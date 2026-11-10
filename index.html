@@ -77,6 +77,7 @@
 
       <div class="card">
         <h2>Weather</h2>
+        <p class="hint" id="mw-status"></p>
         <label class="field"><span>Wind limit <small>(m/s, optional)</small></span>
           <input type="number" id="wlimit" min="1" max="40" step="0.5" placeholder="off">
         </label>
@@ -175,13 +176,7 @@
         <p class="hint">Every marker shows its straight-line distance to your nearest Home. A waypoint also shows its nearest Home point and Hotel, only from its own trip and only those whose dates overlap its own (one with no dates counts for every date). If a waypoint is farther than the max range from every such Home point and Hotel, it is shown in red; your Home does not count toward the range. Units also set the map's scale bar. Elevation and height limits stay in metres.</p>
       </div>
 
-      <div class="aux" role="group" aria-label="Weather, elevation and backup">
-      <div class="card">
-        <h2>Weather and elevation</h2>
-        <p class="hint" id="mw-status"></p>
-        <div class="btn-row"><button type="button" class="btn" id="poi-privacy">Privacy settings…</button></div>
-      </div>
-
+      <div class="aux" role="group" aria-label="Backup">
       <div class="card">
         <h2>Backup</h2>
         <div class="btn-row">
@@ -212,6 +207,7 @@
 
       <div class="card">
         <h2>Weather</h2>
+        <p class="hint" id="mw-status"></p>
         <label class="switch"><span>Fetch weather for markers automatically <small>Shows the next 5 hours in each marker window. Sent when you place a marker and when the page loads (at most every 30 minutes).</small></span><input type="checkbox" id="pv-auto"></label>
         <fieldset class="radios">
           <legend>Location sent for weather</legend>

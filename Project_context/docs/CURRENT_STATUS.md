@@ -10,6 +10,7 @@ Open-source, static map of drone suitable-flight zones (Hubei live data; Singapo
 - Tests moved into `tests/`; trips unit and browser suites written; stale expectations updated.
 - "Plan with an AI" moved to the Trips tab; new marker types Train station and Airport; bulk delete (F20: select mode, shortcuts, export reminder, 10 s Undo). Tests: new `tests/bulk.mjs`, store checks added to `trips-unit`, `ai`/`trip` suites updated for the moved card.
 - UI pass (F21): fixed my markup error from the AI-card move (weather/backup leaked under every tab; phone panel squeezed); weather/backup back in Points of Interest in a dashed settings block; modern number/date fields and scroll bars (`controls.js`); phone search/dock overlap fixed; phone marker window capped at 45% height; day/stop on pins and list rows. New `tests/ui.mjs`.
+- Weather and elevation card removed from Points of Interest; its status line moved into the privacy sub-panel (`#mw-status`); Backup block renamed. Tests `mw`, `priv`, `ui` updated.
 - Docs updated for trips (`PROJECT.md` F19, `AI.md`, `README.md`); this `Project_context/` set created; root `CLAUDE.md` points to `AGENTS.md`.
 - Initial commit `11aa7ce` pushed to `https://github.com/muffinMonday/uav-companion` (`main`, identity muffinMonday, repo-local git config).
 

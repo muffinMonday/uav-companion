@@ -91,7 +91,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - The choice stays shown in the menu after it is made (and is remembered, see F11). Because choosing the same entry again does not fire a change, a **Centre** button next to the menu re-centres on the chosen country after panning away. Choosing the "Choose a country…" prompt clears the choice.
 
 **F12. Automatic weather for markers (built, opt-in, off by default)**
-- The switch lives in the privacy settings (F13). While off, nothing is sent and the marker window shows no weather tiles. The Points of Interest tab only shows a status line ("Weather last refreshed: 14:05 …") and a button to the privacy settings.
+- The switch lives in the privacy settings (F13). While off, nothing is sent and the marker window shows no weather tiles. The status line ("Weather last refreshed: 14:05 …") is at the top of the Weather section of the privacy settings.
 - While on, each marker window shows the next 5 hours (the five hourly values from the current hour at the marker, in its own time zone): average temperature, average wind speed at 10 m, and peak gust. A peak above the user's wind limit is shown in red. It is a regional forecast, as in F8.
 - When it is fetched: when a marker is placed or moved (that marker only); when the switch is turned on (all markers); on page load if the last bulk refresh is more than 30 minutes old (all markers); and on page load or import for any marker that has no weather yet. Requests are batched (one request for up to 50 markers, further batches one after another).
 - Timestamps: the tab shows "Last refreshed" (the time of the most recent successful fetch, in the visitor's time), and each popup shows "Updated" for that marker. Values older than 3 hours are labelled outdated.
@@ -100,7 +100,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Privacy: this is the one place marker locations leave the browser automatically once the user opts in (the Home marker, a residence, is never included). By default coordinates are rounded to 2 decimals (about 1 km) before sending; this does not change the result because the forecast grid is 10 to 25 km. The user can choose precise (4 decimals, about 10 m) instead (F13). The same setting applies to the on-demand weather card (F8).
 
 **F13. Privacy settings (built)**
-- A shield button in the panel header (and a "Privacy settings…" button in the Points of Interest tab) opens a sub-panel that slides over the side panel, with Back, Escape and its own close button. It holds three settings, all remembered in the browser (F11) and all defaulting to the most private choice:
+- A shield button in the panel header opens a sub-panel that slides over the side panel, with Back, Escape and its own close button. It holds three settings, all remembered in the browser (F11) and all defaulting to the most private choice:
   1. **Fetch weather for markers automatically** (off). See F12.
   2. **Location sent for weather**: *Estimated* (rounded to about 1 km, recommended) or *Precise* (about 10 m). It applies to automatic weather and to the "Show weather here" button, whose small print states which one is in force.
   3. **Fetch ground elevation** (off). See F14. Elevation always uses precise coordinates, independent of setting 2, because at 1 km the terrain can differ by hundreds of metres.
@@ -152,7 +152,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - **Delete selected (N)** asks first: the count, that it cannot be undone once the Undo message disappears, and to export first (an **Export first** button downloads the GeoJSON and keeps the question open). After deleting, a message with **Undo** stays for 10 seconds and restores the markers in their original places and trips (a trip tag is dropped if that trip was deleted meanwhile). The Undo is held in memory only; a reload ends it. The Home marker can be deleted like any other.
 
 **F21. Look and phone layout (built)**
-- Weather and elevation, and Backup, live only in the Points of Interest tab, inside a dashed "Settings and backup" block so they read as settings rather than as the tab's own cards.
+- Backup lives at the bottom of the Points of Interest tab, in a dashed "Backup" block so it reads as separate from the tab's own cards. The weather and elevation card was removed from that tab: the privacy sub-panel (shield button) is the one place for those settings and the weather status line.
 - Number fields have − / + buttons (the browser spinner is hidden); date fields are rounded, themed for light and dark, and have a clear button (the native date picker still opens). Scroll bars are thin and themed. The fields are enhanced by `src/controls.js`, including those in marker windows built later.
 - Phones (up to 520 px): the search box and the dock never overlap (the dock is icons only below 760 px, the search box takes the space left, with a shorter hint). A marker window takes at most 45% of the screen height and scrolls inside; the map can be dragged around it.
 - Day and stop: a pin shows a small label ("D2·3" day and stop, "D2" day only, "#3" stop only); list rows say "Day 2 · Stop 3" (only "Stop 3" under a "Day 2" heading); the marker window shows it under the type.

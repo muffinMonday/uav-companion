@@ -30,9 +30,9 @@ ok(!(await vis(p, 'h2:has-text("Weather and elevation")')) && !(await vis(p, 'h2
 await open(p, 'trips');
 ok(!(await vis(p, 'h2:has-text("Weather and elevation")')) && !(await vis(p, 'h2:has-text("Backup")')) && (await vis(p, '#ai-card')) && (await vis(p, '#trips-empty')), 'Trips shows trips and Plan with an AI, and no weather or backup');
 await open(p, 'poi');
-ok((await vis(p, 'h2:has-text("Weather and elevation")')) && (await vis(p, 'h2:has-text("Backup")')) && !(await vis(p, '#ai-card')), 'Points of Interest shows weather and backup, and no AI card');
+ok(!(await vis(p, 'h2:has-text("Weather and elevation")')) && (await vis(p, 'h2:has-text("Backup")')) && !(await vis(p, '#ai-card')), 'Points of Interest shows backup, and no weather card or AI card');
 const struct = await p.evaluate(() => ({
-  weatherInPoi: !!document.querySelector('#pane-poi .aux #mw-status'),
+  weatherInPoi: !document.querySelector('#pane-poi #mw-status') && !!document.querySelector('#privacy #mw-status'),
   backupInPoi: !!document.querySelector('#pane-poi .aux #poi-export'),
   aiInTrips: !!document.querySelector('#pane-trips #ai-card #ai-preview'),
   bodyChildren: [...document.querySelector('#panel > .sp-body').children].map((c) => c.id).join(','),
@@ -41,7 +41,7 @@ const struct = await p.evaluate(() => ({
   scroll: getComputedStyle(document.querySelector('.sp-body')).scrollbarWidth,
 }));
 ok(struct.weatherInPoi && struct.backupInPoi && struct.aiInTrips && struct.bodyChildren === 'pane-config,pane-trips,pane-poi', 'the markup is balanced: the cards sit inside their own tab panes');
-ok(struct.border === 'dashed' && /Settings and backup/.test(struct.label), 'the weather and backup block is set apart: dashed outline and a "Settings and backup" label');
+ok(struct.border === 'dashed' && /Backup/.test(struct.label), 'the backup block is set apart: dashed outline and a "Backup" label');
 ok(struct.scroll === 'thin', 'scroll bars are thin');
 
 // ================= modern controls

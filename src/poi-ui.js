@@ -686,7 +686,6 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (showSwitch.checked) map.addLayer(layer); else { map.removeLayer(layer); map.closePopup(); }
   });
 
-  $('poi-privacy').addEventListener('click', () => panel.openPrivacy());
   $('poi-place').addEventListener('click', () => setMode(mode === 'place' ? null : 'place'));
   $('poi-center').addEventListener('click', () => { setMode(null); panel.closeIfPhone(); place(map.getCenter()); });
   $('poi-here').addEventListener('click', () => {

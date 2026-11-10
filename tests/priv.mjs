@@ -71,7 +71,7 @@ ok(!(await p.isChecked('#pv-auto')) && !(await p.isChecked('#pv-alt')) && (await
 ok(/Open-Meteo/.test(await p.textContent('#privacy')) && /Never sent/.test(await p.textContent('#privacy')), '1: explains what leaves the browser');
 await p.click('#privacy-back'); ok(!(await p.isVisible('#privacy')), '1: Back closes it');
 await p.click('#privacy-btn'); await p.keyboard.press('Escape'); ok(!(await p.isVisible('#privacy')), '1: Escape closes it');
-await p.click('#tab-poi'); await p.click('#poi-privacy'); ok(await p.isVisible('#privacy'), '1: the Points of Interest tab has a "Privacy settings…" button too');
+await p.click('#tab-poi'); ok(!(await p.locator('#poi-privacy').count()) && !(await p.locator('#pane-poi #mw-status').count()), '1: the Points of Interest tab no longer has a weather and privacy card (privacy is one shield button away)'); await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); await p.waitForTimeout(400); ok(await p.isVisible('#privacy') && /Automatic weather is off/.test(await p.textContent('#mw-status')), '1: the privacy panel opens from the shield and shows the weather status line');
 await p.click('#privacy-close'); ok(!(await p.isVisible('#panel')) && await p.isVisible('#dock'), '1: the sub-panel has its own close button that hides the panel'); await p.click('#dock [data-tab=poi]'); ok(!(await p.isVisible('#privacy')), '1: reopening the panel starts from the tab, not the sub-panel');
 await S.ctx.close();
 

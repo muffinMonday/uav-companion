@@ -52,8 +52,8 @@ const lsGet = (p, k) => p.evaluate((key) => JSON.parse(localStorage.getItem(key)
 const openMarker = async (p, name) => { await p.click(`#poi-list .poi-item:has-text("${name}")`); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(900); };
 const wxText = (p) => p.locator('.poi-pop .stats-wrap').innerText().then((t) => t.replace(/\s+/g, ' '));
 const num = (t, re) => parseFloat(t.match(re)[1]);
-const setAuto = async (p, on) => { await p.click('#poi-privacy'); await p.waitForSelector('#privacy:not([hidden])'); await (on ? p.check('#pv-auto') : p.uncheck('#pv-auto')); await p.click('#privacy-back'); };
-const isAuto = async (p) => { await p.click('#poi-privacy'); await p.waitForSelector('#privacy:not([hidden])'); const v = await p.isChecked('#pv-auto'); await p.click('#privacy-back'); return v; };
+const setAuto = async (p, on) => { await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); await (on ? p.check('#pv-auto') : p.uncheck('#pv-auto')); await p.click('#privacy-back'); };
+const isAuto = async (p) => { await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); const v = await p.isChecked('#pv-auto'); await p.click('#privacy-back'); return v; };
 const closePopup = (p) => p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
 
 // ============ A. default: off, nothing sent

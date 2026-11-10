@@ -359,7 +359,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 /* ---------- weather, elevation and backup: set apart from the tab's own content ---------- */
 .aux{margin-top:18px;padding:12px 14px;border:1px dashed var(--line);border-radius:var(--radius);background:transparent}
-.aux::before{content:"Settings and backup";display:block;margin-bottom:8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.aux::before{content:"Backup";display:block;margin-bottom:8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .aux .card{margin:0;padding:0;background:transparent;box-shadow:none}
 .aux .card+.card{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .aux .card h2{text-transform:none;letter-spacing:0;font-size:13px;color:var(--fg)}
