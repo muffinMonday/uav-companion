@@ -15,7 +15,6 @@ This is a planning aid. It does not replace the UOM app (China) or any local off
 | Data | Hubei (`data/regions/cn/hubei/`, 84,863 cells, `allow` semantics). Built locally into one PMTiles file per region. |
 | App | Vite + Leaflet in `src/`. Zones, basemaps, search, point check (F4), location pin and re-centre, scale bar, markers, trips (F19), AI import, privacy controls. Browser-tested in Edge on desktop and phone widths. |
 | Hosting | Source in the public GitHub repo `muffinMonday/uav-companion`. Not yet deployed. Plan: GitHub Pages from the `gh-pages` branch via `npm run deploy`, no CI. |
-| Prototype | `prototype/hubei_zone_map.html`: the earlier single-file version, kept for reference only. |
 
 Earlier layers (the Wuhan screenshot extraction and the province extraction from the provincial map image) are superseded by the official data and should not be used.
 
@@ -27,7 +26,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Attribute fields: `name` (a binary grid code, 21 to 35 digits depending on cell size, unique across all 84,863 cells) and `color_code` (constant `#01f4f4`). The geometry is the zone data; the build drops both fields. The grid code could support a geometry-free point check; not evaluated yet.
 - Coordinate system: `grid.prj` declares WGS84 (EPSG:4326). The label does not rule out GCJ-02, so overlay the cells on a satellite basemap at a known landmark and then set `crsVerified` in `source.json`. Cells are axis-aligned rectangles.
 - Licence: not stated in the attachment. Confirm terms before public redistribution.
-- Reference status: the official grid is the reference. The prototype's earlier layers overlap it by about 86% (province) and 89% (Wuhan), so those layers are not authoritative.
+- Reference status: the official grid is the reference. The earlier prototype layers (removed from the repo) overlapped it by about 86% (province) and 89% (Wuhan), so those layers are not authoritative.
 
 ### 3.2 Place index (`data/places/<country>.txt`)
 - Editable source, one file per country; the build generates `public/data/places/<country>.<hash>.json`.
@@ -193,7 +192,7 @@ Vite + Leaflet in plain JavaScript, with a Node build script. Full layout and th
 7. The build drops attributes, so per-zone classes or height limits are not supported yet.
 8. The Hubei licence is unconfirmed, and the data is published on that basis.
 9. No offline support yet (see section 5).
-10. `prototype/hubei_zone_map.html` is a build artifact of earlier work. Do not edit it.
+10. (Withdrawn: the earlier prototype was removed from the repo.)
 11. Markers live in one browser on one device. Safari can clear site data after a period without use, so the app asks for persistent storage and prompts for backups, but only an export is a guarantee. On GitHub Pages the storage origin is shared by every site under the same `<user>.github.io`, so keys are prefixed `uavzones.`.
 12. Marker popups keep light colours in the dark theme.
 13. Edit mode and the hold-and-drag were tested with a mouse and with emulated touch events in Edge, not on physical phones.

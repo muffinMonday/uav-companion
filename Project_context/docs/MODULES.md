@@ -43,4 +43,3 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `public/ai/{prompt.md,schema.json,example.geojson}`, `public/llms.txt` | Published AI assets; `tests/trip-unit.mjs` checks them against `TYPES` |
 | `tests/` | Test suites and runner; see `DEVELOPMENT.md` |
 | `docs/` | Product docs: `PROJECT.md`, `AI.md`, `ATTRIBUTIONS.md`, `regions/` |
-| `prototype/hubei_zone_map.html` | Earlier single-file version, reference only |

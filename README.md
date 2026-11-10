@@ -31,7 +31,6 @@ data/places/<country>.txt                      offline search index
 scripts/                                       build-data.js, verify-data.js, lib/ (readers, tiles, PMTiles writer, CRS)
 public/data/                                   GENERATED: index.json, <country>/manifest.json, tiles, places (not in git)
 src/                                           map, search, point check, location control
-prototype/                                     the earlier single-file prototype, kept for reference
 ```
 
 `public/data/` is rebuilt locally and published only to the `gh-pages` branch, so large tile files never enter the history of `main`. Each region is one PMTiles file; the app loads a region's tiles only when it is in view.
