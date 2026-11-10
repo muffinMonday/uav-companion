@@ -151,6 +151,12 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Points of Interest tab, **Select markers…**: every row gets a checkbox (a click anywhere on the row ticks it). A bar offers **All shown**, **None**, **Add a trip** (a trip or "No trip") and **Add a type**; the shortcuts add to what is already ticked and only reach markers the list currently shows (the type and trip filters apply). A filtered-out marker is dropped from the selection, so the count always matches what is visible.
 - **Delete selected (N)** asks first: the count, that it cannot be undone once the Undo message disappears, and to export first (an **Export first** button downloads the GeoJSON and keeps the question open). After deleting, a message with **Undo** stays for 10 seconds and restores the markers in their original places and trips (a trip tag is dropped if that trip was deleted meanwhile). The Undo is held in memory only; a reload ends it. The Home marker can be deleted like any other.
 
+**F21. Look and phone layout (built)**
+- Weather and elevation, and Backup, live only in the Points of Interest tab, inside a dashed "Settings and backup" block so they read as settings rather than as the tab's own cards.
+- Number fields have − / + buttons (the browser spinner is hidden); date fields are rounded, themed for light and dark, and have a clear button (the native date picker still opens). Scroll bars are thin and themed. The fields are enhanced by `src/controls.js`, including those in marker windows built later.
+- Phones (up to 520 px): the search box and the dock never overlap (the dock is icons only below 760 px, the search box takes the space left, with a shorter hint). A marker window takes at most 45% of the screen height and scrolls inside; the map can be dragged around it.
+- Day and stop: a pin shows a small label ("D2·3" day and stop, "D2" day only, "#3" stop only); list rows say "Day 2 · Stop 3" (only "Stop 3" under a "Day 2" heading); the marker window shows it under the type.
+
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.
 - First visit (nothing saved): the map fits all covered regions. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.

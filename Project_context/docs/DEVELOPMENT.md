@@ -26,10 +26,10 @@ npm test                          # all suites; needs the app on :5173
 node tests/run.mjs trips ai       # only suites whose name contains these words
 node tests/trips.mjs              # one suite directly; prints PASS/FAIL lines
 ```
-- Suites: unit `ai-unit`, `trip-unit` (Home marker, distance and date rules, AI assets), `trips-unit` (trips model, store, scoping, export/import); browser `bulk` (select and delete), `poi1`, `poi2`, `edit`, `prefs`, `opacity`, `mw`, `priv`, `ai`, `trip`, `trips`, `smoke`.
+- Suites: unit `ai-unit`, `trip-unit` (Home marker, distance and date rules, AI assets), `trips-unit` (trips model, store, scoping, export/import); browser `ui` (tab contents, controls, search/dock, phone window, day and stop), `bulk` (select and delete), `poi1`, `poi2`, `edit`, `prefs`, `opacity`, `mw`, `priv`, `ai`, `trip`, `trips`, `smoke`.
 - Browser suites mock Open-Meteo, Photon and Nominatim; screenshots go to `tests/out/` (git-ignored). `lib.mjs` supplies paths and the browser channel.
 - The runner counts lines starting with `PASS`/`FAIL`; `smoke` prints none, so it shows 0 pass and passes if it does not crash or log console errors.
-- Last full run (this document's date, 2026-11-11): all 15 suites passed on the dev server; counts in `CURRENT_STATUS.md`.
+- Last full run (this document's date, 2026-11-11): all 16 suites passed on the dev server; counts in `CURRENT_STATUS.md`.
 
 ## Debugging
 - A failing browser test prints its message and the first error lines; rerun that suite alone. Screenshots in `tests/out/`.

@@ -66,3 +66,9 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Reasoning: storage is the only copy of a user's markers, so a bulk delete needs a pre-delete backup prompt and a short-lived undo.
 - Alternatives: a delete-trip-with-markers button (not needed: select by trip covers it); a persistent trash (rejected: extra stored state).
 - Consequences: Undo does not survive a reload. Type ids `train` and `airport` are now part of the stored and exchanged format (prompt, schema, example list them).
+
+### 2026-11-11: Settings block, modern controls, phone layout, day/stop labels
+- Context: weather/backup had leaked under every tab through a markup error; native number/date inputs and scroll bars looked dated; on phones the search box overlapped the dock and a marker window could fill the screen.
+- Decision: weather/elevation and backup stay in Points of Interest only, in a dashed "Settings and backup" block. Number and date inputs stay native but are wrapped by `controls.js` (− / +, clear button) and styled; scroll bars use `scrollbar-width: thin`. The dock is icons-only below 760 px and the search box fits the space left. On phones the marker window keeps its Leaflet popup but is capped at 45% of the screen height and scrolls inside, instead of becoming a separate bottom card. Pins show a day/stop label.
+- Alternatives: a custom calendar widget (rejected: more code, worse on phones than the OS picker); a pinned bottom card for the marker on phones (not built: the capped popup solves the blocked map with less change).
+- Consequences: date and number fields in new code should be plain inputs (they are enhanced automatically); add `data-plain` to opt out.

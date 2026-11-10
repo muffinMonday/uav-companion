@@ -125,6 +125,7 @@
         <label class="field"><span>Paste the AI's answer</span><textarea id="ai-text" rows="5" spellcheck="false" placeholder='{"type":"FeatureCollection","features":[ … ]}'></textarea></label>
         <div class="btn-row"><button type="button" class="btn primary" id="ai-preview-btn">Preview…</button></div>
         <div class="preview" id="ai-preview" hidden></div>
+      </div>
     </section>
 
     <!-- Points of Interest -->
@@ -174,8 +175,7 @@
         <p class="hint">Every marker shows its straight-line distance to your nearest Home. A waypoint also shows its nearest Home point and Hotel, only from its own trip and only those whose dates overlap its own (one with no dates counts for every date). If a waypoint is farther than the max range from every such Home point and Hotel, it is shown in red; your Home does not count toward the range. Units also set the map's scale bar. Elevation and height limits stay in metres.</p>
       </div>
 
-      </div>
-
+      <div class="aux" role="group" aria-label="Weather, elevation and backup">
       <div class="card">
         <h2>Weather and elevation</h2>
         <p class="hint" id="mw-status"></p>
@@ -191,6 +191,7 @@
           <input type="file" id="poi-file" accept=".geojson,.json,application/geo+json,application/json" hidden>
         </div>
         <p class="hint" id="poi-note"></p>
+      </div>
       </div>
     </section>
   </div>

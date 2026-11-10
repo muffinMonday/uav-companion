@@ -7,6 +7,7 @@ import { initPointCheck, checkPoint, describeCheck, zoneSummary } from './pointc
 import { addLocateControl } from './locate.js';
 import { initWeather, weatherButton, getWindLimit, setWindLimit } from './weather.js';
 import { initPanel } from './panel.js';
+import { initControls } from './controls.js';
 import { initPOI } from './poi-ui.js';
 import { initPrivacyUI } from './privacy-ui.js';
 import { initAI } from './ai-ui.js';
@@ -45,6 +46,9 @@ const prefs = loadPrefs();
 const { map, switchBase, setScaleUnits } = createMap(prefs);
 onDistanceSettings((s) => setScaleUnits(s.units)); // the scale bar follows the distance units chosen in Points of Interest
 const panel = initPanel();
+initControls(); // modern number and date fields, also for markers' windows built later
+// the search box is narrow on a phone: a shorter hint there
+{ const q = $('q'), full = q.placeholder, narrow = matchMedia('(max-width:520px)'); const set = () => { q.placeholder = narrow.matches ? 'Search places' : full; }; set(); narrow.addEventListener('change', set); }
 
 $('op').value = prefs.opacity ?? 0.45; // applied to the zones once they are loaded, below
 $('base').value = prefs.basemap ?? 'esri';

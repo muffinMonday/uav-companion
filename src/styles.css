@@ -234,9 +234,6 @@ textarea{resize:vertical;min-height:60px}
 
 /* ---------- phones ---------- */
 @media (max-width:520px){
-  .dock button span{display:none}
-  .dock button{padding:9px 11px}
-  .search{width:calc(100% - 56px - 100px);left:54px}
   .sidepanel{left:8px;right:8px;bottom:8px;top:auto;width:auto;height:min(62vh,560px);border-radius:18px}
   .wx{left:8px;right:8px;width:auto;bottom:52px;max-height:50vh}
   .banner{left:10px;right:10px;top:60px;transform:none;max-width:none;border-radius:16px;justify-content:space-between}
@@ -330,3 +327,47 @@ textarea{resize:vertical;min-height:60px}
 .sel-box{flex:none;width:20px;height:20px;margin:0;accent-color:var(--accent)}
 .toast-action{margin-left:8px;padding:2px 10px;border:1px solid currentColor;border-radius:999px;background:transparent;color:inherit;font:inherit;font-weight:650;cursor:pointer}
 .btn-row[hidden],.select-bar[hidden]{display:none}
+/* day and stop on the pin */
+.poi-pin .seq{position:absolute;left:50%;top:-9px;transform:translateX(-50%);padding:1px 6px;border-radius:999px;background:var(--fg);color:var(--bg);font:700 10.5px/1.3 var(--font);letter-spacing:.02em;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4);pointer-events:none}
+
+/* ---------- modern controls: scrollbars, number and date fields ---------- */
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 45%,transparent) transparent}
+:root{color-scheme:light}
+@media (prefers-color-scheme: dark){:root{color-scheme:dark}}
+
+input[type=date]{width:100%;min-height:38px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--fg);font-variant-numeric:tabular-nums}
+input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.6;border-radius:6px;padding:3px;margin-left:2px}
+input[type=date]::-webkit-calendar-picker-indicator:hover{opacity:1;background:var(--accent-soft)}
+input[type=date]::-webkit-datetime-edit-fields-wrapper{padding:0}
+input[type=date]:disabled{opacity:.5}
+input[type=text]:focus,input[type=number]:focus,input[type=date]:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input[type=number]{-moz-appearance:textfield;appearance:textfield;text-align:center;font-variant-numeric:tabular-nums}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+
+.num-field,.date-field{display:flex;align-items:center;position:relative;min-width:0;flex:1}
+.num-field input{border-radius:0;border-left:0;border-right:0;min-width:0;text-align:center}
+.ctl-btn{display:grid;place-items:center;flex:none;width:34px;height:36px;padding:0;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;transition:background .12s,color .12s}
+.ctl-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.ctl-btn:hover{background:var(--accent-soft);color:var(--accent)}
+.ctl-btn.dec{border-radius:var(--radius-sm) 0 0 var(--radius-sm)}
+.ctl-btn.inc{border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.num-field:has(input:disabled) .ctl-btn{opacity:.5;pointer-events:none}
+.date-field .ctl-btn.clear{position:absolute;right:38px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:0;border-radius:50%;background:transparent}
+.date-field[data-empty=true] .ctl-btn.clear,.date-field:has(input:disabled) .ctl-btn.clear{display:none}
+.date-field .ctl-btn.clear:hover{background:var(--surface-2)}
+.inline-input .num-field{flex:1}
+
+/* ---------- weather, elevation and backup: set apart from the tab's own content ---------- */
+.aux{margin-top:18px;padding:12px 14px;border:1px dashed var(--line);border-radius:var(--radius);background:transparent}
+.aux::before{content:"Settings and backup";display:block;margin-bottom:8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.aux .card{margin:0;padding:0;background:transparent;box-shadow:none}
+.aux .card+.card{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.aux .card h2{text-transform:none;letter-spacing:0;font-size:13px;color:var(--fg)}
+
+/* the dock holds three buttons: icons only below 760 px so it never runs into the search box */
+@media (max-width:760px){
+  .dock button span{display:none}
+  .dock button{padding:8px 9px}
+  .dock{right:10px;gap:0}
+  .search{left:54px;width:min(340px,calc(100% - 54px - 10px - 116px - 8px))}
+}

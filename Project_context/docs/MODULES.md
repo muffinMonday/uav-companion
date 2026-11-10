@@ -25,6 +25,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `countries.js` (pure) | ISO country list, code/name/alias resolution | `COUNTRIES`, `countryCode`, `countryName` | none |
 | `aiimport.js` (pure apart from geocode) | Lenient parse of AI text, sanitize, geocode, share-link encode/decode | `parseItinerary`, `isDuplicate`, `geocode`, `encodeShare`, `decodeShare` | poi |
 | `ai-ui.js` | "Plan with an AI" (in the Trips tab): paste/preview/import, trip select, share link | `initAI` | aiimport, poi-ui |
+| `controls.js` | Modern number (− / +) and date (clear button) fields; observer enhances fields created later | `initControls` | none |
 | `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
 | `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
 

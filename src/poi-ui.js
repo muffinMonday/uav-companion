@@ -16,12 +16,14 @@ const HOLD_MS = 380; // press and hold this long before a pin can be moved
 const SLOP = 8;      // px of movement during the hold that cancels it (it was a swipe, not a hold)
 
 /** The pin, with a small dot in its trip's colour when the marker belongs to a trip. The colour comes from the fixed palette in poi.js. */
-const makeIcon = (type, tripColor) => L.divIcon({
+const makeIcon = (type, tripColor, seq = '') => L.divIcon({
   className: 'poi-pin',
-  html: pinSvg(type) + (tripColor ? `<i class="trip-dot" style="background:${tripColor}"></i>` : ''),
+  html: pinSvg(type) + (tripColor ? `<i class="trip-dot" style="background:${tripColor}"></i>` : '') + (seq ? `<b class="seq">${seq}</b>` : ''),
   iconSize: [30, 40], iconAnchor: [15, 38],
 });
 const fmt = (v) => v.toFixed(5);
+/** Short form for the pin: "D2·3", "D2" or "#3"; '' when the marker has neither a day nor a stop. */
+const seqBadge = (it) => (it.day !== undefined ? `D${it.day}${it.order !== undefined ? `·${it.order}` : ''}` : it.order !== undefined ? `#${it.order}` : '');
 /** "Day 2 · Stop 3", or just one of them, or '' when the marker is not part of an itinerary. */
 const tripLabel = (it) => [it.day !== undefined && `Day ${it.day}`, it.order !== undefined && `Stop ${it.order}`].filter(Boolean).join(' · ');
 
@@ -238,7 +240,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     b.innerHTML = pinSvg(it.type);
     const t = el('span', 't');
     const detail = it.note ? it.note.split('\n')[0] : `${fmt(it.lat)}, ${fmt(it.lon)}`;
-    const when = [it.order !== undefined && `Stop ${it.order}`, gmode === 'date' && it.endDate && dateLabel(it)].filter(Boolean).join(' · ');
+    const when = [gmode === 'day' ? (it.order !== undefined && `Stop ${it.order}`) : tripLabel(it), gmode === 'date' && it.endDate && dateLabel(it)].filter(Boolean).join(' · ');
     const name = el('b', '', it.name);
     if (it.unverified) name.append(' ', el('span', 'badge', 'Unverified'));
     if (it.tripId && outsideTrip(it, store.getTrip(it.tripId))) name.append(' ', el('span', 'badge', 'Outside trip dates'));
@@ -401,8 +403,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
 
   // ---------- markers ----------
   function addMarker(item) {
-    const m = L.marker([item.lat, item.lon], { icon: makeIcon(item.type, tripColor(item)), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
-    m._sig = `${item.type}|${tripColor(item) ?? ''}`;
+    const m = L.marker([item.lat, item.lon], { icon: makeIcon(item.type, tripColor(item), seqBadge(item)), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
+    m._sig = `${item.type}|${tripColor(item) ?? ''}|${seqBadge(item)}`;
     m.on('click', () => { if (!suppressClick) openPopup(item.id); });
     markers.set(item.id, m);
     layer.addLayer(m);
@@ -411,8 +413,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function refreshIcons() {
     for (const it of store.items()) {
       const m = markers.get(it.id);
-      const sig = `${it.type}|${tripColor(it) ?? ''}`;
-      if (m && m._sig !== sig) { m.setIcon(makeIcon(it.type, tripColor(it))); m._sig = sig; }
+      const sig = `${it.type}|${tripColor(it) ?? ''}|${seqBadge(it)}`;
+      if (m && m._sig !== sig) { m.setIcon(makeIcon(it.type, tripColor(it), seqBadge(it))); m._sig = sig; }
     }
   }
   function rebuildMarkers() {
@@ -433,6 +435,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     popup = L.popup({
       maxWidth: Math.min(340, window.innerWidth - 32), minWidth: Math.min(290, window.innerWidth - 40), offset: [0, -36],
       autoPanPaddingTopLeft: phone ? [12, 76] : [64, 76], autoPanPaddingBottomRight: [12, 16], closeButton: true,
+      // on a phone the window never takes more than about 45% of the screen: it scrolls inside, and the map stays draggable around it
+      ...(phone && { maxHeight: Math.round(window.innerHeight * 0.45) }),
     })
       .setLatLng(m.getLatLng())
       .setContent(popupContent(id, edit));
@@ -594,7 +598,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         if (!res.ok) toast('Changed for now, but the browser would not store it. Export your markers to keep them.');
         const m = markers.get(id);
         if (m) {
-          m.setIcon(makeIcon(res.item.type, tripColor(res.item)));
+          m.setIcon(makeIcon(res.item.type, tripColor(res.item), seqBadge(res.item))); m._sig = `${res.item.type}|${tripColor(res.item) ?? ''}|${seqBadge(res.item)}`;
           m.options.title = res.item.name;
           m.getElement()?.setAttribute('title', res.item.name);
         }
