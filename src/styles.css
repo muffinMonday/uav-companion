@@ -371,3 +371,16 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   .dock{right:10px;gap:0}
   .search{left:54px;width:min(340px,calc(100% - 54px - 10px - 116px - 8px))}
 }
+
+/* ---------- marker windows as frosted glass: --pop-alpha (0.5 to 1) is set from the slider in Map Configs ---------- */
+:root{--pop-alpha:.8}
+.leaflet-popup-content-wrapper{background:color-mix(in srgb,var(--surface) calc(var(--pop-alpha) * 100%),transparent);-webkit-backdrop-filter:blur(14px) saturate(1.25);backdrop-filter:blur(14px) saturate(1.25)}
+.leaflet-popup-tip{background:color-mix(in srgb,var(--surface) calc(var(--pop-alpha) * 100%),transparent)}
+.pop .status,.pop .stat,.pop .note,.pop .dist-row,.pop .dist-empty{background-color:color-mix(in srgb,var(--surface-2) calc(var(--pop-alpha) * 100%),transparent)}
+.pop .status.ok{background-color:color-mix(in srgb,var(--ok-bg) calc(var(--pop-alpha) * 100%),transparent)}
+.pop .status.no,.pop .dist-row.over{background-color:color-mix(in srgb,var(--no-bg) calc(var(--pop-alpha) * 100%),transparent)}
+.pop .status.unk,.pop .unverified,.pop .trip-warn{background-color:color-mix(in srgb,var(--unk-bg) calc(var(--pop-alpha) * 100%),transparent)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  /* without background blur a see-through window is hard to read: keep it nearly solid */
+  :root{--pop-alpha:.95}
+}

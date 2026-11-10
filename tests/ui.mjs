@@ -94,6 +94,34 @@ ok((await p.locator('#poi-list .day-head').first().textContent()) === 'Day 2' &&
 ok((await p.locator('#poi-list .poi-item').first().locator('b').textContent()) === 'Park', 'and they are ordered by stop');
 await ctx.close();
 
+// ================= frosted marker window and its opacity slider
+({ ctx, p } = await session(dated, { width: 1200, height: 800 }));
+await open(p, 'config');
+const alphaOf = (c) => { const m = c.match(/\/\s*([\d.]+)\s*\)$/) || c.match(/rgba\([^)]*,\s*([\d.]+)\)$/); return m ? +m[1] : 1; };
+const popLook = () => p.evaluate(() => { const w = document.querySelector('.leaflet-popup-content-wrapper'); const cs = getComputedStyle(w); return { bg: cs.backgroundColor, blur: cs.backdropFilter || cs.webkitBackdropFilter, tile: getComputedStyle(document.querySelector('.pop .status')).backgroundColor, v: getComputedStyle(document.documentElement).getPropertyValue('--pop-alpha').trim() }; });
+ok((await p.inputValue('#pop-op')) === '0.8' && (await p.getAttribute('#pop-op', 'min')) === '0.5' && (await p.getAttribute('#pop-op', 'max')) === '1', 'Map Configs has a Marker window opacity slider, default 0.8, from 0.5 to 1');
+await open(p, 'poi');
+await p.click('#poi-list .poi-item:has-text("Bridge")'); await p.waitForFunction(() => document.querySelector('.poi-pop h3')?.textContent === 'Bridge', null, { timeout: 8000 }); await p.waitForTimeout(500);
+let look = await popLook();
+ok(Math.abs(alphaOf(look.bg) - 0.8) < 0.02 && /blur/.test(look.blur), 'the marker window is see-through (about 80% opaque) with a background blur: ' + look.bg + ' | ' + look.blur);
+ok(alphaOf(look.tile) < 0.95, 'its tiles are see-through too, so the map shows through them');
+await open(p, 'config');
+await p.locator('#pop-op').fill('0.6');
+look = await popLook();
+ok(Math.abs(alphaOf(look.bg) - 0.6) < 0.02 && look.v === '0.6', 'dragging the slider changes the open window live (60%)');
+await p.waitForTimeout(200);
+ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).popupOpacity)) === 0.6, 'the choice is remembered in the settings');
+await p.locator('#pop-op').fill('1');
+look = await popLook();
+ok(alphaOf(look.bg) === 1, 'at 1 the window is solid');
+await p.locator('#pop-op').fill('0.7');
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(900);
+ok(Math.abs(+(await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--pop-alpha'))) - 0.7) < 0.001, 'after a reload the opacity is restored (0.7)');
+await p.evaluate(() => localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ popupOpacity: 5 })));
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(900);
+ok((await p.inputValue('#pop-op')) === '0.8', 'an out-of-range saved value is ignored: back to 0.8');
+await ctx.close();
+
 // ================= search box and dock never overlap
 const widths = [320, 360, 390, 430, 520, 600, 700, 760, 900, 1200];
 const bad = [];

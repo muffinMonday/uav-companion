@@ -157,6 +157,9 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Phones (up to 520 px): the search box and the dock never overlap (the dock is icons only below 760 px, the search box takes the space left, with a shorter hint). A marker window takes at most 45% of the screen height and scrolls inside; the map can be dragged around it.
 - Day and stop: a pin shows a small label ("D2·3" day and stop, "D2" day only, "#3" stop only); list rows say "Day 2 · Stop 3" (only "Stop 3" under a "Day 2" heading); the marker window shows it under the type.
 
+**F22. Frosted marker window (built)**
+- Marker windows (and the point-check window) are frosted glass: about 80% opaque with a background blur, tiles inside see-through too, text and buttons opaque. A **Marker window opacity** slider in Map Configs (0.5 to 1, default 0.8; 1 is solid) changes open windows live and is remembered (`popupOpacity` in the settings). Browsers without background blur get a nearly solid window instead.
+
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.
 - First visit (nothing saved): the map fits all covered regions. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.

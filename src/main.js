@@ -50,6 +50,11 @@ initControls(); // modern number and date fields, also for markers' windows buil
 // the search box is narrow on a phone: a shorter hint there
 { const q = $('q'), full = q.placeholder, narrow = matchMedia('(max-width:520px)'); const set = () => { q.placeholder = narrow.matches ? 'Search places' : full; }; set(); narrow.addEventListener('change', set); }
 
+const applyPopOpacity = (v) => document.documentElement.style.setProperty('--pop-alpha', String(v));
+$('pop-op').value = prefs.popupOpacity ?? 0.8;
+applyPopOpacity(+$('pop-op').value); // marker windows are frosted glass: this is how see-through they are
+$('pop-op').addEventListener('input', (e) => applyPopOpacity(+e.target.value));
+$('pop-op').addEventListener('change', (e) => savePrefs({ popupOpacity: +e.target.value }));
 $('op').value = prefs.opacity ?? 0.45; // applied to the zones once they are loaded, below
 $('base').value = prefs.basemap ?? 'esri';
 $('base').addEventListener('change', (e) => { switchBase(e.target.value); savePrefs({ basemap: e.target.value }); });
