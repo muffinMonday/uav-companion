@@ -1,5 +1,5 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from 'playwright-core';
+import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const seed = { v: 1, items: [{ id: 'a1', type: 'home', name: 'Seed Home', note: 'n', lat: 30.5928, lon: 114.3055, created: '2026-11-01T00:00:00.000Z' }] };
 const b = await chromium.launch({ channel: CHANNEL });

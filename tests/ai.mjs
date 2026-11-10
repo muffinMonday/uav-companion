@@ -1,5 +1,5 @@
 import { OUT as SP, ROOT, CHANNEL } from './lib.mjs';
-import { chromium } from 'playwright-core';
+import { chromium } from './lib.mjs';
 import fs from 'node:fs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];

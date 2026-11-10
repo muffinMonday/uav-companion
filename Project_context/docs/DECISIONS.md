@@ -78,3 +78,9 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision: a click on blank map only closes windows; a 2 s hold (the owner's choice), a right-click or Enter checks a spot. Opening a marker or a check centres the map on its coordinate; windows have `autoPan` off and a max height of the space above the centred point (half the map minus pin offset, tip and search row), scrolling inside beyond that.
 - Alternatives: 1 s hold (suggested, owner chose 2 s); keeping auto-pan with a height cap.
 - Consequences: windows are shorter (about 280 px of content on an 800 px screen) and scroll; popups must not rely on Leaflet's close-on-click, so `closeOnClick:false` and a manual close in `main.js`. Tests that need a point check use a real 2.3 s hold.
+
+### 2026-11-11: Welcome screen on every visit, with an opt-out
+- Context: new users get no explanation of the app, and a traveller with a trip planned has no reason-to-return cue.
+- Decision: a modal `<dialog>` opens on every visit (the owner's choice) with a 4-step guide and, when a trip is coming up or under way, a countdown card. "Don't show again" is stored as `uavzones.v1.welcome` (separate from the settings entry, so clearing or rewriting settings does not bring it back); "How it works" in Map Configs reopens it and can turn it back on. Share links skip it.
+- Alternatives: first visit only (would not show the countdown on later visits); showing only when a trip is near (rejected by the owner).
+- Consequences: a modal covers the page on load, so test suites switch it off via `tests/lib.mjs`.

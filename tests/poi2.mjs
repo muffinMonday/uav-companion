@@ -1,5 +1,5 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from 'playwright-core';
+import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const seed = { v: 1, items: [
   { id: 'a1', type: 'home', name: 'Seed Home', note: '', lat: 30.5928, lon: 114.3055, created: '2026-11-01T00:00:00.000Z' },
@@ -90,6 +90,7 @@ const ctx2 = await b.newContext({ viewport: { width: 1200, height: 800 } });
 await ctx2.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });
 const p2 = await ctx2.newPage(); watch(p2);
 await p2.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p2.waitForTimeout(800);
+await p2.click('#welcome-go'); // storage is blocked, so the welcome screen cannot remember an opt-out
 await p2.click('#tab-poi');
 ok(/unavailable/.test(await p2.textContent('#poi-note')), 'no storage: panel says saving is unavailable');
 await p2.click('#poi-center'); await p2.waitForSelector('.poi-pop form');

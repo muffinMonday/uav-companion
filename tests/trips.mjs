@@ -1,6 +1,6 @@
 // Trips tab in the browser: create, validate, edit, delete, current trip, filter, dots, the marker form, phone width.
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from 'playwright-core';
+import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 
 const seedPois = { v: 1, items: [

@@ -9,6 +9,7 @@ import { initWeather, weatherButton, getWindLimit, setWindLimit } from './weathe
 import { initPanel } from './panel.js';
 import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
+import { initWelcome } from './welcome.js';
 import { centreOn, popupMaxHeight } from './view.js';
 import { initPOI } from './poi-ui.js';
 import { initPrivacyUI } from './privacy-ui.js';
@@ -127,7 +128,10 @@ const poi = initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWe
 initPrivacyUI({ mw: poi.mw, elev: poi.elev }); // the privacy settings own the weather and elevation switches
 initTripsUI({ poi, panel, toast });             // the Trips tab: create and edit trips, tag markers with them
 const ai = initAI({ map, toast, panel, poi });  // paste an AI's itinerary, or open a share link, then preview and add
+const opensShareLink = /^#import=/.test(location.hash); // read before fromHash() clears it
 ai.fromHash();
+const welcome = initWelcome({ poi, panel });     // the guide and the countdown to the next trip
+welcome.maybeShow({ skip: opensShareLink });      // every visit unless switched off; a share link has the person's attention already
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch(() => toast('Point check failed. Check your connection and try again.'));
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.

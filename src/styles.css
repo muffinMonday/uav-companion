@@ -404,3 +404,21 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 @media (prefers-reduced-motion: reduce){.hold-ring{animation:none;opacity:1}}
 .leaflet-container{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .leaflet-popup-content{-webkit-user-select:text;user-select:text}
+
+/* ---------- welcome screen ---------- */
+dialog.welcome{padding:0;border:0;border-radius:22px;background:var(--surface);color:var(--fg);box-shadow:var(--shadow);width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:hidden}
+dialog.welcome::backdrop{background:rgba(10,20,30,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.w-card{padding:22px 22px 18px;max-height:calc(100vh - 24px);overflow-y:auto}
+.w-card h1{margin:0 0 4px;font-size:22px;line-height:1.2;letter-spacing:-.01em}
+.w-lead{margin:0 0 14px;color:var(--muted)}
+.w-trip{margin:0 0 14px;padding:14px 16px;border-radius:16px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+.w-trip[hidden]{display:none}
+.w-count{font-size:26px;line-height:1.1;font-weight:800;letter-spacing:-.02em;color:var(--accent)}
+.w-trip-head{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:15px}
+.w-trip-sub{margin-top:2px;color:var(--muted);font-size:12.5px}
+.w-trip .btn-row{margin:10px 0 0}
+.w-steps{margin:0 0 12px;padding:0;list-style:none;counter-reset:w;display:grid;gap:10px}
+.w-steps li{counter-increment:w;position:relative;padding-left:36px;font-size:13.5px}
+.w-steps li::before{content:counter(w);position:absolute;left:0;top:0;display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-weight:700;font-size:13px}
+.w-note{margin:0 0 4px;padding:9px 12px;border-radius:12px;background:var(--surface-2);color:var(--muted);font-size:12.5px}
+dialog.welcome .btn[hidden]{display:none}

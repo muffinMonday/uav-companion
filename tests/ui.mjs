@@ -1,6 +1,6 @@
 // Layout and look: tab contents, settings block, modern controls, search/dock on phones, marker window on phones, day and stop labels.
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from 'playwright-core';
+import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 
 const mk = (id, type, name, n, extra = {}) => ({ id, type, name, note: '', lat: 30.59 + n * 0.003, lon: 114.30 + n * 0.003, created: `2026-11-0${n + 1}T00:00:00.000Z`, ...extra });

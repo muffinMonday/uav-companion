@@ -1,6 +1,6 @@
 // Press and hold to check a spot, plain clicks only close windows, and the clicked coordinate is centred (with a scrolling window if it is tall).
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from 'playwright-core';
+import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const HOLD = 2300; // a little over the 2 s hold

@@ -1,5 +1,5 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from 'playwright-core';
+import { chromium } from './lib.mjs';
 const browser = await chromium.launch({ channel: CHANNEL, headless: true });
 const ctx = await browser.newContext({
   viewport: { width: 1200, height: 800 },

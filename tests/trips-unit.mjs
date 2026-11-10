@@ -148,3 +148,27 @@ const nt = Object.fromEntries(poi.TYPES.map((t) => [t.id, t]));
 ok(nt.train.label === 'Train station' && nt.airport.label === 'Airport', 'types: Train station and Airport exist');
 ok(poi.sanitize({ type: 'train', name: 'x', lat: 1, lon: 2 }).type === 'train' && poi.sanitize({ type: 'airport', name: 'x', lat: 1, lon: 2 }).type === 'airport', 'types: both survive sanitize');
 ok(dist.isWaypoint(it('s', 'train')) && dist.isWaypoint(it('s', 'airport')) && dist.needsDistance(it('s', 'airport')), 'types: both are waypoints with distances');
+
+// ---------- countdown to a trip (welcome screen)
+ok(trips.todayISO(new Date(2026, 10, 9, 23, 59)) === '2026-11-09' && trips.todayISO(new Date(2026, 0, 5, 0, 1)) === '2026-01-05', 'countdown: today is the local calendar date, zero-padded');
+ok(trips.daysBetween('2026-11-09', '2026-11-22') === 13 && trips.daysBetween('2026-12-31', '2027-01-01') === 1 && trips.daysBetween('2026-11-10', '2026-11-09') === -1 && trips.daysBetween('2026-02-28', '2026-03-01') === 1, 'countdown: whole days across month and year ends');
+const TODAY = '2026-11-10';
+let ts1 = trips.tripStatus({ startDate: '2026-11-22', endDate: '2026-11-24' }, TODAY);
+ok(ts1.state === 'upcoming' && ts1.days === 12, 'countdown: a trip starting 22 Nov is 12 days away on 10 Nov');
+ok(trips.tripStatus({ startDate: '2026-11-11' }, TODAY).days === 1, 'countdown: tomorrow is 1 day');
+ts1 = trips.tripStatus({ startDate: '2026-11-09', endDate: '2026-11-11' }, TODAY);
+ok(ts1.state === 'now' && ts1.day === 2 && ts1.of === 3, 'countdown: 9 to 11 Nov is on day 2 of 3 on 10 Nov');
+ts1 = trips.tripStatus({ startDate: '2026-11-10', endDate: '2026-11-12' }, TODAY);
+ok(ts1.state === 'now' && ts1.day === 1 && ts1.of === 3, 'countdown: a trip that starts today is on day 1');
+ts1 = trips.tripStatus({ startDate: '2026-11-08', endDate: '2026-11-10' }, TODAY);
+ok(ts1.state === 'now' && ts1.day === 3 && ts1.of === 3, 'countdown: the last day still counts');
+ok(trips.tripStatus({ startDate: '2026-11-08', endDate: '2026-11-09' }, TODAY) === null && trips.tripStatus({ startDate: '2026-11-09' }, TODAY) === null, 'countdown: a trip that is over has no countdown');
+ok(trips.tripStatus({ name: 'x' }, TODAY) === null && trips.tripStatus({ endDate: '2026-11-12' }, TODAY) === null, 'countdown: a trip with no start date has none');
+ok(trips.tripStatus({ startDate: '2026-11-10' }, TODAY).state === 'now' && trips.tripStatus({ startDate: '2026-11-10' }, TODAY).of === 1, 'countdown: a start-only trip is a one-day trip');
+ok(trips.countdownLabel({ state: 'upcoming', days: 12 }) === '12 days to go' && trips.countdownLabel({ state: 'upcoming', days: 1 }) === 'Tomorrow' && trips.countdownLabel({ state: 'now', day: 2, of: 3 }) === 'Day 2 of 3' && trips.countdownLabel({ state: 'now', day: 1, of: 1 }) === 'Today', 'countdown: wording for upcoming, tomorrow, under way and a one-day trip');
+const list = trips.comingTrips([
+  { id: 'far', name: 'Far', startDate: '2026-12-20' }, { id: 'past', name: 'Past', startDate: '2026-10-01', endDate: '2026-10-05' }, { id: 'none', name: 'None' },
+  { id: 'soon', name: 'Soon', startDate: '2026-11-11' }, { id: 'now', name: 'Now', startDate: '2026-11-09', endDate: '2026-11-11' }, { id: 'mid', name: 'Mid', startDate: '2026-11-22' },
+], TODAY);
+ok(list.map((x) => x.trip.id).join() === 'now,soon,mid,far', 'countdown: under way first, then the soonest; past and undated trips are left out: ' + list.map((x) => x.trip.id));
+ok(trips.comingTrips([], TODAY).length === 0, 'countdown: no trips, nothing to show');

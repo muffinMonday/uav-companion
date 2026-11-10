@@ -91,6 +91,11 @@
         <div id="legend" class="legend"></div>
         <p class="hint">A planning aid, not flight advice. Zones can change, so check the official platform for the place you are flying (for China, UOM) before every flight.</p>
       </div>
+
+      <div class="card">
+        <h2>Help</h2>
+        <div class="btn-row"><button type="button" class="btn" id="help-open">How it works</button></div>
+      </div>
     </section>
 
     <!-- Trips -->
@@ -243,6 +248,26 @@
 
 <div class="wx" id="weather" hidden aria-live="polite"></div>
 <div class="banner" id="banner" hidden role="status"><span id="banner-text"></span><button type="button" class="btn small" id="banner-action">Cancel</button></div>
+<dialog class="welcome" id="welcome" aria-labelledby="welcome-title">
+  <div class="w-card">
+    <h1 id="welcome-title">Welcome to UAV Companion</h1>
+    <p class="w-lead">Check where you can fly a small drone, and plan the places you want to fly on your trip.</p>
+    <section class="w-trip" id="welcome-trip" aria-label="Your next trip" hidden></section>
+    <ol class="w-steps">
+      <li><b>Check a spot.</b> Press and hold on the map for 2 seconds (or right-click) to see whether that spot is in a suitable-flight zone.</li>
+      <li><b>Plan your trip.</b> Create a trip under Trips, then drop markers for hotels, takeoff spots and photo spots. Or paste an AI-made itinerary and add it all at once.</li>
+      <li><b>See the conditions.</b> Open a marker for its zone verdict, its distance to your hotel and Home, and, if you turn it on, weather and the chance of rain.</li>
+      <li><b>Your data stays yours.</b> Markers and trips are saved only in this browser. Weather, elevation and name lookups are off until you allow them (shield button). Export a backup now and then.</li>
+    </ol>
+    <p class="w-note">A planning aid, not flight advice: check the official platform (UOM in China) before every flight. Zone data currently covers Hubei, China.</p>
+    <div class="btn-row">
+      <button type="button" class="btn" id="welcome-dont">Don't show again</button>
+      <button type="button" class="btn" id="welcome-again" hidden>Show on start again</button>
+      <button type="button" class="btn primary" id="welcome-go">Get started</button>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>

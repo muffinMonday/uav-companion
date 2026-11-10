@@ -20,7 +20,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `poi.js` (pure) | Marker and trip model: types, sanitize, store, list sorting, GeoJSON export/import | `createStore` (incl. `removeMany`/`restore` for bulk delete and Undo), `TYPES`, `sanitize`, `sanitizeTrip`, `tripFields`, `toGeoJSON`, `parseGeoJSON`, `sortForList` | countries |
 | `poi-ui.js` | Marker UI: place/edit/drag, list with trip groups and filter, select-and-delete mode, marker window, import/export | `initPOI` returns store, showTrip, fitTrip, get/setCurrentTrip, setNewTripHandler, tagMarker, handleMapClick, items, addMany, fitToItems | poi, distance, trips, cards, weather, elevation |
 | `distance.js` (pure) | Nearest Home point/Hotel (own trip, date overlap) and nearest Home | `nearestBases`, `needsDistance`, `lineApplies`, `inSameTrip`, `beyondRange`, `BASE_TYPES` | none |
-| `trips.js` (pure) | Trip length, labels, "outside trip dates" check, sort | `tripLength`, `tripSummary`, `outsideTrip`, `sortTrips` | poi, countries |
+| `trips.js` (pure) | Trip length, labels, "outside trip dates" check, sort | `tripLength`, `tripSummary`, `outsideTrip`, `sortTrips`, `todayISO`, `tripStatus`, `comingTrips`, `countdownLabel` | poi, countries |
 | `trips-ui.js` | Trips tab: list, form, delete, current trip | `initTripsUI` | poi, trips, countries, cards |
 | `countries.js` (pure) | ISO country list, code/name/alias resolution | `COUNTRIES`, `countryCode`, `countryName` | none |
 | `aiimport.js` (pure apart from geocode) | Lenient parse of AI text, sanitize, geocode, share-link encode/decode | `parseItinerary`, `isDuplicate`, `geocode`, `encodeShare`, `decodeShare` | poi |
@@ -28,6 +28,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `controls.js` | Modern number (− / +) and date (clear button) fields; observer enhances fields created later | `initControls` | none |
 | `holdcheck.js` | Press-and-hold (2 s) point check, right-click and Enter; ring feedback; swallows the click after a hold | `initHoldCheck`, `HOLD_MS` | none |
 | `view.js` | Centre the map on a coordinate (aware of the side panel) and the tallest window that fits above it | `centreOn`, `popupMaxHeight`, `panelInset` | none |
+| `welcome.js` | Welcome dialog, opt-out, countdown card (uses `comingTrips` etc. from `trips.js`) | `initWelcome` (`maybeShow`, `open`) | trips |
 | `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
 | `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
 
