@@ -1,0 +1,22 @@
+{
+  "id": "cn-hubei",
+  "country": "cn",
+  "name": "Hubei",
+  "nameZh": "湖北",
+  "format": "shapefile",
+  "file": "grid.shp",
+  "crs": "wgs84",
+  "crsVerified": false,
+  "semantics": "allow",
+  "maxHeightM": 120,
+  "boundary": "boundary.geojson",
+  "publish": true,
+  "source": {
+    "authority": "Hubei Development and Reform Commission",
+    "announced": "2026-05-12",
+    "effective": "2026-05-14",
+    "attachment": "P020260512578795333014.zip (湖北/湖北适飞网格)"
+  },
+  "license": "unknown",
+  "licenseNote": "Not stated in the attachment. Confirm before public redistribution."
+}
