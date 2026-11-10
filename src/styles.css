@@ -384,3 +384,16 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   /* without background blur a see-through window is hard to read: keep it nearly solid */
   :root{--pop-alpha:.95}
 }
+
+/* ---------- rain chance for the next hours ---------- */
+.rain{margin-top:10px;padding:10px 12px;border-radius:12px}
+.pop .rain{background-color:color-mix(in srgb,var(--surface-2) calc(var(--pop-alpha) * 100%),transparent)}
+.rain-head{font-size:12.5px;color:var(--muted)}
+.rain-head b{color:var(--fg);font-weight:700}
+.rain-strip{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;margin-top:8px}
+.rain-col{display:grid;grid-template-rows:auto 38px auto;justify-items:center;gap:3px;min-width:0}
+.rain-v{font-size:11px;font-weight:650;font-variant-numeric:tabular-nums}
+.rain-t{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rain-bar-wrap{display:flex;align-items:flex-end;width:100%;max-width:26px;height:38px;border-radius:6px;background:color-mix(in srgb,var(--muted) 16%,transparent);overflow:hidden}
+.rain-bar{display:block;width:100%;height:var(--h);border-radius:6px 6px 0 0;background:var(--accent)}
+.rain-bar.none{background:transparent}

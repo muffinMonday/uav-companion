@@ -11,7 +11,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `pointcheck.js` | Zone verdict for a point from tiles at max zoom | check function | pmtiles, vector-tile |
 | `search.js` | Offline place index plus online Photon/Nominatim search | search UI | config |
 | `locate.js` | Location pin, re-centre control | control, `request()` | none |
-| `weather.js`, `markerweather.js` | Open-Meteo forecast for a point / cached per marker (30 min refresh) | `fetchForecast`, `fetchSummaries` | privacy |
+| `weather.js`, `markerweather.js` | Open-Meteo forecast for a point / cached per marker (30 min refresh, incl. rain chance) | `fetchForecast`, `fetchSummaries`, `rainOutlook` | privacy |
 | `elevation.js` | Open-Meteo elevation, per-marker cache | `fetchElevations`, `lookupElevation` | none |
 | `privacy.js`, `privacy-ui.js` | Opt-in switches and coordinate rounding; the privacy sub-panel | settings API | prefs |
 | `prefs.js` | Validated remembered settings | load/save | none |

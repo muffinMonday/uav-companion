@@ -160,6 +160,18 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 **F22. Frosted marker window (built)**
 - Marker windows (and the point-check window) are frosted glass: about 80% opaque with a background blur, tiles inside see-through too, text and buttons opaque. A **Marker window opacity** slider in Map Configs (0.5 to 1, default 0.8; 1 is solid) changes open windows live and is remembered (`popupOpacity` in the settings). Browsers without background blur get a nearly solid window instead.
 
+**F23. Rain chance in the marker window (built)**
+- With automatic weather on, the marker window shows a rain block under the weather tiles: "Rain chance up to 70% around 16:00" and one bar per hour for the next 5 hours (percentage above each bar, hour below). The data is Open-Meteo's hourly precipitation probability, fetched in the same request as the other weather values (no extra coordinates, same opt-in).
+- Not every forecast model gives a chance for every place. Then the block shows expected rain in millimetres ("Rain expected: 1.2 mm", bars in mm) or "No rain forecast", and if the model has neither, "Rain chance unavailable". Entries cached before this feature show no rain block until their next refresh. The Home marker still gets no automatic weather.
+
+**F23. Rain chance in the marker window (built)**
+- With automatic weather on, the marker window shows a rain block under the weather tiles: "Rain chance up to 70% around 16:00" and one bar per hour for the next 5 hours (percentage above each bar, hour below). The data is Open-Meteo's hourly precipitation probability, fetched in the same request as the other weather values (no extra coordinates, same opt-in).
+- Not every forecast model gives a chance for every place. Then the block shows expected rain in millimetres ("Rain expected: 1.2 mm", bars in mm) or "No rain forecast", and if the model has neither, "Rain chance unavailable". Entries cached before this feature show no rain block until their next refresh. The Home marker still gets no automatic weather.
+
+**F23. Rain chance in the marker window (built)**
+- With automatic weather on, the marker window shows a rain block under the weather tiles: "Rain chance up to 70% around 16:00" and one bar per hour for the next 5 hours (percentage above each bar, hour below). The data is Open-Meteo's hourly precipitation probability, fetched in the same request as the other weather values (no extra coordinates, same opt-in).
+- Not every forecast model gives a chance for every place. Then the block shows expected rain in millimetres ("Rain expected: 1.2 mm", bars in mm) or "No rain forecast", and if the model has neither, "Rain chance unavailable". Entries cached before this feature show no rain block until their next refresh. The Home marker still gets no automatic weather.
+
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.
 - First visit (nothing saved): the map fits all covered regions. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.

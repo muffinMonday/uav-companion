@@ -10,7 +10,7 @@ All reads are validated; damaged entries fall back to defaults. If storage is bl
 | `uavzones.v1.pois` | `poi.js` | `{ v: 1, items: [Item] }` | Item: `id`, `type` (home, hotel, takeoff, landing, photo, train, airport, hazard, residence, other), `name` (<= 80), `note` (<= 500), `lat`, `lon`, `created`, optional `day`, `order`, `date`, `endDate` (ISO), `unverified`, `tripId`. `tripId` is dropped for `residence` and when it names no saved trip |
 | `uavzones.v1.trips` | `poi.js` | `{ v: 1, trips: [Trip] }` | Trip: `id`, `name` (<= 80), `created`, `color` (from `TRIP_COLORS`), optional `country` (ISO code), `startDate`, `endDate`, `description` (<= 500). Max 200 trips |
 | `uavzones.v1.prefs` | `prefs.js` | flat object | `basemap`, `country`, `opacity` (0.1 to 0.9), `popupOpacity` (0.5 to 1), `units`, `maxRangeM` (100 to 200000), `currentTrip`, `autoWeather`, `weatherPrecision`, `fetchAltitude`, `lookupNames`, `view {lat, lon, zoom}` |
-| `uavzones.v1.wxcache` | `markerweather.js` | `{ v: 1, lastBulk, items: { [markerId]: { t, temp, wind, gust, n, start, tz, ... } } }` | Weather cache; 30 min refresh interval, outdated after 3 h |
+| `uavzones.v1.wxcache` | `markerweather.js` | `{ v: 1, lastBulk, items: { [markerId]: { t, temp, wind, gust, n, start, tz, pp, pr } } }` | Weather cache; 30 min refresh interval, outdated after 3 h. `pp` = hourly rain chance (%), `pr` = expected rain (mm), up to 6 numbers or nulls each; absent in entries saved before the rain block |
 | `uavzones.v1.elevcache` | `elevation.js` | `{ v: 1, items }` | Per-marker ground elevation |
 | `uavzones.v1.lastBackup` | `poi.js` | ISO timestamp string | Set when the user exports |
 | `uavzones.windLimit` | `weather.js` | number as string | Wind limit; older key without `v1`, kept as is |

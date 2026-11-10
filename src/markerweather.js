@@ -11,6 +11,28 @@ const STALE_MS = 3 * 60 * 60 * 1000;       // older than this is labelled outdat
 const CHUNK = 50;                          // points per request
 
 const num = (v) => (Number.isFinite(v) ? v : null);
+/** An hourly list read back from storage: up to 6 numbers or nulls, or undefined for an entry saved before rain was fetched. */
+const hours = (a) => (Array.isArray(a) ? a.slice(0, 6).map(num) : undefined);
+
+/**
+ * What the next hours hold for rain, from a cached entry. kind 'prob' (a chance in %, peak and the hour it peaks), 'mm' (no chance from
+ * the model, only expected millimetres, total), 'none' (the model gave neither) or null for an entry saved before rain was fetched.
+ * hours: [{ label: '15:00', p, mm }].
+ */
+export function rainOutlook(e) {
+  if (!e || !Array.isArray(e.pp) || !Array.isArray(e.pr)) return null;
+  const [h0] = String(e.start).split(':').map(Number);
+  const count = Math.max(e.pp.length, e.pr.length);
+  const list = Array.from({ length: count }, (_, i) => ({ label: `${String(((Number.isFinite(h0) ? h0 : 0) + i) % 24).padStart(2, '0')}:00`, p: e.pp[i] ?? null, mm: e.pr[i] ?? null }));
+  const probs = list.filter((x) => x.p !== null);
+  if (probs.length) {
+    const peak = Math.max(...probs.map((x) => x.p));
+    return { kind: 'prob', peak, at: probs.find((x) => x.p === peak).label, hours: list };
+  }
+  const mms = list.filter((x) => x.mm !== null);
+  if (mms.length) return { kind: 'mm', total: mms.reduce((a, x) => a + x.mm, 0), hours: list };
+  return { kind: 'none', hours: list };
+}
 
 function loadCache() {
   const empty = { lastBulk: null, items: {} };
@@ -20,7 +42,7 @@ function loadCache() {
     const items = {};
     for (const [id, e] of Object.entries(d.items)) {
       if (!e || !Number.isFinite(e.t) || typeof e.start !== 'string') continue;
-      items[id] = { t: e.t, temp: num(e.temp), wind: num(e.wind), gust: num(e.gust), n: Number.isFinite(e.n) ? e.n : 0, start: e.start.slice(0, 5), tz: String(e.tz || '').slice(0, 12) };
+      items[id] = { t: e.t, temp: num(e.temp), wind: num(e.wind), gust: num(e.gust), n: Number.isFinite(e.n) ? e.n : 0, start: e.start.slice(0, 5), tz: String(e.tz || '').slice(0, 12), pp: hours(e.pp), pr: hours(e.pr) };
     }
     return { lastBulk: Number.isFinite(d.lastBulk) ? d.lastBulk : null, items };
   } catch { return empty; }
@@ -63,7 +85,7 @@ export function createMarkerWeather({ getItems, onChange }) {
         if (!isOn()) break; // switched off while the request was in flight: keep nothing
         const stillThere = new Set(ids());
         const t = Date.now();
-        for (const r of results) if (stillThere.has(r.id)) cache.items[r.id] = { t, temp: r.temp, wind: r.wind, gust: r.gust, n: r.n, start: r.start, tz: r.tz };
+        for (const r of results) if (stillThere.has(r.id)) cache.items[r.id] = { t, temp: r.temp, wind: r.wind, gust: r.gust, n: r.n, start: r.start, tz: r.tz, pp: r.pp, pr: r.pr };
         save();
         emit();
       }

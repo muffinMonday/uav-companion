@@ -205,7 +205,7 @@ await S.page.waitForTimeout(1200);
 await openMarker(S.page, 'Seed A');
 const bg = await S.page.evaluate(() => getComputedStyle(document.querySelector('.leaflet-popup-content-wrapper')).backgroundColor);
 const fg = await S.page.evaluate(() => getComputedStyle(document.querySelector('.poi-pop h3')).color);
-const lum = (c) => { const [r, g, b2] = c.match(/\d+/g).map(Number); return 0.2126 * r + 0.7152 * g + 0.0722 * b2; };
+const lum = (c) => { const [r, g, b2] = c.startsWith('color(') ? c.match(/[\d.]+/g).slice(0, 3).map((x) => +x * 255) : c.match(/\d+/g).map(Number); return 0.2126 * r + 0.7152 * g + 0.0722 * b2; };
 ok(lum(bg) < 80 && lum(fg) > 180, `6: dark theme: popup is dark (${bg}) with light text (${fg})`);
 await S.page.screenshot({ path: SP + '/popup-dark.png' });
 await S.ctx.close();

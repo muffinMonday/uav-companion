@@ -26,11 +26,12 @@ const maxOf = (xs) => { const v = xs.filter((x) => x !== null); return v.length 
 /**
  * One request for many points (Open-Meteo accepts comma-separated coordinate lists; each point counts toward the rate limit).
  * For each point, summarises the SUMMARY_HOURS hourly values starting at the current local hour there.
- * Returns [{ id, temp, wind, gust, n, start, tz }] in the order given; temp/wind/gust are null if the model gave no values.
+ * Returns [{ id, temp, wind, gust, pp, pr, n, start, tz }] in the order given; temp/wind/gust are null if the model gave no values.
+ * pp and pr are the hourly rain chance (%) and expected rain (mm) for those hours, [] when the forecast model has none for the place.
  */
 export async function fetchSummaries(points, signal) {
   const url = `${API}?latitude=${points.map((p) => coord(p.lat)).join(',')}&longitude=${points.map((p) => coord(wrapLon(p.lon))).join(',')}`
-    + '&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m&wind_speed_unit=ms&timezone=auto&forecast_days=2';
+    + '&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation_probability,precipitation&wind_speed_unit=ms&timezone=auto&forecast_days=2';
   const res = await fetch(url, { signal });
   if (res.status === 429) throw new Error('busy');
   if (!res.ok) throw new Error(`http ${res.status}`);
@@ -42,8 +43,10 @@ export async function fetchSummaries(points, signal) {
     const from = r.hourly.time.findIndex((t) => t >= nowLocal);
     if (from < 0) throw new Error('unexpected response');
     const win = (key) => r.hourly[key].slice(from, from + SUMMARY_HOURS).map(num);
+    const winOpt = (key) => (Array.isArray(r.hourly[key]) ? r.hourly[key].slice(from, from + SUMMARY_HOURS).map(num) : []);
     return {
       id: points[i].id, temp: mean(win('temperature_2m')), wind: mean(win('wind_speed_10m')), gust: maxOf(win('wind_gusts_10m')),
+      pp: winOpt('precipitation_probability'), pr: winOpt('precipitation'),
       n: Math.min(SUMMARY_HOURS, r.hourly.time.length - from), start: r.hourly.time[from].slice(11, 16), tz: r.timezone_abbreviation || '',
     };
   });

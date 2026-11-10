@@ -1,7 +1,7 @@
 // Points of interest on the map: placing, listing, editing, moving, backup. Data and storage live in poi.js.
 import L from 'leaflet';
 import { KEY, TRIPS_KEY, TYPES, typeOf, pinSvg, createStore, toGeoJSON, parseGeoJSON, sortForList, posInt, isoDate, listMode, groupLabel, dateLabel } from './poi.js';
-import { createMarkerWeather, formatWhen } from './markerweather.js';
+import { createMarkerWeather, formatWhen, rainOutlook } from './markerweather.js';
 import { createMarkerElevation } from './elevation.js';
 import { getPrivacy } from './privacy.js';
 import { getWindLimit } from './weather.js';
@@ -9,7 +9,7 @@ import { getDistanceSettings, setDistanceSettings, onDistanceSettings } from './
 import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, compass, toDisplay, fromDisplay } from './distance.js';
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
-import { el, statusEl, tile, statsGrid, disclaimer } from './cards.js';
+import { el, statusEl, tile, statsGrid, rainBlock, disclaimer } from './cards.js';
 
 const $ = (id) => document.getElementById(id);
 const HOLD_MS = 380; // press and hold this long before a pin can be moved
@@ -398,6 +398,10 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     box.hidden = !tiles.length;
     if (!tiles.length) return;
     box.append(statsGrid(tiles));
+    if (p.autoWeather) {
+      const outlook = rainOutlook(mw.get(id).entry);
+      if (outlook) box.append(rainBlock(outlook));
+    }
     for (const n of notes.filter(Boolean)) box.append(el('small', 'stats-note', n));
   }
 
@@ -436,7 +440,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       maxWidth: Math.min(340, window.innerWidth - 32), minWidth: Math.min(290, window.innerWidth - 40), offset: [0, -36],
       autoPanPaddingTopLeft: phone ? [12, 76] : [64, 76], autoPanPaddingBottomRight: [12, 16], closeButton: true,
       // on a phone the window never takes more than about 45% of the screen: it scrolls inside, and the map stays draggable around it
-      ...(phone && { maxHeight: Math.round(window.innerHeight * 0.45) }),
+      // on a desktop it leaves room for the pin below it, so a tall window never pushes its own pin off the screen
+      maxHeight: phone ? Math.round(window.innerHeight * 0.45) : Math.max(280, window.innerHeight - 190),
     })
       .setLatLng(m.getLatLng())
       .setContent(popupContent(id, edit));
