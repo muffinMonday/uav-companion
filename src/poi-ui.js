@@ -9,6 +9,7 @@ import { getDistanceSettings, setDistanceSettings, onDistanceSettings } from './
 import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, compass, toDisplay, fromDisplay } from './distance.js';
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
+import { centreOn, popupMaxHeight } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer } from './cards.js';
 
 const $ = (id) => document.getElementById(id);
@@ -434,18 +435,18 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function openPopup(id, edit = false) {
     const item = store.get(id), m = markers.get(id);
     if (!item || !m) return;
-    // On a phone the window must fit the screen: narrower, with small margins instead of room for the zoom buttons.
-    const phone = window.innerWidth <= 520;
+    // The pin is centred on the map and the window opens above it. A window too tall for that space scrolls inside, so it never
+    // runs off the screen and the map is never moved to fit it. On a phone the sheet is closed first so it does not cover the pin.
+    const OFFSET_Y = -36;
+    panel.closeIfPhone();
     popup = L.popup({
-      maxWidth: Math.min(340, window.innerWidth - 32), minWidth: Math.min(290, window.innerWidth - 40), offset: [0, -36],
-      autoPanPaddingTopLeft: phone ? [12, 76] : [64, 76], autoPanPaddingBottomRight: [12, 16], closeButton: true,
-      // on a phone the window never takes more than about 45% of the screen: it scrolls inside, and the map stays draggable around it
-      // on a desktop it leaves room for the pin below it, so a tall window never pushes its own pin off the screen
-      maxHeight: phone ? Math.round(window.innerHeight * 0.45) : Math.max(280, window.innerHeight - 190),
+      maxWidth: Math.min(340, window.innerWidth - 32), minWidth: Math.min(290, window.innerWidth - 40), offset: [0, OFFSET_Y],
+      autoPan: false, closeOnClick: false, closeButton: true, maxHeight: popupMaxHeight(map, OFFSET_Y),
     })
       .setLatLng(m.getLatLng())
       .setContent(popupContent(id, edit));
     popup._poiId = id; // read by the popupopen/popupclose handlers that draw and remove the distance lines
+    centreOn(map, m.getLatLng());
     popup.openOn(map);
   }
 
@@ -878,6 +879,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     /** Gives a marker a trip (or none), e.g. right after "New trip…" saved one. */
     tagMarker(markerId, tripId) { return store.update(markerId, { tripId: tripId ?? null }); },
     /** True if the click was used by a marker mode, so the normal point check should be skipped. */
+    isBusy: () => mode !== null,
     handleMapClick(e) {
       if (mode === 'place') { setMode(null); place(e.latlng); return true; }
       return mode === 'edit';

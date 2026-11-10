@@ -72,3 +72,9 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision: weather/elevation and backup stay in Points of Interest only, in a dashed "Settings and backup" block. Number and date inputs stay native but are wrapped by `controls.js` (− / +, clear button) and styled; scroll bars use `scrollbar-width: thin`. The dock is icons-only below 760 px and the search box fits the space left. On phones the marker window keeps its Leaflet popup but is capped at 45% of the screen height and scrolls inside, instead of becoming a separate bottom card. Pins show a day/stop label.
 - Alternatives: a custom calendar widget (rejected: more code, worse on phones than the OS picker); a pinned bottom card for the marker on phones (not built: the capped popup solves the blocked map with less change).
 - Consequences: date and number fields in new code should be plain inputs (they are enhanced automatically); add `data-plain` to opt out.
+
+### 2026-11-11: Hold to check a spot; centre instead of auto-pan
+- Context: any click on the map opened a point check, so panning by touch or aiming at pins often opened windows by accident, and windows pushed the map around to fit.
+- Decision: a click on blank map only closes windows; a 2 s hold (the owner's choice), a right-click or Enter checks a spot. Opening a marker or a check centres the map on its coordinate; windows have `autoPan` off and a max height of the space above the centred point (half the map minus pin offset, tip and search row), scrolling inside beyond that.
+- Alternatives: 1 s hold (suggested, owner chose 2 s); keeping auto-pan with a height cap.
+- Consequences: windows are shorter (about 280 px of content on an 800 px screen) and scroll; popups must not rely on Leaflet's close-on-click, so `closeOnClick:false` and a manual close in `main.js`. Tests that need a point check use a real 2.3 s hold.

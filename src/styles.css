@@ -397,3 +397,10 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .rain-bar-wrap{display:flex;align-items:flex-end;width:100%;max-width:26px;height:38px;border-radius:6px;background:color-mix(in srgb,var(--muted) 16%,transparent);overflow:hidden}
 .rain-bar{display:block;width:100%;height:var(--h);border-radius:6px 6px 0 0;background:var(--accent)}
 .rain-bar.none{background:transparent}
+
+/* ---------- press and hold on the map ---------- */
+.hold-ring{position:absolute;z-index:700;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;border:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);pointer-events:none;transform-origin:50% 50%;animation:hold-fill var(--hold-ms,2s) linear forwards}
+@keyframes hold-fill{from{transform:scale(.25);opacity:.35}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion: reduce){.hold-ring{animation:none;opacity:1}}
+.leaflet-container{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.leaflet-popup-content{-webkit-user-select:text;user-select:text}

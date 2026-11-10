@@ -26,6 +26,8 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `aiimport.js` (pure apart from geocode) | Lenient parse of AI text, sanitize, geocode, share-link encode/decode | `parseItinerary`, `isDuplicate`, `geocode`, `encodeShare`, `decodeShare` | poi |
 | `ai-ui.js` | "Plan with an AI" (in the Trips tab): paste/preview/import, trip select, share link | `initAI` | aiimport, poi-ui |
 | `controls.js` | Modern number (− / +) and date (clear button) fields; observer enhances fields created later | `initControls` | none |
+| `holdcheck.js` | Press-and-hold (2 s) point check, right-click and Enter; ring feedback; swallows the click after a hold | `initHoldCheck`, `HOLD_MS` | none |
+| `view.js` | Centre the map on a coordinate (aware of the side panel) and the tallest window that fits above it | `centreOn`, `popupMaxHeight`, `panelInset` | none |
 | `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
 | `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
 

@@ -27,7 +27,7 @@ await page.waitForSelector('#results li[role=option]');
 await page.keyboard.press('Enter');
 await page.waitForTimeout(3000);
 await page.screenshot({ path: `${SP}/2-wuhan.png` });
-await page.mouse.click(600, 450);
+await page.mouse.move(600, 450); await page.mouse.down(); await page.waitForTimeout(2300); await page.mouse.up(); // a point check needs a press and hold (2 s)
 await page.waitForSelector('.leaflet-popup .check', { timeout: 8000 });
 console.log('click check:', (await page.locator('.leaflet-popup .check').first().innerText()).replace(/\n/g, ' | '));
 await page.screenshot({ path: `${SP}/3-click.png` });

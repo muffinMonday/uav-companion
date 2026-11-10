@@ -8,6 +8,8 @@ import { addLocateControl } from './locate.js';
 import { initWeather, weatherButton, getWindLimit, setWindLimit } from './weather.js';
 import { initPanel } from './panel.js';
 import { initControls } from './controls.js';
+import { initHoldCheck, HOLD_MS } from './holdcheck.js';
+import { centreOn, popupMaxHeight } from './view.js';
 import { initPOI } from './poi-ui.js';
 import { initPrivacyUI } from './privacy-ui.js';
 import { initAI } from './ai-ui.js';
@@ -96,7 +98,9 @@ function decorate(content, latlng, label, onResize) {
 // Point check popup shared by map clicks and the location pin
 async function showCheck(latlng, title) {
   const res = await checkPoint(latlng.lat, latlng.lng);
-  const popup = L.popup({ maxWidth: Math.min(320, window.innerWidth - 32), minWidth: Math.min(250, window.innerWidth - 40) }).setLatLng(latlng);
+  // the spot is centred; a window too tall to fit above it scrolls inside instead of pushing the map around
+  const popup = L.popup({ maxWidth: Math.min(320, window.innerWidth - 32), minWidth: Math.min(250, window.innerWidth - 40), autoPan: false, closeOnClick: false, maxHeight: popupMaxHeight(map, 0) }).setLatLng(latlng);
+  centreOn(map, latlng);
   popup.setContent(decorate(describeCheck(res, title), latlng, title, () => popup.update())).openOn(map);
 }
 
@@ -125,9 +129,18 @@ initTripsUI({ poi, panel, toast });             // the Trips tab: create and edi
 const ai = initAI({ map, toast, panel, poi });  // paste an AI's itinerary, or open a share link, then preview and add
 ai.fromHash();
 
+const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch(() => toast('Point check failed. Check your connection and try again.'));
+// A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.
+const hold = initHoldCheck({ map, isBusy: () => poi.isBusy(), onCheck: checkAt, holdMs: HOLD_MS });
+// (windows are opened with closeOnClick off: Leaflet would close them on the release that ends a hold, before this runs)
 map.on('click', (e) => {
+  if (hold.consumeClick()) return;   // the release after a hold is not a click
+  map.closePopup();
   if (poi.handleMapClick(e)) return; // placing or editing markers: no point check
-  showCheck(e.latlng, `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`).catch(() => toast('Point check failed. Check your connection and try again.'));
+  if (!loadPrefs().holdHint) {
+    savePrefs({ holdHint: true });
+    toast('To check a spot, press and hold on the map for 2 seconds (or right-click).', 6000);
+  }
 });
 
 // Data

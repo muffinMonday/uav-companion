@@ -156,7 +156,7 @@ ok(S.el.length === before + 1, '3: a moved marker elevation is looked up again a
 await closePopup(S.page);
 
 // point-check popup (map click) and location pin
-await S.page.mouse.click(300, 300); await S.page.waitForSelector('.leaflet-popup .status'); await S.page.waitForTimeout(900);
+await S.page.mouse.move(300, 300); await S.page.mouse.down(); await S.page.waitForTimeout(2300); await S.page.mouse.up(); await S.page.waitForSelector('.leaflet-popup .status'); await S.page.waitForTimeout(900);
 ok((await S.page.locator('.leaflet-popup .stat[data-k=elev] .v').count()) === 1 && /^\d+ m$/.test(await S.page.locator('.leaflet-popup .stat[data-k=elev] .v').innerText()), '3: a point check also shows elevation: ' + await S.page.locator('.leaflet-popup .stat[data-k=elev] .v').innerText());
 await closePopup(S.page);
 await S.page.click('.locate-btn'); await S.page.waitForSelector('.leaflet-popup .stat[data-k=elev]', { timeout: 8000 });

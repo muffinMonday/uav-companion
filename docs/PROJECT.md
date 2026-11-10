@@ -56,7 +56,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Keyboard support: arrows to move through results, Enter to select, Escape to close.
 
 **F4. Point check (built)**
-- Clicking the map, or the user's location pin, answers from the same PMTiles the map draws, at the highest zoom. Three outcomes: `inside` a zone, `outside` the zones but within the region's coverage boundary, or `nodata`.
+- Pressing and holding on the map for 2 seconds (without moving), right-clicking it, pressing Enter on the focused map (checks its centre), or the user's location pin, answers from the same PMTiles the map draws, at the highest zoom. Three outcomes: `inside` a zone, `outside` the zones but within the region's coverage boundary, or `nodata`.
 - Wording follows the region's `semantics`. `allow` (China): "Suitable-flight zone, below 120 m true height" / "Outside the suitable-flight zone (controlled airspace)". `restrict` (e.g. Singapore): "Restricted area" / "Not inside a restricted area in this data", never presented as permission to fly.
 - Always shown with the standing disclaimer. Not legal advice.
 - Checked against the source shapefile: 0 mismatches in 20,000 random points.
@@ -171,6 +171,10 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 **F23. Rain chance in the marker window (built)**
 - With automatic weather on, the marker window shows a rain block under the weather tiles: "Rain chance up to 70% around 16:00" and one bar per hour for the next 5 hours (percentage above each bar, hour below). The data is Open-Meteo's hourly precipitation probability, fetched in the same request as the other weather values (no extra coordinates, same opt-in).
 - Not every forecast model gives a chance for every place. Then the block shows expected rain in millimetres ("Rain expected: 1.2 mm", bars in mm) or "No rain forecast", and if the model has neither, "Rain chance unavailable". Entries cached before this feature show no rain block until their next refresh. The Home marker still gets no automatic weather.
+
+**F24. Hold to check, and centring (built)**
+- A quick click or tap on blank map no longer opens anything: it closes any open window. The first time, a message explains how to check a spot (remembered as `holdHint`). Holding still for 2 s checks the spot (a ring fills under the pointer meanwhile, with a short vibration where supported); moving more than 8 px, a second finger, zooming or letting go early cancels it, and the release after a hold is not treated as a click. A right-click checks at once; on touch screens a long-press's context menu is suppressed instead. Holding does nothing while placing or editing markers, or on a pin, window or control.
+- Opening a marker (click, tap, or from the list) or a point check centres the map on that coordinate, keeping the zoom (with the side panel open, in the part of the map it leaves uncovered; on a phone opening a marker first closes the sheet). Windows no longer pan the map to fit: one too tall for the space above the centred point scrolls inside itself (the same on desktop and phone), so it always stays on screen.
 
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.

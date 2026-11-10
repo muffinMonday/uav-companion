@@ -15,6 +15,7 @@ function sanitize(raw) {
   if (Number.isFinite(raw.maxRangeM) && raw.maxRangeM >= 100 && raw.maxRangeM <= 200000) out.maxRangeM = Math.round(raw.maxRangeM); // 100 m to 200 km
   if (Number.isFinite(raw.popupOpacity) && raw.popupOpacity >= 0.5 && raw.popupOpacity <= 1) out.popupOpacity = Math.round(raw.popupOpacity * 100) / 100; // the slider's own range
   if (typeof raw.currentTrip === 'string' && raw.currentTrip.length > 0 && raw.currentTrip.length <= 64) out.currentTrip = raw.currentTrip; // checked against the saved trips when used
+  if (typeof raw.holdHint === 'boolean') out.holdHint = raw.holdHint;
   if (typeof raw.autoWeather === 'boolean') out.autoWeather = raw.autoWeather;
   if (raw.weatherPrecision === 'precise' || raw.weatherPrecision === 'estimated') out.weatherPrecision = raw.weatherPrecision;
   if (typeof raw.fetchAltitude === 'boolean') out.fetchAltitude = raw.fetchAltitude;
