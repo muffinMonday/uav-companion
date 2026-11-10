@@ -38,6 +38,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let newTripHandler = null;  // set by the Trips tab: starts a new trip and tags a marker with it
   let suppressClick = false;
   let popup = null;
+  let selecting = false;      // "Select markers" mode in the list, for deleting several at once
+  const selected = new Set(); // ids ticked in that mode (only ever markers that are shown)
+  let visibleIds = new Set(); // the markers the list shows now
   let wxLine = null; // { id, render } for the weather and elevation tiles in the open marker window, so they update in place
 
   // Weather summaries and ground elevation for markers: both opt-in, see privacy.js
@@ -116,6 +119,10 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const trips = store.trips();
     const visible = items.filter((i) => (filter === 'all' || i.type === filter)
       && (tripFilter === 'all' || (tripFilter === 'none' ? !i.tripId : i.tripId === tripFilter)));
+    visibleIds = new Set(visible.map((i) => i.id));
+    if (!items.length) selecting = false;
+    for (const id of [...selected]) if (!visibleIds.has(id)) selected.delete(id); // the count always matches what is shown
+    renderSelectBar(items);
 
     // One group of markers. Inside it: date headings once any marker has a date, else "Day N" headings once any has a day,
     // else a plain list, newest first. `mode` is decided by the caller so headings and order always agree.
@@ -154,6 +161,75 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     }
   }
 
+  // ---------- selecting several markers to delete ----------
+  const selRow = $('poi-select-row'), selBar = $('poi-selbar'), selDelete = $('sel-delete'), selConfirm = $('sel-confirm');
+  const selTrip = $('sel-trip'), selType = $('sel-type');
+  const plural = (n) => `${n} marker${n === 1 ? '' : 's'}`;
+  function renderSelectBar(items) {
+    selRow.hidden = selecting || !items.length;
+    selBar.hidden = !selecting;
+    if (!selecting) return;
+    const option = (sel, value, text) => { const o = el('option', '', text); o.value = value; sel.append(o); };
+    selTrip.replaceChildren(); option(selTrip, '', 'Choose…');
+    for (const t of sortTrips(store.trips())) option(selTrip, t.id, t.name);
+    if (items.some((i) => !i.tripId)) option(selTrip, 'none', 'No trip');
+    selType.replaceChildren(); option(selType, '', 'Choose…');
+    for (const t of TYPES) if (items.some((i) => i.type === t.id)) option(selType, t.id, t.label);
+    updateSelectBar();
+  }
+  function updateSelectBar() {
+    const n = selected.size;
+    selDelete.textContent = `Delete selected (${n})`;
+    selDelete.disabled = n === 0;
+    if (n === 0) selConfirm.hidden = true;
+    $('sel-confirm-delete').textContent = `Delete ${plural(n)}`;
+  }
+  function setSelecting(on) {
+    selecting = on; selected.clear(); selConfirm.hidden = true;
+    renderList();
+  }
+  const addToSelection = (match) => {
+    for (const it of store.items()) if (visibleIds.has(it.id) && match(it)) selected.add(it.id);
+    selConfirm.hidden = true;
+    renderList();
+  };
+  $('poi-select').addEventListener('click', () => setSelecting(true));
+  $('sel-done').addEventListener('click', () => setSelecting(false));
+  $('sel-all').addEventListener('click', () => addToSelection(() => true));
+  $('sel-none').addEventListener('click', () => { selected.clear(); selConfirm.hidden = true; renderList(); });
+  selTrip.addEventListener('change', () => { const v = selTrip.value; if (v) addToSelection((i) => (v === 'none' ? !i.tripId : i.tripId === v)); });
+  selType.addEventListener('change', () => { const v = selType.value; if (v) addToSelection((i) => i.type === v); });
+  selDelete.addEventListener('click', () => {
+    const n = selected.size;
+    if (!n) return;
+    $('sel-confirm-text').textContent = `Delete ${plural(n)}? This can't be undone once the Undo message disappears. Export first if you want a copy.`;
+    $('sel-export').textContent = 'Export first';
+    selConfirm.hidden = false;
+  });
+  $('sel-cancel').addEventListener('click', () => { selConfirm.hidden = true; });
+  $('sel-export').addEventListener('click', () => { $('poi-export').click(); $('sel-export').textContent = 'Exported'; });
+  $('sel-confirm-delete').addEventListener('click', () => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    for (const id of ids) {
+      const m = markers.get(id);
+      if (m) layer.removeLayer(m);
+      markers.delete(id); mw.forget(id); elev.forget(id);
+    }
+    map.closePopup();
+    const res = store.removeMany(ids);
+    setSelecting(false);
+    const n = res.removed.length;
+    toast(res.ok ? `Deleted ${plural(n)}.` : `Deleted ${plural(n)} for now, but the browser would not update its storage.`, 10000, {
+      label: 'Undo',
+      run: () => {
+        const back = store.restore(res.removed);
+        for (const { item } of res.removed) { const it = store.get(item.id); if (it && !markers.has(it.id)) addMarker(it); }
+        toast(`Restored ${plural(back.restored)}.`, 4000);
+      },
+    });
+  });
+
   function renderItem(it, items, gmode) {
     const li = el('li');
     const b = el('button', 'poi-item');
@@ -170,7 +246,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const d = distanceSummary(it, items);
     if (d) t.append(el('small', `dist-line${d.over ? ' over' : ''}`, d.text));
     b.append(t);
-    b.addEventListener('click', () => flyToItem(it.id));
+    if (selecting) {
+      const cb = el('input', 'sel-box'); cb.type = 'checkbox'; cb.checked = selected.has(it.id); cb.setAttribute('aria-label', `Select ${it.name}`);
+      const toggle = () => { if (cb.checked) selected.add(it.id); else selected.delete(it.id); selConfirm.hidden = true; updateSelectBar(); };
+      cb.addEventListener('change', toggle);
+      b.title = 'Select or clear';
+      b.addEventListener('click', () => { cb.checked = !cb.checked; toggle(); });
+      li.className = 'selecting';
+      li.append(cb);
+    } else {
+      b.addEventListener('click', () => flyToItem(it.id));
+    }
     li.append(b);
     return li;
   }

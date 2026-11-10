@@ -59,3 +59,10 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 ### 2026-11-11: Persistent project context in `Project_context/`
 - Decision: `AGENTS.md` plus six docs; a one-line root `CLAUDE.md` points to `AGENTS.md` so Claude Code loads it automatically.
 - Reasoning: new sessions start without memory of earlier ones.
+
+### 2026-11-11: Plan with an AI moves to the Trips tab; two new marker types; bulk delete
+- Context: an AI reply can create a trip, and the Points of Interest tab was crowded.
+- Decision: the "Plan with an AI" card lives in the Trips tab. New types `train` (Train station) and `airport` (Airport) are waypoints, not distance bases; the Hazard hint no longer mentions airports. Bulk delete is a Select mode in the list with All/None, by-trip and by-type shortcuts limited to shown markers, a confirmation that gives the count and tells the user to export first, and a 10 s Undo message backed by in-memory `store.removeMany`/`restore`.
+- Reasoning: storage is the only copy of a user's markers, so a bulk delete needs a pre-delete backup prompt and a short-lived undo.
+- Alternatives: a delete-trip-with-markers button (not needed: select by trip covers it); a persistent trash (rejected: extra stored state).
+- Consequences: Undo does not survive a reload. Type ids `train` and `airport` are now part of the stored and exchanged format (prompt, schema, example list them).

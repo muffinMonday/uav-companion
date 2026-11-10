@@ -20,7 +20,9 @@ export const TYPES = [
   { id: 'takeoff', label: 'Takeoff spot', hint: 'A good place to launch the drone', color: '#1565c0', glyph: `<path d="M12 15.4V6.2M8.2 9.8 12 6l3.8 3.8M7.5 17.6h9" ${G}/>` },
   { id: 'landing', label: 'Landing spot', hint: 'A good place to land or recover it', color: '#8d6e63', glyph: `<path d="M12 6.2v9.2M8.2 11.8 12 15.6l3.8-3.8M7.5 17.6h9" ${G}/>` },
   { id: 'photo', label: 'Photo spot', hint: 'A scenic spot to fly or film at', color: '#c2185b', glyph: `<rect x="6.2" y="8.2" width="11.6" height="7.6" rx="1.8" ${G}/><circle cx="12" cy="12" r="2.2" ${G}/><path d="M9.6 8.2l.9-1.4h3l.9 1.4" ${G}/>` },
-  { id: 'hazard', label: 'Hazard', hint: 'Something to avoid: an airport, crowds, cables, a restricted site', color: '#e65100', glyph: `<path d="M12 5.8 18 16.2H6z" ${G}/><path d="M12 9.8v3.2" ${G}/><circle cx="12" cy="14.7" r=".7" fill="#fff"/>` },
+  { id: 'train', label: 'Train station', hint: 'A train or metro station you will use', color: '#00796b', glyph: `<rect x="7.6" y="5.8" width="8.8" height="9" rx="2" ${G}/><path d="M7.6 11h8.8M9.6 17.4l1.2-2.6M14.4 17.4l-1.2-2.6" ${G}/>` },
+  { id: 'airport', label: 'Airport', hint: 'An airport you fly in or out of. Also check its no-fly zone before launching nearby', color: '#039be5', glyph: `<path d="M12 5.8v10.6M12 9.2l-4.6 3v1.3l4.6-1.5 4.6 1.5v-1.3l-4.6-3M10 16.4h4" ${G}/>` },
+  { id: 'hazard', label: 'Hazard', hint: 'Something to avoid: crowds, cables, a restricted site', color: '#e65100', glyph: `<path d="M12 5.8 18 16.2H6z" ${G}/><path d="M12 9.8v3.2" ${G}/><circle cx="12" cy="14.7" r=".7" fill="#fff"/>` },
   { id: 'residence', label: 'Home', hint: 'Your actual residence (not the drone\'s home point)', color: '#827717', glyph: '<path d="M12 5.2 6.2 10.2h1.6v5.3h3v-3.6h2.4v3.6h3v-5.3h1.6z" fill="#fff"/>' },
   { id: 'other', label: 'Other', hint: 'Anything else', color: '#546e7a', glyph: '<circle cx="12" cy="11.3" r="3" fill="#fff"/>' },
 ];
@@ -248,6 +250,30 @@ export function createStore() {
       items = items.filter((x) => x.id !== id);
       const ok = save(); emit();
       return { ok };
+    },
+
+    /** Deletes several markers at once. Returns { ok, removed: [{ item, index }] }, which restore() takes to undo it. */
+    removeMany(ids) {
+      const set = new Set(ids);
+      const removed = [];
+      items.forEach((item, index) => { if (set.has(item.id)) removed.push({ item, index }); });
+      if (!removed.length) return { ok: true, removed };
+      items = items.filter((x) => !set.has(x.id));
+      const ok = save(); emit();
+      return { ok, removed };
+    },
+    /** Puts markers from removeMany back where they were. A trip tag is kept only if that trip still exists. Returns { ok, restored }. */
+    restore(entries) {
+      const have = new Set(items.map((x) => x.id));
+      const ids = tripsExist();
+      let restored = 0;
+      for (const { item, index } of [...entries].sort((a, b) => a.index - b.index)) {
+        if (have.has(item.id)) continue;
+        items.splice(Math.min(index, items.length), 0, item.tripId && !ids.has(item.tripId) ? withoutTrip(item) : item);
+        have.add(item.id); restored++;
+      }
+      const ok = save(); emit();
+      return { ok, restored };
     },
 
     // ----- trips -----

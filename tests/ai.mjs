@@ -36,11 +36,11 @@ async function session({ seed, prefs, viewport = { width: 1200, height: 800 }, p
   S.page.on('console', (m) => m.type() === 'error' && !/arcgisonline|Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
   await S.page.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
   await S.page.waitForTimeout(900);
-  await S.page.click('#tab-poi').catch(() => {});
+  await S.page.click('#tab-trips').catch(() => {});
   return S;
 }
 const pois = (p) => p.evaluate(() => (JSON.parse(localStorage.getItem('uavzones.v1.pois') || '{"items":[]}')).items);
-const preview = async (p, text) => { await p.fill('#ai-text', text); await p.click('#ai-preview-btn'); await p.waitForTimeout(250); };
+const preview = async (p, text) => { await p.click('#tab-trips'); await p.fill('#ai-text', text); await p.click('#ai-preview-btn'); await p.waitForTimeout(250); };
 const rowsText = (p) => p.$$eval('#ai-preview .prow', (rs) => rs.map((r) => r.innerText.replace(/\s+/g, ' ')));
 const toast = (p) => p.textContent('#toast');
 const setPriv = async (p, id, on) => { await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); await (on ? p.check(id) : p.uncheck(id)); await p.click('#privacy-back'); };
@@ -159,7 +159,7 @@ const heads2 = await p.$$eval('#poi-list .day-head', (h) => h.map((x) => x.textC
 ok(heads2.join() === 'Day 2,No day set', '8: once one place has a day, the list groups: "Day 2" first, "No day set" last');
 
 // ============ 9. day and order in the edit form
-await p.click('#poi-list .poi-item:has-text("P1")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(900);
+await p.click('#tab-poi'); await p.click('#poi-list .poi-item:has-text("P1")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(900);
 ok(!(await p.locator('.poi-pop .pop-type').innerText()).includes('Day'), '9: a marker without day/order shows none in its header');
 await p.click('.poi-pop .btn:has-text("Edit")'); await p.waitForSelector('.poi-pop form');
 const dv = await p.$$eval('.poi-pop .two input[type=number]', (i) => i.map((x) => [x.value, x.placeholder, x.required]));
@@ -188,7 +188,7 @@ await closePopup(p);
 // ============ 10. unverified: banner and "Mark as checked"
 await preview(p, fc(feat('Maybe Here', { type: 'photo' }, 114.4, 30.5)));
 await p.click('#ai-add'); await p.waitForTimeout(600);
-await p.click('#poi-list .poi-item:has-text("Maybe Here")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(900);
+await p.click('#tab-poi'); await p.click('#poi-list .poi-item:has-text("Maybe Here")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(900);
 ok(await p.locator('.poi-pop .unverified').isVisible() && /Unverified location/.test(await p.locator('.poi-pop .unverified').innerText()), '10: an unverified marker\'s window says so');
 await p.click('.poi-pop .unverified .btn'); await p.waitForTimeout(500);
 ok((await p.locator('.poi-pop .unverified').count()) === 0 && (await p.locator('.leaflet-popup').count()) === 1, '10: "Mark as checked" removes the notice and keeps the window open');
@@ -211,7 +211,7 @@ ok(!/Riverside|P1|Maybe/.test(link), '12: the link does not show names in clear 
 const S2 = await session();
 const p2 = S2.page;
 await p2.goto(link, { waitUntil: 'networkidle' }); await p2.waitForTimeout(1200);
-ok(await p2.isVisible('#panel') && await p2.isVisible('#pane-poi') && await p2.isVisible('#ai-preview'), '12: opening the link opens the panel on Points of Interest with a preview');
+ok(await p2.isVisible('#panel') && await p2.isVisible('#pane-trips') && await p2.isVisible('#ai-preview'), '12: opening the link opens the panel on Trips with a preview');
 ok((await p2.evaluate(() => location.hash)) === '', '12: the fragment is removed from the address bar (a refresh will not offer it again)');
 ok((await pois(p2)).length === 0, '12: nothing is added until confirmed');
 ok(/came from this app/.test(await p2.textContent('#ai-preview')), '12: the preview says the list came from this app');
@@ -242,7 +242,7 @@ const evil = fc(feat('<img src=x onerror=window.__pwn=1>', { note: '<script>wind
 await preview(p, evil);
 ok((await p.evaluate(() => window.__pwn)) === undefined && /<img src=x/.test((await rowsText(p))[0]), '13: markup in a name or query is shown as text in the preview');
 await p.click('#ai-add'); await p.waitForFunction(() => !document.getElementById('ai-add'), null, { timeout: 15000 });
-await p.click('#poi-list .poi-item:has-text("<img")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(800);
+await p.click('#tab-poi'); await p.click('#poi-list .poi-item:has-text("<img")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(800);
 ok((await p.evaluate(() => window.__pwn)) === undefined && (await p.locator('.poi-pop h3').innerText()).startsWith('<img'), '13: and as text in the marker window and list');
 await closePopup(p);
 
@@ -250,7 +250,7 @@ await closePopup(p);
 await S.ctx.close();
 S = await session({ viewport: { width: 390, height: 780 } });
 p = S.page;
-await p.click('#dock [data-tab=poi]').catch(() => {});
+await p.click('#dock [data-tab=trips]').catch(() => {});
 await preview(p, exampleText);
 const overflow = await p.evaluate(() => { const b = document.querySelector('#panel .sp-body'); return { sw: b.scrollWidth, cw: b.clientWidth }; });
 ok(overflow.sw <= overflow.cw + 1, `14: phone: the preview does not overflow sideways (${overflow.sw} <= ${overflow.cw})`);

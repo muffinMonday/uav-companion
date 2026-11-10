@@ -200,7 +200,7 @@ export function initAI({ map, toast, panel, poi }) {
     const m = location.hash.match(/^#import=(.+)$/);
     if (!m) return;
     history.replaceState(null, '', location.pathname + location.search); // so a refresh does not offer it again
-    panel.open('poi');
+    panel.open('trips');
     try {
       preview(await decodeShare(m[1]));
       if (rows.length) toast('A link brought a list of places. Check it in the panel, then press Add.', 7000);

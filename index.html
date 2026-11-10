@@ -117,6 +117,14 @@
           <div class="btn-row"><button type="submit" class="btn primary" id="trip-save">Save trip</button><button type="button" class="btn" id="trip-cancel">Cancel</button></div>
         </form>
       </div>
+
+      <div class="card" id="ai-card">
+        <h2>Plan with an AI</h2>
+        <p class="hint">Ask any AI assistant to turn your itinerary into markers: copy the prompt, add your itinerary after it, then paste the answer here. You see a preview first, and nothing is added until you confirm.</p>
+        <div class="btn-row"><button type="button" class="btn" id="ai-copy">Copy AI prompt</button></div>
+        <label class="field"><span>Paste the AI's answer</span><textarea id="ai-text" rows="5" spellcheck="false" placeholder='{"type":"FeatureCollection","features":[ … ]}'></textarea></label>
+        <div class="btn-row"><button type="button" class="btn primary" id="ai-preview-btn">Preview…</button></div>
+        <div class="preview" id="ai-preview" hidden></div>
     </section>
 
     <!-- Points of Interest -->
@@ -138,6 +146,19 @@
         <h2>Saved places <span class="count" id="poi-count"></span></h2>
         <label class="field" id="poi-trip-filter-field" hidden><span>Trip</span><select id="poi-trip-filter"></select></label>
         <div class="chips" id="poi-filter" role="group" aria-label="Filter by type"></div>
+        <div class="btn-row" id="poi-select-row" hidden><button type="button" class="btn small" id="poi-select">Select markers…</button></div>
+        <div class="select-bar" id="poi-selbar" hidden>
+          <div class="btn-row"><button type="button" class="btn small" id="sel-all">All shown</button><button type="button" class="btn small" id="sel-none">None</button></div>
+          <div class="two">
+            <label class="field"><span>Add a trip</span><select id="sel-trip"></select></label>
+            <label class="field"><span>Add a type</span><select id="sel-type"></select></label>
+          </div>
+          <div class="btn-row"><button type="button" class="btn small danger" id="sel-delete" disabled>Delete selected (0)</button><button type="button" class="btn small" id="sel-done">Done</button></div>
+          <div class="sel-confirm" id="sel-confirm" role="alertdialog" aria-labelledby="sel-confirm-text" hidden>
+            <p id="sel-confirm-text"></p>
+            <div class="btn-row"><button type="button" class="btn small" id="sel-export">Export first</button><button type="button" class="btn small" id="sel-cancel">Cancel</button><button type="button" class="btn small danger" id="sel-confirm-delete">Delete</button></div>
+          </div>
+        </div>
         <ul class="poi-list" id="poi-list"></ul>
         <p class="hint" id="poi-empty">No markers yet. Choose a type above, then tap Place on map.</p>
       </div>
@@ -153,13 +174,6 @@
         <p class="hint">Every marker shows its straight-line distance to your nearest Home. A waypoint also shows its nearest Home point and Hotel, only from its own trip and only those whose dates overlap its own (one with no dates counts for every date). If a waypoint is farther than the max range from every such Home point and Hotel, it is shown in red; your Home does not count toward the range. Units also set the map's scale bar. Elevation and height limits stay in metres.</p>
       </div>
 
-      <div class="card" id="ai-card">
-        <h2>Plan with an AI</h2>
-        <p class="hint">Ask any AI assistant to turn your itinerary into markers: copy the prompt, add your itinerary after it, then paste the answer here. You see a preview first, and nothing is added until you confirm.</p>
-        <div class="btn-row"><button type="button" class="btn" id="ai-copy">Copy AI prompt</button></div>
-        <label class="field"><span>Paste the AI's answer</span><textarea id="ai-text" rows="5" spellcheck="false" placeholder='{"type":"FeatureCollection","features":[ … ]}'></textarea></label>
-        <div class="btn-row"><button type="button" class="btn primary" id="ai-preview-btn">Preview…</button></div>
-        <div class="preview" id="ai-preview" hidden></div>
       </div>
 
       <div class="card">

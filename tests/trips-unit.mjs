@@ -123,3 +123,28 @@ const none = ai.parseItinerary(JSON.stringify({ type: 'FeatureCollection', trip:
 ok(none.trips.length === 0 && none.rows[0].tripRef === null, 'AI: a trip without a name is ignored');
 const own = ai.parseItinerary(JSON.stringify(gj));
 ok(own.trips.length === 1 && own.trips[0].ref === t2.id && own.rows.find((x) => x.name === 'Fuji').tripRef === t2.id, 'AI: this app\'s own export keeps each marker in its trip');
+
+// ---------- bulk delete and undo (store)
+const bs = poi.createStore();
+const bt = bs.addTrip({ name: 'B' }).trip;
+const ids = ['a', 'b', 'c', 'd', 'e'].map((n) => bs.add({ type: n === 'e' ? 'residence' : 'photo', name: n, lat: 1, lon: 2, tripId: n === 'b' ? bt.id : undefined }).item.id);
+const order0 = bs.items().map((i) => i.name).join();
+const rm = bs.removeMany([ids[1], ids[3], 'nope']);
+ok(rm.ok && rm.removed.length === 2 && bs.items().length === 3 && bs.items().every((i) => ![ids[1], ids[3]].includes(i.id)), 'bulk: removeMany deletes the given markers and ignores unknown ids');
+ok(bs.removeMany([]).removed.length === 0 && bs.removeMany(['nope']).removed.length === 0 && bs.items().length === 3, 'bulk: nothing to delete changes nothing');
+const undone = bs.restore(rm.removed);
+ok(undone.restored === 2 && bs.items().map((i) => i.name).join() === order0, 'bulk: restore puts the markers back in their original order');
+ok(bs.items().find((i) => i.name === 'b').tripId === bt.id, 'bulk: a restored marker keeps its trip');
+ok(bs.restore(rm.removed).restored === 0 && bs.items().length === 5, 'bulk: restoring twice adds nothing');
+const rm2 = bs.removeMany([ids[1]]);
+bs.removeTrip(bt.id);
+bs.restore(rm2.removed);
+ok(bs.items().find((i) => i.name === 'b').tripId === undefined, 'bulk: if the trip was deleted meanwhile, the restored marker comes back without it');
+const all = bs.removeMany(bs.items().map((i) => i.id));
+ok(bs.items().length === 0 && all.removed.length === 5 && bs.restore(all.removed).restored === 5 && bs.items().map((i) => i.name).join() === order0, 'bulk: deleting everything and undoing restores all five in order');
+
+// ---------- new marker types
+const nt = Object.fromEntries(poi.TYPES.map((t) => [t.id, t]));
+ok(nt.train.label === 'Train station' && nt.airport.label === 'Airport', 'types: Train station and Airport exist');
+ok(poi.sanitize({ type: 'train', name: 'x', lat: 1, lon: 2 }).type === 'train' && poi.sanitize({ type: 'airport', name: 'x', lat: 1, lon: 2 }).type === 'airport', 'types: both survive sanitize');
+ok(dist.isWaypoint(it('s', 'train')) && dist.isWaypoint(it('s', 'airport')) && dist.needsDistance(it('s', 'airport')), 'types: both are waypoints with distances');

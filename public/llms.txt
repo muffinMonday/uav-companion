@@ -2,7 +2,7 @@
 
 > An open-source, static web map of the areas where small drones may fly (or are restricted), starting with Hubei, China, with Singapore planned. It is a planning aid, not flight advice: the official platform for the place (for China, UOM) must be checked before every flight.
 
-People use it to plan drone travel. If a person asks you to prepare waypoints from a travel itinerary, produce a GeoJSON file in the format below. The person pastes your reply into the app (Points of Interest tab, "Plan with an AI"), sees a preview, and confirms. The app checks the flight zones itself, so do not state zones, permissions or legal advice.
+People use it to plan drone travel. If a person asks you to prepare waypoints from a travel itinerary, produce a GeoJSON file in the format below. The person pastes your reply into the app (Trips tab, "Plan with an AI"), sees a preview, and confirms. The app checks the flight zones itself, so do not state zones, permissions or legal advice.
 
 ## For AI assistants
 
@@ -12,7 +12,7 @@ People use it to plan drone travel. If a person asks you to prepare waypoints fr
 
 Key rules, in short:
 - Reply with one GeoJSON FeatureCollection in a single code block.
-- Each Feature has properties.name (required) and optionally type (home, hotel, takeoff, landing, photo, hazard, residence, other), note, date and endDate (YYYY-MM-DD with the year; endDate is the last date of a multi-day stay), day (itinerary day, 1 = first) and order (position within the day). date, endDate, day and order are all optional: omit them when unknown, and never guess a year.
+- Each Feature has properties.name (required) and optionally type (home, hotel, takeoff, landing, photo, train, airport, hazard, residence, other), note, date and endDate (YYYY-MM-DD with the year; endDate is the last date of a multi-day stay), day (itinerary day, 1 = first) and order (position within the day). date, endDate, day and order are all optional: omit them when unknown, and never guess a year.
 - If the whole itinerary is one trip, add a top-level "trip" object ({name, country, startDate, endDate, description}; only name is required). The app creates the trip and puts every place in it except a residence.
 - "home" is the drone's home point (where flights start and return to). "residence" is the traveller's own home, only if the itinerary asks for it. Do not confuse them.
 - Coordinates are [longitude, latitude] (WGS84), and only when accurate for that exact place. Never estimate or invent them. If unsure, set geometry to null and give properties.query (venue, address, city, country); the app looks it up and marks the result unverified.

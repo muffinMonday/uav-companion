@@ -17,14 +17,14 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `prefs.js` | Validated remembered settings | load/save | none |
 | `units.js` | km/mi formatting (pure) | format helpers | none |
 | `panel.js` | Side panel, dock, tabs (generic over `[role=tab]`), phone bottom sheet | `initPanel` (`open`, `closeIfPhone`) | none |
-| `poi.js` (pure) | Marker and trip model: types, sanitize, store, list sorting, GeoJSON export/import | `createStore`, `TYPES`, `sanitize`, `sanitizeTrip`, `tripFields`, `toGeoJSON`, `parseGeoJSON`, `sortForList` | countries |
-| `poi-ui.js` | Marker UI: place/edit/drag, list with trip groups and filter, marker window, import/export | `initPOI` returns store, showTrip, fitTrip, get/setCurrentTrip, setNewTripHandler, tagMarker, handleMapClick, items, addMany, fitToItems | poi, distance, trips, cards, weather, elevation |
+| `poi.js` (pure) | Marker and trip model: types, sanitize, store, list sorting, GeoJSON export/import | `createStore` (incl. `removeMany`/`restore` for bulk delete and Undo), `TYPES`, `sanitize`, `sanitizeTrip`, `tripFields`, `toGeoJSON`, `parseGeoJSON`, `sortForList` | countries |
+| `poi-ui.js` | Marker UI: place/edit/drag, list with trip groups and filter, select-and-delete mode, marker window, import/export | `initPOI` returns store, showTrip, fitTrip, get/setCurrentTrip, setNewTripHandler, tagMarker, handleMapClick, items, addMany, fitToItems | poi, distance, trips, cards, weather, elevation |
 | `distance.js` (pure) | Nearest Home point/Hotel (own trip, date overlap) and nearest Home | `nearestBases`, `needsDistance`, `lineApplies`, `inSameTrip`, `beyondRange`, `BASE_TYPES` | none |
 | `trips.js` (pure) | Trip length, labels, "outside trip dates" check, sort | `tripLength`, `tripSummary`, `outsideTrip`, `sortTrips` | poi, countries |
 | `trips-ui.js` | Trips tab: list, form, delete, current trip | `initTripsUI` | poi, trips, countries, cards |
 | `countries.js` (pure) | ISO country list, code/name/alias resolution | `COUNTRIES`, `countryCode`, `countryName` | none |
 | `aiimport.js` (pure apart from geocode) | Lenient parse of AI text, sanitize, geocode, share-link encode/decode | `parseItinerary`, `isDuplicate`, `geocode`, `encodeShare`, `decodeShare` | poi |
-| `ai-ui.js` | "Plan with an AI" paste/preview/import, trip select, share link | `initAI` | aiimport, poi-ui |
+| `ai-ui.js` | "Plan with an AI" (in the Trips tab): paste/preview/import, trip select, share link | `initAI` | aiimport, poi-ui |
 | `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
 | `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
 

@@ -4,7 +4,7 @@ Any AI assistant can turn a travel itinerary into UAV Companion markers. There i
 
 ## For the person using it
 
-1. Open the **Points of Interest** tab, **Plan with an AI**, and press **Copy AI prompt**.
+1. Open the **Trips** tab, **Plan with an AI**, and press **Copy AI prompt**.
 2. Paste it into any AI assistant (Gemini, ChatGPT, Claude, a local model) and add your itinerary after it.
 3. Copy the AI's reply (the JSON in the code block) and paste it into **Paste the AI's answer**, then press **Preview…**.
 4. Untick anything you do not want, press **Add**. Each new marker is marked **Unverified** until you open it and press **Mark as checked**.
@@ -19,7 +19,7 @@ The format is in `public/ai/` and served from the site root: `ai/prompt.md` (the
 |---|---|---|
 | `geometry` | yes | `{"type":"Point","coordinates":[lon, lat]}`, or `null` |
 | `properties.name` | yes | up to 80 characters |
-| `properties.type` | no | `home`, `hotel`, `takeoff`, `landing`, `photo`, `hazard`, `residence`, `other` (default `other`) |
+| `properties.type` | no | `home`, `hotel`, `takeoff`, `landing`, `photo`, `train`, `airport`, `hazard`, `residence`, `other` (default `other`) |
 | `properties.note` | no | up to 500 characters |
 | `properties.date` | **no** | calendar date of the visit, `YYYY-MM-DD` with the year |
 | `properties.endDate` | **no** | last date of a multi-day stay (a hotel), `YYYY-MM-DD`, after `date`; only with `date` |

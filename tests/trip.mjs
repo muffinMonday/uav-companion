@@ -68,7 +68,7 @@ const lines = (p) => p.evaluate(() => ({ dashed: document.querySelectorAll('.lea
 let S = await session();
 let p = S.page;
 const types = await p.$$eval('#poi-types .type-btn', (bs) => bs.map((x) => ({ t: x.dataset.type, label: x.textContent.trim(), title: x.title, svg: x.innerHTML })));
-ok(types.length === 8 && types.map((t) => t.t).join() === 'home,hotel,takeoff,landing,photo,hazard,residence,other', '1: eight types in the picker');
+ok(types.length === 10 && types.map((t) => t.t).join() === 'home,hotel,takeoff,landing,photo,train,airport,hazard,residence,other', '1: ten types in the picker');
 const th = types.find((t) => t.t === 'home'), tr = types.find((t) => t.t === 'residence');
 ok(th.label === 'Home point' && tr.label === 'Home', '1: "Home point" and "Home" are separate buttons');
 ok(th.title !== tr.title && /drone/i.test(th.title) && /residence/i.test(tr.title) && /not the drone/i.test(tr.title), '1: each has a tooltip that says which is which: ' + JSON.stringify([th.title, tr.title]));
@@ -197,7 +197,7 @@ S = await session({ keys: ['W1'] }); p = S.page;
 ok((await p.title()) === 'UAV Companion', '6c: the page title is "UAV Companion"');
 const [dlc] = await Promise.all([p.waitForEvent('download'), p.click('#poi-export')]);
 ok(/^uav-companion-markers-\d{4}-\d{2}-\d{2}\.geojson$/.test(dlc.suggestedFilename()), '6c: the export file is named uav-companion-markers-DATE.geojson: ' + dlc.suggestedFilename());
-await p.click('#ai-copy'); await p.waitForTimeout(400);
+await p.click('#tab-trips'); await p.click('#ai-copy'); await p.waitForTimeout(400);
 const clipp = await p.evaluate(() => navigator.clipboard.readText());
 ok(/called UAV Companion/.test(clipp) && !/UAV Zones/.test(clipp), '6c: the AI prompt uses the new name');
 const llms = await (await p.request.get('http://localhost:5173/llms.txt')).text();
@@ -208,7 +208,7 @@ await p.evaluate(() => localStorage.setItem('uavzones.v1.pois', JSON.stringify({
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(800); await p.click('#tab-poi');
 ok((await item(p, 'Saved before the rename').count()) === 1, '6c: a marker saved under the earlier storage key still loads after the rename');
 const oldExport = JSON.stringify({ type: 'FeatureCollection', uavzones: 1, features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [114.3, 30.6] }, properties: { name: 'From an old export', type: 'hotel' } }] });
-await p.fill('#ai-text', oldExport); await p.click('#ai-preview-btn'); await p.waitForTimeout(300);
+await p.click('#tab-trips'); await p.fill('#ai-text', oldExport); await p.click('#ai-preview-btn'); await p.waitForTimeout(300);
 ok(/came from this app/.test(await p.textContent('#ai-preview')), '6c: a file exported before the rename is still recognised as this app\'s own');
 await S.ctx.close();
 
@@ -371,7 +371,7 @@ const itinerary = JSON.stringify({ type: 'FeatureCollection', features: [
   { type: 'Feature', geometry: { type: 'Point', coordinates: [114.32, 30.61] }, properties: { name: 'End only', endDate: '2026-11-15' } },
   { type: 'Feature', geometry: { type: 'Point', coordinates: [114.33, 30.62] }, properties: { name: 'Backwards', date: '2026-11-15', endDate: '2026-11-13' } },
   { type: 'Feature', geometry: { type: 'Point', coordinates: [114.34, 30.63] }, properties: { name: 'Home town', type: 'residence' } }] });
-await p.fill('#ai-text', itinerary); await p.click('#ai-preview-btn'); await p.waitForTimeout(300);
+await p.click('#tab-trips'); await p.fill('#ai-text', itinerary); await p.click('#ai-preview-btn'); await p.waitForTimeout(300);
 const prow = await p.$$eval('#ai-preview .prow', (r) => r.map((x) => x.innerText.replace(/\s+/g, ' ')));
 ok(/12.*–.*14/.test(prow[0]) && !/Nov|Feb|Mar/.test(prow[1]) && !/Nov/.test(prow[2]) && /15/.test(prow[3]) && !/–/.test(prow[3]), '13: the preview shows the hotel range; an impossible date and an end-only date show no date; a backwards range keeps only its valid start: ' + JSON.stringify(prow.slice(0, 4)));
 ok(/Home/.test(prow[4]), '13: a Home (residence) row is listed as Home');

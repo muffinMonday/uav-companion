@@ -20,9 +20,16 @@ import { loadPrefs, savePrefs } from './prefs.js';
 
 const $ = (id) => document.getElementById(id);
 
-function toast(text, ms = 5000) {
+/** A short message at the top of the map. `action` ({ label, run }) adds one button, e.g. Undo; pressing it closes the message. */
+function toast(text, ms = 5000, action = null) {
   const el = $('toast');
   el.textContent = text; el.hidden = false;
+  if (action) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'toast-action'; b.textContent = action.label;
+    b.addEventListener('click', () => { el.hidden = true; clearTimeout(toast.t); action.run(); });
+    el.append(' ', b);
+  }
   clearTimeout(toast.t);
   toast.t = setTimeout(() => { el.hidden = true; }, ms);
 }

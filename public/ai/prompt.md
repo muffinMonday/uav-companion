@@ -30,7 +30,9 @@ RULES
    - "takeoff"   a good place to launch the drone
    - "landing"   a good place to land or recover it
    - "photo"     a scenic spot worth flying or filming at
-   - "hazard"    something to avoid: an airport, crowds, power lines, a military or government site, a no-fly sign
+   - "train"     a train or metro station I will use
+   - "airport"   an airport I fly in or out of
+   - "hazard"    something to avoid: crowds, power lines, a military or government site, a no-fly sign
    - "residence" my own home, where I actually live. NOT the drone's home point. Add one only if my itinerary asks for it (for example a departure address); never guess an address
    - "other"     anything else
 
