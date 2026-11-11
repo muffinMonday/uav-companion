@@ -4,15 +4,24 @@ import { createTripsApi } from './sharedtrip/api.js';
 import { createSharedTrips } from './sharedtrip/engine.js';
 import { describeWhen } from './sync/core.js';
 import { presenceText } from './social.js';
+import { createLive } from './live.js';
+import { createLiveLayer } from './livemap.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const WHO_KEY = 'uavzones.v1.sharedwho';
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 /** `handle` is what initSyncUI returns ({ sync, adapter, onChange, open }); `cloud` is the holder the dashboard reads. Returns the hooks the trips screen uses. */
-export function initPartyUI({ handle, store, panel, toast, cloud }) {
+export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
   const api = createTripsApi(handle.adapter.client);
   const eng = createSharedTrips({ store, api });
+  // Live locations: sending this device's position (only when the person turns it on, for one trip) and drawing the party's on the map
+  const live = createLive({ api, getTrip: (id) => store.getTrip(id) });
+  const layer = map ? createLiveLayer(map) : null;
+  const HIDE_KEY = 'uavzones.v1.livehide'; // trips whose party this person chose not to see on the map
+  const hiddenTrips = (() => { try { const a = JSON.parse(localStorage.getItem(HIDE_KEY) || '[]'); return new Set(Array.isArray(a) ? a.filter((x) => typeof x === 'string') : []); } catch { return new Set(); } })();
+  const saveHidden = () => { try { localStorage.setItem(HIDE_KEY, JSON.stringify([...hiddenTrips])); } catch { /* ignore */ } };
+  const wantsLive = () => !!handle.sync.status().session && store.trips().some((t) => t.shared);
   const signedIn = () => !!handle.sync.status().session;
   let view = null; // the trips screen: { refresh() }
   const members = new Map();   // trip id -> { rev, list }
@@ -52,17 +61,40 @@ export function initPartyUI({ handle, store, panel, toast, cloud }) {
       let who = null; try { who = localStorage.getItem(WHO_KEY); } catch { /* ignore */ }
       if (who && who !== s.email) eng.reset(); // another person signed in on this device: shared trips here are not theirs
       try { localStorage.setItem(WHO_KEY, s.email); } catch { /* ignore */ }
-      started = true; eng.start();
-    } else if (!s && started) { started = false; eng.stop(); }
+      started = true; eng.start(); live.startPolling(wantsLive); live.poll();
+    } else if (!s && started) { started = false; eng.stop(); live.stopAll(); live.stopPolling(); layer?.clear(); }
   }
   eng.onChange(() => {
+    for (const id of live.sharingIds()) if (!store.getTrip(id)?.shared) live.stop(id, 'You are no longer in this trip, so sharing your location stopped.');
     for (const m of eng.takeNotices()) toast(m, 9000);
     cloud.friends?.recount?.();
     refresh();
   });
   handle.onChange(lifecycle);
   lifecycle();
-  document.addEventListener('visibilitychange', () => { if (started && document.visibilityState === 'visible') eng.poll(); }); // coming back to the page: look for changes at once
+  document.addEventListener('visibilitychange', () => { if (started && document.visibilityState === 'visible') { eng.poll(); live.poll(); } });
+  window.addEventListener('pagehide', () => { live.stopAll(); }); // closing the page ends sharing (the server forgets a position after 2 minutes in any case)
+
+
+  // ---------- the indicator that stays on screen while this device is sharing
+  const chip = el('div', 'live-chip'); chip.id = 'live-chip'; chip.hidden = true; chip.setAttribute('role', 'status');
+  const chipText = el('span'); const chipStop = el('button', 'btn small', 'Stop'); chipStop.type = 'button'; chipStop.setAttribute('aria-label', 'Stop sharing my location');
+  chipStop.addEventListener('click', () => live.stopAll('Sharing your location stopped.'));
+  chip.append(chipText, chipStop); document.body.append(chip);
+  function updateChip() {
+    const ids = live.sharingIds();
+    chip.hidden = !ids.length;
+    if (ids.length) chipText.textContent = ids.length === 1 ? `Sharing your location with “${store.getTrip(ids[0])?.name ?? 'your party'}”` : `Sharing your location with ${ids.length} trips`;
+  }
+  let liveSig = '';
+  live.onChange((s) => {
+    layer?.update(s.others, hiddenTrips);
+    for (const m of live.takeNotices()) toast(m, 9000);
+    updateChip();
+    // redraw the trip screen only when who is sharing changes, not on every new position (that would reset anything being typed)
+    const sig = JSON.stringify([Object.entries(s.sharing).map(([id, v]) => [id, v.status, v.error]), s.others.map((o) => [o.trip_id, o.member_id])]);
+    if (sig !== liveSig) { liveSig = sig; refresh(); }
+  });
 
   // ---------- the section of a trip's screen
   const say = (m) => toast(m, 5000);
@@ -114,6 +146,22 @@ export function initPartyUI({ handle, store, panel, toast, cloud }) {
     const owner = !!t.shared.owner;
     const status = el('p', 'hint party-status', statusText(t)); status.setAttribute('role', 'status');
     box.append(status);
+    const mine = live.snapshot().sharing[t.id];
+    const sw = el('label', 'switch'); const sp = el('span', '', 'Share my location with the party');
+    sp.append(el('small', '', 'Only while this page is open: the others in the party see where you are on the map. It is off every time you open the app, and stops when you close it, sign out or leave the trip.'));
+    const cb = el('input'); cb.type = 'checkbox'; cb.id = 'party-live'; cb.checked = !!mine; cb.disabled = !signedIn();
+    cb.addEventListener('change', () => {
+      if (cb.checked) { const r = live.start(t.id); if (!r.ok) { cb.checked = false; say(r.reason); } } else live.stop(t.id);
+      updateChip(); refresh();
+    });
+    sw.append(sp, cb); box.append(sw);
+    if (mine) box.append(el('p', 'hint party-live-status', mine.status === 'error' ? 'Could not send your position: ' + mine.error : mine.accuracy ? `Sharing your location · accurate to about ${Math.round(mine.accuracy)} m` : 'Waiting for a position…'));
+    const sw2 = el('label', 'switch'); const sp2 = el('span', '', 'Show the party on the map');
+    sp2.append(el('small', '', 'Pins with names for the party members who are sharing their location.'));
+    const cb2 = el('input'); cb2.type = 'checkbox'; cb2.id = 'party-map'; cb2.checked = !hiddenTrips.has(t.id);
+    cb2.addEventListener('change', () => { if (cb2.checked) hiddenTrips.delete(t.id); else hiddenTrips.add(t.id); saveHidden(); layer?.update(live.snapshot().others, hiddenTrips); });
+    sw2.append(sp2, cb2); box.append(sw2);
+    const sharers = new Map(live.snapshot().others.filter((o) => o.trip_id === t.id).map((o) => [o.member_id, o]));
     if (!mem) box.append(el('p', 'hint', 'Loading the party…'));
     else {
       const ul = el('ul', 'party-list');
@@ -127,7 +175,13 @@ export function initPartyUI({ handle, store, panel, toast, cloud }) {
         if (m.status === 'invited') who.append(' ', el('span', 'badge', 'Invited'));
         const pt = m.status === 'joined' ? presenceText(m, describeWhen) : '';
         if (pt) who.append(' ', el('small', 'presence-text', pt));
+        if (sharers.has(m.member_id)) who.append(' ', el('small', 'presence-text', '📍 sharing their location'));
         li.append(who);
+        if (sharers.has(m.member_id)) {
+          const sb = el('button', 'btn small', 'Show on map'); sb.type = 'button';
+          sb.addEventListener('click', () => { if (layer?.focus(m.member_id)) panel.closeIfPhone(); else say('Turn on “Show the party on the map” to see them.'); });
+          li.append(sb);
+        }
         if (owner && m.role !== 'owner') {
           const b = el('button', 'btn small', m.status === 'invited' ? 'Cancel invite' : 'Remove'); b.type = 'button';
           b.addEventListener('click', async () => {

@@ -27,6 +27,7 @@ async function user(tag) {
   if (s.error) throw new Error('could not sign in ' + tag);
   return { id: data.user.id, sb, trips: createTripsApi(sb), social: createSocial(sb) };
 }
+const mine = {}; // the id of this test's own trip, for the clean-up check (the project may hold real shared trips)
 const refused = async (p) => { try { await p; return null; } catch (e) { return e.message; } };
 try {
   const a = await user('a'), b = await user('b'), c = await user('c');
@@ -34,7 +35,7 @@ try {
   await a.social.request(pb.friend_code);
   await b.social.respond((await b.social.list())[0].id, true);
 
-  const TRIP = randomUUID();
+  const TRIP = (mine.trip = randomUUID());
   const mk = (id, name) => ({ id, type: 'photo', name, note: '', lat: 30.5, lon: 114.3, created: '2026-11-01T00:00:00.000Z', tripId: TRIP });
   const doc = (items, name = 'Live trip') => ({ v: 1, trip: { id: TRIP, name }, items });
 
@@ -68,6 +69,13 @@ try {
   ok(vs.length === 1 && vs[0].updated_by_name === 'Live Alex', 'the replaced version is kept');
   const rs = await b.trips.restore(TRIP, vs[0].rev);
   ok(rs.status === 'ok' && rs.rev === 3, 'restoring an earlier version works');
+  ok((await b.trips.shareLocation(TRIP, 30.5, 114.3, 12)).status === 'ok', 'a party member sends a position');
+  const lv = await a.trips.live();
+  ok(lv.length === 1 && lv[0].display_name === 'Live Bea' && lv[0].lat === 30.5 && !JSON.stringify(lv).includes(b.id), 'the owner sees it, with no user id');
+  ok((await c.trips.live()).length === 0 && /trip not found/.test(await refused(c.trips.shareLocation(TRIP, 1, 1, 1)) ?? ''), 'a stranger sees nothing and cannot send one');
+  ok(/not a position/.test(await refused(b.trips.shareLocation(TRIP, 99, 1, 1)) ?? ''), 'a position that is not on Earth is refused');
+  await b.trips.stopSharing(TRIP);
+  ok((await a.trips.live()).length === 0, 'stopping sharing removes it');
   const mem = await a.trips.members(TRIP);
   ok(mem.length === 2 && !JSON.stringify(mem).includes(b.id), 'members are listed by name, without user ids');
   await b.trips.leave(TRIP);
@@ -76,6 +84,6 @@ try {
 } finally {
   for (const id of made) await admin.auth.admin.deleteUser(id);
   const { data: left } = await admin.from('profiles').select('user_id').in('user_id', made);
-  const { data: trips } = await admin.from('shared_trips').select('id');
-  ok(!left?.length && !(trips ?? []).length, 'the test users, their profiles and trips are gone');
+  const { data: trips } = await admin.from('shared_trips').select('id').eq('id', mine.trip ?? randomUUID());
+  ok(!left?.length && !(trips ?? []).length, 'the test users, their profiles and their trip are gone');
 }

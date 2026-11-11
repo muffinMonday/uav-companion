@@ -25,6 +25,11 @@ export function createTripsApi(client) {
     members: (id) => rpc('list_trip_members', { p_trip: id }),
     /** The owner's friends who are not in the trip yet: [{ friendship_id, display_name }] */
     invitable: (id) => rpc('list_invitable_friends', { p_trip: id }),
+    /** Live locations (see live.js): sends this device's position for a trip, stops sharing there or everywhere, and lists the others' positions. */
+    shareLocation: (id, lat, lon, accuracy) => rpc('share_location', { p_trip: id, p_lat: lat, p_lon: lon, p_accuracy: accuracy ?? null }),
+    stopSharing: (id) => rpc('stop_sharing_location', { p_trip: id }),
+    stopAll: () => rpc('stop_all_sharing'),
+    live: () => rpc('list_live_locations'),
     /** [{ rev, updated_at, updated_by_name, markers }] */
     versions: async (id) => (await rpc('list_shared_trip_versions', { p_trip: id })).map((v) => ({ ...v, rev: Number(v.rev) })),
     restore: async (id, rev) => num(await rpc('restore_shared_trip_version', { p_trip: id, p_rev: rev })),
