@@ -22,7 +22,7 @@ A static site. No server code, no database, no accounts. Everything the user cre
 ## External integrations (all browser-side, all optional except basemaps)
 | Service | Used for | Sent | Gate |
 |---|---|---|---|
-| Basemap tile hosts (OSM, Esri, OpenTopoMap) | Map imagery | Tile coordinates, IP | Always |
+| Basemap tile hosts (OpenStreetMap, OpenStreetMap France for Humanitarian and CyclOSM, OpenTopoMap) | Map imagery | Tile coordinates, IP | Always |
 | Open-Meteo forecast | Weather | Coordinates, rounded to ~1 km unless "precise" | Opt-in |
 | Open-Meteo elevation | Ground elevation | Coordinates to 4 decimals | Opt-in |
 | Photon, then Nominatim | Online place search and name lookup for AI rows | Query text | Search on use; AI lookup opt-in |

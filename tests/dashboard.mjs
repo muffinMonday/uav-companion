@@ -179,8 +179,8 @@ const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#dash .dash
 await p.waitForTimeout(300);
 ok(/\.geojson$/.test(dl.suggestedFilename()) && /Last backup/.test(await p.textContent('#dash .dash-data #poi-note')), 'Export in Your data downloads the file, and the card shows the date of the last backup');
 // layers, mirrored
-await p.locator('#dash .dash-layers select').selectOption('sat'); await p.waitForTimeout(200);
-ok((await p.inputValue('#base')) === 'sat' && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).basemap)) === 'sat', 'a basemap chosen on the dashboard changes the map\'s setting and is remembered');
+await p.locator('#dash .dash-layers select').selectOption('hot'); await p.waitForTimeout(200);
+ok((await p.inputValue('#base')) === 'hot' && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).basemap)) === 'hot', 'a basemap chosen on the dashboard changes the map\'s setting and is remembered');
 await p.evaluate(() => { const s = document.getElementById('base'); s.value = 'topo'; s.dispatchEvent(new Event('change')); });
 ok((await p.locator('#dash .dash-layers select').inputValue()) === 'topo', 'and a change made in Map Configs shows on the dashboard');
 await p.locator('#dash .dash-layers input[type=checkbox]').uncheck(); await p.waitForTimeout(150);

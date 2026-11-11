@@ -9,15 +9,17 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({ iconUrl: markerIcon, iconRetinaUrl: markerIcon2x, shadowUrl: markerShadow });
 
+// Only OpenStreetMap-based layers: the standard map, two community styles hosted by OpenStreetMap France, and OpenTopoMap.
+const OSM_CREDIT = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const BASES = {
-  esri: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    { maxZoom: 19, attribution: 'Tiles &copy; Esri' }],
-  sat: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    { maxZoom: 19, attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics' }],
+  hot: ['https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    { maxZoom: 19, subdomains: 'abc', attribution: OSM_CREDIT + ', style by <a href="https://www.hotosm.org/">Humanitarian OpenStreetMap Team</a>, hosted by <a href="https://openstreetmap.fr/">OpenStreetMap France</a>' }],
+  cyclosm: ['https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+    { maxZoom: 19, subdomains: 'abc', attribution: OSM_CREDIT + ', style by <a href="https://www.cyclosm.org/">CyclOSM</a>, hosted by <a href="https://openstreetmap.fr/">OpenStreetMap France</a>' }],
   topo: ['https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     { maxZoom: 17, subdomains: 'abc', attribution: '&copy; OpenStreetMap contributors, SRTM | &copy; OpenTopoMap (CC-BY-SA)' }],
   osm: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }],
+    { maxZoom: 19, attribution: OSM_CREDIT }],
 };
 
 // One fill colour per meaning: allow = where flying is permitted (teal), restrict = where it is restricted (red).
@@ -27,7 +29,8 @@ const toLatLngBounds = (b) => L.latLngBounds([b[1], b[0]], [b[3], b[2]]);
 /** `initial` carries the remembered settings: { view: {lat, lon, zoom}, basemap, units }. All optional. */
 export function createMap(initial = {}) {
   const v = initial.view;
-  const map = L.map('map', { zoomControl: true, maxZoom: 19 }).setView(v ? [v.lat, v.lon] : [35, 105], v ? v.zoom : 4);
+  const map = L.map('map', { zoomControl: true, maxZoom: 19, renderer: L.svg({ padding: 0.6 }) }) // (extra padding: vectors are drawn beyond the screen so a turned map does not clip them at the corners)
+   .setView(v ? [v.lat, v.lon] : [35, 105], v ? v.zoom : 4);
   const makeScale = (units) => L.control.scale({ metric: units !== 'imperial', imperial: units === 'imperial', position: 'bottomleft', maxWidth: 140 }).addTo(map);
   let scale = makeScale(initial.units);
 

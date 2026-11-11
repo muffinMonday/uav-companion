@@ -7,9 +7,9 @@ const errs = [];
 const open = async (ctx) => {
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
-  p.on('console', (m) => m.type() === 'error' && !/arcgisonline|opentopomap|openstreetmap|Failed to load resource/.test(m.text()) && errs.push(m.text()));
+  p.on('console', (m) => m.type() === 'error' && !/opentopomap|openstreetmap|Failed to load resource/.test(m.text()) && errs.push(m.text()));
   p.__tiles = [];
-  p.on('request', (r) => { const u = r.url(); if (/World_Street_Map|World_Imagery|opentopomap|tile\.openstreetmap/.test(u)) p.__tiles.push(u); });
+  p.on('request', (r) => { const u = r.url(); if (/opentopomap|tile\.openstreetmap|tile-cyclosm\.openstreetmap/.test(u)) p.__tiles.push(u); });
   await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1500);
   return p;
 };
@@ -26,7 +26,7 @@ ok((await p.inputValue('#country')) === 'sg', 'country choice stays shown in the
 const sgScale = await centre(p);
 
 // ---- basemap
-await p.selectOption('#base', 'sat'); await p.waitForTimeout(1200);
+await p.selectOption('#base', 'cyclosm'); await p.waitForTimeout(1200);
 // pan/zoom somewhere specific
 await openSearch(p); await p.fill('#q', '武汉'); await p.keyboard.press('Enter'); await p.waitForTimeout(2500);
 await p.click('.leaflet-control-zoom-in'); await p.waitForTimeout(1000);
@@ -34,15 +34,15 @@ await p.mouse.move(300, 400); await p.mouse.down(); await p.mouse.move(250, 330,
 const want = await p.evaluate(() => { const m = document.querySelector('#map'); return null; });
 await p.waitForTimeout(600);
 let saved = await view(p);
-ok(saved.basemap === 'sat' && saved.country === 'sg' && saved.view && Number.isInteger(saved.view.zoom), 'stored: ' + JSON.stringify(saved));
+ok(saved.basemap === 'cyclosm' && saved.country === 'sg' && saved.view && Number.isInteger(saved.view.zoom), 'stored: ' + JSON.stringify(saved));
 
 // ---- next session (same storage): reload
 const before = saved.view;
 p.__tiles.length = 0; // only tiles requested after the reload count
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1800);
 ok((await p.inputValue('#country')) === 'sg', 'reload: country dropdown still shows Singapore');
-ok((await p.inputValue('#base')) === 'sat', 'reload: basemap dropdown shows Satellite');
-ok(p.__tiles.some((u) => /World_Imagery/.test(u)) && !p.__tiles.some((u) => /World_Street_Map/.test(u)), 'reload: satellite tiles are loaded, not the street map');
+ok((await p.inputValue('#base')) === 'cyclosm', 'reload: basemap dropdown shows CyclOSM');
+ok(p.__tiles.some((u) => /tile-cyclosm\.openstreetmap\.fr/.test(u)) && !p.__tiles.some((u) => /\/\/tile\.openstreetmap\.org/.test(u)), 'reload: CyclOSM tiles are loaded, not the standard map');
 const after = (await view(p)).view;
 ok(after && after.zoom === before.zoom && Math.abs(after.lat - before.lat) < 1e-4 && Math.abs(after.lon - before.lon) < 1e-4, `reload: same position and zoom (${before.lat},${before.lon} z${before.zoom})`);
 ok(Math.abs(before.lon - 104) > 5, 'the restored position is where the user left the map (Wuhan area), not the country view');

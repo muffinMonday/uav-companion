@@ -83,10 +83,10 @@
         <label class="field"><span>Marker window opacity <small>(lower lets the map show through)</small></span><input type="range" id="pop-op" min="0.5" max="1" step="0.05" value="0.8"></label>
         <label class="field"><span>Basemap</span>
           <select id="base">
-            <option value="esri">Esri Streets</option>
-            <option value="sat">Esri Satellite</option>
-            <option value="topo">OpenTopoMap (OSM data)</option>
             <option value="osm" selected>OpenStreetMap</option>
+            <option value="hot">Humanitarian (OSM, clear roads and paths)</option>
+            <option value="cyclosm">CyclOSM (OSM, outdoors and cycling)</option>
+            <option value="topo">OpenTopoMap (OSM data, terrain)</option>
           </select>
         </label>
       </div>
@@ -259,7 +259,7 @@
       <div class="card">
         <h2>What leaves your browser</h2>
         <ul class="plain">
-          <li><b>Map tiles:</b> the basemap provider you pick (Esri, OpenStreetMap or OpenTopoMap) sees which area you view.</li>
+          <li><b>Map tiles:</b> the basemap you pick is loaded from OpenStreetMap, OpenStreetMap France (the Humanitarian and CyclOSM styles) or OpenTopoMap, which see which area you view.</li>
           <li><b>Place search and lookup:</b> online search sends your query to Photon or Nominatim, only when you search. Name lookup on import does the same with the names in the import, only if you turn it on above.</li>
           <li><b>Check-in:</b> your position is read by the browser only while check-in is on and the panel shows markers. It is saved with the marker in this browser, included in an export, and left out of share links.</li>
           <li><b>Weather and elevation:</b> Open-Meteo.com, only as set above.</li>

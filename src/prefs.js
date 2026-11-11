@@ -2,7 +2,7 @@
 // Everything read back is validated, so a damaged or hand-edited entry falls back to the defaults.
 const KEY = 'uavzones.v1.prefs';
 
-export const BASEMAPS = ['esri', 'sat', 'topo', 'osm'];
+export const BASEMAPS = ['osm', 'hot', 'cyclosm', 'topo']; // a saved choice that is not here (Esri, from an earlier version) falls back to OpenStreetMap
 const MAX_ZOOM = 19;
 
 function sanitize(raw) {

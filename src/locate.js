@@ -1,13 +1,24 @@
 import L from 'leaflet';
+import { createHeading, chooseHeading, arrowAngle, pointName } from './heading.js';
 
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>';
+const COMPASS = '<svg viewBox="0 0 24 24" aria-hidden="true"><g class="needle"><path d="M12 3l4 9h-8z" fill="#d64545"/><path d="M12 21l-4-9h8z" fill="currentColor" opacity=".55"/></g><circle cx="12" cy="12" r="1.6" fill="#fff" stroke="currentColor" stroke-width=".8"/></svg>';
+// the arrow on the location marker: points up, then is turned by the way the user faces (as seen on the screen)
+const DOT = '<div class="you-wrap"><svg class="you-arrow" viewBox="0 0 44 44" aria-hidden="true"><path d="M22 3l7.5 15.5L22 14.5 14.5 18.5z" fill="#1a73e8" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg><div class="you-dot" style="width:14px;height:14px"></div></div>';
 
 /**
- * "My location" control. The first press asks for permission, drops a pin and starts following the position;
- * later presses re-centre on the latest fix. Nothing is requested until the user presses the button.
+ * "My location" control, in three steps:
+ *   1. press: ask for permission, show where you are and which way you face, centre on it (nothing is requested until the button is pressed);
+ *   2. press: follow you as you move, and, where the phone has a compass, turn the map so the way it points is up;
+ *   3. press: back to a normal north-up map (your position stays on it).
+ * A small compass button (see addCompassControl) turns the map north again. Pulling the map with one finger, or anything else that moves it away, ends following.
+ * Turning the map by hand while following pauses the compass turning (the map keeps following you at the angle you chose).
+ * `rotation` is the map turner (maprotate.js); `onNotice(text)` carries things worth telling the user; `onFollow()` is called when following starts.
  */
-export function addLocateControl(map, { onFix, onError }) {
+export function addLocateControl(map, { onFix, onError, onNotice = onError, onFollow, rotation = null, headingSensor = null, wakeLock = () => globalThis.navigator?.wakeLock }) {
   let dot = null, ring = null, last = null, active = false;
+  let mode = 'off', manual = false, ownMove = 0, zooming = false, compass = false, compassFailed = false, compassTold = false, lock = null, btn = null;
+  let compassHeading = null, travel = { heading: null, speed: null };
 
   const Control = L.Control.extend({
     options: { position: 'topleft' },
@@ -16,16 +27,80 @@ export function addLocateControl(map, { onFix, onError }) {
       const a = L.DomUtil.create('a', 'locate-btn', bar);
       a.href = '#';
       a.role = 'button';
-      a.title = 'Show my location / re-centre';
-      a.setAttribute('aria-label', 'Show my location and re-centre the map');
-      a.innerHTML = ICON;
+      L.DomUtil.create('span', 'locate-icon', a).innerHTML = ICON;
       L.DomEvent.disableClickPropagation(bar);
       L.DomEvent.on(a, 'click', (e) => { L.DomEvent.preventDefault(e); press(); });
-      this._a = a;
+      this._a = btn = a;
+      label();
       return bar;
     },
   });
   const control = new Control().addTo(map);
+
+  /** The button's name says what pressing it does now. */
+  function label() {
+    const a = btn; if (!a) return;
+    const text = mode === 'following' ? 'Stop following and turn the map back to north' : mode === 'located' ? (rotation ? 'Follow me and turn the map with the way the phone points' : 'Follow me') : 'Show my location';
+    a.title = text; a.setAttribute('aria-label', text);
+    a.classList.toggle('following', mode === 'following');
+    a.setAttribute('aria-pressed', String(mode === 'following'));
+  }
+
+  // ---------- which way you face
+  const shown = () => chooseHeading({ compass: compassHeading, travel: travel.heading, speed: travel.speed });
+  function showArrow() {
+    const el = dot?.getElement()?.querySelector('.you-wrap');
+    if (!el) return;
+    const h = shown(), deg = arrowAngle(h, rotation ? rotation.bearing() : 0);
+    el.classList.toggle('has-heading', deg !== null);
+    if (deg !== null) el.style.setProperty('--ya', deg + 'deg');
+    dot.getElement().title = h === null ? 'You are here' : 'You are here, facing ' + pointName(h);
+  }
+  const sensor = headingSensor ?? createHeading({
+    onHeading: (deg) => {
+      compassHeading = deg; compass = true;
+      if (mode === 'following' && !manual && rotation) rotation.set(deg, 'compass');
+      showArrow();
+    },
+    onUnavailable: () => { compass = false; compassFailed = true; compassHeading = null; showArrow(); if (mode === 'following') tellNoCompass(); },
+    onDenied: () => { compass = false; compassFailed = true; compassHeading = null; onNotice('Compass permission was refused, so the map will not turn with the phone. Allow motion and orientation for this site to use it.'); },
+  });
+  function tellNoCompass() { if (!compassTold) { compassTold = true; onNotice('This phone has no usable compass, so the map follows you but stays north-up.'); } }
+  rotation?.onChange(() => showArrow());
+
+  // ---------- following
+  async function takeLock() {
+    try { const wl = wakeLock(); if (wl && !lock) { lock = await wl.request('screen'); lock.addEventListener?.('release', () => { lock = null; }); } } catch { /* not allowed or not supported: the screen may dim */ }
+  }
+  function dropLock() { try { lock?.release?.(); } catch { /* ignore */ } lock = null; }
+  const own = (fn) => { ownMove++; try { fn(); } finally { setTimeout(() => { ownMove = Math.max(0, ownMove - 1); }, 700); } };
+
+  function enterFollow() {
+    if (!last) return;
+    mode = 'following'; manual = false; label();
+    onFollow?.();
+    dot?.closePopup(); // an open popup on your own marker would pan the map to keep itself in view each time you move
+    own(() => map.setView(last, Math.max(map.getZoom(), 16), { animate: false }));
+    takeLock();
+    if (rotation && compass && compassHeading !== null) rotation.set(compassHeading, 'compass');
+    else if (!rotation || compassFailed) tellNoCompass(); // (if the sensor is still waiting for its first reading, the answer comes with it)
+  }
+  /** Back to a normal map: not following, north up (the position stays). */
+  function exitFollow({ north = true } = {}) {
+    if (mode !== 'following') return;
+    mode = 'located'; manual = false; label(); dropLock();
+    if (north) rotation?.animateTo(0, 280, 'reset');
+  }
+  // anything that moves the map away from you ends following: a drag, a recentre elsewhere; zooming does not
+  map.on('zoomstart', () => { zooming = true; });
+  map.on('zoomend', () => { zooming = false; });
+  map.on('dragstart', () => exitFollow());
+  map.on('movestart', () => { if (mode === 'following' && !ownMove && !zooming) exitFollow(); });
+  rotation?.onHandTurn(() => { if (mode === 'following') { manual = true; } });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') { sensor.stop(); }
+    else { if (mode !== 'off') sensor.start(); if (mode === 'following') takeLock(); } // the screen lock is released by the browser when the page is hidden
+  });
 
   /** Returns false if location cannot be used at all (the user has been told why). */
   function press({ recentre = true } = {}) {
@@ -33,9 +108,20 @@ export function addLocateControl(map, { onFix, onError }) {
       onError('Location needs a secure page (https). It will not work from a file or plain http.');
       return false;
     }
-    if (last) { if (recentre) map.setView(last, Math.max(map.getZoom(), 15)); return true; }
-    if (!navigator.geolocation) { onError('This browser does not support location.'); return false; }
-    map.locate({ watch: true, enableHighAccuracy: true, setView: false, maximumAge: 10000, timeout: 20000 });
+    if (!recentre) { // asked for by something else ("check my spot", "place at my location"): get a position, change nothing else
+      if (last) return true;
+      if (!navigator.geolocation) { onError('This browser does not support location.'); return false; }
+      map.locate({ watch: true, enableHighAccuracy: true, setView: false, maximumAge: 10000, timeout: 20000 });
+      return true;
+    }
+    if (mode === 'following') { exitFollow(); return true; }
+    if (mode === 'located') { enterFollow(); return true; }
+    // the first press: also starts the compass here, inside the tap, because iOS asks for permission then
+    sensor.start();
+    if (!last && !navigator.geolocation) { onError('This browser does not support location.'); return false; }
+    mode = 'located'; label();
+    if (last) own(() => map.setView(last, Math.max(map.getZoom(), 15)));
+    else map.locate({ watch: true, enableHighAccuracy: true, setView: false, maximumAge: 10000, timeout: 20000 });
     return true;
   }
 
@@ -55,28 +141,65 @@ export function addLocateControl(map, { onFix, onError }) {
   map.on('locationfound', (e) => {
     const first = !last;
     last = e.latlng;
+    travel = { heading: Number.isFinite(e.heading) ? e.heading : null, speed: Number.isFinite(e.speed) ? e.speed : null };
     if (!dot) {
       ring = L.circle(e.latlng, { radius: e.accuracy, weight: 1, color: '#1a73e8', fillOpacity: 0.12, interactive: false }).addTo(map);
       dot = L.marker(e.latlng, {
-        icon: L.divIcon({ className: '', html: '<div class="you-dot" style="width:14px;height:14px"></div>', iconSize: [14, 14] }),
+        icon: L.divIcon({ className: '', html: DOT, iconSize: [14, 14] }),
         zIndexOffset: 1000, title: 'You are here',
       }).addTo(map);
       active = true;
       control._a.classList.add('active');
     } else {
-      dot.setLatLng(e.latlng);
-      ring.setLatLng(e.latlng).setRadius(e.accuracy);
+      own(() => { dot.setLatLng(e.latlng); ring.setLatLng(e.latlng).setRadius(e.accuracy); }); // (a popup bound to the marker re-pans when it moves: that is not the user moving the map)
     }
-    if (first) map.setView(e.latlng, Math.max(map.getZoom(), 15));
+    showArrow();
+    if (first) own(() => map.setView(e.latlng, Math.max(map.getZoom(), 15)));
+    else if (mode === 'following') own(() => map.panTo(e.latlng, { animate: true, duration: 0.4, easeLinearity: 1, noMoveStart: true }));
     onFix?.(dot, e);
   });
 
   map.on('locationerror', (e) => {
     if (active && last) return; // keep the last fix on a transient error
     map.stopLocate();
+    mode = 'off'; label(); sensor.stop();
     const denied = e.code === 1;
     onError(denied ? 'Location permission was denied. Allow it in the browser settings and try again.' : 'Could not get your location. Check that location services are on.');
   });
 
-  return { control, request };
+  return {
+    control, request,
+    /** The map turned back to north-up and following stopped; used by the compass button. */
+    northUp() { exitFollow({ north: false }); rotation?.animateTo(0, 280, 'reset'); },
+    mode: () => mode,
+    isManual: () => manual,
+    heading: shown,
+  };
+}
+
+/**
+ * The compass button: shown whenever the map is turned (by the compass or by hand), with a needle that points to north; pressing it turns the map north-up and
+ * stops following. Added last, so the other buttons above it keep their places.
+ */
+export function addCompassControl(map, { rotation, onPress }) {
+  const Control = L.Control.extend({
+    options: { position: 'topleft' },
+    onAdd() {
+      const bar = L.DomUtil.create('div', 'leaflet-bar leaflet-control compass-bar');
+      const a = L.DomUtil.create('a', 'compass-btn', bar);
+      a.href = '#'; a.role = 'button'; a.title = 'Turn the map back to north'; a.setAttribute('aria-label', 'Turn the map back to north');
+      a.innerHTML = COMPASS;
+      bar.hidden = true;
+      L.DomEvent.disableClickPropagation(bar);
+      L.DomEvent.on(a, 'click', (e) => { L.DomEvent.preventDefault(e); onPress(); });
+      this._bar = bar; this._a = a;
+      return bar;
+    },
+  });
+  const control = new Control().addTo(map);
+  rotation.onChange((b) => {
+    control._bar.hidden = Math.abs(b) < 0.5;
+    control._a.style.setProperty('--needle', b + 'deg'); // the needle points to north: the map is turned by -bearing, so the needle turns by the same
+  });
+  return control;
 }

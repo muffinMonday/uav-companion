@@ -36,9 +36,9 @@ ok((await p.inputValue('#op')) === '0.8', 'next session: the slider shows 0.8');
 ok((await zoneOpacity(p)).every((o) => Math.abs(o - 0.8) < 0.01) && (await zoneOpacity(p)).length >= 1, 'next session: the zones are drawn at 0.8 from the start: ' + JSON.stringify(await zoneOpacity(p)));
 
 // the other remembered settings are untouched by saving opacity
-await p.selectOption('#base', 'sat'); await p.selectOption('#country', 'sg'); await p.waitForTimeout(800); await setSlider(p, '0.3'); await p.waitForTimeout(500);
+await p.selectOption('#base', 'topo'); await p.selectOption('#country', 'sg'); await p.waitForTimeout(800); await setSlider(p, '0.3'); await p.waitForTimeout(500);
 const pr = await prefs(p);
-ok(pr.opacity === 0.3 && pr.basemap === 'sat' && pr.country === 'sg' && pr.view, 'saving opacity keeps basemap, country and position: ' + JSON.stringify(pr).slice(0, 120));
+ok(pr.opacity === 0.3 && pr.basemap === 'topo' && pr.country === 'sg' && pr.view, 'saving opacity keeps basemap, country and position: ' + JSON.stringify(pr).slice(0, 120));
 
 // invalid stored values fall back to the default
 for (const [label, v] of [['too high', 5], ['too low', -1], ['zero', 0], ['text', 'x'], ['null', null], ['NaN-like', '0.5abc']]) {

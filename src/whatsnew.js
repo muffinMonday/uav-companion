@@ -2,6 +2,16 @@
 // (the date is a good id): visitors who have not seen it get the dashboard opened with it, once. Keep each entry to a few short lines.
 export const WHATS_NEW = [
   {
+    id: '2026-11-12-compass',
+    date: '2026-11-12',
+    title: 'A map that turns with you, and OpenStreetMap layers',
+    items: [
+      'Press the location button once to find yourself (the marker now has an arrow for the way you face), a second time to follow you and turn the map with your phone, a third time to stop.',
+      'Turn the map with two fingers at any time; the compass button turns it back to north.',
+      'The map layers are now all OpenStreetMap-based: OpenStreetMap, Humanitarian, CyclOSM and OpenTopoMap. The Esri street and satellite layers were removed.',
+    ],
+  },
+  {
     id: '2026-11-11-checkin',
     date: '2026-11-11',
     title: 'Check in at your markers',

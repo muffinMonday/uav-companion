@@ -45,6 +45,12 @@ See `supabase/README.md`: migrations, how the access rules are tested without Do
 - **Friends:** `db-friends-unit` (rules on an in-memory Postgres), `friends` (browser; the real friends SQL runs behind mocked HTTP so two simulated users are tested against the real access rules), and `node tests/friends-live.mjs` (live, throwaway users).
 - The browser suites run against `npm run dev`, which reads `.env.development.local`, so the sign-in card is present in them.
 
+### Turning the map and the locate button
+- `heading-unit` (the compass maths and the sensor wrapper, with a fake window), `maprotate` (a real browser with real touch: the two-finger turn, pins on the spot they mark, popups upright, a hold and a drag at the right coordinates, tiles to the corners), `locatemode` (the three steps, the arrow, the wake lock, the permission paths) and `layers` (the four layers, each from its own host, remembered).
+- Orientation events are dispatched as real `DeviceOrientationEvent`s (`deviceorientationabsolute`, `absolute: true`). The browser context must grant `accelerometer`, `gyroscope` and `magnetometer` as well as geolocation, because current Chromium answers `DeviceOrientationEvent.requestPermission()` from them (without them the app correctly reports a refused permission).
+- Tile requests are answered with a tiny image so no network is needed; answer only the tile hosts (the dev server serves the marker icons as `.png?import` modules, which must go through untouched). Tiles have `pointer-events: none`, so find them by counting `img.leaflet-tile`, not by hit-testing.
+- The dev server can reload the page mid-test if a source file is saved while a suite runs.
+
 ### Swipe gestures (`src/swipe.js`)
 - `onSwipe(el, { direction, onDismiss, canStart, enabled, follow })` is built on touch events; it only takes a gesture over once it is clearly along the chosen direction, and never starts on a form control, `[data-no-swipe]`, the trip card flip, a sideways scroller, or while a row is being dragged (`body.reordering`). Put `data-no-swipe` on anything new that needs its own gestures.
 - Tests use real touch events through the browser protocol (`ctx.newCDPSession(p)` and `Input.dispatchTouchEvent`, as in `tests/hold.mjs` and `tests/swipe.mjs`). The panel bodies scroll smoothly, so wait until `scrollTop` has arrived before measuring a control or starting a swipe.

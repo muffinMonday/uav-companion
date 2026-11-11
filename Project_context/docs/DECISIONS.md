@@ -202,6 +202,12 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 ### 2026-11-11: Crosshair at the map centre (on by default); the guide inside the Fly in card
 - Decision (owner): a crosshair with the centre's coordinates, on by default, switchable from a map button and from Quick actions; How it works moves under Fly in so the dashboard's cards fill a tight grid.
 
+### 2026-11-12: The map is turned by our own code, not the leaflet-rotate plugin; layers limited to OpenStreetMap's family
+- Context: the owner wants the locate button to follow the user and turn the map with the phone's compass, two-finger turning, an arrow on the location marker, and only OpenStreetMap-based layers.
+- Decision: write the rotation in `src/maprotate.js` (the map's pane is turned about its centre with the CSS `rotate` property; four small changes to Leaflet make clicks, holds, drags, pinch and tile loading correct; markers and popups are turned back about their anchor and positioned with the `translate` property, because `rotate` is applied before the `transform` Leaflet positions icons with). The only Leaflet rotation plugin, `leaflet-rotate`, is GPL-3.0; this repository is MIT, so shipping it in the site's bundle would have made the bundle subject to the GPL (the same reasoning as writing our own MSP code for the flight-controller work).
+- Layers: OpenStreetMap (default), Humanitarian, CyclOSM (both hosted by OpenStreetMap France) and OpenTopoMap; Esri Streets and Satellite were removed at the owner's request (so there is no satellite view) and the Carto layers were not added. A saved choice of a removed layer falls back to OpenStreetMap.
+- Risk accepted: our changes wrap Leaflet 1.9 internals (`mouseEventToContainerPoint`, `Draggable._onMove`, `GridLayer._getTiledPixelBounds`, `Marker._setPos`, `Popup._updatePosition`); the rotated-correctness tests will show it if a Leaflet update changes them.
+
 ### 2026-11-11: Shared trips (party members), merged field by field
 - Context: the owner wants to invite friends onto a trip, with party members who can edit the trip but not delete it, later with live locations and online status (W16, W17).
 - Decision (owner): participants may edit and remove the markers inside the trip; only the trip itself (and who is in it) is owner-only. Every change is kept as an earlier version for 30 days. Someone who leaves keeps a private copy. The section in the trip card is called "Party Members".

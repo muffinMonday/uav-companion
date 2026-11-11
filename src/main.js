@@ -4,7 +4,8 @@ import L from 'leaflet';
 import { createMap, createZones } from './map.js';
 import { initSearch } from './search.js';
 import { initPointCheck, checkPoint, describeCheck, zoneSummary } from './pointcheck.js';
-import { addLocateControl } from './locate.js';
+import { addLocateControl, addCompassControl } from './locate.js';
+import { createRotation } from './maprotate.js';
 import { initWeather, weatherButton, getWindLimit, setWindLimit } from './weather.js';
 import { initPanel } from './panel.js';
 import { initControls } from './controls.js';
@@ -139,7 +140,11 @@ async function showCheck(latlng, title, opts = {}) {
 }
 
 let quietFix = false; // true while a marker is being placed at the user's location: its own popup must stay open
+const rotation = createRotation(map); // turning the map (the locate button's compass mode, and two fingers by hand)
+rotation.enableTouchTurn();
 const locate = addLocateControl(map, {
+  rotation,
+  onFollow: () => panel.closeIfPhone(), // the bottom sheet would hide the map that is following you
   onError: (m) => toast(m, 7000),
   onFix: (() => {
     let first = true;
@@ -171,6 +176,7 @@ const cross = initCrosshair(map); // a crosshair at the centre of the map (the b
 // the zone verdict for where I am now (the position is read once, when the button is pressed)
 const checkHere = () => { quietFix = true; return locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ }).finally(() => { quietFix = false; }); };
 const cloud = { handle: null, refresh: null }; // the optional cloud copy: filled in once its code has loaded (only when this build has a project address)
+addCompassControl(map, { rotation, onPress: () => locate.northUp() }); // after the other left-hand buttons, so their places do not move
 const dash = initDashboard({ poi, panel, trips, cloud, shared: opensShareLink, actions: { checkHere, crosshair: cross } });
 initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); initFriendsUI({ panel, handle: h, toast, cloud }); cloud.refresh?.(); } }).catch((e) => console.warn('cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 

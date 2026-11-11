@@ -37,7 +37,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 
 ### 3.3 Basemap tiles
 - Not stored in the repo. Loaded at runtime from the provider.
-- Attribution must stay visible (Esri, OpenStreetMap, OpenTopoMap, as applicable).
+- Attribution must stay visible (OpenStreetMap and, as applicable, the style and host of the Humanitarian and CyclOSM layers, and OpenTopoMap).
 - Each provider has its own usage terms. Confirm before public deployment at volume.
 
 ## 4. Functional requirements
@@ -48,7 +48,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Fit the initial view to Hubei.
 
 **F2. Basemap selection**
-- Switch between at least Esri Streets, Esri Satellite and OpenTopoMap. OpenStreetMap is optional and needs http/https.
+- Switch between four OpenStreetMap-based layers: **OpenStreetMap** (the default), **Humanitarian**, **CyclOSM** and **OpenTopoMap**. Esri Streets and Esri Satellite were removed on 2026-11-12 at the owner's request, so there is no satellite view; a saved choice of either falls back to OpenStreetMap. The choice is remembered (`basemap` in the saved settings) and mirrored on the dashboard.
 - Keep the zone layer on top of any basemap.
 
 **F3. Search**
@@ -64,7 +64,11 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Checked against the source shapefile: 0 mismatches in 20,000 random points.
 
 **F6. User location (built)**
-- A "my location" button drops a pin with an accuracy circle and follows the position after the first press; pressing again re-centres. Nothing is requested until the button is pressed. Needs https or localhost.
+- A "my location" button works in **three steps**: **press 1** asks for permission, drops a pin with an accuracy circle and a **direction arrow**, and centres on it; **press 2** follows you as you move and, where the phone has a compass, **turns the map so the way the phone points is up** (the screen stays awake while following); **press 3** goes back to a normal north-up map with your position still shown. Nothing is requested until the button is pressed. Needs https or localhost.
+- **The arrow on the location marker** shows which way you face: from the compass from the first press (on an iPhone the first press asks once for motion and orientation permission), otherwise from your direction of travel when you are moving faster than about 1.5 m/s; it points straight up while the map turns with you, and its on-screen angle is the heading minus the map's turn otherwise. It is not shown until a heading is known, and a phone with no usable compass says so and follows north-up.
+- **Turning the map by hand:** two fingers twisting turn the map at any time, on phones and tablets (a pinch only zooms). A **compass button** appears under the other left-hand buttons whenever the map is turned; its needle points to north and pressing it turns the map back to north and stops following. During compass following a hand turn pauses the compass turning (the map keeps following you at the angle you chose).
+- **Ending following:** press 3, the compass button, pulling the map with one finger, or anything else that moves the map away from you (for example tapping a marker, which centres the map on it). Zooming by pinch or by the buttons keeps following. This mode is never remembered: the map always starts north-up.
+- **How the turning is done:** only the map's own layers (tiles, zones, markers, popups) are turned, about the centre of the map, by a small module of our own (`src/maprotate.js`, because the one Leaflet rotation plugin is GPL-licensed and this project is MIT). Markers, popups and labels stay upright about the point they mark; route arrows turn with the map; the crosshair, controls and panels never turn. Clicks, press-and-holds, pinch zoom, the wheel and one-finger drags are converted back so they land on the right place, and tiles are loaded to the corners. Tested with real touch in `tests/maprotate.mjs` and `tests/locatemode.mjs`; compass accuracy on a real phone is for the owner to judge outdoors.
 
 **F7. Scale bar (built)**
 - Metric scale bar, bottom-left.
@@ -314,7 +318,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - **Performance:** zones are served as vector tiles (PMTiles, range requests), so only the tiles in view are fetched. Not yet measured on mid-range phones.
 - **Accessibility:** controls are keyboard-operable, have labels, and respect light and dark system themes.
 - **Privacy:** the app sends no user data to any service other than the basemap provider, the geocoder for online search, and Open-Meteo, only when the user presses "Show weather here" (that point) or turns on automatic weather for markers (every marker's location on placement, move and refresh, rounded to about 1 km unless the user chooses precise), or turns on ground elevation (the exact location of a marker or point when its window or popup opens). or turns on name lookup for AI imports (the names or addresses of places that came without coordinates, to Photon and then Nominatim, when Add is pressed). All of these are off by default and controlled in the privacy settings. The wind limit and the saved markers never leave the browser (they are only written to local storage, or to a file when the user exports). If a future module ingests user files (for example flight logs), those files stay in the browser unless the user explicitly uploads them.
-- **Licensing and attribution:** respect OpenStreetMap, Esri, OpenTopoMap, Leaflet (BSD-2 Clause), and echarts/china-map-geojson licences where their data is used. Record each in `docs/ATTRIBUTIONS.md` when the project is set up.
+- **Licensing and attribution:** respect OpenStreetMap (and OpenStreetMap France's Humanitarian and CyclOSM hosting), OpenTopoMap, Leaflet (BSD-2 Clause), and echarts/china-map-geojson licences where their data is used. Record each in `docs/ATTRIBUTIONS.md` when the project is set up.
 
 ## 6. Architecture
 
@@ -331,11 +335,11 @@ Vite + Leaflet in plain JavaScript, with a Node build script. Full layout and th
 ## 7. Known issues and limits
 
 1. The Hubei CRS is declared WGS84 but not yet verified against imagery. A GCJ-02 mistake would shift every zone by a few hundred metres.
-2. Esri and OpenStreetMap tiles may show a small offset against the official cells. Compare on a satellite basemap before assuming an error in the data.
+2. OpenStreetMap tiles may show a small offset against the official cells. Compare with the official platform before assuming an error in the data (there is no satellite basemap any more).
 3. Place coordinates are approximate, and only Hubei places exist.
 4. Coverage boundaries are approximate. The Hubei one (Natural Earth 1:10m) can be off by about a kilometre at the border; see `docs/regions/cn-hubei.md`.
 5. Zone tiles are simplified at low zoom (geojson-vt). Point checks always use the highest zoom, where cells keep their full shape.
-6. Esri's street basemap has no tiles at the closest zooms in China ("Map data not yet available"). Use Esri Satellite there.
+6. (Removed with the Esri layers: that limitation no longer applies.)
 7. The build drops attributes, so per-zone classes or height limits are not supported yet.
 8. The Hubei licence is unconfirmed, and the data is published on that basis.
 9. No offline support yet (see section 5).

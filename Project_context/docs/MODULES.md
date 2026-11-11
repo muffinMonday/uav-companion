@@ -6,12 +6,14 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | Module | Purpose | Key interface | Depends on |
 |---|---|---|---|
 | `main.js` | Wiring and start-up order: createMap, initPanel, weather, locate, initPOI, initPrivacyUI, initTripsUI, initAI, then data load, zones, country menu | none | everything below |
-| `map.js` | Leaflet map, basemaps, scale control, zone layer | `createMap` (map, switchBase, setScaleUnits), `createZones` | config, prefs |
+| `map.js` | Leaflet map, the four OpenStreetMap-based basemaps, scale control, zone layer | `createMap` (map, switchBase, setScaleUnits), `createZones` | config, prefs |
 | `config.js` | Data base URL (`VITE_DATA_BASE_URL`, default `./data/`) | `dataUrl` | none |
 | `zones.js` | Reads every zone containing a point from a PMTiles archive (pure, testable in Node) | `zonesInArchive` | vector-tile, pbf |
 | `pointcheck.js` | Zone verdict for a point from tiles at max zoom | check function | pmtiles, vector-tile |
 | `search.js` | Offline place index plus online Photon/Nominatim search | search UI | config |
-| `locate.js` | Location pin, re-centre control | control, `request()` | none |
+| `locate.js` | Location pin with a direction arrow; the locate button's three steps (locate, follow and turn, back to normal); the compass button; screen wake lock | `addLocateControl` (`request()`, `northUp()`), `addCompassControl` | `heading.js`, `maprotate.js` (passed in) |
+| `heading.js` | The compass: heading from device orientation (maths and sensor wrapper, iOS permission) | `compassHeading`, `chooseHeading`, `arrowAngle`, `createHeading` | none |
+| `maprotate.js` | Turning the map: pane rotation, point conversion, drag, tile coverage, upright markers and popups, two-finger turn | `createRotation` (`bearing`, `set`, `animateTo`, `enableTouchTurn`) | Leaflet |
 | `weather.js`, `markerweather.js` | Open-Meteo forecast for a point / cached per marker (30 min refresh, incl. rain chance) | `fetchForecast`, `fetchSummaries`, `rainOutlook` | privacy |
 | `elevation.js` | Open-Meteo elevation, per-marker cache | `fetchElevations`, `lookupElevation` | none |
 | `privacy.js`, `privacy-ui.js` | Opt-in switches and coordinate rounding; the privacy sub-panel | settings API | prefs |
