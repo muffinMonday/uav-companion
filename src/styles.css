@@ -726,3 +726,12 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 .pop .dist-wrap .dist-v{font-size:13.5px}
 .pop .dist-wrap .dist-txt small{font-size:11px}
 .pop .dist-wrap .stats-note,.pop .dist-wrap .dist-empty{flex:1 1 100%}
+
+/* ---------- motion, part 2: leaving, and new rows (not with "reduce motion") ---------- */
+@keyframes slide-out{to{opacity:0;translate:16px 0}}
+@keyframes dash-down{to{opacity:0;translate:0 26px}}
+@media (prefers-reduced-motion:no-preference){
+  .sidepanel.closing{animation:slide-out var(--dur) var(--ease) forwards}
+  .dash.closing{animation:dash-down var(--dur) var(--ease) forwards}
+  .poi-list li.enter{animation:rise-in var(--dur) var(--ease)}
+}

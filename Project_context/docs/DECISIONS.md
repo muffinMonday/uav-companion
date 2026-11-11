@@ -191,3 +191,6 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 ### 2026-11-11: Share links use a compact, exact format (z2.)
 - Decision (owner): option 1 of the short-link discussion: a compact row format, with the 6-decimal coordinates kept exactly (3% longer than rounding to 5), old links still read. A third-party shortener is rejected (it would send the list of places to someone else); a real short link waits for the backend decision.
 - Consequences: a trip's notes and checklist are no longer part of a link (private planning); the sender's trip colour is not shared.
+
+### 2026-11-11: Overnight arrows go through the hotel
+- Decision (owner): a hotel is the end of the day. The route's overnight arrows pass through the hotel that covers the night (a hotel covers its first night up to the night before check-out); a selected hotel shows an arrow in from the last stop of its first day and out to the first stop of the day after check-out. Without a hotel for that night the arrow goes straight to the neighbouring day's stop. Hotels still take no part in the thin day chain.

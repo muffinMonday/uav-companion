@@ -5,6 +5,7 @@ import { createMarkerWeather, formatWhen, rainOutlook } from './markerweather.js
 import { createMarkerElevation } from './elevation.js';
 import { getPrivacy, onPrivacyChange } from './privacy.js';
 import { createCheckin, checkinCell } from './checkin-ui.js';
+import { reduced, EASE } from './motion.js';
 import { checkinLabel } from './checkin.js';
 import { getWindLimit } from './weather.js';
 import { getDistanceSettings, setDistanceSettings, onDistanceSettings } from './units.js';
@@ -129,6 +130,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       filterEl.append(c);
     }
 
+    const before = new Map([...listEl.querySelectorAll('li[data-id]')].map((li) => [li.dataset.id, li.getBoundingClientRect().top])); // where each row is now, to glide it to where it will be
     cin.unbind('poi');
     listEl.replaceChildren();
     const trips = store.trips();
@@ -185,6 +187,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       if (!listEl.children.length) listEl.append(el('li', 'poi-none', 'Nothing matches this filter.'));
     }
     $('poi-drag-hint').hidden = !listEl.querySelector('li[data-drag="1"]');
+    settleRows(before);
+  }
+  /** New rows ease in; rows that moved glide from their old place. Not on the first drawing, and not with reduced motion. */
+  function settleRows(before) {
+    if (reduced() || !before.size) return;
+    for (const li of listEl.querySelectorAll('li[data-id]')) {
+      const was = before.get(li.dataset.id);
+      if (was === undefined) { li.classList.add('enter'); continue; }
+      const dy = was - li.getBoundingClientRect().top;
+      if (Math.abs(dy) > 4) li.animate([{ translate: `0 ${dy}px` }, { translate: '0 0' }], { duration: 240, easing: EASE });
+    }
   }
 
   // ---------- reordering by holding a row ----------
@@ -514,12 +527,33 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (!it?.tripId || !it.date) return;
     const color = tripColour(it.tripId), chain = chainOf(it.tripId, it.date);
     if (chain.length >= 2) drawChain(routes, chain, it.id, color);
-    // the first stop of a day follows the last stop of the day before, and the last stop leads to the first stop of the next day
+    const dates = stopDates(it.tripId);
+    // a hotel is where the day ends: an arrow in from the last stop of its first day, and one out to the first stop of the day after it checks out
+    if (it.type === 'hotel') {
+      const day = [...dates].reverse().find((d) => d <= it.date);
+      if (day) { const c = chainOf(it.tripId, day); if (c.length) drawSeg(routes, c[c.length - 1], it, color, true, true); }
+      const morning = it.endDate && it.endDate > it.date ? it.endDate : addDays(it.date, 1);
+      const next = dates.find((d) => d >= morning);
+      if (next) { const c = chainOf(it.tripId, next); if (c.length) drawSeg(routes, it, c[0], color, true, true); }
+      return;
+    }
+    // the first stop of a day follows the hotel of the night before (or, with none, the last stop of the day before); the last stop leads to
+    // its night's hotel (or, with none, the first stop of the next day)
     const at = chain.findIndex((x) => x.id === it.id);
     if (at < 0) return;
-    const dates = stopDates(it.tripId), di = dates.indexOf(it.date);
-    if (at === 0 && di > 0) { const before = chainOf(it.tripId, dates[di - 1]); if (before.length) drawSeg(routes, before[before.length - 1], it, color, true, true); }
-    if (at === chain.length - 1 && di >= 0 && di < dates.length - 1) { const after = chainOf(it.tripId, dates[di + 1]); if (after.length) drawSeg(routes, it, after[0], color, true, true); }
+    const di = dates.indexOf(it.date);
+    const hotels = store.items().filter((h) => h.tripId === it.tripId && h.type === 'hotel' && h.date);
+    const hotelFor = (night) => hotels.find((h) => h.date <= night && night <= (h.endDate && h.endDate > h.date ? addDays(h.endDate, -1) : h.date));
+    if (at === 0 && di >= 0) {
+      const hotel = hotelFor(addDays(it.date, -1));
+      if (hotel) drawSeg(routes, hotel, it, color, true, true);
+      else if (di > 0) { const before = chainOf(it.tripId, dates[di - 1]); if (before.length) drawSeg(routes, before[before.length - 1], it, color, true, true); }
+    }
+    if (at === chain.length - 1 && di >= 0) {
+      const hotel = hotelFor(it.date);
+      if (hotel) drawSeg(routes, it, hotel, color, true, true);
+      else if (di < dates.length - 1) { const after = chainOf(it.tripId, dates[di + 1]); if (after.length) drawSeg(routes, it, after[0], color, true, true); }
+    }
   }
   /** The selected marker's pin stands out. */
   function paintFocus() { for (const [id, m] of markers) m.getElement()?.classList.toggle('focused', id === viewId); }

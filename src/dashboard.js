@@ -4,6 +4,7 @@
 import { comingTrips, countdownLabel, tripSummary, todayISO, tripLength, tripStatus, planDays, tripWarnings } from './trips.js';
 import { WHATS_NEW } from './whatsnew.js';
 import { load, save, unseenEntries, startState, backupDue } from './dashstate.js';
+import { animateOut } from './motion.js';
 import { routeLinks } from './maplinks-ui.js';
 import { MODES, MAX_STOPS } from './maplinks.js';
 import { typeOf } from './poi.js';
@@ -18,7 +19,7 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
   const saved = load();
   const firstRun = !saved.welcomed && store.items().length === 0 && store.trips().length === 0;
   let fresh = unseenEntries(WHATS_NEW, saved.seen);   // entries to show until the visitor has seen them
-  let state = null;
+  let state = null, stateToken = 0;
   let guideOpen = firstRun;
   let tripFade = false;                              // the trip card eases in after ‹ or ›
   let tripIx = 0;                                    // which of the coming trips the trip card shows
@@ -225,12 +226,17 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
       render();
       if (!load().welcomed) save({ welcomed: true });
     }
-    dash.hidden = next !== 'expanded';
-    peek.hidden = next !== 'peek';
-    tab.hidden = next !== 'hidden';
-    peek.setAttribute('aria-expanded', 'false');
-    document.body.dataset.dash = next;
-    lift();
+    const token = ++stateToken; // a later change wins over one still on its way
+    const apply = () => {
+      if (token !== stateToken) return;
+      dash.hidden = next !== 'expanded';
+      peek.hidden = next !== 'peek';
+      tab.hidden = next !== 'hidden';
+      peek.setAttribute('aria-expanded', 'false');
+      document.body.dataset.dash = next;
+      lift();
+    };
+    if (leaving) animateOut(dash, 'closing', apply); else apply(); // slides down, then the strip or the tab appears
   }
 
   $('dash-collapse').addEventListener('click', () => setState('peek'));

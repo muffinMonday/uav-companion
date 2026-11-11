@@ -1,5 +1,8 @@
 // Selecting a marker: the day's route with the selected stop's arrows in bold, and the switch that stops the details window opening.
-import { chromium, CHANNEL } from './lib.mjs';
+import { chromium, CHANNEL, ROOT } from './lib.mjs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+const { haversineM, fmtDistance } = await import(pathToFileURL(path.join(ROOT, 'src/distance.js')).href);
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const D = '2026-11-20';
@@ -13,13 +16,13 @@ const items = [
   mk('x', 'Elsewhere', 30.620, 114.340, { tripId: 't1', date: '2026-11-21', order: 1 }),
 ];
 const b = await chromium.launch({ channel: CHANNEL });
-async function open(prefs = {}, vp = { width: 1300, height: 900 }) {
+async function open(prefs = {}, vp = { width: 1300, height: 900 }, list = items) {
   const ctx = await b.newContext({ viewport: vp });
   await ctx.addInitScript(([po, tr, pf]) => {
     if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
     localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po })); localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr }));
     localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.60, lon: 114.31, zoom: 13 }, basemap: 'osm', ...pf }));
-  }, [items, trips, prefs]);
+  }, [list, trips, prefs]);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
@@ -51,7 +54,7 @@ ok(s.length === 3 && s.filter(Boolean).length === 2 && s[1] === true && (await c
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
 await pin(p, 'Hotel').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
 s = await segs(p);
-ok(s.length === 2 && s.every((x) => !x), 'the hotel is not part of the chain: the day shows thin, nothing bold');
+ok(s.length === 4 && s.filter(Boolean).length === 2 && (await count(p, 'path.route-seg.overnight')) === 2, 'the hotel is not part of the day\'s chain (it stays thin), but two bold dashed arrows join it to the last stop of its first day and the first stop of the day after it checks out');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
 await pin(p, 'Elsewhere').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
 ok((await segs(p)).length === 1 && (await segs(p))[0] === true && (await count(p, 'path.route-seg.overnight')) === 1 && (await count(p, '.seg-label')) >= 0, 'a day with a single stop has nothing to join inside it, but it is linked from the last stop of the day before');
@@ -114,6 +117,42 @@ ok(await count(p, 'path.route-seg') === 0, 'turning to a day with a single stop 
 await p.locator('#trip-detail .flip-btn').nth(0).click(); await p.waitForTimeout(300);
 await p.click('#trip-detail >> text=‹ Trips'); await p.waitForTimeout(400);
 ok(await count(p, 'path.route-seg') === 0, 'leaving the trip screen clears it');
+await ctx.close();
+// ================= the overnight arrows go through the hotel
+const P = Object.fromEntries(items.map((x) => [x.id, x]));
+const labels = () => p.$$eval('.seg-label', (e) => e.map((x) => x.textContent));
+const dist = (a, b) => fmtDistance(haversineM(a.lat, a.lon, b.lat, b.lon));
+({ ctx, p } = await open());
+await pin(p, 'Charlie').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+let L1 = await labels();
+ok(L1.length === 2 && L1.includes(dist(P.c, P.h)), 'the last stop of a day leads to its night\'s hotel (' + dist(P.c, P.h) + '), and only there: two bold labels, the one into it and this one (' + L1.join(', ') + ')');
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
+await pin(p, 'Elsewhere').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+L1 = await labels();
+ok(L1.includes(dist(P.h, P.x)) && !L1.includes(dist(P.c, P.x)), 'the first stop of the next day follows the hotel (' + dist(P.h, P.x) + '), not the last stop of the day before');
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
+await pin(p, 'Hotel').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+L1 = await labels();
+ok(L1.includes(dist(P.c, P.h)) && L1.includes(dist(P.h, P.x)), 'the hotel shows the arrow in from the last stop and the arrow out to the first stop of the next day');
+await ctx.close();
+
+// no hotel in the trip: the arrows join the days directly, as before
+({ ctx, p } = await open({}, { width: 1300, height: 900 }, items.filter((x) => x.id !== 'h')));
+await pin(p, 'Charlie').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+ok((await labels()).includes(dist(P.c, P.x)) && (await count(p, 'path.route-seg.overnight')) === 1, 'with no hotel in the trip, the last stop is joined straight to the first stop of the next day');
+await ctx.close();
+
+// a stay of two nights: the hotel leads to the first stop on the day it checks out, and the stops between are still joined to it
+const later = { id: 'l', type: 'photo', name: 'Later', note: '', lat: 30.63, lon: 114.35, created: '2026-11-01T00:00:09.000Z', tripId: 't1', date: '2026-11-22', order: 1 };
+const longStay = [...items.filter((x) => x.id !== 'h'), { ...P.h, endDate: '2026-11-22' }, later];
+({ ctx, p } = await open({}, { width: 1300, height: 900 }, longStay));
+await pin(p, 'Hotel').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+L1 = await labels();
+ok(L1.includes(dist(P.c, P.h)) && L1.includes(dist(P.h, later)) && !L1.includes(dist(P.h, P.x)), 'a two-night stay leads out to the first stop on the day it checks out (' + dist(P.h, later) + '), not to the day in between');
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
+await pin(p, 'Elsewhere').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+L1 = await labels();
+ok(L1.includes(dist(P.h, P.x)) && L1.length === 2, 'a stop in the middle of the stay has the hotel both before and after it');
 await ctx.close();
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();

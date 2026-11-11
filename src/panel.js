@@ -4,6 +4,7 @@ const $ = (id) => document.getElementById(id);
 const isPhone = () => window.matchMedia('(max-width: 520px)').matches;
 
 import { loadPrefs, savePrefs } from './prefs.js';
+import { reduced, animateOut, glide } from './motion.js';
 
 export function initPanel() {
   const panel = $('panel'), dock = $('dock'), sub = $('privacy');
@@ -51,7 +52,17 @@ export function initPanel() {
   }
 
   /** Rolls the panel up to its header strip (the tabs stay) or back down. Remembered. */
-  function setRolled(on, { save = true } = {}) {
+  function setRolled(on, { save = true, animate = true } = {}) {
+    const was = panel.classList.contains('rolled');
+    if (animate && !reduced() && !panel.hidden && was !== on) { // the height glides: shrink first when rolling up, grow after switching when rolling down
+      const h0 = panel.offsetHeight;
+      panel.classList.toggle('rolled', on); const h1 = panel.offsetHeight; panel.classList.toggle('rolled', was);
+      if (on) { glide(panel, h0, h1, () => applyRolled(on, save)); return; }
+      applyRolled(on, save); glide(panel, h0, h1); return;
+    }
+    applyRolled(on, save);
+  }
+  function applyRolled(on, save) {
     panel.classList.toggle('rolled', on);
     const roll = $('panel-roll');
     roll.setAttribute('aria-expanded', String(!on));
@@ -64,11 +75,10 @@ export function initPanel() {
   }
   $('panel-roll').addEventListener('click', () => setRolled(!panel.classList.contains('rolled')));
 
-  function open(tab) { selectTab(tab || current); setOpen(true); setRolled(false, { save: false }); }
+  function open(tab) { selectTab(tab || current); setOpen(true); setRolled(false, { save: false, animate: false }); }
   function close() {
-    const wasOpen = !panel.hidden;
-    setOpen(false);
-    if (wasOpen) dock.querySelector(`[data-tab=${current}]`)?.focus();
+    if (panel.hidden) { setOpen(false); return; }
+    animateOut(panel, 'closing', () => { setOpen(false); dock.querySelector(`[data-tab=${current}]`)?.focus(); }); // slides out, then the dock comes back
   }
 
   for (const t of tabs) {
@@ -88,7 +98,7 @@ export function initPanel() {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sub.hidden) closePrivacy(); });
 
   setOpen(false);
-  if (!isPhone()) { open('config'); if (loadPrefs().panelRolled) setRolled(true, { save: false }); } // phones start with the map unobstructed
+  if (!isPhone()) { open('config'); if (loadPrefs().panelRolled) setRolled(true, { save: false, animate: false }); } // phones start with the map unobstructed
 
   return {
     open, close, selectTab, openPrivacy, closePrivacy,
