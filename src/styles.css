@@ -763,3 +763,17 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 .cross-btn .slash{display:none}
 .cross-btn.off{color:var(--muted)!important}
 .cross-btn.off .slash{display:inline}
+
+/* optional cloud copy (privacy settings card, the question dialog, the dashboard line) */
+input[type=email]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--fg)}
+input[type=email]:focus{border-color:var(--accent)}
+.cloud-form{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.cloud-status{margin:4px 0 0}
+.cloud-versions{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.cloud-version{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+#cloud-card .btn.danger{margin-top:10px}
+.cloud-dialog{max-width:min(440px,calc(100vw - 32px));border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--fg);box-shadow:var(--shadow);padding:18px}
+.cloud-dialog::backdrop{background:rgba(0,0,0,.4)}
+.cloud-dialog h2{margin:0 0 6px;font-size:18px}
+.cloud-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;font-size:14px}
+.cloud-line{margin-top:8px;text-align:left;white-space:normal}

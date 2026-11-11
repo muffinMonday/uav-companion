@@ -31,7 +31,7 @@ export function createMap(initial = {}) {
   const makeScale = (units) => L.control.scale({ metric: units !== 'imperial', imperial: units === 'imperial', position: 'bottomleft', maxWidth: 140 }).addTo(map);
   let scale = makeScale(initial.units);
 
-  let base = L.tileLayer(...BASES[initial.basemap in BASES ? initial.basemap : 'esri']).addTo(map);
+  let base = L.tileLayer(...BASES[initial.basemap in BASES ? initial.basemap : 'osm']).addTo(map);
   const switchBase = (key) => {
     map.removeLayer(base);
     base = L.tileLayer(...BASES[key]).addTo(map);

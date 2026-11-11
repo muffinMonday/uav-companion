@@ -14,7 +14,7 @@ const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 const isPhone = () => window.matchMedia('(max-width: 520px)').matches;
 
-export function initDashboard({ poi, panel, trips, shared = false, actions = {} }) {
+export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, actions = {} }) {
   const dash = $('dash'), body = $('dash-body'), peek = $('dash-peek'), tab = $('dash-tab');
   const store = poi.store;
   // parts that live elsewhere in the page and are shown on the dashboard while it is open (their handlers stay attached; they wait in
@@ -221,6 +221,12 @@ export function initDashboard({ poi, panel, trips, shared = false, actions = {} 
     const row = el('div', 'btn-row');
     row.append(...dataNodes.slice(0, 4)); // export, import, share link and the (hidden) file chooser
     c.append(row, dataNodes[4]);
+    const line = cloud.handle?.line();
+    if (line) { // signed in to the optional cloud copy: one line of status that opens its settings
+      const b = el('button', 'btn small cloud-line', 'Cloud copy: ' + line); b.type = 'button';
+      b.addEventListener('click', () => cloud.handle.open());
+      c.append(b);
+    }
     return c;
   }
   function keyCard() {
@@ -337,6 +343,7 @@ export function initDashboard({ poi, panel, trips, shared = false, actions = {} 
   dash.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setState('peek'); peek.focus(); } });
   panel.onOpen?.(() => { if (isPhone() && state === 'expanded') setState('peek'); }); // on a phone the panel and the dashboard take turns
   store.onChange(() => { if (state === 'expanded') render(); else updatePeek(); });
+  cloud.refresh = () => { if (state === 'expanded') render(); };
   poi.checkin.also(() => state === 'expanded' && todayShown);
   actions.crosshair?.onChange(() => { if (state === 'expanded') render(); });
   trips.onForecast?.(() => { if (state === 'expanded') render(); });

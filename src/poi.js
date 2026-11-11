@@ -397,6 +397,20 @@ export function createStore() {
       const ok = save() && (addedTrips ? saveTrips() : true); emit();
       return { ok, added, skipped, addedTrips };
     },
+    /**
+     * Replaces everything with these markers and trips (the cloud copy, when the user chooses it). Each is checked like any stored one, ids stay unique,
+     * a marker whose trip is not in the list loses its tag, and the day numbers are settled. Returns { ok, items, trips }.
+     */
+    replaceAll(incomingItems, incomingTrips = []) {
+      const seenTrip = new Set(), seenItem = new Set();
+      trips = (Array.isArray(incomingTrips) ? incomingTrips : []).map(sanitizeTrip).filter((t) => t && !seenTrip.has(t.id) && seenTrip.add(t.id)).slice(0, MAX_TRIPS);
+      items = (Array.isArray(incomingItems) ? incomingItems : []).map(sanitize).filter((i) => i && !seenItem.has(i.id) && seenItem.add(i.id)).slice(0, MAX_ITEMS);
+      dropDangling();
+      const m = migrateDays(items, trips);
+      if (m.items !== items) items = m.items;
+      const ok = save() && saveTrips(); emit();
+      return { ok, items: items.length, trips: trips.length };
+    },
     /** What the start-up fix of day numbers changed ({ corrected, converted }), once; null if nothing, or already reported. */
     takeMigration() { const m = migration; migration = null; return m; },
     lastBackup() { try { return ls?.getItem(BACKUP_KEY) || null; } catch { return null; } },

@@ -16,6 +16,8 @@ This is a planning aid. It does not replace the UOM app (China) or any local off
 | App | Vite + Leaflet in `src/`. Zones, basemaps, search, point check (F4), location pin and re-centre, scale bar, markers, trips (F19), AI import, privacy controls. Browser-tested in Edge on desktop and phone widths. |
 | Hosting | Source in the public GitHub repo `muffinMonday/uav-companion`. Published to the `gh-pages` branch with `npm run deploy` (no CI); GitHub Pages must be enabled in the repo settings (Source: `gh-pages`). |
 
+**Work in progress and queue:** see the Work board in `Project_context/docs/CURRENT_STATUS.md` (what is being built, queued, waiting on a decision or planned, with dates), and section 9 below for the roadmap beyond the current app.
+
 Earlier layers (the Wuhan screenshot extraction and the province extraction from the provincial map image) are superseded by the official data and should not be used.
 
 ## 3. Data
@@ -360,18 +362,30 @@ Open:
 - Singapore source data and its terms (CAAS, data.gov.sg) and its `semantics` mapping: restricted versus prohibited areas may need two zone classes, which the build does not support yet.
 - When to move tiles from GitHub Pages to object storage.
 
-## 9. Future module: Betaflight log analyzer (not started)
+## 9. Roadmap: accounts, social features and flight-controller diagnostics
 
-A separate module that shares the app shell but not the map code.
+Status of each item is kept on the Work board in `Project_context/docs/CURRENT_STATUS.md` (IDs W1 to W10); this section holds the requirements. The static, cache-driven app stays complete on its own: everything below is optional and loaded only when used.
 
-- **Connection:** MSP over USB serial via the Web Serial API. Chromium-based browsers (Chrome, Edge) only. Requires a secure context: HTTPS or localhost, so a file opened from disk will not work.
-- **Phase 1 (read-only):** connect, identify board and firmware, list blackbox logs on flash.
-- **Phase 2:** download logs and parse them in the browser.
-- **Phase 3:** analysis and charts. Evaluate existing open-source decoders (for example blackbox-log-viewer and blackbox-tools) for reuse; check their licences and current Betaflight compatibility first.
-- **Phase 4 (last):** settings writes, each with explicit user confirmation.
-- **Hosting:** fits GitHub Pages, as long as all processing runs in the browser.
-- **Privacy:** flight logs can contain GPS history. Keep sample logs out of any public repo. Do not upload user logs anywhere.
-- **Testing:** parsing can be unit-tested with sample logs. Connection and flashing need physical hardware testing.
+### 9.1 Accounts and cloud persistence (W1, in progress)
+- **Optional.** A visitor who does not sign in uses the app exactly as today; no backend code is loaded and nothing is sent.
+- **One cloud document per user:** markers, trips (notes, checklists, and check-ins only if the user turns that on) and a few settings (not weather caches, not privacy choices, which are per device). Weather and elevation caches are never synced.
+- **Conflicts:** each device remembers the revision it last synced from. If both the device and the cloud copy changed, the app asks which to keep (use the cloud copy, use this device, or back up the other side first, which is the safe default). Nothing is overwritten silently. The cloud keeps earlier versions for 30 days (at most 20) so an overwrite can be undone.
+- **Service:** Supabase (hosted Postgres, sign-in by email, row-level security). Development uses a hosted dev project; access rules are tested on an in-memory Postgres. See `supabase/README.md`.
+- **Security:** the browser holds only the project address and the publishable key; row-level security and functions as the only write path protect the data (tested in `tests/db-unit.mjs`); secrets never enter the repository.
+
+### 9.2 Friends and flight sessions (W5, W6, planned)
+- Profiles with a display name; friends (request, accept, block); invitations.
+- **Flight sessions**, public or private: private ones are visible only to invited people and participants; public ones appear in a searchable, paged lobby (filters: region, date, capacity). A public session shows an approximate area until someone joins, not the exact takeoff point.
+- Needed before any public lobby: report and block tools, rate limits, a moderation route, terms and a privacy policy.
+
+### 9.3 Flight-controller diagnostics (W7 to W10, planned)
+A separate module that shares the app shell but not the map code. Everything runs in the browser; nothing is uploaded.
+- **Connection:** MSP over USB serial through the Web Serial API. Desktop Chrome and Edge only (not Safari, Firefox or iPhone), over HTTPS or localhost. Check the firmware API version first; Betaflight first. Write our own MSP code from the protocol, not by copying GPL code (this project is MIT).
+- **4a (read-only):** connect, identify board and firmware, battery voltage and current, attitude, receiver channels, read rates and PIDs.
+- **4b (logs):** load blackbox files (from the SD card, by drag and drop; reading over USB can follow), analyse noise spectra, step response, motor saturation and desyncs. Keep sample logs out of the public repo.
+- **4c (tuning writes):** rates and PID changes; always snapshot the current settings first, show a diff, clamp to sane ranges, confirm every write, and offer a one-tap revert.
+- **4d (motor test and pre-flight rules):** can hurt people, so last. Requires props removed (an explicit checklist plus typed confirmation), low throttle only, the aircraft disarmed, an always-visible stop button, an automatic time limit, and a refusal to start when telemetry says the battery or connection is unhealthy. Telemetry (RPM, temperature, current) feeds a rule set stored as data (pass, warn, fail with the reason), tuned per build; checks that cannot be done honestly without load are reported as such.
+- **Testing:** parsing with sample logs and a simulated flight controller; connection, tuning and the motor test need physical hardware testing by the owner.
 - **Record:** the target Betaflight firmware version and supported board types, since MSP details vary between releases.
 
 ## 10. Glossary

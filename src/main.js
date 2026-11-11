@@ -17,6 +17,7 @@ import { toolBar } from './cards.js';
 import { centreOn, popupMaxHeight } from './view.js';
 import { initPOI } from './poi-ui.js';
 import { initPrivacyUI } from './privacy-ui.js';
+import { initSyncUI } from './sync-ui.js';
 import { initAI } from './ai-ui.js';
 import { initTripsUI } from './trips-ui.js';
 import { getPrivacy } from './privacy.js';
@@ -63,7 +64,7 @@ applyPopOpacity(+$('pop-op').value); // marker windows are frosted glass: this i
 $('pop-op').addEventListener('input', (e) => applyPopOpacity(+e.target.value));
 $('pop-op').addEventListener('change', (e) => savePrefs({ popupOpacity: +e.target.value }));
 $('op').value = prefs.opacity ?? 0.45; // applied to the zones once they are loaded, below
-$('base').value = prefs.basemap ?? 'esri';
+$('base').value = prefs.basemap ?? 'osm';
 $('base').addEventListener('change', (e) => { switchBase(e.target.value); savePrefs({ basemap: e.target.value }); });
 
 let viewTimer = null;
@@ -166,7 +167,9 @@ ai.fromHash();
 const cross = initCrosshair(map); // a crosshair at the centre of the map (the button goes under the marker-details button)
 // the zone verdict for where I am now (the position is read once, when the button is pressed)
 const checkHere = () => { quietFix = true; return locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ }).finally(() => { quietFix = false; }); };
-const dash = initDashboard({ poi, panel, trips, shared: opensShareLink, actions: { checkHere, crosshair: cross } }); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
+const cloud = { handle: null, refresh: null }; // the optional cloud copy: filled in once its code has loaded (only when this build has a project address)
+const dash = initDashboard({ poi, panel, trips, cloud, shared: opensShareLink, actions: { checkHere, crosshair: cross } });
+initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); cloud.refresh?.(); } }).catch((e) => console.warn('cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch(() => toast('Point check failed. Check your connection and try again.'));
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.

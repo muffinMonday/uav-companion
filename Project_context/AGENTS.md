@@ -40,6 +40,7 @@ Read only what the task needs.
 - Do not copy information between docs; link instead.
 
 ## Keeping the docs current
+- **Work board** (`docs/CURRENT_STATUS.md`): when work on a backlog item starts, set its row to **In progress** with the date and say what is being built; when it is queued, waiting on the owner or planned, say so; when it ships, move it to Done with the commit. Keep it true at every stop, so the owner can see what is queued and what is in progress.
 - Update `docs/CURRENT_STATUS.md` at the end of every logical task (recent work, in progress, outstanding, next steps).
 - Add a dated entry to `docs/DECISIONS.md` for any decision that constrains future work.
 - Update `MODULES.md` when a module is added, removed or changes its interface; `DATABASE.md` when a stored shape or key changes; `DEVELOPMENT.md` when a command changes.

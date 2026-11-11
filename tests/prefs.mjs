@@ -75,7 +75,7 @@ for (const [label, value] of [
   await c.addInitScript((v) => localStorage.setItem('uavzones.v1.prefs', v), value);
   const q = await open(c);
   const okLoad = (await q.textContent('#regions-note')).includes('Coverage');
-  ok(okLoad && (await q.inputValue('#base')) === 'esri' && (await q.inputValue('#country')) === '', `damaged prefs (${label}): app loads with defaults`);
+  ok(okLoad && (await q.inputValue('#base')) === 'osm' && (await q.inputValue('#country')) === '', `damaged prefs (${label}): app loads with defaults`);
   if (label === 'unknown country') { const v = (await view(q)).view; ok(v && v.zoom === 8, 'unknown country ignored, valid saved view still used'); }
   await c.close();
 }
