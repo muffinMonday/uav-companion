@@ -220,6 +220,10 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - **One-time fix at start-up**: in a trip with a start date, a dated marker loses its stored day, and a day-only marker becomes a date (start + day − 1). A message says how many were corrected or turned into dates. The same happens when a trip gets dates later, and when markers are saved, imported or moved.
 - AI import: with a trip that has dates, a place's day becomes a date; a reply's day beside a date is ignored. Export files still carry the day, now worked out. Reordering by dragging only works in dated lists; a move sets the date and stop (the day follows).
 
+**F32. Previous and next stop (built)**
+- A marker in a trip that has a date (or an old stored day) gets a bar pinned to the bottom of its window: **‹ Previous · 3 of 8 · Next ›**. The stops are the trip's dated markers in itinerary order (date, then stop; markers with no stop last in their day; hotels included). Each button's tooltip names its destination with its day and stop. The first stop has no Previous and the last has no Next. Pressing one opens that marker's window and centres the map on it, keeping the expanded or collapsed size.
+- No bar for a marker with no date, in no trip, or alone in its trip, nor in the edit form. The bar stays inside the window while its content scrolls.
+
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.
 - First visit (nothing saved): the map fits all covered regions. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.

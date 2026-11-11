@@ -10,7 +10,7 @@ import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, comp
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { visitGroups, visitLabel } from './places.js';
-import { dayInfo, dayText } from './trips.js';
+import { dayInfo, dayText, tripSequence } from './trips.js';
 import { mapLinksBlock, routeLinks } from './maplinks-ui.js';
 import { MODES, MAX_STOPS } from './maplinks.js';
 import { planMove, stepSlot, groupKey, addDays } from './reorder.js';
@@ -697,6 +697,25 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         acts.append(edit, again, del);
       }
       root.append(weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), mapLinksBlock({ lat: it.lat, lon: it.lon, name: it.name, home: it.type === 'residence' }), acts, disclaimer());
+
+      // previous / next stop of the trip, in itinerary order, pinned to the bottom of the window
+      const seq = it.tripId ? tripSequence(store.items(), it.tripId) : [];
+      const at = seq.findIndex((x) => x.id === id);
+      if (at >= 0 && seq.length > 1) {
+        const bar = el('div', 'pop-seq');
+        const stopBtn = (target, arrow, word) => {
+          const b = el('button', 'pop-seq-btn'); b.type = 'button';
+          b.textContent = arrow === '‹' ? `‹ ${word}` : `${word} ›`;
+          if (!target) { b.disabled = true; return b; }
+          const where = [dayText(dayInfo(target, tripOf(target))), target.order !== undefined && `Stop ${target.order}`].filter(Boolean).join(' · ');
+          b.title = `${word} stop: ${target.name}${where ? ` (${where})` : ''}`;
+          b.setAttribute('aria-label', b.title);
+          b.addEventListener('click', () => setTimeout(() => openPopup(target.id), 0)); // after the click, so the old window going away is not seen as a map click
+          return b;
+        };
+        bar.append(stopBtn(seq[at - 1], '‹', 'Previous'), el('span', 'pop-seq-pos', `${at + 1} of ${seq.length}`), stopBtn(seq[at + 1], '›', 'Next'));
+        root.append(bar);
+      }
     }
 
     function editForm() {

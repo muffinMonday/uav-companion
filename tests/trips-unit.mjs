@@ -238,3 +238,10 @@ const ms2 = poi.createStore(); const mt = ms2.addTrip({ name: 'M', startDate: '2
 ms2.merge([{ id: 'imp1', type: 'photo', name: 'I', note: '', lat: 1, lon: 2, created: '2026-11-01T00:00:00.000Z', tripId: mt.id, date: '2026-11-13', day: 9 }], []);
 ok(!('day' in ms2.items()[0]), 'store: an imported marker with a day and a date in a trip with dates loses its day');
 ok(places.visitLabel({ date: '2026-11-13', order: 2 }, { trip: TR }) === 'Day 2 · Stop 2 · Wed, Nov 13' || /^Day 2 · Stop 2/.test(places.visitLabel({ date: '2026-11-13', order: 2 }, { trip: TR })), 'visit label: the day is worked out from the date and the trip');
+
+// ---------- the stops of a trip in order
+const sq = (id, extra) => ({ id, type: 'photo', name: id, note: '', lat: 1, lon: 2, created: `2026-11-01T00:00:0${id.length}.000Z`, tripId: 'tr', ...extra });
+const seqItems = [sq('c', { date: '2026-11-13', order: 2 }), sq('a', { date: '2026-11-12', order: 2 }), sq('h', { type: 'hotel', date: '2026-11-12', endDate: '2026-11-14', order: 1 }), sq('b', { date: '2026-11-13', order: 1 }), sq('d', { date: '2026-11-14' }), sq('u', {}), sq('x', { tripId: 'other', date: '2026-11-12' }), sq('n', { tripId: undefined, date: '2026-11-12' })];
+ok(trips.tripSequence(seqItems, 'tr').map((x) => x.id).join('') === 'habcd', 'sequence: by date then stop, hotel included, a marker with no stop last in its day, undated and other trips left out');
+ok(trips.tripSequence(seqItems, 'nope').length === 0 && trips.tripSequence([], 'tr').length === 0, 'sequence: a trip with no stops, or none at all, is empty');
+ok(trips.tripSequence([sq('o1', { day: 2, order: 1 }), sq('o2', { day: 1, order: 1 })], 'tr').map((x) => x.id).join('') === 'o2o1', 'sequence: old markers with only a day are ordered by day');

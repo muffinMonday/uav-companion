@@ -1,5 +1,5 @@
 // Helpers for trips: wording, length, ordering and a date check. Pure functions; storage is in poi.js.
-import { dateLabel } from './poi.js';
+import { dateLabel, listMode, sortForList } from './poi.js';
 import { countryName } from './countries.js';
 import { daysBetween } from './dates.js';
 
@@ -93,3 +93,14 @@ export function dayInfo(item, trip) {
 }
 /** "Day 2", "Day 1–3" or ''. */
 export const dayText = (info) => (info ? (info.last > info.day ? `Day ${info.day}–${info.last}` : `Day ${info.day}`) : '');
+
+// ---------- the stops of a trip in order (for the previous / next buttons) ----------
+
+/**
+ * The markers of a trip that are part of its itinerary (they have a date, or an old stored day), in itinerary order: by date, then stop,
+ * markers with no stop last within their day. Hotels are included. Markers with neither a date nor a day are left out.
+ */
+export function tripSequence(items, tripId) {
+  const members = items.filter((i) => i.tripId === tripId && (i.date !== undefined || i.day !== undefined));
+  return sortForList(members, listMode(members));
+}

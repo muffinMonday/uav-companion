@@ -480,3 +480,10 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .day-line{display:block;margin:-4px 0 0;color:var(--muted)}
 .ai-trip-dates{margin:8px 0}
 .ai-trip-dates .hint{margin:0 0 4px}
+
+/* ---------- previous / next stop ---------- */
+.pop-seq{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px -16px -14px;padding:8px 16px;border-top:1px solid var(--line);border-radius:0 0 20px 20px;background:color-mix(in srgb,var(--surface) calc(var(--pop-alpha) * 100%),transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.pop-seq-pos{font-size:12px;font-weight:650;color:var(--muted);font-variant-numeric:tabular-nums}
+.pop-seq-btn{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);font-weight:600;font-size:12.5px;cursor:pointer}
+.pop-seq-btn:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
+.pop-seq-btn:disabled{opacity:.35;cursor:default}
