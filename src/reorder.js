@@ -1,18 +1,12 @@
-// Moving a marker to a new place in the list: which date, day and stop it, and its neighbours, get. Pure: no DOM.
+// Moving a marker to a new place in the list: which date and stop it, and its neighbours, get. Pure: no DOM.
 //
-// The list is a group of markers (one trip, or the ones with no trip) shown under date headings (when any has a date) or "Day N"
-// headings (when any has a day). Dropping a marker into another heading changes its date or day; dropping it between two markers
-// changes its stop, and the stops of its new group are renumbered 1, 2, 3. A hotel moved to another date gets that date as its
+// The list is a group of markers (one trip, or the ones with no trip) shown under date headings. Dropping a marker into another
+// heading changes its date (its day follows from the trip's start date); dropping it between two markers changes its stop, and the stops of its new group are renumbered 1, 2, 3. A hotel moved to another date gets that date as its
 // start and the next day of the trip as its end (the trip's last day: start and end are both that day).
 import { sortForList } from './poi.js';
-import { daysBetween } from './trips.js';
+import { addDays, daysBetween } from './dates.js';
 
-const ms = (iso) => { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d); };
-/** An ISO date n days later (or earlier). */
-export function addDays(iso, n) {
-  const d = new Date(ms(iso) + n * 86400000);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-}
+export { addDays };
 /** The end date for a stay starting on `date`: the next day of the trip, or `date` itself on the trip's last day. */
 export function nextTripDate(date, trip) {
   return trip?.endDate && date >= trip.endDate ? date : addDays(date, 1);
@@ -49,7 +43,7 @@ const FIELDS = ['date', 'endDate', 'day', 'order'];
  * Returns { items: [the changed markers, complete], summary } or null when nothing changes or the move is not possible.
  */
 export function planMove({ members, mode, movedId, targetKey, index, trip = null }) {
-  if (mode !== 'date' && mode !== 'day') return null;
+  if (mode !== 'date') return null; // lists with days only (old markers) are not reordered: a day can no longer be typed in
   const moved = members.find((x) => x.id === movedId);
   if (!moved) return null;
   const groups = new Map(groupsOf(members, mode).map((g) => [g.key, g.items.slice()]));
@@ -63,33 +57,15 @@ export function planMove({ members, mode, movedId, targetKey, index, trip = null
   const hotel = moved.type === 'hotel';
 
   if (targetKey === 'none') {
-    // an undated (or day-less) group has no order of its own: the marker leaves the itinerary part of the list
-    set(movedId, mode === 'date' ? { date: undefined, endDate: undefined, day: undefined, order: undefined } : { day: undefined, order: undefined });
+    // an undated group has no order of its own: the marker leaves the itinerary part of the list
+    set(movedId, { date: undefined, endDate: undefined, day: undefined, order: undefined });
   } else if (targetKey !== srcKey) {
-    if (mode === 'date') {
-      const date = targetKey;
-      const dayApplies = moved.day !== undefined || members.some((x) => x.day !== undefined);
-      let day;
-      if (dayApplies) {
-        day = common(target, 'day') ?? (trip?.startDate ? Math.max(1, daysBetween(trip.startDate, date) + 1) : moved.day);
-      }
-      let endDate;
-      if (hotel) endDate = nextTripDate(date, trip);
-      else if (moved.endDate && moved.date) endDate = addDays(date, daysBetween(moved.date, moved.endDate));
-      set(movedId, { date, endDate, day });
-    } else {
-      const day = targetKey;
-      const dateApplies = moved.date !== undefined || members.some((x) => x.date !== undefined);
-      let date, endDate;
-      if (dateApplies) {
-        date = common(target, 'date') ?? (trip?.startDate ? addDays(trip.startDate, day - 1) : moved.date);
-        if (date !== undefined && date !== moved.date) {
-          if (hotel) endDate = nextTripDate(date, trip);
-          else if (moved.endDate && moved.date) endDate = addDays(date, daysBetween(moved.date, moved.endDate));
-        } else endDate = moved.endDate;
-      }
-      set(movedId, { day, date, endDate });
-    }
+    // the day follows from the date (the trip's start date is day 1), so only the date and a stay's end are set
+    const date = targetKey;
+    let endDate;
+    if (hotel) endDate = nextTripDate(date, trip);
+    else if (moved.endDate && moved.date) endDate = addDays(date, daysBetween(moved.date, moved.endDate));
+    set(movedId, { date, endDate, day: undefined });
   }
 
   if (targetKey !== 'none') {
@@ -117,8 +93,8 @@ export function planMove({ members, mode, movedId, targetKey, index, trip = null
 
 function summarise(item, targetKey, mode) {
   if (targetKey === 'none') return `Moved “${item.name}” out of the itinerary`;
-  const where = [item.date && item.date, item.day !== undefined && `day ${item.day}`, item.order !== undefined && `stop ${item.order}`].filter(Boolean).join(', ');
-  return `Moved “${item.name}” to ${where || (mode === 'day' ? `day ${targetKey}` : targetKey)}`;
+  const where = [item.date, item.order !== undefined && `stop ${item.order}`].filter(Boolean).join(', ');
+  return `Moved “${item.name}” to ${where || targetKey}`;
 }
 
 /** The slot after moving one step: { key, index } for "up" (-1) or "down" (+1) from marker `id`, or null at the very top or bottom. */

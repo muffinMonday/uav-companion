@@ -114,3 +114,9 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision: the search box reads coordinates and pasted Google/Amap links in the browser (never sent to an online search). Inside China, typed coordinates give two rows, as typed (GPS) and converted from GCJ-02, because coordinates copied from Amap would otherwise land about 500 m off. Any picked result drops a blue pin and opens the point-check window above it. Add as marker and Remove pin go in that window (owner's choice for Add as marker).
 - Alternatives: pins for every candidate at once (owner chose the picked result only); resolving short links (not possible from the browser).
 - Consequences: the check window is now the one place for verdict, links, Add as marker; `showCheck` takes options (offset, zoom, remove-pin).
+
+### 2026-11-11: The day is worked out from the date; trip dates are required
+- Context: the day was typed in separately from the date, so a marker's day and date could disagree.
+- Decision: Day N = date − trip start + 1; the Day box is removed; trips need a start and end date (owner's choices); a date outside the trip has no day; stored days are dropped or turned into dates at start-up and whenever they could conflict, without a backup (owner's choice). Old markers with a day and no way to work it out keep it read-only. Reordering only works on dated lists.
+- Alternatives: keep Day as an editable fallback (rejected: that is how they drifted apart); count from the earliest dated marker when a trip has no start (day 1 would shift).
+- Consequences: AI days become dates on import; trip dates are needed to create a trip from an AI reply.

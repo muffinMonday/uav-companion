@@ -23,9 +23,9 @@ The format is in `public/ai/` and served from the site root: `ai/prompt.md` (the
 | `properties.note` | no | up to 500 characters |
 | `properties.date` | **no** | calendar date of the visit, `YYYY-MM-DD` with the year |
 | `properties.endDate` | **no** | last date of a multi-day stay (a hotel), `YYYY-MM-DD`, after `date`; only with `date` |
-| `properties.day` | **no** | itinerary day, a whole number from 1 (1 = first day) |
+| `properties.day` | **no** | itinerary day, a whole number from 1 (1 = first day). Only for itineraries with no calendar dates: with dates the app works the day out itself and ignores this |
 | `properties.order` | **no** | position within the day, from 1 |
-| `trip` (top level, not per place) | **no** | `{ name, country?, startDate?, endDate?, description? }`; every place in the reply is put in this trip (a Home marker is not). `country` is a name or ISO code from the standard list |
+| `trip` (top level, not per place) | **no** | `{ name, country?, startDate, endDate, description? }` (the dates are required to create the trip; the app asks for them if they are missing); every place in the reply is put in this trip (a Home marker is not). `country` is a name or ISO code from the standard list |
 | `properties.query` | when `geometry` is `null` | text to search: venue, address, city, country |
 
 `home` is the **drone's home point** (where flights start and return to). `residence` is the **traveller's own home**; an AI should add one only if the itinerary asks for it, and never guess an address. The app keeps `residence` markers private: they are left out of share links and automatic weather and elevation lookups.

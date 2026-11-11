@@ -143,6 +143,10 @@ const locate = addLocateControl(map, {
 const poi = initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWeather, panel,
   locateOnce: () => { quietFix = true; return locate.request().finally(() => { quietFix = false; }); },
 });
+{ // day numbers now follow from dates: say once if saved markers were changed to match
+  const mig = poi.store.takeMigration();
+  if (mig) toast(`Day numbers now follow the dates: ${mig.corrected} corrected${mig.converted ? `, ${mig.converted} turned into dates` : ''}.`, 9000);
+}
 initPrivacyUI({ mw: poi.mw, elev: poi.elev }); // the privacy settings own the weather and elevation switches
 initTripsUI({ poi, panel, toast });             // the Trips tab: create and edit trips, tag markers with them
 const ai = initAI({ map, toast, panel, poi });  // paste an AI's itinerary, or open a share link, then preview and add

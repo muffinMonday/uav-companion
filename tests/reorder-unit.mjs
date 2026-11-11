@@ -31,14 +31,14 @@ ok(R.planMove({ members, mode: 'date', movedId: 'A', targetKey: '2026-11-12', in
 
 // ---------- to another date that has markers
 r = R.planMove({ members, mode: 'date', movedId: 'B', targetKey: '2026-11-13', index: 0, trip: TRIP });
-ok(by(r, 'B').date === '2026-11-13' && by(r, 'B').day === 2 && by(r, 'B').order === 1 && by(r, 'C').order === 2, 'to 13 Nov, first: B takes date 13 Nov and day 2 from that group, stop 1; C moves to stop 2');
+ok(by(r, 'B').date === '2026-11-13' && by(r, 'B').order === 1 && by(r, 'C').order === 2, 'to 13 Nov, first: B takes date 13 Nov and stop 1; C moves to stop 2 (the day follows from the date, nothing is set)');
 ok(!by(r, 'A'), 'the group B left is renumbered only if needed (A is already stop 1)');
 r = R.planMove({ members, mode: 'date', movedId: 'A', targetKey: '2026-11-13', index: 1, trip: TRIP });
-ok(by(r, 'A').order === 2 && by(r, 'A').day === 2 && !by(r, 'C') && by(r, 'B').order === 1, 'to 13 Nov, after C: A is day 2, stop 2 (C stays stop 1, untouched), and B, left alone in 12 Nov, becomes stop 1');
+ok(by(r, 'A').order === 2 && by(r, 'A').date === '2026-11-13' && !by(r, 'C') && by(r, 'B').order === 1, 'to 13 Nov, after C: A is stop 2 (C stays stop 1, untouched), and B, left alone in 12 Nov, becomes stop 1');
 
 // ---------- to a trip date with no markers yet
 r = R.planMove({ members, mode: 'date', movedId: 'C', targetKey: '2026-11-14', index: 0, trip: TRIP });
-ok(by(r, 'C').date === '2026-11-14' && by(r, 'C').day === 3 && by(r, 'C').order === 1, 'to an empty trip day (14 Nov): date 14 Nov, day 3 worked out from the trip start, stop 1');
+ok(by(r, 'C').date === '2026-11-14' && by(r, 'C').order === 1, 'to an empty trip day (14 Nov): date 14 Nov, stop 1');
 
 // ---------- markers without days or stops
 const P = it('P', { date: '2026-11-12' }), Q = it('Q', { date: '2026-11-13' });
@@ -68,21 +68,12 @@ const D = it('D'); // no date
 r = R.planMove({ members: [A, B, C, D], mode: 'date', movedId: 'A', targetKey: 'none', index: 0, trip: TRIP });
 ok(!('date' in by(r, 'A')) && !('day' in by(r, 'A')) && !('order' in by(r, 'A')) && by(r, 'B').order === 1, 'into "No date set": date, day and stop are cleared, and the group it left is renumbered');
 r = R.planMove({ members: [A, B, C, D], mode: 'date', movedId: 'D', targetKey: '2026-11-13', index: 0, trip: TRIP });
-ok(by(r, 'D').date === '2026-11-13' && by(r, 'D').day === 2 && by(r, 'D').order === 1 && by(r, 'C').order === 2, 'out of "No date set" into a date: it gets that date, day and stop');
+ok(by(r, 'D').date === '2026-11-13' && by(r, 'D').order === 1 && by(r, 'C').order === 2, 'out of "No date set" into a date: it gets that date and stop 1');
 ok(R.planMove({ members: [A, B, C, D], mode: 'date', movedId: 'D', targetKey: 'none', index: 0, trip: TRIP }) === null, 'within "No date set" nothing changes');
 
-// ---------- day mode
+// ---------- lists with days only (old markers) are not reordered: a day can no longer be typed in
 const X = it('X', { day: 1, order: 1 }), Y = it('Y', { day: 2, order: 1 }), Z = it('Z', { day: 2, order: 2 });
-r = R.planMove({ members: [X, Y, Z], mode: 'day', movedId: 'X', targetKey: 2, index: 1, trip: null });
-ok(by(r, 'X').day === 2 && by(r, 'X').order === 2 && !by(r, 'Y') && by(r, 'Z').order === 3 && !('date' in by(r, 'X')), 'day mode: X to day 2 between Y and Z: day 2, stop 2; Y stays stop 1, Z becomes 3; no date invented');
-const XD = it('XD', { day: 1, order: 1, date: '2026-11-12' }), YD = it('YD', { day: 2, order: 1, date: '2026-11-13' });
-r = R.planMove({ members: [XD, YD], mode: 'day', movedId: 'XD', targetKey: 2, index: 0, trip: TRIP });
-ok(by(r, 'XD').day === 2 && by(r, 'XD').date === '2026-11-13' && by(r, 'XD').order === 1 && by(r, 'YD').order === 2, 'day mode with dates: the date follows the day (day 2 is 13 Nov)');
-r = R.planMove({ members: [XD, YD], mode: 'day', movedId: 'XD', targetKey: 3, index: 0, trip: TRIP });
-ok(by(r, 'XD').day === 3 && by(r, 'XD').date === '2026-11-14', 'day mode: an empty day 3 of the trip is 14 Nov');
-const HD = it('HD', { type: 'hotel', day: 1, order: 1, date: '2026-11-12', endDate: '2026-11-14' });
-r = R.planMove({ members: [HD, YD], mode: 'day', movedId: 'HD', targetKey: 2, index: 0, trip: TRIP });
-ok(by(r, 'HD').date === '2026-11-13' && by(r, 'HD').endDate === '2026-11-14', 'day mode: a hotel moved to day 2 starts 13 Nov and ends on the next trip day');
+ok(R.planMove({ members: [X, Y, Z], mode: 'day', movedId: 'X', targetKey: 2, index: 1, trip: null }) === null, 'a day-only list cannot be reordered');
 ok(R.planMove({ members: [X, Y, Z], mode: 'plain', movedId: 'X', targetKey: 2, index: 0 }) === null, 'plain lists cannot be reordered');
 ok(R.planMove({ members: [X], mode: 'day', movedId: 'nope', targetKey: 2, index: 0 }) === null, 'an unknown marker gives nothing');
 

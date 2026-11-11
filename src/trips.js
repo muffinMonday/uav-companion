@@ -1,12 +1,13 @@
 // Helpers for trips: wording, length, ordering and a date check. Pure functions; storage is in poi.js.
 import { dateLabel } from './poi.js';
 import { countryName } from './countries.js';
+import { daysBetween } from './dates.js';
 
-const ms = (iso) => { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+export { daysBetween };
 
 /** Whole days from start to end, both counted (12 to 14 Nov is 3 days). null unless the trip has both dates. */
 export function tripLength(t) {
-  return t.startDate && t.endDate ? Math.round((ms(t.endDate) - ms(t.startDate)) / 86400000) + 1 : null;
+  return t.startDate && t.endDate ? daysBetween(t.startDate, t.endDate) + 1 : null;
 }
 
 /** "Thu, Nov 12 – Sat, Nov 14", "Thu, Nov 12", or '' for a trip with no dates. */
@@ -44,8 +45,6 @@ export function sortTrips(trips) {
 export function todayISO(now = new Date()) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
-/** Whole days from date a to date b (negative if b is earlier). */
-export const daysBetween = (a, b) => Math.round((ms(b) - ms(a)) / 86400000);
 
 /**
  * Where a trip stands relative to `today`: { state: 'upcoming', days } before it starts, { state: 'now', day, of } while it runs
@@ -69,3 +68,28 @@ export function countdownLabel(status) {
   if (status.state === 'upcoming') return status.days === 1 ? 'Tomorrow' : `${status.days} days to go`;
   return status.of === 1 ? 'Today' : `Day ${status.day} of ${status.of}`;
 }
+
+// ---------- the day of a marker within its trip ----------
+// Day 1 is the trip's start date, so a marker's day is worked out from its date and nothing is typed in. Only a marker with no date (an old
+// one that kept a day number) still shows its stored day.
+
+/**
+ * The day (or days, for a stay of several nights) a marker falls on: { day, last, derived } or null.
+ * derived is false for the stored day of an old marker that has no date. A date before the trip starts or after it ends has no day.
+ */
+export function dayInfo(item, trip) {
+  if (item.date && trip?.startDate) {
+    if (item.date < trip.startDate || (trip.endDate && item.date > trip.endDate)) return null;
+    const day = daysBetween(trip.startDate, item.date) + 1;
+    let last = day;
+    if (item.endDate) {
+      const cap = trip.endDate ? daysBetween(trip.startDate, trip.endDate) + 1 : Infinity;
+      last = Math.max(day, Math.min(daysBetween(trip.startDate, item.endDate) + 1, cap));
+    }
+    return { day, last, derived: true };
+  }
+  if (item.day !== undefined) return { day: item.day, last: item.day, derived: false };
+  return null;
+}
+/** "Day 2", "Day 1–3" or ''. */
+export const dayText = (info) => (info ? (info.last > info.day ? `Day ${info.day}–${info.last}` : `Day ${info.day}`) : '');

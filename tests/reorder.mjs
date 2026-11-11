@@ -30,7 +30,7 @@ async function session({ items = seed, tripsData = trips, viewport = { width: 12
   return { ctx, p };
 }
 const stored = (p) => p.evaluate(() => Object.fromEntries(JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.map((i) => [i.id, i])));
-const f = (it) => `${it.date ?? '-'}|${it.endDate ?? '-'}|${it.day ?? '-'}|${it.order ?? '-'}`;
+const f = (it) => `${it.date ?? '-'}|${it.endDate ?? '-'}|${it.order ?? '-'}`; // the day is not stored: it follows from the date
 const rect = (p, id) => p.evaluate((i) => { const li = document.querySelector(`#poi-list li[data-id="${i}"]`); li.scrollIntoView({ block: 'center' }); const r = li.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, top: r.top, bottom: r.bottom, h: r.height }; }, id);
 const headRect = (p, key) => p.evaluate((k) => { const h = document.querySelector(`#poi-list li.day-head[data-gkey="${k}"]`); h.scrollIntoView({ block: 'center' }); const r = h.getBoundingClientRect(); return { y: r.y + r.height / 2, top: r.top, bottom: r.bottom }; }, key);
 const toastText = (p) => p.evaluate(() => { const t = document.getElementById('toast'); return t.hidden ? '' : t.textContent; });
@@ -75,7 +75,7 @@ await dragTo(p, rD.top + 2);
 ok((await p.locator('li.drop-line').count()) === 1, 'a line shows where it would land');
 await drop(p);
 let now = await stored(p);
-ok(f(now.B) === '2026-11-13|-|2|2' && f(now.C) === '2026-11-13|-|2|1' && f(now.D) === '2026-11-13|-|2|3', 'dropped between Charlie and Delta: Bravo is 13 Nov, day 2, stop 2; Delta moves to stop 3: ' + f(now.B) + ' / ' + f(now.D));
+ok(f(now.B) === '2026-11-13|-|2' && f(now.C) === '2026-11-13|-|1' && f(now.D) === '2026-11-13|-|3', 'dropped between Charlie and Delta: Bravo is 13 Nov, stop 2; Delta moves to stop 3: ' + f(now.B) + ' / ' + f(now.D));
 ok(f(now.H) === f(original.H) && f(now.A) === f(original.A), 'the markers of the day it left keep their stops');
 ok((await p.locator('.leaflet-popup').count()) === 0, 'the release did not count as a click on the row');
 let tt = await toastText(p);
@@ -92,7 +92,7 @@ rD = await rect(p, 'C');
 await dragTo(p, rD.top + 2);
 await drop(p);
 now = await stored(p);
-ok(f(now.H) === '2026-11-13|2026-11-14|2|1' && f(now.C) === '2026-11-13|-|2|2', 'the hotel dropped on 13 Nov starts then and ends on the next day (14 Nov), day 2, stop 1');
+ok(f(now.H) === '2026-11-13|2026-11-14|1' && f(now.C) === '2026-11-13|-|2', 'the hotel dropped on 13 Nov starts then and ends on the next day (14 Nov), stop 1');
 await p.click('#toast .toast-action'); await p.waitForTimeout(500);
 
 // ---- drag Alpha onto the empty 14 Nov
@@ -101,7 +101,7 @@ const h14 = await headRect(p, '2026-11-14');
 await dragTo(p, h14.bottom + 1);
 await drop(p);
 now = await stored(p);
-ok(f(now.A) === '2026-11-14|-|3|1', 'dropped on the empty 14 Nov: date 14 Nov, day 3 (from the trip start), stop 1: ' + f(now.A));
+ok(f(now.A) === '2026-11-14|-|1', 'dropped on the empty 14 Nov: date 14 Nov, stop 1: ' + f(now.A));
 await p.click('#toast .toast-action'); await p.waitForTimeout(500);
 
 // ---- the hotel on the trip's last day: start = end
@@ -109,7 +109,7 @@ await hold(p, 'H');
 await dragTo(p, (await headRect(p, '2026-11-14')).bottom + 1);
 await drop(p);
 now = await stored(p);
-ok(f(now.H) === '2026-11-14|-|3|1', 'the hotel dropped on the last day of the trip: start and end are both 14 Nov (stored as that one date): ' + f(now.H));
+ok(f(now.H) === '2026-11-14|-|1', 'the hotel dropped on the last day of the trip: start and end are both 14 Nov (stored as that one date): ' + f(now.H));
 await p.click('#toast .toast-action'); await p.waitForTimeout(500);
 
 // ---- a row cannot be dropped in another group
@@ -129,7 +129,7 @@ ok(now.A.order === 3 && now.B.order === 2, 'Alt + Down moves Alpha one place dow
 ok(await p.evaluate(() => document.activeElement?.closest('li')?.dataset.id) === 'A', 'and keeps the focus on it');
 await p.keyboard.press('Alt+ArrowDown'); await p.waitForTimeout(500);
 now = await stored(p);
-ok(f(now.A) === '2026-11-13|-|2|1', 'Alt + Down from the last of a day moves it to the top of the next day (13 Nov, day 2, stop 1): ' + f(now.A));
+ok(f(now.A) === '2026-11-13|-|1', 'Alt + Down from the last of a day moves it to the top of the next day (13 Nov, stop 1): ' + f(now.A));
 await p.keyboard.press('Alt+ArrowUp'); await p.waitForTimeout(500);
 now = await stored(p);
 ok(f(now.A).startsWith('2026-11-12') && now.A.order === 3, 'Alt + Up takes it back to the end of 12 Nov');
@@ -161,7 +161,7 @@ const rdd = await rect(p, 'D');
 await touch('touchMove', rb.x, (rb.y + rdd.top) / 2); await touch('touchMove', rb.x, rdd.top + 2); await p.waitForTimeout(250);
 await touch('touchEnd'); await p.waitForTimeout(700);
 now = await stored(p);
-ok(f(now.B) === '2026-11-13|-|2|2' && f(now.D) === '2026-11-13|-|2|3', 'phone: dragging by touch moves Bravo between Charlie and Delta: ' + f(now.B));
+ok(f(now.B) === '2026-11-13|-|2' && f(now.D) === '2026-11-13|-|3', 'phone: dragging by touch moves Bravo between Charlie and Delta: ' + f(now.B));
 await p.screenshot({ path: `${SP}/reorder-phone.png` });
 await ctx.close();
 

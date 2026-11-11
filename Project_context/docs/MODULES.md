@@ -20,7 +20,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `poi.js` (pure) | Marker and trip model: types, sanitize, store, list sorting, GeoJSON export/import | `createStore` (incl. `removeMany`/`restore` for bulk delete and Undo, `setMany` for reorder and Undo), `TYPES`, `sanitize`, `sanitizeTrip`, `tripFields`, `toGeoJSON`, `parseGeoJSON`, `sortForList` | countries |
 | `poi-ui.js` | Marker UI: place/edit/drag, list with trip groups and filter, select-and-delete mode, marker window, import/export | `initPOI` returns store, showTrip, fitTrip, get/setCurrentTrip, setNewTripHandler, tagMarker, handleMapClick, items, addMany, fitToItems | poi, distance, trips, cards, weather, elevation |
 | `distance.js` (pure) | Nearest Home point/Hotel (own trip, date overlap) and nearest Home | `nearestBases`, `needsDistance`, `lineApplies`, `inSameTrip`, `beyondRange`, `BASE_TYPES` | none |
-| `trips.js` (pure) | Trip length, labels, "outside trip dates" check, sort | `tripLength`, `tripSummary`, `outsideTrip`, `sortTrips`, `todayISO`, `tripStatus`, `comingTrips`, `countdownLabel` | poi, countries |
+| `trips.js` (pure) | Trip length, labels, "outside trip dates" check, sort | `tripLength`, `tripSummary`, `outsideTrip`, `sortTrips`, `todayISO`, `tripStatus`, `comingTrips`, `countdownLabel`, `dayInfo`, `dayText` | poi, countries |
 | `trips-ui.js` | Trips tab: list, form, delete, current trip | `initTripsUI` | poi, trips, countries, cards |
 | `countries.js` (pure) | ISO country list, code/name/alias resolution | `COUNTRIES`, `countryCode`, `countryName` | none |
 | `aiimport.js` (pure apart from geocode) | Lenient parse of AI text, sanitize, geocode, share-link encode/decode | `parseItinerary`, `isDuplicate`, `isRevisit`, `geocode`, `encodeShare`, `decodeShare` | poi |
@@ -36,6 +36,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `maplinks.js` | Google Maps / Amap links for a place, directions-here and routes (limits, parts) (pure) | `appsFor`, `placeUrl`, `hereUrl`, `routeUrls`, `chunk`, `MODES` | coords |
 | `maplinks-ui.js` | The buttons: `mapLinksBlock` (marker and check windows), `routeLinks` (Route block); Home asks first | as listed | maplinks |
 | `coordparse.js` | Reads coordinates and pasted map links from text: formats, hemispheres, DMS, longitude-first, China two-reading rows (pure) | `parseCoordinates` | coords |
+| `dates.js` | `addDays`, `daysBetween` on ISO dates (pure) | as listed | none |
 | `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
 | `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
 

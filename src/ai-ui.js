@@ -1,5 +1,6 @@
 // "Plan with an AI": copy a prompt for any assistant, paste its answer (or open a share link), preview, then add.
 // Nothing is added until the preview is confirmed. See aiimport.js for what is accepted and public/ai/ for the spec.
+import { addDays } from './dates.js';
 import { parseItinerary, isDuplicate, isRevisit, geocode, pause, encodeShare, decodeShare, MAX_LOOKUPS } from './aiimport.js';
 import { typeOf, toGeoJSON, dateLabel } from './poi.js';
 import { tripDatesLabel } from './trips.js';
@@ -16,6 +17,12 @@ export function initAI({ map, toast, panel, poi }) {
   let meta = null;          // what the preview was parsed from (skipped count, notes, trips), to redraw it
   let controller = null;    // aborts a running name lookup
   let tripChoice = 'none';  // 'file' (the trip(s) in the reply) | 'none' | 't:<id>' (one of your trips)
+  const tripDates = new Map(); // trip ref -> { start, end } typed in the preview for a reply's trip that came without dates
+  // A trip needs a start and an end date. The reply's own, or the ones typed in the preview.
+  const mergedDates = (t) => { const d = tripDates.get(t.ref) ?? {}; return { startDate: t.startDate || d.start || '', endDate: t.endDate || d.end || '' }; };
+  const datesOk = (t) => { const m = mergedDates(t); return !!m.startDate && !!m.endDate && m.endDate >= m.startDate; };
+  /** The reply's trips that places are about to be put in but that still have no usable dates. */
+  const needDates = () => (tripChoice === 'file' ? (meta?.trips ?? []).filter((t) => rows.some((r) => r.include && r.type !== 'residence' && r.tripRef === t.ref) && !datesOk(t)) : []);
 
   // ---------- the prompt ----------
   $('ai-copy').addEventListener('click', async () => {
@@ -65,9 +72,26 @@ export function initAI({ map, toast, panel, poi }) {
       for (const t of poi.store.trips()) add(`t:${t.id}`, `Your trip: ${t.name}`);
       if (![...sel.options].some((o) => o.value === tripChoice)) tripChoice = meta.trips.length ? 'file' : 'none';
       sel.value = tripChoice;
-      sel.addEventListener('change', () => { tripChoice = sel.value; });
+      sel.addEventListener('change', () => { tripChoice = sel.value; render(); });
       const lab = el('label', 'field'); lab.append(el('span', '', 'Put these places in'), sel);
       box.append(lab);
+      // a reply's trip without dates cannot be created as it is: ask for them here
+      if (tripChoice === 'file') {
+        for (const t of meta.trips) {
+          if ((t.startDate && t.endDate) || !rows.some((r) => r.type !== 'residence' && r.tripRef === t.ref)) continue;
+          const d = tripDates.get(t.ref) ?? {};
+          const wrap = el('div', 'ai-trip-dates');
+          wrap.append(el('p', 'hint', `“${t.name}” came without dates. A trip needs a start and an end date (the same for one day), or choose “No trip”:`));
+          const s = el('input'); s.type = 'date'; s.value = t.startDate || d.start || ''; s.disabled = !!t.startDate; s.setAttribute('aria-label', `Start date of ${t.name}`);
+          const e = el('input'); e.type = 'date'; e.value = t.endDate || d.end || ''; e.disabled = !!t.endDate; e.setAttribute('aria-label', `End date of ${t.name}`);
+          const keep = () => tripDates.set(t.ref, { start: s.value, end: e.value });
+          s.addEventListener('input', keep); e.addEventListener('input', keep);
+          const two = el('div', 'two');
+          const l1 = el('label', 'field'); l1.append(el('span', '', 'Start date'), s);
+          const l2 = el('label', 'field'); l2.append(el('span', '', 'End date'), e);
+          two.append(l1, l2); wrap.append(two); box.append(wrap);
+        }
+      }
     }
 
     const list = el('ul', 'prev-list');
@@ -102,7 +126,7 @@ export function initAI({ map, toast, panel, poi }) {
     refreshCount();
   }
 
-  function clearPreview() { rows = []; meta = null; box.replaceChildren(); box.hidden = true; }
+  function clearPreview() { rows = []; meta = null; tripDates.clear(); box.replaceChildren(); box.hidden = true; }
 
   // turning name lookup on or off while a preview is open changes which places can be added
   onPrivacyChange(() => { if (rows.length && !controller) { rows.forEach((r) => { r.include = true; }); render(); } });
@@ -128,6 +152,8 @@ export function initAI({ map, toast, panel, poi }) {
   async function addSelected(addBtn, cancelBtn) {
     const chosen = rows.filter((r) => r.include);
     if (!chosen.length) return;
+    const need = needDates();
+    if (need.length) { toast(`Give the trip “${need[0].name}” a start and an end date first, or choose “No trip”.`, 7000); return; }
     addBtn.disabled = true;
     controller = new AbortController();
     const found = [], failed = [];
@@ -161,14 +187,21 @@ export function initAI({ map, toast, panel, poi }) {
       if (!r.tripRef) return undefined;
       if (!tripIdByRef.has(r.tripRef)) {
         const def = meta.trips.find((t) => t.ref === r.tripRef);
-        const res = def ? poi.store.ensureTrip(def) : null;
+        const res = def ? poi.store.ensureTrip({ ...def, ...mergedDates(def) }) : null;
         if (res?.created) createdTrips++;
         tripIdByRef.set(r.tripRef, res?.trip?.id);
       }
       return tripIdByRef.get(r.tripRef);
     };
 
-    const { added, stored } = poi.addMany(fresh.map((r) => ({ type: r.type, name: r.name, note: r.note, day: r.day ?? undefined, order: r.order ?? undefined, date: r.date ?? undefined, endDate: r.endDate ?? undefined, lat: r.lat, lon: r.lon, unverified: r.unverified, tripId: tripFor(r) })));
+    const { added, stored } = poi.addMany(fresh.map((r) => {
+      const tripId = tripFor(r);
+      const trip = tripId ? poi.store.getTrip(tripId) : null;
+      // a day number becomes a date in a trip with dates (day 1 is the start date); the day itself is then worked out from the date
+      let date = r.date ?? undefined, day = r.day ?? undefined;
+      if (trip?.startDate) { if (!date && day) date = addDays(trip.startDate, day - 1); day = undefined; }
+      return { type: r.type, name: r.name, note: r.note, day, order: r.order ?? undefined, date, endDate: r.endDate ?? undefined, lat: r.lat, lon: r.lon, unverified: r.unverified, tripId };
+    }));
     const unv = added.filter((a) => a.unverified).length;
     toast(`Added ${added.length} marker${added.length === 1 ? '' : 's'}${createdTrips ? ` and ${createdTrips} trip${createdTrips === 1 ? '' : 's'}` : ''}${unv ? `, ${unv} unverified: check ${unv === 1 ? 'it' : 'them'} on the map` : ''}.`
       + `${failed.length ? ` Not found: ${failed.slice(0, 5).join(', ')}${failed.length > 5 ? '…' : ''}.` : ''}`

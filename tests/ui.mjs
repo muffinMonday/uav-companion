@@ -47,11 +47,11 @@ ok(struct.scroll === 'thin', 'scroll bars are thin');
 // ================= modern controls
 await p.click('#poi-list .poi-item:has-text("Plain spot")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(500);
 await p.click('.poi-pop .btn:has-text("Edit")'); await p.waitForSelector('.poi-pop form'); await p.waitForTimeout(200);
-ok((await p.locator('.poi-pop .num-field').count()) === 2 && (await p.locator('.poi-pop .num-field .ctl-btn').count()) === 4, 'Day and Stop get − and + buttons');
+ok((await p.locator('.poi-pop .num-field').count()) === 1 && (await p.locator('.poi-pop .num-field .ctl-btn').count()) === 2, 'Stop gets − and + buttons (there is no Day box: the day follows from the date)');
 ok((await p.locator('.poi-pop .date-field').count()) === 2, 'both dates are wrapped in the modern date field');
 const day = p.locator('.poi-pop .num-field input').first();
 await p.locator('.poi-pop .num-field .inc').first().click();
-ok((await day.inputValue()) === '1', '+ on an empty Day starts at its minimum (1)');
+ok((await day.inputValue()) === '1', '+ on an empty Stop starts at its minimum (1)');
 await p.locator('.poi-pop .num-field .inc').first().click();
 ok((await day.inputValue()) === '2', '+ again makes it 2');
 await p.locator('.poi-pop .num-field .dec').first().click();
@@ -70,8 +70,8 @@ ok((await startDate.inputValue()) === '' && (await endDate.isDisabled()), 'clear
 await startDate.fill('2026-11-21');
 await p.click('.poi-pop form button[type=submit]'); await p.waitForTimeout(400);
 const saved = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.find((i) => i.id === 'c'));
-ok(saved.day === 7 && saved.date === '2026-11-21', 'values set through the new controls are saved (Day 7, 21 Nov)');
-ok((await p.locator('.poi-pin .seq').filter({ hasText: 'D7' }).count()) === 1, 'the pin of the edited marker shows its new day label straight away');
+ok(saved.order === 7 && saved.date === '2026-11-21', 'values set through the new controls are saved (stop 7, 21 Nov)');
+ok((await p.locator('.poi-pin .seq').filter({ hasText: '#7' }).count()) === 1, 'the pin of the edited marker shows its new stop label straight away');
 await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 ok((await p.locator('#dist-card .num-field').count()) === 1, 'the max range field is a modern number field too');
 await p.locator('#dist-card .num-field .inc').click();
@@ -80,7 +80,7 @@ await p.fill('#dist-max', ''); await p.locator('#dist-max').blur(); await p.wait
 
 // ================= day and stop labels
 const seqs = await p.$$eval('.poi-pin .seq', (e) => e.map((x) => x.textContent).sort());
-ok(seqs.join() === ['#4', 'D1', 'D2·3', 'D7'].sort().join(), 'pins show D2·3 (day and stop), #4 (stop only), D1 (day only), and nothing for a marker with neither: ' + seqs);
+ok(seqs.join() === ['#4', 'D1', 'D2·3', '#7'].sort().join(), 'pins show D2·3 (day and stop), #4 (stop only), D1 (day only), and nothing for a marker with neither: ' + seqs);
 const rows = await p.$$eval('#poi-list .poi-item', (r) => Object.fromEntries(r.map((x) => [x.querySelector('b').textContent.replace(/\s*Unverified/, ''), x.querySelector('small').textContent])));
 ok(/Day 2 · Stop 3/.test(rows.Bridge) && /Stop 4/.test(rows['Lake Hotel']) && /Day 1/.test(rows.Early) && !/Day|Stop/.test(rows.Plain === undefined ? '' : rows.Plain), 'list rows (grouped by date) say "Day 2 · Stop 3", "Stop 4", "Day 1": ' + JSON.stringify(rows));
 await p.click('#poi-list .poi-item:has-text("Bridge")'); await p.waitForFunction(() => document.querySelector('.poi-pop h3')?.textContent === 'Bridge', null, { timeout: 8000 }); await p.waitForTimeout(400);

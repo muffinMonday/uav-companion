@@ -39,7 +39,8 @@ RULES
 4. properties.date, properties.endDate, properties.day and properties.order are all OPTIONAL. Never invent them.
    - date is the calendar date of the visit as "YYYY-MM-DD" with the year, for example "2026-11-12". Give it only when my itinerary states the full date including the year. Do not guess the year.
    - endDate is the last date of a stay of several days (for example a hotel check-out), also "YYYY-MM-DD", later than date. Use it only together with date.
-   - day is the itinerary day as a whole number (1 is the first day). order is the position within that day (1 is the first stop). Leave them out when the itinerary does not make them clear.
+   - order is the position within that day (1 is the first stop). Leave it out when the itinerary does not make it clear.
+   - day is the itinerary day as a whole number (1 is the first day). Give it ONLY when the itinerary has no calendar dates. When you give dates (trip startDate and a date for each place) leave day out: the app works the day out from the dates, and ignores a day that disagrees.
 
 5. properties.note is optional, at most 300 characters: facts from my itinerary such as check-in time, address, opening hours, or a reminder. Do not present guesses as facts.
 
@@ -54,7 +55,7 @@ RULES
 
 9. If the whole itinerary is ONE trip, also add a top-level "trip" object next to "features" (not inside a Feature):
    {"name": "short trip name", "country": "country name in English", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD", "description": "one or two sentences"}
-   Only "name" is required. startDate and endDate follow the same rules as date above (full date with the year, never guessed; endDate only together with startDate). Leave out whatever you do not know. The app puts every place of the reply in that trip, except a "residence", which never belongs to a trip.
+   "name" is required, and so are startDate and endDate whenever the itinerary gives dates (a one-day trip has the same date twice). They follow the same rules as date above: a full date with the year, never guessed. If the itinerary has no dates, leave them out and the app will ask the person for them. Leave out whatever you do not know. The app puts every place of the reply in that trip, except a "residence", which never belongs to a trip.
 
 EXAMPLE OF THE REPLY
 

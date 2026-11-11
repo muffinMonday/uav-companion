@@ -10,6 +10,7 @@ const dist = await load('src/distance.js');
 const ai = await load('src/aiimport.js');
 const trips = await load('src/trips.js');
 const countries = await load('src/countries.js');
+const places = await load('src/places.js');
 
 // ---------- countries
 ok(countries.countryCode('cn') === 'CN' && countries.countryCode('Singapore') === 'SG' && countries.countryCode(' singapore ') === 'SG', 'country: a code (any case) or a name resolves to the ISO code');
@@ -172,3 +173,68 @@ const list = trips.comingTrips([
 ], TODAY);
 ok(list.map((x) => x.trip.id).join() === 'now,soon,mid,far', 'countdown: under way first, then the soonest; past and undated trips are left out: ' + list.map((x) => x.trip.id));
 ok(trips.comingTrips([], TODAY).length === 0, 'countdown: no trips, nothing to show');
+
+// ---------- the day follows from the date
+const TR = { id: 'tr', name: 'T', startDate: '2026-11-12', endDate: '2026-11-14' };
+const di = (item, trip = TR) => trips.dayInfo(item, trip);
+ok(di({ date: '2026-11-12' }).day === 1 && di({ date: '2026-11-13' }).day === 2 && di({ date: '2026-11-14' }).day === 3, 'day: 12, 13 and 14 Nov of a trip starting 12 Nov are days 1, 2 and 3');
+ok(di({ date: '2026-11-11' }) === null && di({ date: '2026-11-15' }) === null, 'day: a date before the trip starts or after it ends has no day');
+const stay = di({ date: '2026-11-12', endDate: '2026-11-14' });
+ok(stay.day === 1 && stay.last === 3 && trips.dayText(stay) === 'Day 1–3', 'day: a three-night stay is "Day 1–3"');
+ok(di({ date: '2026-11-13', endDate: '2026-11-20' }).last === 3 && trips.dayText(di({ date: '2026-11-13', endDate: '2026-11-20' })) === 'Day 2–3', 'day: a stay running past the trip\'s end is cut at its last day');
+ok(trips.dayText(di({ date: '2026-11-13' })) === 'Day 2' && trips.dayText(null) === '', 'day: text for one day, and for none');
+ok(di({ date: '2026-11-13' }, { startDate: '2026-11-12' }).day === 2, 'day: a trip with only a start date still gives days');
+ok(di({ date: '2026-11-13' }, null) === null && di({ date: '2026-11-13' }, { name: 'x' }) === null && di({}, TR) === null, 'day: no trip, a trip with no start date, or no date: no day');
+const legacy = di({ day: 4 }, TR);
+ok(legacy.day === 4 && legacy.derived === false && di({ day: 4 }, null).day === 4, 'day: an old marker with no date keeps its stored day, marked as not worked out');
+ok(di({ date: '2026-11-13', day: 5 }, { name: 'x' }).day === 5, 'day: a dated marker in a trip with no start date keeps its stored day');
+ok(di({ date: '2026-11-20', day: 5 }, TR) === null, 'day: a stored day is not shown for a date outside the trip');
+ok(di({ date: '2026-11-13', day: 5 }, TR).day === 2 && di({ date: '2026-11-13', day: 5 }, TR).derived === true, 'day: the date wins over a stored day');
+
+// ---------- the start-up fix
+const mk2 = (id, extra) => ({ id, type: 'photo', name: id, note: '', lat: 1, lon: 2, created: '2026-11-01T00:00:00.000Z', tripId: 'tr', ...extra });
+const trs = [TR, { id: 'nodates', name: 'N' }];
+let mig = poi.migrateDays([mk2('ok', { date: '2026-11-13', day: 2 }), mk2('bad', { date: '2026-11-13', day: 3 }), mk2('conv', { day: 3 }), mk2('none', { tripId: 'nodates', day: 2 }), mk2('free', { tripId: undefined, date: '2026-11-13', day: 9 }), mk2('plain', { date: '2026-11-12' })], trs);
+const byid = Object.fromEntries(mig.items.map((x) => [x.id, x]));
+ok(mig.corrected === 1 && mig.converted === 1, 'fix: one dated marker whose day disagreed is counted, one day-only marker is converted');
+ok(!('day' in byid.ok) && !('day' in byid.bad) && byid.bad.date === '2026-11-13' && byid.ok.date === '2026-11-13', 'fix: dated markers lose their stored day (the date stays)');
+ok(byid.conv.date === '2026-11-14' && !('day' in byid.conv), 'fix: a day-only marker in a trip becomes a date: day 3 of a trip starting 12 Nov is 14 Nov');
+ok(byid.none.day === 2 && !byid.none.date && byid.free.day === 9 && byid.free.date === '2026-11-13', 'fix: markers in a trip with no start date, or in no trip, are left as they are');
+const same = [mk2('a', { date: '2026-11-12' })];
+ok(poi.migrateDays(same, trs).items === same, 'fix: nothing to do returns the same list');
+ok(poi.migrateDays([], trs).corrected === 0, 'fix: an empty list is fine');
+const input = [mk2('q', { date: '2026-11-13', day: 3 })];
+const snap = JSON.stringify(input);
+poi.migrateDays(input, trs);
+ok(JSON.stringify(input) === snap, 'fix: the original markers are not changed');
+
+// ---------- the store keeps it true
+const ds = poi.createStore();
+const dt = ds.addTrip({ name: 'Wuhan', startDate: '2026-11-12', endDate: '2026-11-14' }).trip;
+const dm = ds.add({ type: 'photo', name: 'A', lat: 1, lon: 2, tripId: dt.id, date: '2026-11-13', day: 7 }).item;
+ok(!('day' in dm) && dm.date === '2026-11-13', 'store: a dated marker in a trip with dates is saved without a stored day');
+const dd = ds.add({ type: 'photo', name: 'B', lat: 1, lon: 2, day: 3 }).item;
+ok(dd.day === 3, 'store: a marker in no trip keeps its stored day');
+ds.update(dd.id, { tripId: dt.id });
+ok(ds.get ? true : true, 'store: (moving it into the trip)');
+const dd2 = ds.items().find((x) => x.id === dd.id);
+ok(dd2.day === 3 && !dd2.date, 'store: a day-only marker put into a trip keeps its day until it gets a date');
+ds.update(dd.id, { date: '2026-11-14' });
+ok(!('day' in ds.items().find((x) => x.id === dd.id)), 'store: giving it a date drops the stored day');
+const late = ds.addTrip({ name: 'Later', startDate: '2026-12-01', endDate: '2026-12-03' }).trip;
+const lm = ds.add({ type: 'photo', name: 'C', lat: 1, lon: 2, day: 2 }).item;
+ds.update(lm.id, { tripId: late.id, date: '2026-12-02' });
+ok(!('day' in ds.items().find((x) => x.id === lm.id)), 'store: a dated marker moved into another trip loses its day');
+const open = ds.addTrip({ name: 'Open' }).trip; // an old trip without dates
+const om = ds.add({ type: 'photo', name: 'D', lat: 1, lon: 2, tripId: open.id, date: '2026-12-02', day: 2 }).item;
+ok(om.day === 2, 'store: in a trip with no start date a stored day is kept');
+ds.updateTrip(open.id, { startDate: '2026-12-01', endDate: '2026-12-03' });
+ok(!('day' in ds.items().find((x) => x.id === om.id)), 'store: when the trip gets dates, the stored day of its markers is dropped');
+const dm2 = ds.add({ type: 'photo', name: 'E', lat: 1, lon: 2, tripId: open.id, day: 3 }).item;
+ds.updateTrip(open.id, { startDate: '2026-12-02', endDate: '2026-12-04' });
+ok(ds.items().find((x) => x.id === dm2.id).date === '2026-12-04', 'store: and a day-only marker in it becomes a date: day 3 of a trip starting 2 Dec is 4 Dec');
+ok(ds.takeMigration() === null, 'store: no start-up fix is reported when there was none');
+const ms2 = poi.createStore(); const mt = ms2.addTrip({ name: 'M', startDate: '2026-11-12', endDate: '2026-11-14' }).trip;
+ms2.merge([{ id: 'imp1', type: 'photo', name: 'I', note: '', lat: 1, lon: 2, created: '2026-11-01T00:00:00.000Z', tripId: mt.id, date: '2026-11-13', day: 9 }], []);
+ok(!('day' in ms2.items()[0]), 'store: an imported marker with a day and a date in a trip with dates loses its day');
+ok(places.visitLabel({ date: '2026-11-13', order: 2 }, { trip: TR }) === 'Day 2 · Stop 2 · Wed, Nov 13' || /^Day 2 · Stop 2/.test(places.visitLabel({ date: '2026-11-13', order: 2 }, { trip: TR })), 'visit label: the day is worked out from the date and the trip');

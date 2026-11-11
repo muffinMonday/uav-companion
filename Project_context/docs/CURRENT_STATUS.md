@@ -20,6 +20,7 @@ Open-source, static map of drone suitable-flight zones (Hubei live data; Singapo
 - Reorder saved places by holding 2 s and dragging (F28), with date/day/stop/hotel-end recalculation, Undo and Alt+arrows. New `reorder-unit` and `reorder` suites. Gotcha: a touch drag must not re-render the touched row (the touch loses its target and the browser scrolls); drop-only dates are inserted in place.
 - Open in Google Maps/Amap + routes (F29): buttons in marker and check windows, Route block in Select mode, Amap first inside China, Home asks first. New `maplinks-unit` and `maplinks` suites; `coords.js`, China outline. The apps themselves are untested on a real phone.
 - Search by coordinates (F30): coordinate and map-link parsing, two rows inside China, blue pin + point-check window for every result, Add as marker and Remove pin in check windows. New `coordparse-unit` and `search` suites.
+- The day follows from the date and trips need dates (F31): `dayInfo`, one-time fix of stored days, no Day box, AI days become dates, required trip dates. New `days` suite; `trips-unit` extended.
 - Docs updated for trips (`PROJECT.md` F19, `AI.md`, `README.md`); this `Project_context/` set created; root `CLAUDE.md` points to `AGENTS.md`.
 - Initial commit `11aa7ce` pushed to `https://github.com/muffinMonday/uav-companion` (`main`, identity muffinMonday, repo-local git config).
 

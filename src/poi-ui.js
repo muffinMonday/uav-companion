@@ -10,6 +10,7 @@ import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, comp
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { visitGroups, visitLabel } from './places.js';
+import { dayInfo, dayText } from './trips.js';
 import { mapLinksBlock, routeLinks } from './maplinks-ui.js';
 import { MODES, MAX_STOPS } from './maplinks.js';
 import { planMove, stepSlot, groupKey, addDays } from './reorder.js';
@@ -29,9 +30,9 @@ const makeIcon = (type, tripColor, seq = '', visits = 0) => L.divIcon({
 });
 const fmt = (v) => v.toFixed(5);
 /** Short form for the pin: "D2·3", "D2" or "#3"; '' when the marker has neither a day nor a stop. */
-const seqBadge = (it) => (it.day !== undefined ? `D${it.day}${it.order !== undefined ? `·${it.order}` : ''}` : it.order !== undefined ? `#${it.order}` : '');
+const seqBadge = (it, trip) => { const d = dayInfo(it, trip)?.day; return d !== undefined ? `D${d}${it.order !== undefined ? `·${it.order}` : ''}` : it.order !== undefined ? `#${it.order}` : ''; };
 /** "Day 2 · Stop 3", or just one of them, or '' when the marker is not part of an itinerary. */
-const tripLabel = (it) => [it.day !== undefined && `Day ${it.day}`, it.order !== undefined && `Stop ${it.order}`].filter(Boolean).join(' · ');
+const tripLabel = (it, trip) => [dayText(dayInfo(it, trip)), it.order !== undefined && `Stop ${it.order}`].filter(Boolean).join(' · ');
 
 export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWeather, locateOnce, panel }) {
   const store = createStore();
@@ -140,7 +141,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const renderGroup = (group, mode, head, scope = 'none') => {
       if (head) listEl.append(head);
       // dragging is for dated or day-numbered lists only, with no type filter on, and not while selecting
-      const dragOk = !selecting && filter === 'all' && mode !== 'plain';
+      const dragOk = !selecting && filter === 'all' && mode === 'date';
       const heading = (label, key) => { const h = el('li', 'day-head', label); h.setAttribute('role', 'presentation'); h.dataset.scope = scope; h.dataset.gkey = String(key); return h; };
       let lastGroup = null;
       for (const it of sortForList(group, mode)) {
@@ -192,7 +193,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (!plan) return false;
     const res = store.setMany(plan.items);
     const m = plan.moved;
-    const where = targetKey === 'none' ? 'out of the itinerary' : `to ${[m.date && dateLabel({ date: m.date }), tripLabel(m)].filter(Boolean).join(' · ')}`;
+    const where = targetKey === 'none' ? 'out of the itinerary' : `to ${[m.date && dateLabel({ date: m.date }), tripLabel(m, tripOf(m))].filter(Boolean).join(' · ')}`;
     toast(`Moved “${m.name}” ${where}.${res.ok ? '' : ' The browser would not store it.'}`, 10000, { label: 'Undo', run: () => { store.setMany(res.previous); toast('Move undone.', 3000); } });
     return true;
   }
@@ -357,7 +358,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     b.innerHTML = pinSvg(it.type);
     const t = el('span', 't');
     const detail = it.note ? it.note.split('\n')[0] : `${fmt(it.lat)}, ${fmt(it.lon)}`;
-    const when = [gmode === 'day' ? (it.order !== undefined && `Stop ${it.order}`) : tripLabel(it), gmode === 'date' && it.endDate && dateLabel(it)].filter(Boolean).join(' · ');
+    const when = [gmode === 'day' ? (it.order !== undefined && `Stop ${it.order}`) : tripLabel(it, tripOf(it)), gmode === 'date' && it.endDate && dateLabel(it)].filter(Boolean).join(' · ');
     const name = el('b', '', it.name);
     if (it.unverified) name.append(' ', el('span', 'badge', 'Unverified'));
     if (it.tripId && outsideTrip(it, store.getTrip(it.tripId))) name.append(' ', el('span', 'badge', 'Outside trip dates'));
@@ -524,8 +525,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
 
   // ---------- markers ----------
-  const iconOf = (it) => makeIcon(it.type, tripColor(it), seqBadge(it), visitCount(it.id));
-  const sigOf = (it) => `${it.type}|${tripColor(it) ?? ''}|${seqBadge(it)}|${visitCount(it.id)}`;
+  const tripOf = (it) => (it.tripId ? store.getTrip(it.tripId) : null);
+  const iconOf = (it) => makeIcon(it.type, tripColor(it), seqBadge(it, tripOf(it)), visitCount(it.id));
+  const sigOf = (it) => `${it.type}|${tripColor(it) ?? ''}|${seqBadge(it, tripOf(it))}|${visitCount(it.id)}`;
   function addMarker(item) {
     const m = L.marker([item.lat, item.lon], { icon: iconOf(item), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
     m._sig = sigOf(item);
@@ -606,7 +608,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       badge.innerHTML = pinSvg(it.type); // built from constants only
       badge.firstChild.setAttribute('width', '26'); badge.firstChild.setAttribute('height', '35');
       const titles = el('div', 'pop-titles');
-      const trip = tripLabel(it);
+      const trip = tripLabel(it, store.getTrip(it.tripId));
       titles.append(el('div', 'pop-type', trip ? `${typeOf(it.type).label} · ${trip}` : typeOf(it.type).label), el('h3', '', it.name));
       const tripRec = it.tripId ? store.getTrip(it.tripId) : null;
       if (tripRec) {
@@ -625,7 +627,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         const strip = el('div', 'pop-visits');
         strip.append(el('span', 'pop-visits-label', `${visits.length} visits here`));
         for (const v of visits) {
-          const chip = el('button', 'chip visit-chip', visitLabel(v, { tripName: v.tripId && v.tripId !== it.tripId ? store.getTrip(v.tripId)?.name ?? '' : '' }));
+          const chip = el('button', 'chip visit-chip', visitLabel(v, { trip: store.getTrip(v.tripId), tripName: v.tripId && v.tripId !== it.tripId ? store.getTrip(v.tripId)?.name ?? '' : '' }));
           chip.type = 'button';
           if (v.id === id) chip.setAttribute('aria-current', 'true');
           else chip.addEventListener('click', () => setTimeout(() => openPopup(v.id), 0)); // after the click, so the old window going away is not seen as a map click
@@ -707,8 +709,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const type = el('select');
       for (const t of TYPES) { const o = el('option', '', t.label); o.value = t.id; o.selected = t.id === it.type; type.append(o); }
       const note = el('textarea'); note.maxLength = 500; note.value = it.note; note.rows = 3;
-      // Day and Order are for itineraries and entirely optional: leave them empty and the marker has neither.
-      const day = el('input'); day.type = 'number'; day.min = '1'; day.max = '999'; day.step = '1'; day.placeholder = 'optional'; day.value = it.day ?? '';
+      // The stop is optional. The day is not typed in: it follows from the date and the trip's start date.
       const order = el('input'); order.type = 'number'; order.min = '1'; order.max = '999'; order.step = '1'; order.placeholder = 'optional'; order.value = it.order ?? '';
       // Dates are optional too. The end date is for a stay of several days (a hotel), and only makes sense after a start date.
       const date = el('input'); date.type = 'date'; date.min = '2000-01-01'; date.max = '2100-12-31'; date.value = it.date ?? '';
@@ -718,7 +719,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       syncEnd();
       const lab = (text, input) => { const l = el('label', '', text); l.append(input); return l; };
       const when = el('div', 'two'); when.append(lab('Start date', date), lab('End date', endDate));
-      const trip = el('div', 'two'); trip.append(lab('Day', day), lab('Stop in the day', order));
+      const trip = el('div'); trip.append(lab('Stop in the day', order));
+      const dayLine = el('small', 'form-hint day-line');
 
       // Trip: which trip the marker belongs to. A Home marker (a residence) belongs to none, so the field goes away for that type.
       const tripPick = el('select');
@@ -745,21 +747,33 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         lastTrip = tripPick.value;
         showHint();
       });
-      date.addEventListener('input', showHint);
-      endDate.addEventListener('input', showHint);
+      // which day the date is, worked out from the trip (nothing to type)
+      const paintDay = () => {
+        const t = store.getTrip(tripPick.value), d = isoDate(date.value);
+        const info = d ? dayInfo({ date: d, endDate: isoDate(endDate.value) || undefined }, t) : null;
+        dayLine.textContent = tripLab.hidden || !t ? (it.day !== undefined && !d ? `Day ${it.day} (kept from before: give this marker a date and the day is worked out)` : '')
+          : !t.startDate ? 'Add dates to the trip to see day numbers.'
+          : !d ? 'Pick a date to see which day of the trip it is.'
+          : info ? `${dayText(info)} of the trip (worked out from the date)` : 'This date is outside the trip, so it has no day.';
+      };
+      tripPick.addEventListener('change', paintDay);
+      type.addEventListener('change', paintDay);
+      date.addEventListener('input', () => { showHint(); paintDay(); });
+      endDate.addEventListener('input', () => { showHint(); paintDay(); });
       syncTripField();
       showHint();
+      paintDay();
 
       const acts = el('div', 'acts');
       const save = el('button', 'btn small primary', 'Save'); save.type = 'submit';
       const cancel = el('button', 'btn small', 'Cancel'); cancel.type = 'button';
       cancel.addEventListener('click', () => setTimeout(view, 0)); // deferred for the same reason as Edit
       acts.append(save, cancel);
-      form.append(lab('Name', name), lab('Type', type), tripLab, when, trip, hint, el('small', 'form-hint', 'Trip, dates, day and stop are all optional. Use an end date for a stay of several days.'), lab('Note', note), acts);
+      form.append(lab('Name', name), lab('Type', type), tripLab, when, dayLine, trip, hint, el('small', 'form-hint', 'Trip, dates and stop are all optional. Use an end date for a stay of several days.'), lab('Note', note), acts);
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const res = store.update(id, {
-          name: name.value, type: type.value, note: note.value, day: posInt(day.value), order: posInt(order.value), date: isoDate(date.value), endDate: isoDate(endDate.value),
+          name: name.value, type: type.value, note: note.value, order: posInt(order.value), date: isoDate(date.value), endDate: isoDate(endDate.value),
           tripId: type.value === 'residence' ? null : (tripPick.value || null), // a Home marker is never in a trip
         });
         if (!res.item) { toast('Could not save that change.'); return; }

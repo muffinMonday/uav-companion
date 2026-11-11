@@ -57,7 +57,7 @@
             "note": { "type": "string", "maxLength": 500 },
             "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Calendar date of the visit, YYYY-MM-DD with the year. Optional: only when the itinerary states the full date." },
             "endDate": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Last date of a multi-day stay, YYYY-MM-DD, later than date. Optional, and only with date." },
-            "day": { "type": "integer", "minimum": 1, "maximum": 999, "description": "Itinerary day, 1 is the first day. Optional." },
+            "day": { "type": "integer", "minimum": 1, "maximum": 999, "description": "Itinerary day, 1 is the first day. Only for an itinerary with no calendar dates: when dates are given, leave this out (the app works the day out from the date and the trip start). Optional." },
             "order": { "type": "integer", "minimum": 1, "maximum": 999, "description": "Position within the day, 1 is the first stop. Optional." },
             "query": { "type": "string", "maxLength": 200, "description": "Searchable text for a place without coordinates: venue, address, city, country." }
           }

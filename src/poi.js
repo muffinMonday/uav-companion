@@ -1,6 +1,7 @@
 // Points of interest: types, icons, local storage and GeoJSON import/export. No map code here.
 // Stored only in this browser (localStorage). Nothing is ever sent anywhere.
 
+import { addDays, daysBetween } from './dates.js';
 import { countryCode } from './countries.js';
 
 export const KEY = 'uavzones.v1.pois';
@@ -131,6 +132,27 @@ export function sanitizeTrip(raw) {
 export const sameTrip = (a, b) => a.name.toLowerCase() === b.name.toLowerCase() && (a.country ?? '') === (b.country ?? '')
   && (a.startDate ?? '') === (b.startDate ?? '') && (a.endDate ?? '') === (b.endDate ?? '');
 
+/**
+ * Day numbers follow from dates (the trip's start date is day 1), so a stored day only matters for a marker that has no date.
+ * For markers in a trip with a start date: a stored day on a dated marker is dropped (the day is worked out), and a stored day on an
+ * undated marker becomes a date (start + day − 1). Returns { items, corrected, converted }: corrected counts dated markers whose stored
+ * day disagreed with their date, converted those whose day became a date. Markers it does not touch are returned as they are.
+ */
+export function migrateDays(items, trips) {
+  const byId = new Map(trips.map((t) => [t.id, t]));
+  let corrected = 0, converted = 0, changed = false;
+  const out = items.map((it) => {
+    const trip = it.tripId ? byId.get(it.tripId) : null;
+    if (!trip?.startDate || it.day === undefined) return it;
+    const { day, ...rest } = it;
+    changed = true;
+    if (it.date) { if (daysBetween(trip.startDate, it.date) + 1 !== day) corrected++; return rest; }
+    converted++;
+    return { ...rest, date: addDays(trip.startDate, day - 1) };
+  });
+  return { items: changed ? out : items, corrected, converted };
+}
+
 /** How the list is organised: by date when any marker has a date, else by day, else a plain newest-first list. */
 export function listMode(items) {
   if (items.some((i) => i.date !== undefined)) return 'date';
@@ -185,8 +207,23 @@ export function createStore() {
   let items = [];
   let trips = [];
   const listeners = new Set();
+  let migration = null; // what the start-up fix of day numbers changed, until it has been reported
 
   const withoutTrip = ({ tripId, ...rest }) => rest; // eslint-disable-line no-unused-vars
+  /** A dated marker in a trip with a start date has no stored day: it is worked out. */
+  const settle = (item) => {
+    const t = item.tripId ? trips.find((x) => x.id === item.tripId) : null;
+    if (item.day !== undefined && item.date && t?.startDate) delete item.day;
+    return item;
+  };
+  /** After a trip's dates change: its markers' stored days are fixed the same way as at start-up. */
+  const settleTrip = (tripId) => {
+    const mine = items.filter((i) => i.tripId === tripId);
+    const m = migrateDays(mine, trips);
+    if (m.items === mine) return;
+    const fixed = new Map(m.items.map((i) => [i.id, i]));
+    items = items.map((i) => fixed.get(i.id) ?? i);
+  };
   /** A marker can only point at a trip that exists. */
   const tripsExist = () => new Set(trips.map((t) => t.id));
   const dropDangling = () => { const ids = tripsExist(); items = items.map((i) => (i.tripId && !ids.has(i.tripId) ? withoutTrip(i) : i)); };
@@ -206,6 +243,9 @@ export function createStore() {
       if (data && Array.isArray(data.items)) items = data.items.map(sanitize).filter(Boolean);
     } catch { items = []; }
     dropDangling();
+    // days now follow from dates: fix the markers saved with a day typed in, and keep what was changed to report once
+    const m = migrateDays(items, trips);
+    if (m.items !== items) { items = m.items; migration = m.corrected || m.converted ? { corrected: m.corrected, converted: m.converted } : null; save(); }
   }
   function save() {
     if (!ls) return true; // memory only
@@ -231,6 +271,7 @@ export function createStore() {
       const item = sanitize({ ...partial, id: newId(), created: new Date().toISOString() });
       if (!item) return { ok: false };
       if (item.tripId && !tripsExist().has(item.tripId)) delete item.tripId;
+      settle(item);
       items.unshift(item);
       const ok = save(); emit();
       if (ok && ls && navigator.storage?.persist) navigator.storage.persist().catch(() => {}); // ask the browser not to evict it
@@ -242,6 +283,7 @@ export function createStore() {
       const next = sanitize({ ...items[i], ...patch, id });
       if (!next) return { ok: false };
       if (next.tripId && !tripsExist().has(next.tripId)) delete next.tripId;
+      settle(next);
       items[i] = next;
       const ok = save(); emit();
       return { ok, item: next };
@@ -261,6 +303,7 @@ export function createStore() {
         const clean = sanitize({ ...next, id: next.id });
         if (!clean) continue;
         if (clean.tripId && !tripsExist().has(clean.tripId)) delete clean.tripId;
+        settle(clean);
         previous.push(items[i]);
         items[i] = clean;
       }
@@ -306,7 +349,8 @@ export function createStore() {
       const next = sanitizeTrip({ ...trips[i], ...patch, id });
       if (!next) return { ok: false };
       trips[i] = next;
-      const ok = saveTrips(); emit();
+      settleTrip(id); // new dates can make stored day numbers redundant
+      const ok = saveTrips() && save(); emit();
       return { ok, trip: next };
     },
     /** Deletes a trip. Its markers are kept, just without the tag. Returns how many were untagged. */
@@ -337,12 +381,14 @@ export function createStore() {
       let added = 0, skipped = 0;
       for (const it of incoming) {
         if (have.has(it.id)) { skipped++; continue; }
-        items.push(it.tripId && !haveTrip.has(it.tripId) ? withoutTrip(it) : it); have.add(it.id); added++;
+        items.push(settle(it.tripId && !haveTrip.has(it.tripId) ? withoutTrip(it) : it)); have.add(it.id); added++;
       }
       items.sort((a, b) => b.created.localeCompare(a.created));
       const ok = save() && (addedTrips ? saveTrips() : true); emit();
       return { ok, added, skipped, addedTrips };
     },
+    /** What the start-up fix of day numbers changed ({ corrected, converted }), once; null if nothing, or already reported. */
+    takeMigration() { const m = migration; migration = null; return m; },
     lastBackup() { try { return ls?.getItem(BACKUP_KEY) || null; } catch { return null; } },
     markBackup() { try { ls?.setItem(BACKUP_KEY, new Date().toISOString()); } catch { /* ignore */ } },
   };

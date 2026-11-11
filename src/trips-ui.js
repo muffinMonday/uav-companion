@@ -37,6 +37,7 @@ export function initTripsUI({ poi, panel, toast }) {
       li.append(head);
       const summary = tripSummary(t);
       if (summary) li.append(el('div', 'trip-card-sub', summary));
+      if (!t.startDate || !t.endDate) li.append(el('div', 'trip-card-warn', 'No dates yet. Add them (Edit) to see day numbers and the countdown.'));
       if (t.description) li.append(el('p', 'trip-card-desc', t.description));
       li.append(el('div', 'trip-card-count', `${n} marker${n === 1 ? '' : 's'}`));
 
@@ -99,8 +100,9 @@ export function initTripsUI({ poi, panel, toast }) {
     const countryText = fCountry.value.trim();
     const country = countryText ? countryCode(countryText) : null;
     if (countryText && !country) { showError('Choose a country from the list, or leave the country empty.'); fCountry.focus(); return; }
-    if (fEnd.value && !fStart.value) { showError('Add a start date, or clear the end date.'); return; }
-    if (fEnd.value && fEnd.value < fStart.value) { showError('The end date cannot be before the start date.'); fEnd.focus(); return; }
+    if (!fStart.value) { showError('Add a start date: day numbers and the countdown depend on it.'); fStart.focus(); return; }
+    if (!fEnd.value) { showError('Add an end date (the same as the start date for a one-day trip).'); fEnd.focus(); return; }
+    if (fEnd.value < fStart.value) { showError('The end date cannot be before the start date.'); fEnd.focus(); return; }
     const fields = { name, country, startDate: fStart.value || null, endDate: fEnd.value || null, description: fDesc.value };
 
     if (editingId) {

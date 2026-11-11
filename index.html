@@ -115,8 +115,8 @@
           <label class="field"><span>Country <small>(optional)</small></span><input type="text" id="trip-country" list="country-list" autocomplete="off" placeholder="Start typing a country"></label>
           <datalist id="country-list"></datalist>
           <div class="two">
-            <label class="field"><span>Start date <small>(optional)</small></span><input type="date" id="trip-start" min="2000-01-01" max="2100-12-31"></label>
-            <label class="field"><span>End date <small>(optional)</small></span><input type="date" id="trip-end" max="2100-12-31"></label>
+            <label class="field"><span>Start date</span><input type="date" id="trip-start" required min="2000-01-01" max="2100-12-31"></label>
+            <label class="field"><span>End date <small>(same as the start for one day)</small></span><input type="date" id="trip-end" required max="2100-12-31"></label>
           </div>
           <p class="hint" id="trip-length"></p>
           <label class="field"><span>Description <small>(optional)</small></span><textarea id="trip-desc" rows="3" maxlength="500" placeholder="What is this trip for?"></textarea></label>
