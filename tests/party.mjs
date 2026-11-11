@@ -109,6 +109,12 @@ const bea = await open('b');
 await bea.p.evaluate(() => { document.querySelector('#dock button[data-tab=friends]')?.click() || document.getElementById('tab-friends').click(); }); await bea.p.waitForTimeout(900);
 ok(/Hubei spring/.test(await bea.p.textContent('#party-invites')) && /from Alex/.test(await bea.p.textContent('#party-invites')) && /2026-12-01/.test(await bea.p.textContent('#party-invites')), 'Bea sees the invitation in Friends, with the trip, the owner and the dates');
 ok(await bea.p.locator('#tab-friends .tab-badge:not([hidden])').textContent() === '1', 'the Friends tab carries a badge for it');
+// folded into a circle, the rail still shows that something is waiting
+await bea.p.click('#panel-close'); await bea.p.waitForSelector('#panel', { state: 'hidden' });
+await bea.p.click('#dock-fold'); await bea.p.waitForTimeout(400);
+ok(await bea.p.locator('#dock-circle .tab-badge').isVisible() && (await bea.p.locator('#dock-circle .tab-badge').textContent()) === '1', 'with the rail folded into one circle, the circle still carries the badge for the invitation');
+await bea.p.click('#dock-circle'); await bea.p.waitForTimeout(400);
+await bea.p.click('#dock button[data-tab=friends]'); await bea.p.waitForSelector('#panel:not([hidden])'); await bea.p.waitForTimeout(600);
 await bea.p.click('#party-invites >> text=Join'); await bea.p.waitForTimeout(1500);
 ok(!(await bea.p.locator('#party-invites').count()), 'joining clears the invitation');
 await goTrips(bea.p);

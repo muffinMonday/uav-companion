@@ -21,6 +21,7 @@
 
 <!-- the rail shown while the panel is collapsed: < brings the panel back, each icon opens it on that tab -->
 <div class="dock" id="dock" role="group" aria-label="Open panel" hidden>
+  <div class="dock-icons" id="dock-icons"><div class="dock-inner" id="dock-inner">
   <button type="button" id="dock-expand" aria-controls="panel" aria-expanded="false" aria-label="Expand the panel" title="Expand the panel">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
   </button>
@@ -35,6 +36,13 @@
   <button type="button" data-tab="poi" aria-controls="panel" aria-expanded="false" aria-label="Points of Interest" title="Points of Interest">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
     <span>Points of Interest</span>
+  </button>
+  <button type="button" id="dock-fold" aria-controls="dock-icons" aria-expanded="true" aria-label="Fold the icons away" title="Fold the icons away">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+  </button>
+  </div></div>
+  <button type="button" id="dock-circle" aria-controls="dock-icons" aria-expanded="false" aria-label="Show the panel buttons" title="Show the panel buttons" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></svg><span class="tab-badge" hidden></span>
   </button>
 </div>
 

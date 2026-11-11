@@ -822,3 +822,17 @@ input[type=email]:focus{border-color:var(--accent)}
 .party-versions>summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
 .party-version{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;font-size:12.5px}
 .party-line{color:var(--accent)}
+
+/* the rail folds up into one circle; swipe gestures */
+.dock-icons{display:grid;grid-template-rows:1fr;transition:grid-template-rows .22s var(--ease),opacity .2s var(--ease)}
+.dock-inner{display:flex;flex-direction:column;gap:2px;min-height:0;overflow:hidden}
+.dock.folded .dock-icons{grid-template-rows:0fr;opacity:0;visibility:hidden;transition:grid-template-rows .22s var(--ease),opacity .2s var(--ease),visibility 0s .22s}
+.dock.folded{min-height:48px}
+.dock{touch-action:none}
+#dock-circle{position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--accent);cursor:pointer}
+#dock-circle[hidden]{display:none}
+.dock.folded #dock-circle:hover,#dock-fold:hover{background:var(--accent-soft)}
+#dock-fold{border-top:1px solid var(--line);border-radius:8px 8px 50% 50%;height:34px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.dock-icons,.dock.folded .dock-icons{transition:none}}
+.sp-head,.sp-grab,.dash-head,.dash-peek{touch-action:pan-x}
+.sp-body,.dash-body{overscroll-behavior:contain}

@@ -5,6 +5,7 @@ const isPhone = () => window.matchMedia('(max-width: 520px)').matches;
 
 import { loadPrefs, savePrefs } from './prefs.js';
 import { animateOut } from './motion.js';
+import { onSwipe, atTop } from './swipe.js';
 
 export function initPanel() {
   const panel = $('panel'), dock = $('dock'), sub = $('privacy');
@@ -45,7 +46,7 @@ export function initPanel() {
     panel.hidden = !open;
     dock.hidden = open;
     if (!open) closePrivacy({ focus: false });
-    for (const b of dock.querySelectorAll('button')) b.setAttribute('aria-expanded', String(open));
+    for (const b of dock.querySelectorAll('#dock-expand, button[data-tab]')) b.setAttribute('aria-expanded', String(open));
     mark();
     if (open) openers.forEach((fn) => fn());
     changed();
@@ -65,11 +66,36 @@ export function initPanel() {
 
   /** Remembers a choice made by the visitor on a computer (a phone always starts with the panel out of the way). */
   const remember = (collapsed) => { if (!isPhone()) savePrefs({ panelCollapsed: collapsed || null }); };
-  function open(tab, { save = true } = {}) { selectTab(tab || current); setOpen(true); if (save) remember(false); }
-  function close() {
-    if (panel.hidden) { setOpen(false); return; }
-    animateOut(panel, 'closing', () => { setOpen(false); remember(true); $('dock-expand')?.focus(); }); // slides out to the right, then the rail comes back
+  // The rail folds up into one circle (a fold button, or a swipe up; the circle, or a swipe down, brings the icons back). Remembered.
+  const circle = $('dock-circle'), foldBtn = $('dock-fold'), icons = $('dock-icons');
+  const counts = new Map(); // badge counts per tab; the circle shows their sum so an invitation is never hidden
+  const showCircleBadge = () => { const n = [...counts.values()].reduce((a, b) => a + b, 0); const b = circle.querySelector('.tab-badge'); b.hidden = !n; b.textContent = n > 9 ? '9+' : String(n || ''); };
+  const isFolded = () => dock.classList.contains('folded');
+  function setFolded(on, { save = true, focus = true } = {}) {
+    dock.classList.toggle('folded', on);
+    icons.inert = on; circle.hidden = !on;
+    circle.setAttribute('aria-expanded', String(!on)); foldBtn.setAttribute('aria-expanded', String(!on));
+    if (save) savePrefs({ railFolded: on || null });
+    if (focus) (on ? circle : $('dock-expand')).focus();
   }
+  foldBtn.addEventListener('click', () => setFolded(true));
+  circle.addEventListener('click', () => setFolded(false));
+  onSwipe(dock, { direction: 'up', distance: 28, follow: icons, ignore: '[data-no-swipe]', enabled: () => !isFolded() && !dock.hidden, onDismiss: () => setFolded(true) });
+  onSwipe(dock, { direction: 'down', distance: 28, follow: circle, ignore: '[data-no-swipe]', enabled: () => isFolded() && !dock.hidden, onDismiss: () => setFolded(false) });
+  if (loadPrefs().railFolded) setFolded(true, { save: false, focus: false });
+
+  function open(tab, { save = true } = {}) { selectTab(tab || current); setOpen(true); if (save) remember(false); }
+  function close({ instant = false } = {}) {
+    if (panel.hidden) { setOpen(false); return; }
+    const done = () => { setOpen(false); remember(true); (isFolded() ? circle : $('dock-expand'))?.focus(); };
+    if (instant) done(); else animateOut(panel, 'closing', done); // slides out to the right, then the rail comes back (a swipe has already slid it away)
+  }
+
+  // Swipe to dismiss: the phone's bottom sheet goes down; on a computer or tablet the panel goes to the right, the way it leaves. A swipe starts in the header or handle,
+  // or in the body once it is scrolled to the top.
+  const inHeader = (t) => !!t.closest('.sp-head, .sp-grab');
+  onSwipe(panel, { direction: 'down', enabled: () => isPhone() && !panel.hidden, canStart: (t) => inHeader(t) || atTop(t, panel), onDismiss: () => close({ instant: true }) });
+  onSwipe(panel, { direction: 'right', enabled: () => !isPhone() && !panel.hidden, onDismiss: () => close({ instant: true }) });
 
   function wireTab(t) {
     t.addEventListener('click', () => selectTab(t.dataset.tab));
@@ -81,7 +107,7 @@ export function initPanel() {
     });
   }
   for (const t of tabs) wireTab(t);
-  for (const b of dock.querySelectorAll('button')) b.addEventListener('click', () => open(b.dataset.tab));
+  for (const b of dock.querySelectorAll('#dock-expand, button[data-tab]')) b.addEventListener('click', () => open(b.dataset.tab));
 
   /** Adds a tab after start-up: { key, label, icon (svg markup built from constants), pane (the tab's content element) }. Returns { badge(n) } to show a count on its tab and rail icon. */
   function addTab({ key, label, icon, pane }) {
@@ -100,8 +126,8 @@ export function initPanel() {
     d.innerHTML = svg + '<span></span><span class="tab-badge" hidden></span>';
     d.querySelector('span').textContent = label;
     d.addEventListener('click', () => open(key));
-    dock.append(d);
-    return { badge(n) { for (const b of [t.querySelector('.tab-badge'), d.querySelector('.tab-badge')]) { b.hidden = !n; b.textContent = n > 9 ? '9+' : String(n || ''); } } };
+    $('dock-fold').before(d);
+    return { badge(n) { for (const b of [t.querySelector('.tab-badge'), d.querySelector('.tab-badge')]) { b.hidden = !n; b.textContent = n > 9 ? '9+' : String(n || ''); } counts.set(key, n || 0); showCircleBadge(); } };
   }
   $('panel-close').addEventListener('click', close);
   $('privacy-close').addEventListener('click', close); // the sub-panel covers the main header, so it needs its own

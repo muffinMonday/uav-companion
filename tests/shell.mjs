@@ -60,7 +60,7 @@ await p.click('#tab-trips'); await p.waitForTimeout(150);
 await p.click('#panel-close'); await p.waitForSelector('#panel', { state: 'hidden' });
 const rail = await box(p, '#dock');
 ok(await p.isVisible('#dock') && rail.r > 1300 - 20 && rail.w < 70, 'it slides away and leaves a slim rail on the right edge (' + Math.round(rail.w) + ' px wide)');
-ok((await p.locator('#dock button').count()) === 5 && (await p.getAttribute('#dock-expand', 'aria-label')) === 'Expand the panel', 'the rail has the < button and one icon per tab');
+ok((await p.locator('#dock button[data-tab]').count()) === 4 && (await p.locator('#dock-fold').count()) === 1 && (await p.locator('#dock-circle').count()) === 1 && (await p.getAttribute('#dock-expand', 'aria-label')) === 'Expand the panel', 'the rail has the < button and one icon per tab');
 ok(await p.evaluate(() => document.activeElement.id === 'dock-expand'), 'focus moves to the < button, so the keyboard user can bring the panel back');
 ok(await p.evaluate(() => document.body.dataset.panel) === 'closed', 'the page knows the panel is collapsed');
 await p.click('#dock-expand'); await p.waitForSelector('#panel', { state: 'visible' });

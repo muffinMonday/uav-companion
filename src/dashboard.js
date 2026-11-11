@@ -6,6 +6,7 @@ import { WHATS_NEW } from './whatsnew.js';
 import { load, save, unseenEntries, startState, backupDue, storageUse, sizeLabel } from './dashstate.js';
 import { animateOut } from './motion.js';
 import { loadPrefs, savePrefs } from './prefs.js';
+import { onSwipe, atTop } from './swipe.js';
 import { routeLinks } from './maplinks-ui.js';
 import { MODES, MAX_STOPS } from './maplinks.js';
 import { typeOf } from './poi.js';
@@ -343,7 +344,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
   const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(lift) : null;
   ro?.observe(dash);
 
-  function setState(next, { guide = false } = {}) {
+  function setState(next, { guide = false, instant = false } = {}) {
     const leaving = state === 'expanded' && next !== 'expanded';
     if (leaving && fresh.length) { save({ seen: fresh[0].id }); fresh = []; } // seen once they have been on screen and put away
     state = next;
@@ -364,9 +365,12 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
       lift();
       poi.checkin.sync();
     };
-    if (leaving) animateOut(dash, 'closing', apply); else apply(); // slides down, then the strip or the tab appears
+    if (leaving && !instant) animateOut(dash, 'closing', apply); else apply(); // slides down, then the strip or the tab appears (a swipe has already slid it away)
   }
 
+  // Swipe down puts the dashboard away to its tab, like Close. It starts in the header, or in the cards once they are scrolled to the top; the strip swipes down too.
+  onSwipe(dash, { direction: 'down', enabled: () => state === 'expanded', canStart: (t) => !!t.closest('.dash-head') || atTop(t, dash), onDismiss: () => setState('hidden', { instant: true }) });
+  onSwipe(peek, { direction: 'down', distance: 24, enabled: () => state === 'peek', onDismiss: () => setState('hidden', { instant: true }) });
   $('dash-collapse').addEventListener('click', () => setState('peek'));
   $('dash-close').addEventListener('click', () => setState('hidden'));
   peek.addEventListener('click', () => setState('expanded'));

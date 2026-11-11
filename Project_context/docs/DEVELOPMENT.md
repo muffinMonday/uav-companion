@@ -43,6 +43,10 @@ See `supabase/README.md`: migrations, how the access rules are tested without Do
 - **Friends:** `db-friends-unit` (rules on an in-memory Postgres), `friends` (browser; the real friends SQL runs behind mocked HTTP so two simulated users are tested against the real access rules), and `node tests/friends-live.mjs` (live, throwaway users).
 - The browser suites run against `npm run dev`, which reads `.env.development.local`, so the sign-in card is present in them.
 
+### Swipe gestures (`src/swipe.js`)
+- `onSwipe(el, { direction, onDismiss, canStart, enabled, follow })` is built on touch events; it only takes a gesture over once it is clearly along the chosen direction, and never starts on a form control, `[data-no-swipe]`, the trip card flip, a sideways scroller, or while a row is being dragged (`body.reordering`). Put `data-no-swipe` on anything new that needs its own gestures.
+- Tests use real touch events through the browser protocol (`ctx.newCDPSession(p)` and `Input.dispatchTouchEvent`, as in `tests/hold.mjs` and `tests/swipe.mjs`). The panel bodies scroll smoothly, so wait until `scrollTop` has arrived before measuring a control or starting a swipe.
+
 ## Writing tests that can run in parallel
 The runner runs four suites side by side by default (see the "Faster tests" item in `CURRENT_STATUS.md`), so every new or changed suite follows these rules:
 - **Self-contained.** A suite seeds everything it needs itself (an `addInitScript` that writes `localStorage`, guarded by `sessionStorage.__seeded` so a reload keeps the state) and never depends on another suite having run, or on the order.
