@@ -10,6 +10,7 @@ import { initPanel } from './panel.js';
 import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
 import { initWelcome } from './welcome.js';
+import { mapLinksBlock } from './maplinks-ui.js';
 import { centreOn, popupMaxHeight } from './view.js';
 import { initPOI } from './poi-ui.js';
 import { initPrivacyUI } from './privacy-ui.js';
@@ -93,6 +94,7 @@ function decorate(content, latlng, label, onResize) {
     lookupElevation(latlng.lat, latlng.lng).then((m) => set(m === null ? '–' : `${Math.round(m)} m`)).catch(() => set('–'));
   }
   content.append(weatherButton(() => { map.closePopup(); showWeather(latlng.lat, latlng.lng, label); }));
+  content.append(mapLinksBlock({ lat: latlng.lat, lon: latlng.lng, name: label }));
   return content;
 }
 

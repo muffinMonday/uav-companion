@@ -18,6 +18,7 @@ Open-source, static map of drone suitable-flight zones (Hubei live data; Singapo
 - Expanded/collapsed marker window (F26): tall centred window over the pin by default on desktop, collapsed on phones, chevron toggle remembered. New `window` suite. Gotcha: never replace the clicked element's children mid-click inside a popup (Leaflet closes the popup); the chevron uses two always-present SVGs.
 - Same place on several dates (F27): ×N pin badge, visit chips, Add visit, AI import treats a different date as another visit, shared weather/elevation per spot. New `places-unit` and `visits` suites.
 - Reorder saved places by holding 2 s and dragging (F28), with date/day/stop/hotel-end recalculation, Undo and Alt+arrows. New `reorder-unit` and `reorder` suites. Gotcha: a touch drag must not re-render the touched row (the touch loses its target and the browser scrolls); drop-only dates are inserted in place.
+- Open in Google Maps/Amap + routes (F29): buttons in marker and check windows, Route block in Select mode, Amap first inside China, Home asks first. New `maplinks-unit` and `maplinks` suites; `coords.js`, China outline. The apps themselves are untested on a real phone.
 - Docs updated for trips (`PROJECT.md` F19, `AI.md`, `README.md`); this `Project_context/` set created; root `CLAUDE.md` points to `AGENTS.md`.
 - Initial commit `11aa7ce` pushed to `https://github.com/muffinMonday/uav-companion` (`main`, identity muffinMonday, repo-local git config).
 
@@ -32,6 +33,13 @@ Nothing.
 - Run the browser suites against `vite preview` (production build) for the trips work.
 - Typing in Max range then clicking a list row can swallow the click: the field's `change` fires on blur and re-renders the list mid-click (existing behaviour).
 - Weak assertion in `tests/trips.mjs` ("Home marker's form has no Trip field" passes on either of two conditions); tighten it.
+
+## Optimization backlog (later, none urgent)
+Measured 2026-11-11: a marker is about 360 bytes (810 at its limits), a weather cache entry about 170, an elevation entry about 70; 100 markers with caches are about 60 KB of the browser's roughly 5 MB. The app bundle is 417 KB (about 130 KB compressed); the Hubei zone file is 6.7 MB, read in small pieces.
+- Show storage use in the Backup card ("Using 62 KB of about 5 MB") with a warning past about 80%.
+- At start-up, drop weather and elevation cache entries whose marker no longer exists (delete already forgets them; another tab or an import could leave strays).
+- Lower the import ceiling from 5,000 markers to about 2,000: 5,000 markers at their maximum size with caches would exceed the quota (the app already warns when the browser refuses to store).
+- When more regions arrive (Singapore, a second Chinese province): keep one zone file per region; revisit moving tiles to object storage if bandwidth grows (GitHub Pages: 1 GB per site, 100 MB per file).
 
 ## Known issues and risks
 - Hubei CRS declared WGS84, not verified (GCJ-02 would shift zones by up to a few hundred metres).

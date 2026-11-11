@@ -449,3 +449,27 @@ dialog.welcome .btn[hidden]{display:none}
 .day-head.drop-only{padding:4px 8px;border:1px dashed var(--line);border-radius:8px;opacity:.85}
 .drag-ghost{position:fixed;z-index:3000;list-style:none;margin:0;pointer-events:none;opacity:.96;filter:drop-shadow(0 8px 14px rgba(0,0,0,.3));transform:scale(1.02)}
 body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
+
+/* ---------- open in Google Maps / Amap, and routes ---------- */
+.maplinks{margin-top:10px;display:grid;gap:8px}
+.maplinks-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.maplinks-label{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);min-width:96px}
+.maplinks-btns{display:flex;flex-wrap:wrap;gap:6px}
+.maplinks-mode{width:auto;padding:4px 26px 4px 8px;font-size:12px}
+.maplinks-note{color:var(--muted);font-size:11.5px}
+.maplink{text-decoration:none;color:var(--fg)}
+.maplink:hover{text-decoration:none}
+.route-box{display:grid;gap:8px;padding:10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2)}
+.route-box[hidden]{display:none}
+.route-box h3{margin:0;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.route-stops{list-style:none;margin:0;padding:0;display:grid;gap:4px;counter-reset:rs}
+.route-stop{counter-increment:rs;display:flex;align-items:center;gap:6px;min-width:0}
+.route-stop::before{content:counter(rs);flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font:700 11px/1 var(--font)}
+.route-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.route-stop small{color:var(--muted);flex:none}
+.route-btn{width:26px;height:26px;font-size:13px}
+.route-btn:disabled{opacity:.35}
+.route-links .btn-row,.route-group .btn-row{margin:4px 0}
+.route-group{display:grid;gap:2px}
+.route-note{display:block;color:var(--muted);font-size:11.5px}
+.sel-num{flex:none;min-width:18px;text-align:center;font:700 12px/1 var(--font);color:var(--accent)}

@@ -21,15 +21,15 @@ Geolocation needs https or localhost.
 
 ## Tests (`tests/`)
 ```
-npm run test:unit                 # ai-unit, trip-unit, trips-unit, rain-unit, places-unit, reorder-unit: Node only, about 1 s
+npm run test:unit                 # ai-unit, trip-unit, trips-unit, rain-unit, places-unit, reorder-unit, maplinks-unit: Node only, about 1 s
 npm test                          # all suites; needs the app on :5173
 node tests/run.mjs trips ai       # only suites whose name contains these words
 node tests/trips.mjs              # one suite directly; prints PASS/FAIL lines
 ```
-- Suites: unit `ai-unit`, `trip-unit` (Home marker, distance and date rules, AI assets), `trips-unit` (trips model, store, scoping, export/import, bulk delete), `rain-unit` (rain outlook and request parsing), `places-unit` (same-place groups, duplicate vs another visit), `reorder-unit` (what a move changes); browser `reorder` (hold and drag, Undo, Alt+arrows, touch), `visits` (badge, chips, Add visit, import, shared weather request), `window` (expanded/collapsed marker window), `welcome` (welcome screen and countdown), `hold` (hold to check, centring, scrolling window), `rain` (rain block), `ui` (tab contents, controls, search/dock, phone window, day and stop), `bulk` (select and delete), `poi1`, `poi2`, `edit`, `prefs`, `opacity`, `mw`, `priv`, `ai`, `trip`, `trips`, `smoke`.
+- Suites: unit `ai-unit`, `trip-unit` (Home marker, distance and date rules, AI assets), `trips-unit` (trips model, store, scoping, export/import, bulk delete), `rain-unit` (rain outlook and request parsing), `places-unit` (same-place groups, duplicate vs another visit), `reorder-unit` (what a move changes), `maplinks-unit` (China outline, GCJ-02, link formats and limits); browser `maplinks` (marker and check buttons, routes), `reorder` (hold and drag, Undo, Alt+arrows, touch), `visits` (badge, chips, Add visit, import, shared weather request), `window` (expanded/collapsed marker window), `welcome` (welcome screen and countdown), `hold` (hold to check, centring, scrolling window), `rain` (rain block), `ui` (tab contents, controls, search/dock, phone window, day and stop), `bulk` (select and delete), `poi1`, `poi2`, `edit`, `prefs`, `opacity`, `mw`, `priv`, `ai`, `trip`, `trips`, `smoke`.
 - Browser suites mock Open-Meteo, Photon and Nominatim; screenshots go to `tests/out/` (git-ignored). `lib.mjs` supplies paths, the browser channel and a `chromium` wrapper that switches the welcome screen off in every new context (import `chromium` from `./lib.mjs`; `welcome.mjs` uses playwright-core directly to see the real thing).
 - The runner counts lines starting with `PASS`/`FAIL`; `smoke` prints none, so it shows 0 pass and passes if it does not crash or log console errors.
-- Last full run (this document's date, 2026-11-11): all 25 suites passed on the dev server; counts in `CURRENT_STATUS.md`.
+- Last full run (this document's date, 2026-11-11): all 27 suites passed on the dev server; counts in `CURRENT_STATUS.md`.
 
 ## Debugging
 - A failing browser test prints its message and the first error lines; rerun that suite alone. Screenshots in `tests/out/`.

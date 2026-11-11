@@ -10,6 +10,8 @@ import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, comp
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { visitGroups, visitLabel } from './places.js';
+import { mapLinksBlock, routeLinks } from './maplinks-ui.js';
+import { MODES, MAX_STOPS } from './maplinks.js';
 import { planMove, stepSlot, groupKey, addDays } from './reorder.js';
 import { initReorder } from './reorder-ui.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
@@ -243,7 +245,64 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     selDelete.disabled = n === 0;
     if (n === 0) selConfirm.hidden = true;
     $('sel-confirm-delete').textContent = `Delete ${plural(n)}`;
+    syncRoute();
+    renderRoute();
+    paintSelNums();
   }
+  // ----- a route through the ticked places -----
+  let routeOrder = [];            // the ticked places in route order (tick order, until the visitor moves them)
+  let routeMode = MODES[0].id;
+  const routeMode$ = $('route-mode');
+  for (const m of MODES) { const o = el('option', '', m.label); o.value = m.id; routeMode$.append(o); }
+  routeMode$.addEventListener('change', () => { routeMode = routeMode$.value; renderRoute(); });
+  /** Keeps routeOrder to the ticked places: new ticks go to the end, unticked ones drop out. */
+  function syncRoute() {
+    routeOrder = routeOrder.filter((id) => selected.has(id));
+    for (const id of selected) if (!routeOrder.includes(id)) routeOrder.push(id);
+  }
+  /** The numbers 1, 2, 3 beside the ticked rows (only when there are two or more: that is a route). */
+  function paintSelNums() {
+    for (const li of listEl.querySelectorAll('li.selecting')) {
+      const i = routeOrder.indexOf(li.dataset.id);
+      const n = li.querySelector('.sel-num');
+      if (n) n.textContent = selected.size >= 2 && i >= 0 ? String(i + 1) : '';
+    }
+  }
+  function renderRoute() {
+    const box = $('route-box'), hint = $('route-hint');
+    const stopsItems = routeOrder.map((id) => store.get(id)).filter(Boolean);
+    box.hidden = stopsItems.length < 2;
+    hint.hidden = stopsItems.length >= 2 || !selecting;
+    $('route-links').replaceChildren();
+    if (stopsItems.length < 2) return;
+    const list = $('route-stops');
+    list.replaceChildren();
+    stopsItems.forEach((it, i) => {
+      const li = el('li', 'route-stop');
+      const name = el('span', 'route-name', it.name);
+      const small = el('small', '', typeOf(it.type).label);
+      const btn = (text, label, fn, disabled) => { const b = el('button', 'icon-btn route-btn', text); b.type = 'button'; b.setAttribute('aria-label', label); b.disabled = disabled; b.addEventListener('click', fn); return b; };
+      const move = (d) => { const j = i + d; [routeOrder[i], routeOrder[j]] = [routeOrder[j], routeOrder[i]]; renderRoute(); paintSelNums(); };
+      li.append(name, small,
+        btn('↑', `Move ${it.name} earlier`, () => move(-1), i === 0),
+        btn('↓', `Move ${it.name} later`, () => move(1), i === stopsItems.length - 1),
+        btn('✕', `Remove ${it.name} from the route`, () => { selected.delete(it.id); selConfirm.hidden = true; renderList(); }, false));
+      list.append(li);
+    });
+    $('route-sort').disabled = listMode(stopsItems) === 'plain';
+    const links = $('route-links');
+    if (stopsItems.length > MAX_STOPS) { links.append(el('small', 'route-note', `That is a lot of stops. Tick ${MAX_STOPS} places or fewer.`)); return; }
+    const stops = stopsItems.map((it) => ({ lat: it.lat, lon: it.lon, name: it.name }));
+    links.append(...routeLinks({ stops, mode: routeMode, home: stopsItems.some((it) => it.type === 'residence') }));
+  }
+  $('route-reverse').addEventListener('click', () => { routeOrder.reverse(); renderRoute(); paintSelNums(); });
+  $('route-sort').addEventListener('click', () => {
+    const items = routeOrder.map((id) => store.get(id)).filter(Boolean);
+    const mode = listMode(items);
+    if (mode === 'plain') return;
+    routeOrder = sortForList(items, mode).map((x) => x.id);
+    renderRoute(); paintSelNums();
+  });
   function setSelecting(on) {
     selecting = on; selected.clear(); selConfirm.hidden = true;
     renderList();
@@ -308,12 +367,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     b.append(t);
     if (selecting) {
       const cb = el('input', 'sel-box'); cb.type = 'checkbox'; cb.checked = selected.has(it.id); cb.setAttribute('aria-label', `Select ${it.name}`);
+      const num = el('span', 'sel-num');
       const toggle = () => { if (cb.checked) selected.add(it.id); else selected.delete(it.id); selConfirm.hidden = true; updateSelectBar(); };
       cb.addEventListener('change', toggle);
       b.title = 'Select or clear';
       b.addEventListener('click', () => { cb.checked = !cb.checked; toggle(); });
       li.className = 'selecting';
-      li.append(cb);
+      li.append(cb, num);
     } else {
       b.addEventListener('click', () => flyToItem(it.id));
     }
@@ -634,7 +694,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         again.addEventListener('click', () => setTimeout(() => addVisit(id), 0));
         acts.append(edit, again, del);
       }
-      root.append(weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), acts, disclaimer());
+      root.append(weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), mapLinksBlock({ lat: it.lat, lon: it.lon, name: it.name, home: it.type === 'residence' }), acts, disclaimer());
     }
 
     function editForm() {

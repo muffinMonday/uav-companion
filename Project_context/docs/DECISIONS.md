@@ -102,3 +102,9 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision: press-and-hold 1 s then drag a row within its group (a trip, or no trip), in dated or day-numbered lists only (the owner's rules). A drop sets the date and day of the heading it lands under and renumbers stops. A hotel gets the new date as its start and the next trip day as its end (the last trip day: start = end). Undo for 10 s; Alt+arrows for the keyboard. Plain lists cannot be dragged.
 - Alternatives: a drag handle on each row (rejected: the hold matches the map and keeps rows uncluttered); drops across trips (not allowed).
 - Consequences: the logic is pure (`reorder.js`) and unit-tested; the drag layer must not redraw the touched row while dragging.
+
+### 2026-11-11: Map-app links built from the apps' documented URL formats
+- Context: travellers want to open a marker, or a route between markers, in Google Maps or Amap.
+- Decision: plain links, no API keys. Amap first then Google Maps inside China; Google Maps only elsewhere (owner's choice). Multi-stop routes in Select mode; limits from the official docs (Google: 9 stops between, 3 on mobile; Amap: one `via`, driving only), with longer routes opened as parts. Amap navigation has no coordinate setting, so coordinates are converted to GCJ-02 in the app; the marker link uses `coordinate=wgs84`. The Home marker asks before any link opens. "In China" is a coarse Natural Earth outline (not Taiwan; Hong Kong and Macao by box).
+- Alternatives: map-provider APIs (need keys, quotas); sending WGS-84 to Amap navigation unconverted (would be about 500 m off).
+- Consequences: new static data file (about 14 KB) and a generator script; links are only checked for form, not against the live apps.

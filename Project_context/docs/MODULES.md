@@ -32,6 +32,9 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `places.js` | Markers that share a spot (within 15 m): groups, visit order, labels (pure) | `visitGroups`, `visitLabel`, `metres`, `SAME_PLACE_M` | poi |
 | `reorder.js` | What a move does to date, day, stop and hotel end date: `planMove`, `stepSlot`, `groupsOf`, `addDays`, `nextTripDate` (pure) | as listed | poi, trips |
 | `reorder-ui.js` | Hold 1 s then drag a row; ghost, drop line, auto-scroll, Escape, Alt+arrows | `initReorder` | none |
+| `coords.js` | WGS-84 <-> GCJ-02 conversion and `inChina` (coarse outline) (pure) | `wgs84ToGcj02`, `gcj02ToWgs84`, `inChina` | data/china-outline.js |
+| `maplinks.js` | Google Maps / Amap links for a place, directions-here and routes (limits, parts) (pure) | `appsFor`, `placeUrl`, `hereUrl`, `routeUrls`, `chunk`, `MODES` | coords |
+| `maplinks-ui.js` | The buttons: `mapLinksBlock` (marker and check windows), `routeLinks` (Route block); Home asks first | as listed | maplinks |
 | `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
 | `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
 
@@ -39,6 +42,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | Path | Purpose |
 |---|---|
 | `scripts/build-data.js` | Region data to `public/data/` (entry for `npm run build:data`) |
+| `scripts/make-china-outline.js` | Builds `src/data/china-outline.js` (China outline from Natural Earth) | `node scripts/make-china-outline.js [ne50.json]` |
 | `scripts/verify-data.js` | Compares shapefile cells with tiles (`npm run verify:data`); 0 mismatches for Hubei |
 | `scripts/lib/{crs,readers,tiles,pmtiles-writer}.js` | CRS conversion, shapefile/GeoJSON readers, tile cutting, own PMTiles v3 writer |
 | `data/regions/<country>/country.json`, `<region>/source.json` + `boundary.geojson` | Region definitions committed to git; raw data stays local |

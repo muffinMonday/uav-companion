@@ -198,6 +198,7 @@ await S.page.click('#poi-list .poi-item:has-text("Seed A")'); await S.page.waitF
 await S.page.check('#poi-edit');
 const pin = await S.page.evaluate(() => { const r = document.querySelector('.poi-pin').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
 S.reqs.length = 0;
+await S.page.waitForFunction(() => !document.querySelector('.poi-pop'), null, { timeout: 5000 }).catch(() => {}); // a closed window fades out for 200 ms
 if (await S.page.locator('.poi-pop .pop-toggle[aria-expanded=true]').count()) { await S.page.click('.poi-pop .pop-toggle'); await S.page.waitForTimeout(300); } // collapsed: the pin is not under the window
 await S.page.mouse.move(pin.x, pin.y); await S.page.mouse.down(); await S.page.waitForTimeout(650); await S.page.mouse.move(pin.x + 40, pin.y + 120, { steps: 8 }); await S.page.mouse.up(); await S.page.waitForTimeout(1200);
 ok(S.reqs.length === 1 && nLocs(S.reqs[0]) === 1, 'M: dropping a moved marker requests weather for its new position');
