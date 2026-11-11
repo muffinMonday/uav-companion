@@ -708,7 +708,7 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 .details-btn.off .slash{display:inline}
 
 /* ---------- the greeting, the eye in the window's bar ---------- */
-.dash-hello{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.dash-hello{font-size:25px;font-weight:250;letter-spacing:-.02em;line-height:1.1}
 .dash-hello-sub{margin-top:3px;font-size:13.5px;color:var(--muted)}
 .dash-hello-sub b{color:var(--fg)}
 .dash-link{padding:0;border:0;background:none;color:var(--accent);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline}
@@ -718,3 +718,11 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 .pop-eye.off .slash{display:inline}
 .pop-eye.off{color:var(--muted)}
 @media (max-width:520px){.dash-hello{font-size:22px}}
+
+/* ---------- the marker window: distances sit side by side, below the conditions ---------- */
+.pop .dist-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pop .dist-wrap .dist-row{flex:1 1 150px;margin:0;padding:5px 9px;gap:8px}
+.pop .dist-wrap .dist-row+.dist-row{margin-top:0}
+.pop .dist-wrap .dist-v{font-size:13.5px}
+.pop .dist-wrap .dist-txt small{font-size:11px}
+.pop .dist-wrap .stats-note,.pop .dist-wrap .dist-empty{flex:1 1 100%}

@@ -181,3 +181,6 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 
 ### 2026-11-11: Eye in the window, v hides into the ⓘ, fixed map controls, larger greeting
 - Decision (owner): an eye in the marker window's bar mirrors the details setting (synchronised with the map button and the Points of Interest switch); with details off the window's v button hides it into the name tag's ⓘ; the dashboard no longer lifts the scale bar and attribution (it stands above them on a common baseline, with the strip and tab); the greeting is a large "Welcome back!" with a trip sentence beneath.
+
+### 2026-11-11: Marker window order: conditions before distances
+- Decision (owner): elevation and weather matter more than the distance to the hotel or Home, so they come straight after the zone verdict, with the Show weather here button in the same place, and the distance rows move below, side by side. Elevation stays one of the four tiles (the 2x2 layout).

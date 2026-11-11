@@ -26,6 +26,9 @@ ok((await p.locator('.poi-pop .coords-row a.maplink').allTextContents()).join() 
 ok(((await p.locator('.poi-pop .coords-row a.maplink').first().getAttribute('title')) || '').includes('shares this location') && (await p.locator('.poi-pop .coords-row a.maplink').first().evaluate((e) => e.getBoundingClientRect().width)) < 40, 'they are small icons, and the tooltip says the location is shared');
 ok((await p.locator('.poi-pop .maplinks-note').count()) === 0, 'the long sentence under the old buttons is gone');
 ok((await p.textContent('.poi-pop .disclaimer')) === 'Planning aid, not flight advice.', 'the disclaimer is one short line');
+const kids = await p.evaluate(() => [...document.querySelector('.poi-pop').children].map((c) => c.className.split(' ')[0]));
+ok(kids.indexOf('zone') < kids.indexOf('stats-wrap') && kids.indexOf('stats-wrap') < kids.indexOf('wx-opt') && kids.indexOf('wx-opt') < kids.indexOf('dist-wrap') && kids.indexOf('dist-wrap') < kids.indexOf('disclaimer'), 'the window runs: verdict, conditions, the weather button, distances, disclaimer: ' + kids.join(' > '));
+ok((await p.locator('.poi-pop .dist-wrap').evaluate((e) => e.getBoundingClientRect().height)) < 50, 'the distances take one compact row');
 ok(/Open-Meteo/.test(await p.getAttribute('.poi-pop .wx-btn', 'title')) && (await p.locator('.poi-pop .wx-opt small').evaluate((e) => e.getBoundingClientRect().width)) <= 1, 'the weather privacy sentence is a tooltip, not a line of text');
 await p.click('.poi-pop .btn.danger'); await p.waitForTimeout(200);
 ok((await p.textContent('.poi-pop .btn.danger')) === 'Confirm delete' && (await p.evaluate(() => !!document.querySelector('.poi-pop h3'))), 'the first press on Delete only asks to confirm');

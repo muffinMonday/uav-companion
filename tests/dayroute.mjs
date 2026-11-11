@@ -43,18 +43,18 @@ await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').cli
 ok(await count(p, 'path.route-seg') === 0 && await count(p, '.route-arrow') === 0, 'closing the window clears the route');
 await pin(p, 'Alpha').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
 let s = await segs(p);
-ok(s.length === 2 && s.filter(Boolean).length === 1 && s[0] === true, 'the first stop: only the arrow out of it is bold');
+ok(s.length === 2 && s.filter(Boolean).length === 1 && s[0] === true && (await count(p, 'path.route-seg.overnight')) === 0, 'the first stop of the trip: only the arrow out of it is bold (there is no day before)');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
 await pin(p, 'Charlie').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
 s = await segs(p);
-ok(s.length === 2 && s.filter(Boolean).length === 1 && s[1] === true, 'the last stop: only the arrow into it is bold');
+ok(s.length === 3 && s.filter(Boolean).length === 2 && s[1] === true && (await count(p, 'path.route-seg.overnight')) === 1, 'the last stop of a day: the arrow into it is bold, and so is a dashed one on to the first stop of the next day');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
 await pin(p, 'Hotel').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
 s = await segs(p);
 ok(s.length === 2 && s.every((x) => !x), 'the hotel is not part of the chain: the day shows thin, nothing bold');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
 await pin(p, 'Elsewhere').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
-ok(await count(p, 'path.route-seg') === 0, 'a day with a single stop has nothing to join');
+ok((await segs(p)).length === 1 && (await segs(p))[0] === true && (await count(p, 'path.route-seg.overnight')) === 1 && (await count(p, '.seg-label')) >= 0, 'a day with a single stop has nothing to join inside it, but it is linked from the last stop of the day before');
 await ctx.close();
 
 // ================= the switch

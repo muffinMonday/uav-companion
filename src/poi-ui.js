@@ -483,33 +483,43 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     return store.items().filter((i) => i.tripId === tripId && i.date === date && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence')
       .sort((a, b) => a.order - b.order || String(a.created).localeCompare(String(b.created)));
   }
-  /** Arrows between consecutive stops; those into and out of the selected stop are bold and say how far. */
-  function drawChain(layer, chain, selId, color) {
+  /** One arrow from stop a to stop b: bold ones say how far; an overnight link (to the next or from the previous day) is bold and dashed. */
+  function drawSeg(layer, a, b, color, bold, overnight = false) {
     const { units } = getDistanceSettings();
-    for (let i = 1; i < chain.length; i++) {
-      const a = chain[i - 1], b = chain[i];
-      const bold = !!selId && (a.id === selId || b.id === selId);
-      L.polyline([[a.lat, a.lon], [b.lat, b.lon]], { color, weight: bold ? 6 : 2.5, opacity: bold ? 0.95 : 0.4, className: bold ? 'route-seg bold' : 'route-seg', interactive: false, lineCap: 'round' }).addTo(layer);
-      const pa = map.latLngToLayerPoint([a.lat, a.lon]), pb = map.latLngToLayerPoint([b.lat, b.lon]);
-      const deg = (Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180) / Math.PI;
-      const px = Math.hypot(pb.x - pa.x, pb.y - pa.y); // how long it is on screen: short ones get no arrow or label (they would sit on the pins)
-      const at = (f) => [a.lat + (b.lat - a.lat) * f, a.lon + (b.lon - a.lon) * f];
-      const arrow = el('span', bold ? 'route-arrow bold' : 'route-arrow');
-      arrow.style.setProperty('--rot', deg.toFixed(1) + 'deg'); arrow.style.color = color;
-      arrow.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 1l10 5-10 5 3-5z"/></svg>'; // built from constants only
-      if (px >= 36) L.marker(at(0.62), { icon: L.divIcon({ className: 'route-arrow-box', html: arrow, iconSize: [0, 0] }), interactive: false, keyboard: false }).addTo(layer);
-      if (bold && px >= 80) {
-        const lab = el('span', 'dist-label-text seg-label', fmtDistance(haversineM(a.lat, a.lon, b.lat, b.lon), units));
-        lab.style.borderColor = color;
-        L.marker(at(0.36), { icon: L.divIcon({ className: 'dist-label', html: lab, iconSize: null }), interactive: false, keyboard: false }).addTo(layer);
-      }
+    L.polyline([[a.lat, a.lon], [b.lat, b.lon]], { color, weight: bold ? 6 : 2.5, opacity: bold ? 0.95 : 0.4, className: bold ? (overnight ? 'route-seg bold overnight' : 'route-seg bold') : 'route-seg', dashArray: overnight ? '12 9' : undefined, interactive: false, lineCap: 'round' }).addTo(layer);
+    const pa = map.latLngToLayerPoint([a.lat, a.lon]), pb = map.latLngToLayerPoint([b.lat, b.lon]);
+    const deg = (Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180) / Math.PI;
+    const px = Math.hypot(pb.x - pa.x, pb.y - pa.y); // how long it is on screen: short ones get no arrow or label (they would sit on the pins)
+    const at = (f) => [a.lat + (b.lat - a.lat) * f, a.lon + (b.lon - a.lon) * f];
+    const arrow = el('span', bold ? 'route-arrow bold' : 'route-arrow');
+    arrow.style.setProperty('--rot', deg.toFixed(1) + 'deg'); arrow.style.color = color;
+    arrow.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 1l10 5-10 5 3-5z"/></svg>'; // built from constants only
+    if (px >= 36) L.marker(at(0.62), { icon: L.divIcon({ className: 'route-arrow-box', html: arrow, iconSize: [0, 0] }), interactive: false, keyboard: false }).addTo(layer);
+    if (bold && px >= 80) {
+      const lab = el('span', 'dist-label-text seg-label', fmtDistance(haversineM(a.lat, a.lon, b.lat, b.lon), units));
+      lab.style.borderColor = color;
+      L.marker(at(0.36), { icon: L.divIcon({ className: 'dist-label', html: lab, iconSize: null }), interactive: false, keyboard: false }).addTo(layer);
     }
   }
+  /** Arrows between consecutive stops; those into and out of the selected stop are bold and say how far. */
+  function drawChain(layer, chain, selId, color) {
+    for (let i = 1; i < chain.length; i++) drawSeg(layer, chain[i - 1], chain[i], color, !!selId && (chain[i - 1].id === selId || chain[i].id === selId));
+  }
+  /** The days of a trip that have stops, in order. */
+  const stopDates = (tripId) => [...new Set(store.items().filter((i) => i.tripId === tripId && i.date && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence').map((i) => i.date))].sort();
   function redrawRoutes() {
     routes.clearLayers(); dayLayer.clearLayers();
     if (shownDay) { const chain = chainOf(shownDay.tripId, shownDay.date); if (chain.length >= 2) drawChain(dayLayer, chain, null, tripColour(shownDay.tripId)); }
     const it = viewId && store.get(viewId);
-    if (it?.tripId && it.date) { const chain = chainOf(it.tripId, it.date); if (chain.length >= 2) drawChain(routes, chain, it.id, tripColour(it.tripId)); }
+    if (!it?.tripId || !it.date) return;
+    const color = tripColour(it.tripId), chain = chainOf(it.tripId, it.date);
+    if (chain.length >= 2) drawChain(routes, chain, it.id, color);
+    // the first stop of a day follows the last stop of the day before, and the last stop leads to the first stop of the next day
+    const at = chain.findIndex((x) => x.id === it.id);
+    if (at < 0) return;
+    const dates = stopDates(it.tripId), di = dates.indexOf(it.date);
+    if (at === 0 && di > 0) { const before = chainOf(it.tripId, dates[di - 1]); if (before.length) drawSeg(routes, before[before.length - 1], it, color, true, true); }
+    if (at === chain.length - 1 && di >= 0 && di < dates.length - 1) { const after = chainOf(it.tripId, dates[di + 1]); if (after.length) drawSeg(routes, it, after[0], color, true, true); }
   }
   /** The selected marker's pin stands out. */
   function paintFocus() { for (const [id, m] of markers) m.getElement()?.classList.toggle('focused', id === viewId); }
@@ -793,17 +803,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         .then((res) => { zone.replaceChildren(statusEl(zoneSummary(res))); popup?.update(); })
         .catch(() => { zone.replaceChildren(el('div', 'status unk', 'Zone check unavailable right now.')); });
 
-      // how far this is from the nearest home point and hotel, then the numbers: elevation and the 5-hour weather (when enabled)
+      // the numbers (elevation and the 5-hour weather, when enabled), then how far this is from the nearest home point and hotel
       const dist = el('div', 'dist-wrap');
       const stats = el('div', 'stats-wrap');
       wxLine = { id, render: () => { renderDist(dist, id); renderStats(stats, id); } };
       wxLine.render();
-      root.append(dist, stats);
+      root.append(stats, weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), dist); // conditions first, distances after
       elev.ensure(id); // no-op unless ground elevation is on
 
       if (it.note) root.append(el('p', 'note', it.note));
 
-      root.append(weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), disclaimer());
+      root.append(disclaimer());
 
       // previous / next stop of the trip, in itinerary order, pinned to the bottom of the window
       const seq = it.tripId ? tripSequence(store.items(), it.tripId) : [];

@@ -119,9 +119,9 @@ ok(rows[0].v === `${F(D(P.W1, P.HP))} ${compassOf(P.W1, P.HP)}` && /home point L
 ok(rows[1].v === `${F(D(P.W1, P.H1))} ${compassOf(P.W1, P.H1)}` && /hotel Hotel One/.test(rows[1].s) && !/Two/.test(rows[1].s), `4: hotel row names the matching hotel: "${rows[1].v}", "${rows[1].s}"`);
 ok(rows[2].v === `${F(D(P.W1, P.RES))} ${compassOf(P.W1, P.RES)}` && /from home My flat/.test(rows[2].s), `4: Home row: "${rows[2].v}", "${rows[2].s}"`);
 ok(/from home point Launch A/.test(rows[0].s) && /from home My flat/.test(rows[2].s) && !/home point/.test(rows[2].s), '4: the Home point line and the Home line read differently ("home point Launch A" / "home My flat")');
-ok(await p.locator('.poi-pop .dist-wrap').isVisible(), '4: shown directly under the zone verdict');
+ok(await p.locator('.poi-pop .dist-wrap').isVisible(), '4: the distances are shown, below the conditions');
 const order4 = await p.evaluate(() => [...document.querySelector('.poi-pop').children].map((c) => c.className.split(' ')[0]));
-ok(order4.indexOf('zone') < order4.indexOf('dist-wrap') && order4.indexOf('dist-wrap') < order4.indexOf('stats-wrap'), '4: window order: zone, distances, weather tiles: ' + order4.join(' > '));
+ok(order4.indexOf('zone') < order4.indexOf('stats-wrap') && order4.indexOf('stats-wrap') < order4.indexOf('dist-wrap'), '4: window order: zone, weather tiles, then distances: ' + order4.join(' > '));
 await p.screenshot({ path: SP + '/trip-window.png' });
 
 // ================= 5. dashed lines on the map
