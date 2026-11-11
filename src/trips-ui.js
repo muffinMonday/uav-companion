@@ -9,6 +9,9 @@ import { createTripWeather, weatherInfo, forecastSpots } from './tripweather.js'
 import { getWindLimit } from './weather.js';
 import { getPrivacy } from './privacy.js';
 import { el } from './cards.js';
+import { checkinCell } from './checkin-ui.js';
+import { visitedCount } from './checkin.js';
+import { onPrivacyChange } from './privacy.js';
 import { routeLinks } from './maplinks-ui.js';
 import { MAX_STOPS } from './maplinks.js';
 import { loadPrefs } from './prefs.js';
@@ -17,6 +20,7 @@ const $ = (id) => document.getElementById(id);
 
 export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   const store = poi.store;
+  const cin = poi.checkin;
   const list = $('trips-list'), empty = $('trips-empty'), count = $('trips-count');
   const card = $('trip-form-card'), form = $('trip-form'), title = $('trip-form-title');
   const fName = $('trip-name'), fCountry = $('trip-country'), fStart = $('trip-start'), fEnd = $('trip-end'), fDesc = $('trip-desc');
@@ -70,7 +74,8 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     }
     if (t.description) li.append(el('p', 'trip-card-desc', t.description));
     const done = t.checklist ? t.checklist.filter((c) => c.done).length : 0;
-    li.append(el('div', 'trip-card-count', [n + ' marker' + (n === 1 ? '' : 's'), t.checklist && done + ' of ' + t.checklist.length + ' checked'].filter(Boolean).join(' · ')));
+    const visited = visitedCount(items.filter((i) => i.tripId === t.id));
+    li.append(el('div', 'trip-card-count', [n + ' marker' + (n === 1 ? '' : 's'), (visited.done || (cin.enabled() && visited.total)) && visited.done + ' of ' + visited.total + ' visited', t.checklist && done + ' of ' + t.checklist.length + ' checked'].filter(Boolean).join(' · ')));
 
     const acts = el('div', 'btn-row trip-acts');
     const btn = (text, fn, cls = '') => { const b = el('button', ('btn small ' + cls).trim(), text); b.type = 'button'; b.addEventListener('click', fn); acts.append(b); return b; };
@@ -140,6 +145,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   }
 
   function renderDetail(t, items, today) {
+    cin.unbind('trips');
     detail.replaceChildren();
     const top = el('div', 'trip-detail-top');
     const back = el('button', 'btn small', '‹ Trips'); back.type = 'button'; back.addEventListener('click', closeDetail);
@@ -201,7 +207,11 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
       if (z && z.sig === sigOf(it)) text.append(el('small', 'plan-zone ' + z.s.cls, z.s.title));
       row.append(mark, text);
       row.addEventListener('click', () => poi.openMarker(it.id));
-      return row;
+      const cell = checkinCell({ cin, store, id: it.id, ns: 'trips' }); // Check in, or what was recorded, at the right
+      if (!cell) return row;
+      const line = el('div', 'plan-row');
+      line.append(row, cell);
+      return line;
     };
     // the days, as pages of one card: ‹ and › turn to the previous and next day
     const pages = [];
@@ -228,6 +238,8 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
           const d = pg.day;
           const w = fc?.[d.date];
           if (w) { const line = el('small', 'plan-wx' + (limit !== null && w.wind !== null && w.wind > limit ? ' over' : ''), dayWeatherText(w)); line.title = weatherInfo(w.code).label; body.append(line); }
+          const seen = visitedCount(stops);
+          if (seen.done || (cin.enabled() && seen.total)) body.append(el('small', 'plan-km', seen.done + ' of ' + seen.total + ' visited'));
           if (d.km >= 0.1) body.append(el('small', 'plan-km', '≈ ' + fmtDistance(d.km * 1000, units) + ' between stops'));
           if (!stops.length) body.append(el('small', 'plan-empty', 'Nothing planned'));
         }
@@ -372,6 +384,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
 
   poi.setNewTripHandler((markerId) => openForm(null, { assign: markerId }));
   store.onChange(render);
+  onPrivacyChange(render); // check-in switched on or off changes the rows
   render();
   return { openForm, openDetail };
 }

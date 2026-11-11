@@ -51,6 +51,8 @@ Every region declares what its zones mean in `semantics`:
 
 **Singapore.** Its no-fly zones (CAAS, MHA and NParks, as published on OneMap) come in several classes (`layers[]` in `source.json`, format `onemap-themes`); the point check lists every zone containing the point and links to the official OneMap Drone Query. The data is approximate and was published before OneMap's terms were read. Sourced geo data is published by default; a region with `"publish": false` is built into `public/data-local/` (read only on localhost or a private network address) and stripped by `npm run deploy`.
 
+**Check-in.** With the Check-in switch on (privacy settings, off by default), a marker's Check in button enables within 300 m of it and saves your position and the time on that marker, in your browser only. It is kept in exports and left out of share links.
+
 ## Licence
 
 Code is MIT (`LICENSE`). The zone data comes from official sources with their own terms; see `docs/ATTRIBUTIONS.md` and `docs/regions/`.

@@ -10,7 +10,8 @@ export function initPanel() {
   const tabs = [...panel.querySelectorAll('[role=tab]')];
   const panes = new Map(tabs.map((t) => [t.dataset.tab, $(t.getAttribute('aria-controls'))]));
   let current = 'config';
-  const openers = [];
+  const openers = [], changers = [];
+  const changed = () => changers.forEach((fn) => fn());
   const mark = () => { document.body.dataset.panel = panel.hidden ? 'closed' : panel.classList.contains('rolled') ? 'rolled' : 'open'; };
 
   function selectTab(name, focus = false) {
@@ -23,6 +24,7 @@ export function initPanel() {
       if (on && focus) t.focus();
     }
     for (const [k, el] of panes) el.hidden = k !== name;
+    changed();
   }
 
   function openPrivacy() {
@@ -45,6 +47,7 @@ export function initPanel() {
     for (const b of dock.querySelectorAll('button')) b.setAttribute('aria-expanded', String(open));
     mark();
     if (open) openers.forEach((fn) => fn());
+    changed();
   }
 
   /** Rolls the panel up to its header strip (the tabs stay) or back down. Remembered. */
@@ -56,6 +59,7 @@ export function initPanel() {
     roll.title = roll.getAttribute('aria-label');
     if (on) closePrivacy({ focus: false });
     mark();
+    changed();
     if (save) savePrefs({ panelRolled: on || null });
   }
   $('panel-roll').addEventListener('click', () => setRolled(!panel.classList.contains('rolled')));
@@ -91,6 +95,10 @@ export function initPanel() {
     isOpen: () => !panel.hidden,
     /** Calls fn whenever the panel opens (the dashboard steps aside for it on a phone). */
     onOpen(fn) { openers.push(fn); },
+    /** The tab showing, whether the panel is rolled up, and a hook for any change (open, close, tab, roll). */
+    getTab: () => current,
+    isRolled: () => panel.classList.contains('rolled'),
+    onChange(fn) { changers.push(fn); },
     /** On phones the panel is a bottom sheet that would hide the map, so get it out of the way. */
     closeIfPhone() { if (isPhone() && !panel.hidden) { setOpen(false); } },
   };

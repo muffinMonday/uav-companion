@@ -220,7 +220,7 @@ export function initAI({ map, toast, panel, poi }) {
     // ids and creation times are noise in a link; dates, day, order, the unverified flag and the trips the shared markers are in are kept
     const used = new Set(items.map((i) => i.tripId).filter(Boolean));
     const gj = toGeoJSON(items, poi.store.trips().filter((t) => used.has(t.id)));
-    for (const f of gj.features) { delete f.properties.id; delete f.properties.created; }
+    for (const f of gj.features) { delete f.properties.id; delete f.properties.created; delete f.properties.checkin; /* where you were stays with you */ }
     const url = `${location.origin}${location.pathname}#import=${await encodeShare(JSON.stringify(gj))}`;
     try {
       await navigator.clipboard.writeText(url);

@@ -3,7 +3,9 @@ import L from 'leaflet';
 import { KEY, TRIPS_KEY, TYPES, typeOf, pinSvg, createStore, toGeoJSON, parseGeoJSON, sortForList, posInt, isoDate, listMode, groupLabel, dateLabel } from './poi.js';
 import { createMarkerWeather, formatWhen, rainOutlook } from './markerweather.js';
 import { createMarkerElevation } from './elevation.js';
-import { getPrivacy } from './privacy.js';
+import { getPrivacy, onPrivacyChange } from './privacy.js';
+import { createCheckin, checkinCell } from './checkin-ui.js';
+import { checkinLabel } from './checkin.js';
 import { getWindLimit } from './weather.js';
 import { getDistanceSettings, setDistanceSettings, onDistanceSettings } from './units.js';
 import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, compass, toDisplay, fromDisplay } from './distance.js';
@@ -36,6 +38,7 @@ const tripLabel = (it, trip) => [dayText(dayInfo(it, trip)), it.order !== undefi
 
 export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWeather, locateOnce, panel }) {
   const store = createStore();
+  const cin = createCheckin({ store, panel, toast }); // check-in at markers: opt-in, only while the panel shows them
   const layer = L.layerGroup().addTo(map);
   const markers = new Map(); // id -> L.Marker
   const container = map.getContainer();
@@ -126,6 +129,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       filterEl.append(c);
     }
 
+    cin.unbind('poi');
     listEl.replaceChildren();
     const trips = store.trips();
     const visible = items.filter((i) => (filter === 'all' || i.type === filter)
@@ -223,6 +227,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       if (slot && applyMove(id, scope, mode, slot.key, slot.index)) requestAnimationFrame(() => listEl.querySelector(`li[data-id="${CSS.escape(id)}"] .poi-item`)?.focus());
     },
   });
+
+  onPrivacyChange(() => renderList()); // check-in switched on or off changes the rows
 
   // ---------- selecting several markers to delete ----------
   const selRow = $('poi-select-row'), selBar = $('poi-selbar'), selDelete = $('sel-delete'), selConfirm = $('sel-confirm');
@@ -384,6 +390,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       b.addEventListener('click', () => flyToItem(it.id));
     }
     li.append(b);
+    const cell = checkinCell({ cin, store, id: it.id, ns: 'poi' }); // Check in, or what was recorded, at the right of the row
+    if (cell) { li.classList.add('with-checkin'); li.append(cell); }
     return li;
   }
 
@@ -404,6 +412,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     noteEl.textContent = 'Saved only in this browser on this device, and never uploaded. '
       + (last ? `Last backup: ${new Date(last).toLocaleDateString()}. ` : 'Not backed up yet. ')
       + 'Clearing site data erases them, so export now and then.'
+      + (store.items().some((i) => i.checkin) ? ' An export includes your check-in positions (where you were and when), so keep the file private.' : '')
       + (store.items().some((i) => i.type === 'residence') ? ' An export includes your Home marker (your residence), so keep the file private. Share links leave it out.' : '');
   }
 
@@ -635,6 +644,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const coordRow = el('div', 'coords-row');
       coordRow.append(el('span', 'coords', `${fmt(it.lat)}, ${fmt(it.lon)}`), mapLinkIcons({ lat: it.lat, lon: it.lon, name: it.name, home: it.type === 'residence' }));
       titles.append(coordRow);
+      if (it.checkin) titles.append(el('div', 'pop-checkin', '✓ Checked in ' + checkinLabel(it.checkin)));
       head.append(badge, titles);
       root.append(head);
       const visits = visitMap.get(id);
@@ -1074,6 +1084,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   return {
     store,
     route: routeApi,
+    checkin: cin,
     showTrip, fitTrip,
     /** Flies to a marker and opens its window (the Trips tab's day list uses it). */
     openMarker: (id) => flyToItem(id),

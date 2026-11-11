@@ -4,7 +4,7 @@ import { getPrivacy, setPrivacy } from './privacy.js';
 const $ = (id) => document.getElementById(id);
 
 export function initPrivacyUI({ mw, elev }) {
-  const auto = $('pv-auto'), alt = $('pv-alt'), geo = $('pv-geo');
+  const auto = $('pv-auto'), alt = $('pv-alt'), geo = $('pv-geo'), chk = $('pv-checkin');
   const radios = [...document.querySelectorAll('input[name=pv-prec]')];
 
   const sync = () => {
@@ -12,6 +12,7 @@ export function initPrivacyUI({ mw, elev }) {
     auto.checked = p.autoWeather;
     alt.checked = p.fetchAltitude;
     geo.checked = p.lookupNames;
+    chk.checked = p.checkIn;
     for (const r of radios) r.checked = r.value === p.weatherPrecision;
   };
   sync();
@@ -20,5 +21,6 @@ export function initPrivacyUI({ mw, elev }) {
   auto.addEventListener('change', () => mw.setEnabled(auto.checked));
   alt.addEventListener('change', () => elev.setEnabled(alt.checked));
   geo.addEventListener('change', () => setPrivacy({ lookupNames: geo.checked }));
+  chk.addEventListener('change', () => setPrivacy({ checkIn: chk.checked }));
   for (const r of radios) r.addEventListener('change', () => { if (r.checked) setPrivacy({ weatherPrecision: r.value }); });
 }

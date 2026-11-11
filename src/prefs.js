@@ -22,6 +22,7 @@ function sanitize(raw) {
   if (raw.weatherPrecision === 'precise' || raw.weatherPrecision === 'estimated') out.weatherPrecision = raw.weatherPrecision;
   if (typeof raw.fetchAltitude === 'boolean') out.fetchAltitude = raw.fetchAltitude;
   if (typeof raw.lookupNames === 'boolean') out.lookupNames = raw.lookupNames;
+  if (typeof raw.checkIn === 'boolean') out.checkIn = raw.checkIn; // use the position to enable check-in at markers
   if (['auto', 'amap', 'google'].includes(raw.mapApp)) out.mapApp = raw.mapApp; // which map app the Open / Navigate buttons use
   if (['drive', 'transit', 'walk', 'bike'].includes(raw.mapMode)) out.mapMode = raw.mapMode; // the usual way of travelling
   const v = raw.view;

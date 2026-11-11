@@ -30,6 +30,8 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `controls.js` | Modern number (− / +) and date (clear button) fields; observer enhances fields created later | `initControls` | none |
 | `holdcheck.js` | Press-and-hold (2 s) point check, right-click and Enter; ring feedback; swallows the click after a hold | `initHoldCheck`, `HOLD_MS` | none |
 | `view.js` | Centre the map on a coordinate (aware of the side panel) and the tallest window that fits above it | `centreOn`, `popupMaxHeight`, `expandedMaxHeight`, `defaultExpanded`, `panelInset` | none |
+| `checkin.js` (pure) | Check-in rules (300 m, 150 m accuracy), the stored record, label, tooltip wording, visited count | `checkinState`, `checkinTitle`, `sanitizeCheckin`, `checkinLabel`, `visitedCount` | distance |
+| `checkin-ui.js` | The opt-in position watcher and the Check in control at the right of a row | `createCheckin`, `checkinCell` | privacy, checkin |
 | `dashboard.js` | The dashboard: What's new, next trip with ‹ ›, backup reminder, region buttons, guide; three states | `initDashboard` (`setRegions`, `open`) | dashstate, whatsnew, trips |
 | `dashstate.js` (pure) | What the dashboard remembers; start rules; unseen What's new; backup reminder rule | `startState`, `unseenEntries`, `backupDue`, `load`, `save` | - |
 | `whatsnew.js` | The What's new entries, newest first (add one to announce a change) | `WHATS_NEW` | - |

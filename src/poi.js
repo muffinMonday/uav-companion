@@ -3,6 +3,7 @@
 
 import { addDays, daysBetween } from './dates.js';
 import { countryCode } from './countries.js';
+import { sanitizeCheckin } from './checkin.js';
 
 export const KEY = 'uavzones.v1.pois';
 export const TRIPS_KEY = 'uavzones.v1.trips';
@@ -84,6 +85,8 @@ export function sanitize(raw) {
     item.date = date;
     if (endDate && endDate > date) item.endDate = endDate; // an end on or before the start is just a single day
   }
+  const checkin = type !== 'residence' ? sanitizeCheckin(raw.checkin) : null; // where and when you were there; the Home marker cannot have one
+  if (checkin) item.checkin = checkin;
   if (raw.unverified === true) item.unverified = true; // location came from an AI or a name lookup and has not been checked yet
   // A trip tag. The Home marker (a residence) does not belong to a trip, so it never keeps one.
   if (typeof raw.tripId === 'string' && raw.tripId.length > 0 && raw.tripId.length <= 64 && type !== 'residence') item.tripId = raw.tripId;
@@ -414,6 +417,7 @@ export function toGeoJSON(items, trips = []) {
         ...(i.day !== undefined && { day: i.day }), ...(i.order !== undefined && { order: i.order }),
         ...(i.date !== undefined && { date: i.date }), ...(i.endDate !== undefined && { endDate: i.endDate }), ...(i.unverified && { unverified: true }),
         ...(i.tripId !== undefined && { tripId: i.tripId }),
+        ...(i.checkin && { checkin: i.checkin }),
       },
       geometry: { type: 'Point', coordinates: [i.lon, i.lat] },
     })),
@@ -435,7 +439,7 @@ export function parseGeoJSON(text) {
     const g = f?.geometry;
     if (g?.type !== 'Point' || !Array.isArray(g.coordinates)) { skipped++; continue; }
     const p = f.properties || {};
-    const item = sanitize({ id: p.id, type: p.type, name: p.name, note: p.note ?? p.description, created: p.created, day: p.day, order: p.order, date: p.date, endDate: p.endDate, unverified: p.unverified, tripId: p.tripId, lon: g.coordinates[0], lat: g.coordinates[1] });
+    const item = sanitize({ id: p.id, type: p.type, name: p.name, note: p.note ?? p.description, created: p.created, day: p.day, order: p.order, date: p.date, endDate: p.endDate, unverified: p.unverified, checkin: p.checkin, tripId: p.tripId, lon: g.coordinates[0], lat: g.coordinates[1] });
     if (item) items.push(item); else skipped++;
   }
   if (feats.length > MAX_ITEMS) skipped += feats.length - MAX_ITEMS;

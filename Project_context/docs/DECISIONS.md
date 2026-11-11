@@ -164,3 +164,8 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision (owner): the Route block leaves the Points of Interest tab and becomes a card on the dashboard, shown while selecting markers (opens the dashboard at the second stop on a desktop; a strip on a phone). A welcome line tops the dashboard. Each day of a trip gets a Navigate this day route.
 - Reasoning: the route is built while looking at the map, and tapping pins already selects; the dashboard sits under the map and a phone no longer detours through the panel. Navigate this day needs no selecting.
 - Alternative considered and dropped: a flip card for the Points of Interest list (it would hide days from drag-and-drop and from select-all).
+
+### 2026-11-11: Check-in at markers (opt-in, local)
+- Decision (owner): a Check in button on each marker row enables within 300 m and records position and time. Rules chosen with the owner: an opt-in privacy switch, a 150 m accuracy limit, one check-in per marker (cleared with an ✕), exported but not shared, and "visited" counts on the trip cards.
+- Reasoning: enabling a button as someone walks needs continuous location, so it follows the same consent model as weather and elevation; the position is read only while markers are on show and never leaves the browser.
+- Consequences: export files contain where the owner was; share links never do.

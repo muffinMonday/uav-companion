@@ -252,6 +252,13 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Beside the open side panel it stops short of it; on a phone the panel and the dashboard take turns (opening one tucks the other away). **How it works** in Map Configs opens it with the guide unfolded.
 - Stored under `uavzones.v1.dash`: `showOnStart`, `hideUntil`, `seen`, `welcomed`. The old `uavzones.v1.welcome` key is no longer read.
 
+**F37. Check-in at markers (built)**
+- Every marker row (Points of Interest list, and the stops on a trip's day card) has a **Check in** button at its right. It is disabled until your position is within 300 m of the marker and the GPS fix is accurate to 150 m or better; the tooltip says why ("You are 1.2 km away. Check-in opens within 300 m.", "Your location is only accurate to about 400 m", "Waiting for your location…", or that location is blocked).
+- Pressing it saves a check-in on the marker: the time, your coordinates and the accuracy. The row then shows `✓ Wed, Nov 11, 16:09` at the right with a small ✕ that clears it (asks first); the marker window shows "Checked in …". One check-in per marker; a second visit to the same place is its own marker. The Home marker cannot be checked in.
+- The trip card and each day card count the markers visited ("1 of 2 visited").
+- **Opt-in:** the **Check-in** switch in the privacy settings (off by default). Only while it is on, and only while the panel is open, not rolled up, on the Points of Interest or Trips tab and the page is visible, the app watches the position (`watchPosition`); it stops otherwise and forgets the position. The position is never sent anywhere. If permission is denied the buttons stay disabled and say so.
+- A check-in is kept on the marker in this browser. It is included in the **export** (and a restore brings it back; the backup note says the file contains check-in positions) and **left out of share links**.
+
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.
 - First visit (nothing saved): the map fits the first covered region (Hubei); other regions are reached with the country menu. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.

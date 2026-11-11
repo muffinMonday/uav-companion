@@ -650,3 +650,16 @@ body[data-panel=open] .dash{max-width:min(780px,calc(100% - 396px))}
 .dash-route{flex:1 1 300px;max-width:440px}
 .dash-route .route-stops{margin:6px 0}
 .day-route{display:grid;gap:4px;margin-top:8px}
+
+/* ---------- check-in at the right of a marker row ---------- */
+.poi-list li.with-checkin{display:flex;align-items:center;gap:6px}
+.poi-list li.with-checkin .poi-item{flex:1;min-width:0;width:auto}
+.checkin{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:46%}
+.checkin-btn{padding:5px 9px;font-size:12px;white-space:nowrap}
+.checkin-btn:disabled{opacity:.5;cursor:not-allowed}
+.checkin-done{color:var(--ok);font-size:12px;font-weight:650;text-align:right;line-height:1.25}
+.checkin-clear{width:22px;height:22px;font-size:12px}
+.checkin-clear.armed{width:auto;padding:0 7px;border-radius:11px;background:var(--danger);color:#fff;font-weight:650}
+.plan-row{display:flex;align-items:center;gap:6px}
+.plan-row .plan-stop{flex:1;min-width:0;width:auto}
+.pop-checkin{margin-top:2px;color:var(--ok);font-size:12px;font-weight:650}
