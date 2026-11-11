@@ -487,3 +487,15 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .pop-seq-btn{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);font-weight:600;font-size:12.5px;cursor:pointer}
 .pop-seq-btn:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
 .pop-seq-btn:disabled{opacity:.35;cursor:default}
+
+/* ---------- zones with named classes (Singapore) ---------- */
+.zone-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.zone-list li{padding:8px 10px;border-radius:12px;background:var(--surface-2)}
+.pop .zone-list li{background-color:color-mix(in srgb,var(--surface-2) calc(var(--pop-alpha) * 100%),transparent)}
+.zone-name{font-size:12.5px}
+.zone-dot{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:50%;vertical-align:-1px}
+.zone-rule,.zone-src{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+.check-note{margin:8px 0 0;padding:6px 10px;border-radius:10px;background:var(--accent-soft);font-size:12.5px}
+.official-link{display:block;margin-top:8px;text-align:center}
+.legend-note{margin:6px 0 0;font-size:11.5px;color:var(--muted)}
+.uafa-pin span{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#2e7d32;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);font:700 11px/1 var(--font)}

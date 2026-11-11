@@ -49,6 +49,8 @@ Every region declares what its zones mean in `semantics`:
 - `allow`: zones are where flying is permitted (China's 适飞 grid). Outside the zones is controlled.
 - `restrict`: zones are restricted areas (the usual form elsewhere, e.g. Singapore). Outside the zones means no restriction in this data, which is not permission to fly.
 
+**Singapore (local only).** A region can have several zone classes (`layers[]` in `source.json`, format `onemap-themes`) and `"publish": false`. Such a region is built into `public/data-local/`, which the app only reads on localhost or a private network address, and `npm run deploy` removes it from the site. Singapore's no-fly zones (CAAS, MHA, NParks, as published on OneMap) are used this way for the owner's own group: the OneMap terms have not been read, so the data is not published. The point check lists every zone containing the point and links to the official OneMap Drone Query.
+
 ## Licence
 
 Code is MIT (`LICENSE`). The zone data comes from official sources with their own terms; see `docs/ATTRIBUTIONS.md` and `docs/regions/`.

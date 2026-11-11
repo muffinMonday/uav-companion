@@ -1,0 +1,90 @@
+{
+  "id": "sg-nofly",
+  "country": "sg",
+  "name": "Singapore no-fly zones",
+  "nameZh": "新加坡禁飞区",
+  "format": "onemap-themes",
+  "crs": "wgs84",
+  "crsVerified": true,
+  "semantics": "restrict",
+  "boundary": "boundary.geojson",
+  "coverageMarginM": 1500,
+  "publish": false,
+  "officialMap": {
+    "label": "OneMap Drone Query (official)",
+    "url": "https://www.onemap.gov.sg/droneQuery"
+  },
+  "layers": [
+    {
+      "id": "nparks",
+      "file": "layers/nparks.json",
+      "label": "NParks park or nature reserve",
+      "color": "#795548",
+      "severity": 6,
+      "summary": "Drones are not allowed in this park or nature reserve (NParks)."
+    },
+    {
+      "id": "aerodrome",
+      "file": "layers/aerodrome.json",
+      "label": "Within 5 km of an aerodrome",
+      "color": "#1976d2",
+      "severity": 5,
+      "summary": "Within 5 km of an aerodrome: a no-fly zone for unmanned aircraft without a CAAS permit."
+    },
+    {
+      "id": "protected",
+      "file": "layers/protected.json",
+      "label": "Protected area (Air Navigation Act)",
+      "color": "#7b1fa2",
+      "severity": 4,
+      "summary": "Protected area under the Air Navigation Act: a no-fly zone for unmanned aircraft without a CAAS permit."
+    },
+    {
+      "id": "danger",
+      "file": "layers/danger.json",
+      "label": "Danger area",
+      "color": "#ef6c00",
+      "severity": 3,
+      "summary": "Danger area: flying unmanned aircraft is not allowed without a CAAS permit."
+    },
+    {
+      "id": "restricted",
+      "file": "layers/restricted.json",
+      "label": "Restricted area",
+      "color": "#e53935",
+      "severity": 2,
+      "summary": "Restricted area: unauthorised aerial activity is not allowed (see the height limit)."
+    },
+    {
+      "id": "prohibited",
+      "file": "layers/prohibited.json",
+      "label": "Prohibited area",
+      "color": "#b71c1c",
+      "severity": 1,
+      "summary": "Prohibited area: flying unmanned aircraft is not allowed."
+    },
+    {
+      "id": "uafa_open",
+      "file": "layers/uafa_open.json",
+      "points": true,
+      "label": "UA flying area (open use)",
+      "color": "#2e7d32",
+      "summary": "A CAAS unmanned aircraft flying area, where flying is allowed under the area's rules."
+    },
+    {
+      "id": "uafa_community",
+      "file": "layers/uafa_community.json",
+      "points": true,
+      "label": "UA flying area (community-led)",
+      "color": "#2e7d32",
+      "summary": "A community-led CAAS unmanned aircraft flying area: contact the club before flying."
+    }
+  ],
+  "source": {
+    "authority": "CAAS, MHA and NParks, as published on OneMap",
+    "effective": "auto",
+    "attachment": "OneMap theme responses (boundary_5km, danger_areas, prohibited_areas, restricted_areaspoly, mha_uav_2015, drone_no_fly, caas_uafa_*)"
+  },
+  "license": "unknown",
+  "licenseNote": "Taken from OneMap by the owner for the owner's own group. OneMap's terms have not been read. Do not publish: this region is built locally only (publish: false)."
+}

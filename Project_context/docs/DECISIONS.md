@@ -120,3 +120,9 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision: Day N = date − trip start + 1; the Day box is removed; trips need a start and end date (owner's choices); a date outside the trip has no day; stored days are dropped or turned into dates at start-up and whenever they could conflict, without a backup (owner's choice). Old markers with a day and no way to work it out keep it read-only. Reordering only works on dated lists.
 - Alternatives: keep Day as an editable fallback (rejected: that is how they drifted apart); count from the earliest dated marker when a trip has no start (day 1 would shift).
 - Consequences: AI days become dates on import; trip dates are needed to create a trip from an AI reply.
+
+### 2026-11-11: Singapore no-fly zones are built locally and never deployed
+- Context: the owner saved OneMap's theme responses (aerodrome 5 km, danger, prohibited, restricted, MHA protected areas, NParks, UAFA pins) for a small FPV group; OneMap's terms are unread and the group does not approach CAAS.
+- Decision: a region may have `layers[]` (one zone class each, with label, colour, severity, summary) and `publish: false`; it is built into `public/data-local` (gitignored), merged by the app only on localhost/private addresses, and removed from `dist` by `scripts/strip-local.js` inside `npm run deploy` (which fails if a local region remains). Temporary restricted areas are ignored. Point check returns every zone containing the point; coverage uses a 1.5 km margin around the Natural Earth outline.
+- Alternatives: publish publicly (rejected until the terms are read); rebuild from AIP tables (not needed once OneMap data was available).
+- Consequences: sharing the Singapore layer with the group needs a later decision (possibly a backend). Raw files and tiles stay local; accuracy is "as published on OneMap", with a button to the official map.

@@ -20,7 +20,7 @@ import { getPrivacy } from './privacy.js';
 import { onDistanceSettings } from './units.js';
 import { lookupElevation } from './elevation.js';
 import { tile, statsGrid } from './cards.js';
-import { dataUrl } from './config.js';
+import { dataUrl, localUrl, mayHaveLocalData } from './config.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 
 const $ = (id) => document.getElementById(id);
@@ -95,6 +95,11 @@ function decorate(content, latlng, label, onResize, extras = {}) {
   }
   content.append(weatherButton(() => { map.closePopup(); showWeather(latlng.lat, latlng.lng, label); }));
   content.append(mapLinksBlock({ lat: latlng.lat, lon: latlng.lng, name: label }));
+  if (extras.official) { // the region's own authoritative map (Singapore: OneMap), in a new tab
+    const a = document.createElement('a');
+    a.className = 'btn small maplink official-link'; a.href = extras.official.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = extras.official.label;
+    content.append(a);
+  }
   // save the spot as a marker; a searched spot also has a pin that can be removed
   const acts = document.createElement('div');
   acts.className = 'acts check-acts';
@@ -120,7 +125,7 @@ async function showCheck(latlng, title, opts = {}) {
   const res = await checkPoint(latlng.lat, latlng.lng);
   // a window too tall to fit above the spot scrolls inside instead of pushing the map around
   const popup = L.popup({ maxWidth: Math.min(320, window.innerWidth - 32), minWidth: Math.min(250, window.innerWidth - 40), offset: [0, offsetY], autoPan: false, closeOnClick: false, maxHeight: popupMaxHeight(map, offsetY) }).setLatLng(latlng);
-  popup.setContent(decorate(describeCheck(res, title), latlng, title, () => popup.update(), opts)).openOn(map);
+  popup.setContent(decorate(describeCheck(res, title, opts.note), latlng, title, () => popup.update(), { ...opts, official: res.region?.officialMap })).openOn(map);
 }
 
 let quietFix = false; // true while a marker is being placed at the user's location: its own popup must stay open
@@ -172,11 +177,27 @@ map.on('click', (e) => {
 // Data
 try {
   const index = await loadJson('index.json');
+  // Regions that are built locally only (publish: false) sit in ./data-local. They are looked for on localhost and private addresses only.
+  const localManifests = [];
+  if (mayHaveLocalData()) {
+    try {
+      const r = await fetch(localUrl('index.json'));
+      const li = r.ok ? await r.json().catch(() => null) : null;
+      for (const lc of li?.countries ?? []) {
+        if (!lc.manifest) continue;
+        const m = await (await fetch(localUrl(lc.manifest))).json();
+        m.regions.forEach((x) => { x.local = true; });
+        localManifests.push(m);
+        const entry = index.countries.find((c) => c.id === lc.id);
+        if (entry) entry.regions += m.regions.length; else index.countries.push({ ...lc, regions: m.regions.length, manifest: null, places: null });
+      }
+    } catch { /* no local data here: fine */ }
+  }
   const [manifests, placeLists] = await Promise.all([
     Promise.all(index.countries.filter((c) => c.manifest).map((c) => loadJson(c.manifest))),
     Promise.all(index.countries.filter((c) => c.places).map((c) => loadJson(c.places))),
   ]);
-  const regions = manifests.flatMap((m) => m.regions);
+  const regions = [...manifests, ...localManifests].flatMap((m) => m.regions);
   const places = placeLists.flat();
   initPointCheck(regions);
   initSearch(map, places, { show: showCheck });
@@ -205,6 +226,22 @@ try {
   });
   if (prefs.country && index.countries.some((c) => c.id === prefs.country && c.view)) countrySel.value = prefs.country; // position itself comes from the saved view
 
+  // Point features (flying areas): a green pin each, which opens the usual check window for that spot with a note
+  const pinLayer = L.layerGroup().addTo(map);
+  for (const r of regions.filter((x) => x.points)) {
+    try {
+      const pts = await (await fetch(r.local ? localUrl(r.points) : dataUrl(r.points))).json();
+      const label = (id) => r.classes?.find((c) => c.id === id)?.label ?? 'Flying area';
+      const summary = (id) => r.classes?.find((c) => c.id === id)?.summary ?? '';
+      for (const p of pts) {
+        const m = L.marker([p.lat, p.lon], { icon: L.divIcon({ className: 'uafa-pin', html: '<span>UA</span>', iconSize: [28, 28], iconAnchor: [14, 14] }), title: p.name, alt: p.name, keyboard: true });
+        m.on('click', () => showCheck(L.latLng(p.lat, p.lon), p.name, { offsetY: -16, note: `${label(p.class)}. ${summary(p.class)}` }));
+        m.addTo(pinLayer);
+      }
+    } catch { /* the flying areas could not be loaded: the zones still work */ }
+  }
+  $('show').addEventListener('change', (e) => (e.target.checked ? pinLayer.addTo(map) : map.removeLayer(pinLayer)));
+
   const zones = createZones(map, regions);
   zones.setOpacity(+$('op').value); // the remembered opacity, before any zone layer is created
   if (!prefs.view) zones.fit(clearOfPanel()); // first visit: show all covered regions; later visits resume where the user left off
@@ -218,7 +255,12 @@ try {
     allow: ['#2aa6b8', 'Teal: suitable-flight airspace (flying permitted within the stated height); everything else is controlled.'],
     restrict: ['#d64545', 'Red: restricted area. Elsewhere there is no restriction in this data, which is not the same as permission to fly.'],
   };
-  for (const sem of new Set(regions.map((r) => r.semantics))) {
+  const addLegend = (colour, text) => { const row = document.createElement('div'); const sw = document.createElement('i'); sw.style.background = colour; row.append(sw, text); legend.append(row); };
+  for (const r of regions.filter((x) => x.classes)) {
+    for (const c of r.classes) addLegend(c.color, c.points ? `${c.label}: where flying is allowed (a pin on the map).` : `${c.label}.`);
+    const p = document.createElement('div'); p.className = 'legend-note'; p.textContent = `${r.name}: ${r.source.authority}, updated ${r.source.effective}. Approximate: not in a zone here does not mean flying is allowed. Check the official map.`; legend.append(p);
+  }
+  for (const sem of new Set(regions.filter((r) => !r.classes).map((r) => r.semantics))) {
     const row = document.createElement('div');
     const sw = document.createElement('i');
     sw.style.background = meanings[sem][0];

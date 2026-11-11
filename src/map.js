@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import { leafletLayer, PolygonSymbolizer } from 'protomaps-leaflet';
-import { dataUrl } from './config.js';
+import { regionUrl } from './config.js';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -53,11 +53,14 @@ export function createZones(map, regions) {
   let opacity = 0.45;
 
   const make = (r) => leafletLayer({
-    url: dataUrl(r.file),
+    url: regionUrl(r, r.file),
     maxZoom: 19,
     maxDataZoom: r.maxZoom, // tiles stop here; deeper map zooms overzoom them (library default is 15)
     // Opaque fill; transparency is applied to the whole layer so adjacent cells do not darken at shared edges.
-    paintRules: [{ dataLayer: 'zones', symbolizer: new PolygonSymbolizer({ fill: FILL[r.semantics] }) }],
+    // A region with named classes (Singapore) is drawn class by class, in the order of its classes, each in its own colour.
+    paintRules: r.classes
+      ? r.classes.filter((c) => !c.points).map((c) => ({ dataLayer: 'zones', filter: (zoom, f) => f.props.c === c.id, symbolizer: new PolygonSymbolizer({ fill: c.color }) }))
+      : [{ dataLayer: 'zones', symbolizer: new PolygonSymbolizer({ fill: FILL[r.semantics] }) }],
     labelRules: [],
     attribution: `Zones: ${r.source.authority}`,
   });
@@ -79,7 +82,9 @@ export function createZones(map, regions) {
     sync,
     fit(options) {
       if (!regions.length) return;
-      const all = regions.map((r) => toLatLngBounds(r.bounds)).reduce((a, b) => a.extend(b));
+      // the opening view follows the published regions; a local-only one (Singapore) must not stretch it
+      const shown = regions.filter((r) => !r.local);
+      const all = (shown.length ? shown : regions).map((r) => toLatLngBounds(r.bounds)).reduce((a, b) => a.extend(b));
       map.fitBounds(all, options);
     },
     setVisible(v) {

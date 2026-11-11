@@ -18,3 +18,6 @@ tests/out/
 
 # Planning material (screenshots of third-party maps and the like): never committed
 planning/
+
+# Regions marked "publish": false are built here and never deployed (see scripts/strip-local.js)
+public/data-local/

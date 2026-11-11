@@ -6,7 +6,7 @@
   "type": "module",
   "description": "Open-source map of suitable-flight (适飞) drone zones, starting with China",
   "scripts": {
-    "deploy": "vite build && gh-pages -d dist --nojekyll --no-history",
+    "deploy": "vite build && node scripts/strip-local.js && gh-pages -d dist --nojekyll --no-history",
     "verify:data": "node scripts/verify-data.js",
     "dev": "vite",
     "build:data": "node scripts/build-data.js",

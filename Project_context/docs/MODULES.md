@@ -8,6 +8,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `main.js` | Wiring and start-up order: createMap, initPanel, weather, locate, initPOI, initPrivacyUI, initTripsUI, initAI, then data load, zones, country menu | none | everything below |
 | `map.js` | Leaflet map, basemaps, scale control, zone layer | `createMap` (map, switchBase, setScaleUnits), `createZones` | config, prefs |
 | `config.js` | Data base URL (`VITE_DATA_BASE_URL`, default `./data/`) | `dataUrl` | none |
+| `zones.js` | Reads every zone containing a point from a PMTiles archive (pure, testable in Node) | `zonesInArchive` | vector-tile, pbf |
 | `pointcheck.js` | Zone verdict for a point from tiles at max zoom | check function | pmtiles, vector-tile |
 | `search.js` | Offline place index plus online Photon/Nominatim search | search UI | config |
 | `locate.js` | Location pin, re-centre control | control, `request()` | none |
@@ -46,6 +47,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `scripts/build-data.js` | Region data to `public/data/` (entry for `npm run build:data`) |
 | `scripts/make-china-outline.js` | Builds `src/data/china-outline.js` (China outline from Natural Earth) | `node scripts/make-china-outline.js [ne50.json]` |
 | `scripts/verify-data.js` | Compares shapefile cells with tiles (`npm run verify:data`); 0 mismatches for Hubei |
+| `scripts/lib/onemap.js`, `scripts/strip-local.js` | OneMap theme parser; removes local-only regions from `dist` before deploy |
 | `scripts/lib/{crs,readers,tiles,pmtiles-writer}.js` | CRS conversion, shapefile/GeoJSON readers, tile cutting, own PMTiles v3 writer |
 | `data/regions/<country>/country.json`, `<region>/source.json` + `boundary.geojson` | Region definitions committed to git; raw data stays local |
 | `data/places/<country>.txt` | Offline search index source |
