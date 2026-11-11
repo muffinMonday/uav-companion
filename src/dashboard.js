@@ -183,15 +183,16 @@ export function initDashboard({ poi, panel, trips, shared = false, actions = {} 
     const c = el('section', 'dash-card dash-actions');
     c.append(el('h3', '', 'Quick actions'));
     const grid = el('div', 'dash-btns');
-    const mk = (text, fn, disabled = false) => {
+    const mk = (text, fn, disabled = false, keep = false) => {
       const b = el('button', 'btn small', text); b.type = 'button'; b.disabled = disabled;
-      b.addEventListener('click', () => { if (isPhone()) setState('peek'); fn(); }); // on a phone the map needs the room
+      b.addEventListener('click', () => { if (isPhone() && !keep) setState('peek'); fn(); }); // on a phone the map needs the room
       grid.append(b);
     };
     mk('Place at map centre', () => $('poi-center').click());
     mk('Place at my location', () => $('poi-here').click());
     mk('Select markers', () => $('poi-select').click(), !store.items().length);
     mk('Check my spot', () => actions.checkHere?.(), !actions.checkHere);
+    if (actions.crosshair) mk(actions.crosshair.on ? 'Hide crosshair' : 'Show crosshair', () => actions.crosshair.toggle(), false, true);
     c.append(grid);
     return c;
   }
@@ -249,16 +250,21 @@ export function initDashboard({ poi, panel, trips, shared = false, actions = {} 
     return c;
   }
   function regionsCard() {
-    if (!regions.countries.length) return null;
-    const c = el('section', 'dash-card');
-    c.append(el('h3', '', 'Fly in'));
-    const row = el('div', 'btn-row');
-    for (const k of regions.countries) {
-      const b = el('button', 'btn small', k.name); b.type = 'button';
-      b.addEventListener('click', () => { regions.goTo?.(k.id); panel.closeIfPhone(); if (isPhone()) setState('peek'); });
-      row.append(b);
+    const c = el('section', 'dash-card dash-fly');
+    if (regions.countries.length) {
+      c.append(el('h3', '', 'Fly in'));
+      const row = el('div', 'btn-row');
+      for (const k of regions.countries) {
+        const b = el('button', 'btn small', k.name); b.type = 'button';
+        b.addEventListener('click', () => { regions.goTo?.(k.id); panel.closeIfPhone(); if (isPhone()) setState('peek'); });
+        row.append(b);
+      }
+      c.append(row);
     }
-    c.append(row);
+    const g = guideCard(); // How it works folds out under the buttons; open, the card takes the whole row so the steps stay readable
+    c.classList.toggle('wide', g.open);
+    g.addEventListener('toggle', () => c.classList.toggle('wide', g.open));
+    c.append(g);
     return c;
   }
   function guideCard() {
@@ -283,7 +289,6 @@ export function initDashboard({ poi, panel, trips, shared = false, actions = {} 
     body.replaceChildren();
     body.append(welcomeLine());
     for (const card of [routeCard(), whatsNewCard(), tripCard(), actionsCard(), layersCard(), backupCard(), dataCard(), keyCard(), regionsCard()]) if (card) body.append(card);
-    body.append(guideCard());
     updatePeek();
     poi.checkin.sync(); // the position is wanted while Today shows check-in buttons
   }
@@ -333,6 +338,7 @@ export function initDashboard({ poi, panel, trips, shared = false, actions = {} 
   panel.onOpen?.(() => { if (isPhone() && state === 'expanded') setState('peek'); }); // on a phone the panel and the dashboard take turns
   store.onChange(() => { if (state === 'expanded') render(); else updatePeek(); });
   poi.checkin.also(() => state === 'expanded' && todayShown);
+  actions.crosshair?.onChange(() => { if (state === 'expanded') render(); });
   trips.onForecast?.(() => { if (state === 'expanded') render(); });
   // Map Configs changes show in the mirrored layer controls
   $('show').addEventListener('change', () => { if (layerEls.cb) layerEls.cb.checked = $('show').checked; });

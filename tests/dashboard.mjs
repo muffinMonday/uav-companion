@@ -248,5 +248,46 @@ async function openX({ prefs = {}, geo = null, weather = false } = {}) {
   ok(/First day: .*22°\/14°/.test(txt), 'with automatic weather on, the next trip shows the forecast for its first day: ' + (txt.match(/First day:[^·]*/) || [''])[0].trim());
   await c.close();
 }
+// ================= the crosshair at the map centre, and a tight grid of cards
+({ ctx, p } = await open({ width: 1300, height: 850 }, false));
+const cross = () => p.$eval('.crosshair', (e) => { const r = e.getBoundingClientRect(), m = document.getElementById('map').getBoundingClientRect(); return { x: r.x + r.width / 2 - (m.x + m.width / 2), y: r.y + r.height / 2 - (m.y + m.height / 2), hidden: getComputedStyle(e).display === 'none', label: e.querySelector('.cross-label').textContent }; });
+let cr = await cross();
+ok(!cr.hidden && Math.abs(cr.x) <= 1 && Math.abs(cr.y) <= 1, 'a crosshair marks the centre of the map by default');
+ok(/^\d+\.\d{5}, \d+\.\d{5}$/.test(cr.label), 'with the coordinates of the centre under it: ' + cr.label);
+const placedBefore = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length);
+await p.locator('#dash .dash-actions .btn', { hasText: 'Place at map centre' }).click(); await p.waitForTimeout(500);
+const placed = await p.evaluate(() => { const it = JSON.parse(localStorage.getItem('uavzones.v1.pois')).items; return it.slice().sort((a, b) => String(b.created).localeCompare(String(a.created)))[0]; });
+const [la, lo] = cr.label.split(', ').map(Number);
+ok(Math.abs(placed.lat - la) < 2e-5 && Math.abs(placed.lon - lo) < 2e-5 && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length)) === placedBefore + 1, 'Place at map centre puts the marker exactly where the cross is');
+ok((await cross()).hidden, 'the crosshair steps aside while a window is open');
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
+ok(!(await cross()).hidden, 'and returns when it closes');
+ok((await p.$eval('.crosshair', (e) => getComputedStyle(e).pointerEvents)) === 'none', 'it never takes a click');
+ok(/Hide crosshair/.test(await p.textContent('#dash .dash-actions')), 'Quick actions offers to hide it');
+await p.locator('#dash .dash-actions .btn', { hasText: 'Hide crosshair' }).click(); await p.waitForTimeout(250);
+ok((await cross()).hidden && await p.locator('.cross-btn.off').count() === 1 && /Show crosshair/.test(await p.textContent('#dash .dash-actions')) && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).crosshair)) === false, 'hiding it from the dashboard also updates the map button, and is remembered');
+await p.click('.cross-btn'); await p.waitForTimeout(250);
+ok(!(await cross()).hidden && /Hide crosshair/.test(await p.textContent('#dash .dash-actions')), 'the map button brings it back, and the dashboard follows');
+// the grid
+const grid = await p.evaluate(() => {
+  const body = document.getElementById('dash-body'), r = body.getBoundingClientRect(), cs = getComputedStyle(body);
+  const inner = { l: r.left + parseFloat(cs.paddingLeft), r: r.right - parseFloat(cs.paddingRight) };
+  const cards = [...body.querySelectorAll(':scope > .dash-card')].map((c) => { const b = c.getBoundingClientRect(); return { top: Math.round(b.top), bottom: Math.round(b.bottom), left: b.left, right: b.right }; });
+  const rows = {}; for (const c of cards) (rows[c.top] ??= []).push(c);
+  return { inner, rows: Object.values(rows) };
+});
+ok(grid.rows.length >= 2 && grid.rows.every((row) => Math.abs(Math.max(...row.map((c) => c.right)) - grid.inner.r) <= 2 && Math.abs(Math.min(...row.map((c) => c.left)) - grid.inner.l) <= 2), 'the cards fill their rows edge to edge: ' + grid.rows.map((r) => r.length).join(' + ') + ' cards in ' + grid.rows.length + ' rows');
+ok(grid.rows.every((row) => new Set(row.map((c) => c.bottom)).size === 1), 'and the cards in a row are the same height');
+ok(await p.locator('#dash .dash-fly .dash-guide').count() === 1 && await p.locator('#dash .dash-fly .btn', { hasText: 'Singapore' }).count() === 1, 'How it works sits under the Fly in buttons, in the same card');
+const flyW = await p.$eval('.dash-fly', (e) => e.getBoundingClientRect().width);
+await p.locator('#dash .dash-guide summary').click(); await p.waitForTimeout(250);
+const openW = await p.$eval('.dash-fly', (e) => e.getBoundingClientRect().width), bodyW = await p.$eval('#dash-body', (e) => e.clientWidth);
+ok(openW >= bodyW - 30 && await p.locator('.dash-fly.wide').count() === 1, 'opened, the card takes the whole row so the steps stay readable (' + Math.round(flyW) + ' then ' + Math.round(openW) + ' px of ' + bodyW + ')');
+await ctx.close();
+({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: RETURNING }));
+await p.evaluate(() => localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ ...JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}'), crosshair: false })));
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+ok((await p.$eval('.crosshair', (e) => getComputedStyle(e).display)) === 'none' && await p.locator('.cross-btn.off').count() === 1, 'with the setting saved as off, the next visit starts without the crosshair');
+await ctx.close();
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();

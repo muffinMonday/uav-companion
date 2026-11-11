@@ -31,6 +31,20 @@ node tests/trips.mjs              # one suite directly; prints PASS/FAIL lines
 - The runner counts lines starting with `PASS`/`FAIL`; `smoke` prints none, so it shows 0 pass and passes if it does not crash or log console errors.
 - Last full run (this document's date, 2026-11-11): see CURRENT_STATUS for the latest count on the dev server; counts in `CURRENT_STATUS.md`.
 
+## Writing tests that can run in parallel
+The suites will be run side by side (see the "Faster tests" item in `CURRENT_STATUS.md`), so every new or changed suite follows these rules even while the runner is still serial:
+- **Self-contained.** A suite seeds everything it needs itself (an `addInitScript` that writes `localStorage`, guarded by `sessionStorage.__seeded` so a reload keeps the state) and never depends on another suite having run, or on the order.
+- **Own browser context, own state.** Open a context per scenario and close it. Do not share a page between scenarios, and never rely on anything left in the browser profile.
+- **No shared files.** Write screenshots and downloads to `tests/out/` with the suite's name in the file name (`<suite>-<what>.png`), never a name two suites could both use. Do not write to the repository, `public/` or `dist/` from a test.
+- **No shared ports, no global mocks.** The only shared thing is the app server. Stand-ins for outside services are installed on the context (`ctx.route`), permissions such as geolocation and clipboard on the context, never globally.
+- **Deterministic time and data.** Build dates relative to today in the test (see `iso()` in `tripplan.mjs`) and seed coordinates; do not depend on the real network. Compare against values computed in the test, not constants that depend on the day.
+- **Wait for a condition, not for a time.** Use `waitForSelector`, `waitForFunction` or an assertion that retries; a fixed `waitForTimeout` is only for a deliberate delay (a hold gesture, a retry interval) and should be commented. Fixed waits are what make a suite slow and flaky under load.
+- **Reduced motion.** The context wrapper in `lib.mjs` emulates reduced motion; ask for motion back only in suites about animation (`motion.mjs`).
+- **Keep a suite short** (aim for under 60 s and one subject). Split a long one by subject rather than growing it.
+- **Register it** in `tests/run.mjs` (`UNIT` for logic that needs no browser, `BROWSER` otherwise). A suite that truly cannot run beside others is marked serial in the runner, with the reason beside it.
+- **Prefer a unit suite** for anything that is pure logic: it takes milliseconds and has none of these concerns.
+- While iterating, run only the suites that cover the change (`node tests/run.mjs <words>`); run the full set before every deploy.
+
 ## Debugging
 - A failing browser test prints its message and the first error lines; rerun that suite alone. Screenshots in `tests/out/`.
 - Leaflet pitfalls seen here: removing the clicked button mid-click closes the popup (defer DOM swaps with `setTimeout`); popups fade for 200 ms (wait before asserting); Leaflet uses `lng`, not `lon`; the scale control builds only its initial unit (replace the control to switch units).

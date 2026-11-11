@@ -32,6 +32,7 @@ Read only what the task needs.
 - `npm run test:unit` (no browser) for logic changes; `npm test` (needs the app on http://localhost:5173) before any commit that touches `src/`, `index.html` or `public/ai/`.
 - A change in behaviour updates the test that encodes the old behaviour, and new behaviour gets a test (unit suite if pure logic, browser suite if UI).
 - Never mark work done without running the relevant suites and reading the result; report failures verbatim.
+- Write every new or changed suite so it can run in parallel with the others (self-contained, its own context and files, waits on conditions rather than timers): the rules are in `docs/DEVELOPMENT.md`, "Writing tests that can run in parallel". Run only the relevant suites while iterating and the full set before every deploy.
 
 ## Context management
 - Start with `docs/CURRENT_STATUS.md`, then only the docs the task needs. Use `git diff`/`git log --stat` rather than re-reading files. Do not dump large logs; quote the failing lines.

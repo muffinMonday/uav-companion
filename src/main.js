@@ -10,6 +10,7 @@ import { initPanel } from './panel.js';
 import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
 import { initDashboard } from './dashboard.js';
+import { initCrosshair } from './crosshair.js';
 import { mapLinkIcons } from './maplinks-ui.js';
 import { MODES } from './maplinks.js';
 import { toolBar } from './cards.js';
@@ -162,9 +163,10 @@ const trips = initTripsUI({ poi, panel, toast, checkPoint, zoneSummary });      
 const ai = initAI({ map, toast, panel, poi });  // paste an AI's itinerary, or open a share link, then preview and add
 const opensShareLink = /^#import=/.test(location.hash); // read before fromHash() clears it
 ai.fromHash();
+const cross = initCrosshair(map); // a crosshair at the centre of the map (the button goes under the marker-details button)
 // the zone verdict for where I am now (the position is read once, when the button is pressed)
 const checkHere = () => { quietFix = true; return locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ }).finally(() => { quietFix = false; }); };
-const dash = initDashboard({ poi, panel, trips, shared: opensShareLink, actions: { checkHere } }); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
+const dash = initDashboard({ poi, panel, trips, shared: opensShareLink, actions: { checkHere, crosshair: cross } }); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch(() => toast('Point check failed. Check your connection and try again.'));
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.

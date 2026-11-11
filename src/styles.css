@@ -603,7 +603,7 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 @media (max-width:520px){.sidepanel.rolled{height:auto;top:auto;bottom:8px}}
 
 /* ---------- the dashboard ---------- */
-.dash{position:absolute;z-index:1004;left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:36px;width:max-content;max-width:min(780px,calc(100% - 24px - var(--panel-w,0px)));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:dash-up .22s ease-out}
+.dash{position:absolute;z-index:1004;left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:36px;width:min(780px,calc(100% - 24px - var(--panel-w,0px)));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:dash-up .22s ease-out}
 .dash[hidden],.dash-peek[hidden],.dash-tab[hidden]{display:none}
 body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, strip and tab centre in the map beside it */
 @keyframes dash-up{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
@@ -611,8 +611,8 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 .dash-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 6px 14px;border-bottom:1px solid var(--line)}
 .dash-head h2{margin:0;font-size:14px}
 .dash-tools{display:flex;gap:2px}
-.dash-body{flex:1;overflow-y:auto;padding:10px;background:var(--surface-2);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
-.dash-card{flex:1 1 250px;max-width:380px;padding:12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.dash-body{flex:1;overflow-y:auto;padding:10px;background:var(--surface-2);display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.dash-card{flex:1 1 230px;max-width:none;padding:12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
 .dash-card h3{margin:0 0 6px;font-size:13px}
 .dash-new{border-color:color-mix(in srgb,var(--accent) 40%,transparent);background:var(--accent-soft)}
 .dash-entry ul{margin:4px 0 0;padding-left:18px;font-size:12.5px;display:grid;gap:3px}
@@ -625,7 +625,8 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 .dash-stop{display:flex;align-items:center;gap:8px;padding:4px 6px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--fg);text-align:left;cursor:pointer;font:inherit;font-size:13px}
 .dash-stop:hover{background:var(--surface-2)}
 .dash-card .btn-row{margin:10px 0 0}
-.dash-guide{flex:1 1 100%;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.dash-guide{margin-top:10px}
+.dash-card.wide{flex-basis:100%}
 .dash-guide summary{cursor:pointer;font-weight:700;font-size:13px}
 .dash-guide .w-steps{margin-top:10px}
 .dash-foot{display:flex;justify-content:flex-end;padding:6px 10px;border-top:1px solid var(--line)}
@@ -647,7 +648,7 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 /* ---------- the dashboard: welcome line and the route card ---------- */
 .dash-welcome{flex:1 1 100%;font-size:13.5px}
 .dash-welcome small{display:block;margin-top:2px;color:var(--muted);font-size:11.5px}
-.dash-route{flex:1 1 300px;max-width:440px}
+.dash-route{flex:1 1 300px}
 .dash-route .route-stops{margin:6px 0}
 .day-route{display:grid;gap:4px;margin-top:8px}
 
@@ -751,3 +752,14 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 .key-sample svg{display:block;width:44px;height:12px}
 .dash-layers .switch,.dash-layers .field{margin-top:6px}
 .dash-data .hint{margin-top:8px}
+
+/* ---------- the crosshair at the centre of the map ---------- */
+.crosshair{position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;z-index:450;pointer-events:none;color:#111}
+.crosshair[hidden],.crosshair.under{display:none}
+.crosshair svg{display:block;width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1px #fff)}
+.cross-label{position:absolute;top:32px;left:50%;transform:translateX(-50%);padding:1px 8px;border-radius:999px;background:var(--surface);color:var(--fg);box-shadow:var(--shadow-sm);font:600 11px/1.6 var(--font);white-space:nowrap;font-variant-numeric:tabular-nums}
+.leaflet-bar a.cross-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
+.leaflet-bar a.cross-btn svg{width:18px;height:18px}
+.cross-btn .slash{display:none}
+.cross-btn.off{color:var(--muted)!important}
+.cross-btn.off .slash{display:inline}
