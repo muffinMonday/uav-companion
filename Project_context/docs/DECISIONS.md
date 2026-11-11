@@ -136,3 +136,8 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision: a region may have `layers[]` (one zone class each, with label, colour, severity, summary) and `publish: false`; it is built into `public/data-local` (gitignored), merged by the app only on localhost/private addresses, and removed from `dist` by `scripts/strip-local.js` inside `npm run deploy` (which fails if a local region remains). Temporary restricted areas are ignored. Point check returns every zone containing the point; coverage uses a 1.5 km margin around the Natural Earth outline.
 - Alternatives: publish publicly (rejected until the terms are read); rebuild from AIP tables (not needed once OneMap data was available).
 - Consequences: sharing the Singapore layer with the group needs a later decision (possibly a backend). Raw files and tiles stay local; accuracy is "as published on OneMap", with a button to the official map.
+
+### 2026-11-11: Trip plan screen: forecast per day and an on-tap no-fly check
+- Decision: the trip detail screen shows an Open-Meteo daily forecast for the first non-hotel stop of each day (up to 16 days ahead), only while automatic weather is on; and a button that checks every stop against the local zone tiles. The Distances settings moved into the privacy settings (owner's request).
+- Reasoning: reuses the existing weather opt-in and coordinate rounding, so no new consent step; the zone check needs no network, so it is safe to run on demand.
+- Consequences: one more Open-Meteo request per upcoming trip (at most 6 trips, reused for 3 hours); the forecast cache is cleared when weather is switched off.

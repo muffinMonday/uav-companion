@@ -1,6 +1,11 @@
 // Layout and look: tab contents, settings block, modern controls, search/dock on phones, marker window on phones, day and stop labels.
 import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
+// the Distances settings live in the privacy settings: open them, act, and come back to the list
+const inPrivacy = async (p, fn) => { const wasHidden = await p.locator('#privacy').isHidden(); if (wasHidden) await p.click('#privacy-btn'); await fn(); if (wasHidden) await p.click('#privacy-back'); };
+const maxRange = (p, v) => inPrivacy(p, async () => { await p.fill('#dist-max', v); await p.press('#dist-max', 'Tab'); });
+const setUnits = (p, v) => inPrivacy(p, () => p.selectOption('#dist-units', v));
+
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 
 const mk = (id, type, name, n, extra = {}) => ({ id, type, name, note: '', lat: 30.59 + n * 0.003, lon: 114.30 + n * 0.003, created: `2026-11-0${n + 1}T00:00:00.000Z`, ...extra });
@@ -73,10 +78,12 @@ const saved = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v
 ok(saved.order === 7 && saved.date === '2026-11-21', 'values set through the new controls are saved (stop 7, 21 Nov)');
 ok((await p.locator('.poi-pin .seq').filter({ hasText: '#7' }).count()) === 1, 'the pin of the edited marker shows its new stop label straight away');
 await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+await p.click('#privacy-btn');
 ok((await p.locator('#dist-card .num-field').count()) === 1, 'the max range field is a modern number field too');
 await p.locator('#dist-card .num-field .inc').click();
 ok((await p.inputValue('#dist-max')) === '0.1', 'its + starts at the 0.1 minimum');
 await p.fill('#dist-max', ''); await p.locator('#dist-max').blur(); await p.waitForTimeout(200);
+await p.click('#privacy-back');
 
 // ================= day and stop labels
 const seqs = await p.$$eval('.poi-pin .seq', (e) => e.map((x) => x.textContent).sort());

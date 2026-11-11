@@ -83,5 +83,58 @@ const overflow = await p.evaluate(() => { const d = document.getElementById('tri
 ok(await p.isVisible('#trip-detail') && !overflow, 'on a phone the detail screen fits with no sideways scrolling');
 await p.screenshot({ path: `${OUT}/tripplan-phone.png` });
 await ctx.close();
+
+// ================= forecast per day (opt-in) and the no-fly check of stops
+{
+  const asked = [];
+  const wctx = await b.newContext({ viewport: { width: 1300, height: 900 } });
+  const sgStop = mk('pd', 'Padang', 1.302, 103.8291, { tripId: 't1', date: iso(7), order: 1 });
+  await wctx.addInitScript(([po, tr]) => {
+    if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
+    localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po })); localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr }));
+    localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.6, lon: 114.3, zoom: 11 }, basemap: 'osm', autoWeather: true }));
+    localStorage.setItem('uavzones.windLimit', '10');
+  }, [[...items, sgStop], trips]);
+  await wctx.route('**/api.open-meteo.com/**', (route) => {
+    const url = route.request().url();
+    if (!url.includes('daily=')) return route.fulfill({ status: 500, body: '' });
+    asked.push(url);
+    const lat = new URL(url).searchParams.get('latitude').split(',');
+    const times = Array.from({ length: 16 }, (_, k) => iso(k));
+    const one = () => ({ utc_offset_seconds: 28800, timezone_abbreviation: 'CST', daily: { time: times, weather_code: times.map((_, k) => [0, 61, 3][k % 3]), temperature_2m_max: times.map(() => 22.4), temperature_2m_min: times.map(() => 14.1), precipitation_probability_max: times.map((_, k) => (k % 3 === 1 ? 70 : 10)), wind_speed_10m_max: times.map((_, k) => (k === 6 ? 12.4 : 4.2)) } });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(lat.length === 1 ? one() : lat.map(one)) });
+  });
+  const wp = await wctx.newPage();
+  wp.on('pageerror', (e) => errs.push('pageerror ' + e.message));
+  await wp.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await wp.waitForTimeout(1000);
+  await wp.evaluate(() => { if (document.getElementById('panel').hidden) document.querySelector('#dock button[data-tab=trips]').click(); else document.getElementById('tab-trips').click(); });
+  await wp.waitForTimeout(1500);
+  ok(asked.length >= 1 && asked.every((u) => u.includes('forecast_days=16')), 'with automatic weather on, a trip asks for its daily forecast (' + asked.length + ' request)');
+  ok((await wp.locator('#trips-list .trip-card', { hasText: 'Hubei spring' }).locator('.trip-wx-strip span').count()) >= 2, 'the card shows a strip of weather symbols, one for each day that has a place');
+  await wp.locator('#trips-list .trip-card', { hasText: 'Hubei spring' }).locator('.trip-card-head').click(); await wp.waitForTimeout(400);
+  const heads = await wp.$$eval('#trip-detail .plan-day .plan-wx', (e) => e.map((x) => ({ t: x.textContent, over: x.classList.contains('over') })));
+  ok(heads.length >= 2 && /22°\/14°/.test(heads[0].t) && /rain \d+%/.test(heads[0].t) && /wind 4 m\/s/.test(heads[0].t), 'each day shows the high and low, rain chance and wind: ' + (heads[0] && heads[0].t));
+  ok(heads.some((h) => h.over && /wind 12 m\/s/.test(h.t)), 'a day windier than the wind limit (10 m/s) is shown in red');
+  ok(/Forecast per day from Open-Meteo/.test(await wp.textContent('#trip-detail')), 'the forecast is credited to Open-Meteo');
+
+  // no-fly check
+  await wp.click('#trip-detail >> text=Check stops against no-fly zones');
+  await wp.waitForFunction(() => document.querySelectorAll('#trip-detail .plan-zone').length >= 5, null, { timeout: 15000 });
+  const zones = await wp.$$eval('#trip-detail .plan-stop', (r) => r.map((x) => ({ n: x.querySelector('b').textContent, z: x.querySelector('.plan-zone')?.textContent || '', c: x.querySelector('.plan-zone')?.className || '' })));
+  ok(zones.every((z) => z.z), 'every stop got a verdict: ' + zones.map((z) => z.n + ' = ' + z.z.slice(0, 22)).join('; '));
+  const pad = zones.find((z) => z.n === 'Padang');
+  ok(pad && /No-fly zone/.test(pad.z) && /\bno\b/.test(pad.c), 'the stop in Singapore\'s restricted area is marked: ' + (pad && pad.z));
+  ok(/Padang: No-fly zone/.test(await wp.textContent('#trip-detail .trip-warnings')), 'and it is added to the warnings');
+  ok(/Check stops again/.test(await wp.textContent('#trip-detail')), 'the button now offers to check again');
+  const before = asked.length;
+
+  // switching weather off forgets the forecast
+  await wp.click('#trip-detail >> text=‹ Trips'); await wp.waitForTimeout(300);
+  await wp.click('#privacy-btn'); await wp.uncheck('#pv-auto'); await wp.waitForTimeout(600); await wp.click('#privacy-back');
+  ok((await wp.locator('.trip-wx-strip').count()) === 0 && (await wp.evaluate(() => { const c = JSON.parse(localStorage.getItem('uavzones.v1.tripwx') || '{"trips":{}}'); return Object.keys(c.trips).length; })) === 0, 'turning automatic weather off removes the strip and the saved forecast');
+  await wp.locator('#trips-list .trip-card', { hasText: 'Hubei spring' }).locator('.trip-card-head').click(); await wp.waitForTimeout(300);
+  ok(/Turn on automatic weather in the privacy settings/.test(await wp.textContent('#trip-detail')) && asked.length === before, 'with it off, the screen says how to turn it on and nothing more is requested');
+  await wctx.close();
+}
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();

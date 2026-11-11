@@ -39,8 +39,8 @@ Nothing.
 
 ## Feature backlog and queue
 Done and published 2026-11-11: window tidy-up, map selection, Singapore no-fly zones (open: OneMap terms unread; coarse 10 m boundary with a 1.5 km margin; temporary restricted areas ignored by choice).
-Agreed, not built yet:
-1. **Trips tab upgrades**, part 1 built (countdown, warning line, Past trips, detail screen with days and distances, notes, checklist); part 2 queued: weather strip per day and the on-tap no-fly check of stops. Layout agreed 2026-11-11: trip cards show countdown, a one-line warning summary and a weather strip, with a collapsed "Past trips" section; tapping a card opens a separate detail screen with a warnings list, day-by-day stops with distances and weather, then notes and one checklist per trip; the no-fly check on stops runs only on tap and is cached): day-by-day view with route distance per day; gaps and warnings (undated markers, days without a hotel, markers outside the trip dates, stops inside a no-fly zone); per-day weather glance from the rain outlook; archive of past trips ("Past" section); trip notes and a per-marker checklist; countdown on the trip card ("In 12 days", "Day 2 of 5"). Not chosen for now: duplicate trip, trip colours, whole-trip route button, GPX/KML export, printable summary, move markers between trips, search inside a trip.
+Nothing agreed and waiting. Ideas not chosen: duplicate trip, trip colours, whole-trip route button, GPX/KML export, printable summary, move markers between trips, search inside a trip, undo for share-link imports.
+Trips tab upgrades (day-by-day plan, forecast per day, no-fly check of stops, notes, checklist, Past trips, countdown) built and deployed 2026-11-11.
 
 ## Optimization backlog (later, none urgent)
 Measured 2026-11-11: a marker is about 360 bytes (810 at its limits), a weather cache entry about 170, an elevation entry about 70; 100 markers with caches are about 60 KB of the browser's roughly 5 MB. The app bundle is 417 KB (about 130 KB compressed); the Hubei zone file is 6.7 MB, read in small pieces.

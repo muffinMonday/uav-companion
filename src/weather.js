@@ -12,8 +12,8 @@ const SUMMARY_HOURS = 5;
 const LIMIT_KEY = 'uavzones.windLimit';
 
 const num = (v) => (Number.isFinite(v) ? v : null);
-const wrapLon = (lon) => ((((lon + 180) % 360) + 360) % 360) - 180; // the map can be panned past the date line
-const coord = (v) => {
+export const wrapLon = (lon) => ((((lon + 180) % 360) + 360) % 360) - 180; // the map can be panned past the date line
+export const coord = (v) => {
   const d = getPrivacy().weatherPrecision === 'precise' ? 4 : 2; // decimals: 4 is about 10 m, 2 is about 1 km
   const f = 10 ** d;
   return (Math.round(v * f) / f).toFixed(d);

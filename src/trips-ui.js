@@ -5,11 +5,14 @@ import { sortTrips, tripSummary, tripLength, tripStatus, countdownLabel, todayIS
 import { formatDate, typeOf, MAX_NOTES, MAX_CHECKLIST } from './poi.js';
 import { getDistanceSettings } from './units.js';
 import { fmtDistance } from './distance.js';
+import { createTripWeather, weatherInfo, forecastSpots } from './tripweather.js';
+import { getWindLimit } from './weather.js';
+import { getPrivacy } from './privacy.js';
 import { el } from './cards.js';
 
 const $ = (id) => document.getElementById(id);
 
-export function initTripsUI({ poi, panel, toast }) {
+export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   const store = poi.store;
   const list = $('trips-list'), empty = $('trips-empty'), count = $('trips-count');
   const card = $('trip-form-card'), form = $('trip-form'), title = $('trip-form-title');
@@ -23,6 +26,10 @@ export function initTripsUI({ poi, panel, toast }) {
 
   // ---------- the list ----------
   let openId = null;      // the trip whose detail screen is showing, or null for the list
+  const tw = createTripWeather({ onChange: () => render() }); // per-day forecasts, only while automatic weather is on
+  const zoneChecks = new Map(); // tripId -> Map(markerId -> { sig, s }): what the map data says about each stop, until the page closes
+  const sigOf = (it) => `${it.lat},${it.lon}`;
+  const dayWeatherText = (w) => [`${weatherInfo(w.code).icon} ${w.max !== null ? Math.round(w.max) : '–'}°/${w.min !== null ? Math.round(w.min) : '–'}°`, w.rain !== null && `rain ${Math.round(w.rain)}%`, w.wind !== null && `wind ${w.wind.toFixed(0)} m/s`].filter(Boolean).join(' · ');
   const listCard = list.closest('.card'), detail = $('trip-detail'), aiCard = $('ai-card');
   const pastBox = $('trips-past'), pastList = $('trips-past-list');
 
@@ -44,6 +51,18 @@ export function initTripsUI({ poi, panel, toast }) {
     else {
       const line = warningsLine(tripWarnings(items, t));
       if (line) li.append(el('div', 'trip-card-warn', '⚠ ' + line));
+    }
+    const fc = tw.get(t.id);
+    if (fc && tripLength(t)) {
+      const strip = el('div', 'trip-wx-strip');
+      for (const d of planDays(items, t).days) {
+        const w = fc[d.date];
+        if (!w) continue;
+        const cell = el('span', '', weatherInfo(w.code).icon);
+        cell.title = `${formatDate(d.date)}: ${weatherInfo(w.code).label}, ${dayWeatherText(w).replace(/^\S+ /, '')}`;
+        strip.append(cell);
+      }
+      if (strip.childNodes.length) li.append(strip);
     }
     if (t.description) li.append(el('p', 'trip-card-desc', t.description));
     const done = t.checklist ? t.checklist.filter((c) => c.done).length : 0;
@@ -87,6 +106,10 @@ export function initTripsUI({ poi, panel, toast }) {
     const past = trips.filter((t) => isPastTrip(t, today));
     for (const t of trips) (past.includes(t) ? pastList : list).append(tripCard(t, items, today));
     pastBox.hidden = !past.length;
+    if (getPrivacy().autoWeather) {
+      tw.prune(trips.map((t) => t.id));
+      for (const t of trips.filter((x) => !past.includes(x) && tripLength(x)).slice(0, 6)) tw.ensure(t.id, forecastSpots(planDays(items, t).days, today));
+    }
     $('trips-past-title').textContent = 'Past trips (' + past.length + ')';
     const open = openId && store.getTrip(openId);
     if (!open) openId = null;
@@ -97,6 +120,20 @@ export function initTripsUI({ poi, panel, toast }) {
   // ---------- one trip: warnings, the days, notes and the checklist ----------
   function openDetail(id) { openId = id; render(); panel.open('trips'); $('pane-trips').scrollTop = 0; detail.scrollIntoView({ block: 'start' }); }
   function closeDetail() { openId = null; render(); }
+
+  async function runZoneCheck(t, stops, btn) {
+    btn.disabled = true;
+    const found = new Map();
+    let n = 0;
+    for (const it of stops) {
+      btn.textContent = 'Checking ' + (++n) + ' of ' + stops.length + '…';
+      try { found.set(it.id, { sig: sigOf(it), s: zoneSummary(await checkPoint(it.lat, it.lon)) }); } catch { /* a stop that cannot be read simply has no verdict */ }
+    }
+    zoneChecks.set(t.id, found);
+    const bad = [...found.values()].filter((z) => z.s.cls === 'no').length;
+    toast(bad ? bad + ' of ' + stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' need a look: see the warnings.' : 'Checked ' + stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ': none is inside a restricted area.', 6000);
+    render();
+  }
 
   function renderDetail(t, items, today) {
     detail.replaceChildren();
@@ -128,22 +165,36 @@ export function initTripsUI({ poi, panel, toast }) {
       if (w.undated) msgs.push(w.undated + ' marker' + (w.undated === 1 ? ' has' : 's have') + ' no date (listed under “No date” below).');
       if (w.outside) msgs.push(w.outside + ' marker' + (w.outside === 1 ? ' is' : 's are') + ' dated outside the trip (listed under “Outside the dates”).');
       for (const d of w.noHotel) msgs.push('No hotel for the night of Day ' + d + '.');
+      const zr = zoneChecks.get(t.id);
+      if (zr) for (const it of items) { const z = it.tripId === t.id && zr.get(it.id); if (z && z.sig === sigOf(it) && z.s.cls === 'no') msgs.push(it.name + ': ' + z.s.title + '.'); }
       const box = el('details', 'trip-warnings'); box.open = msgs.length > 0;
       box.append(el('summary', '', msgs.length ? 'Warnings (' + msgs.length + ')' : 'No warnings'));
       if (msgs.length) { const ul = el('ul'); for (const m of msgs) ul.append(el('li', '', m)); box.append(ul); }
       else box.append(el('p', 'hint', 'Every marker is dated inside the trip' + (items.some((i) => i.tripId === t.id && i.type === 'hotel') ? ', and every night has a hotel.' : '.')));
       detail.append(box);
+      const stopsToCheck = items.filter((i) => i.tripId === t.id && i.type !== 'residence');
+      if (stopsToCheck.length) {
+        const row = el('div', 'btn-row trip-acts');
+        const chk = el('button', 'btn small', zoneChecks.has(t.id) ? 'Check stops again' : 'Check stops against no-fly zones'); chk.type = 'button';
+        chk.addEventListener('click', () => runZoneCheck(t, stopsToCheck, chk));
+        row.append(chk, el('small', 'hint', 'Reads the map data in your browser; nothing is sent.'));
+        detail.append(row);
+      }
     }
 
     // the days
     const units = getDistanceSettings().units;
     const plan = planDays(items, t);
+    const fc = tw.get(t.id);
+    const limit = getWindLimit();
     const stopRow = (it, day) => {
       const row = el('button', 'plan-stop'); row.type = 'button';
       const info = dayInfo(it, t);
       const mark = el('span', 'plan-n', it.order !== undefined ? String(it.order) : '•');
       const text = el('span', 'plan-name');
       text.append(el('b', '', it.name), el('small', '', [typeOf(it.type).label, day === undefined && it.date && formatDate(it.date), info && info.last > info.day && dayText(info)].filter(Boolean).join(' · ')));
+      const z = zoneChecks.get(t.id)?.get(it.id);
+      if (z && z.sig === sigOf(it)) text.append(el('small', 'plan-zone ' + z.s.cls, z.s.title));
       row.append(mark, text);
       row.addEventListener('click', () => poi.openMarker(it.id));
       return row;
@@ -156,6 +207,8 @@ export function initTripsUI({ poi, panel, toast }) {
         head.append(el('b', '', 'Day ' + d.day + ' · ' + formatDate(d.date)));
         if (d.km >= 0.1) head.append(el('small', '', '≈ ' + fmtDistance(d.km * 1000, units) + ' between stops'));
         sec.append(head);
+        const w = fc?.[d.date];
+        if (w) { const line = el('small', 'plan-wx' + (limit !== null && w.wind !== null && w.wind > limit ? ' over' : ''), dayWeatherText(w)); line.title = weatherInfo(w.code).label; sec.append(line); }
         if (!d.stops.length) sec.append(el('small', 'plan-empty', 'Nothing planned'));
         for (const it of d.stops) sec.append(stopRow(it, d.day));
         days.append(sec);
@@ -171,6 +224,11 @@ export function initTripsUI({ poi, panel, toast }) {
     }
     if (!dated) detail.append(el('p', 'hint', 'Add start and end dates (Edit) to see the days.'));
     if (dated) detail.append(el('p', 'hint', 'Distances are straight lines between the stops of a day, not driving distances.'));
+    if (dated && forecastSpots(plan.days, today).length) {
+      detail.append(el('p', 'hint', getPrivacy().autoWeather
+        ? 'Forecast per day from Open-Meteo.com, for the first stop of each day, up to 16 days ahead.'
+        : 'Turn on automatic weather in the privacy settings (shield button) to see a forecast for each day, up to 16 days ahead.'));
+    }
 
     // notes
     const notes = el('section', 'trip-notes');

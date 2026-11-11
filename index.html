@@ -198,17 +198,6 @@
         <p class="hint" id="poi-empty">No markers yet. Choose a type above, then tap Place on map.</p>
       </div>
 
-      <div class="card" id="dist-card">
-        <h2>Distances</h2>
-        <label class="field"><span>Units</span>
-          <select id="dist-units"><option value="metric">Kilometres and metres</option><option value="imperial">Miles and feet</option></select>
-        </label>
-        <label class="field"><span>Max range <small>(optional)</small></span>
-          <span class="inline-input"><input type="number" id="dist-max" min="0.1" step="0.1" placeholder="off" inputmode="decimal"><span id="dist-max-unit">km</span></span>
-        </label>
-        <p class="hint">Every marker shows its straight-line distance to your nearest Home. A waypoint also shows its nearest Home point and Hotel, only from its own trip and only those whose dates overlap its own (one with no dates counts for every date). If a waypoint is farther than the max range from every such Home point and Hotel, it is shown in red; your Home does not count toward the range. Units also set the map's scale bar. Elevation and height limits stay in metres.</p>
-      </div>
-
       <div class="aux" role="group" aria-label="Backup">
       <div class="card">
         <h2>Backup</h2>
@@ -260,6 +249,17 @@
         <label class="switch"><span>Look up places by name when importing <small>For itineraries from an AI: a place that came without coordinates is searched by its name or address. Those names are sent to Photon (Komoot), or Nominatim (OpenStreetMap) if Photon fails, only when you press Add on an import. Looked-up places are marked unverified.</small></span><input type="checkbox" id="pv-geo"></label>
       </div>
 
+      <div class="card" id="dist-card">
+        <h2>Distances</h2>
+        <label class="field"><span>Units</span>
+          <select id="dist-units"><option value="metric">Kilometres and metres</option><option value="imperial">Miles and feet</option></select>
+        </label>
+        <label class="field"><span>Max range <small>(optional)</small></span>
+          <span class="inline-input"><input type="number" id="dist-max" min="0.1" step="0.1" placeholder="off" inputmode="decimal"><span id="dist-max-unit">km</span></span>
+        </label>
+        <p class="hint">Every marker shows its straight-line distance to your nearest Home. A waypoint also shows its nearest Home point and Hotel, only from its own trip and only those whose dates overlap its own (one with no dates counts for every date). If a waypoint is farther than the max range from every such Home point and Hotel, it is shown in red; your Home does not count toward the range. Units also set the map's scale bar. Elevation and height limits stay in metres.</p>
+      </div>
+
       <div class="card">
         <h2>What leaves your browser</h2>
         <ul class="plain">
@@ -277,7 +277,7 @@
 <div class="banner" id="banner" hidden role="status"><span id="banner-text"></span><button type="button" class="btn small" id="banner-review" hidden>Review</button><button type="button" class="btn small" id="banner-action">Cancel</button></div>
 <dialog class="welcome" id="welcome" aria-labelledby="welcome-title">
   <div class="w-card">
-    <h1 id="welcome-title">Welcome to UAV Companion</h1>
+    <h1 id="welcome-title">Welcome to UAV Companion!</h1>
     <p class="w-lead">Check where you can fly a small drone, and plan the places you want to fly on your trip.</p>
     <section class="w-trip" id="welcome-trip" aria-label="Your next trip" hidden></section>
     <ol class="w-steps">

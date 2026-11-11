@@ -59,3 +59,12 @@ ok(t2.notes === 'hello' && t2.checklist.length === 1 && t2.name === 'Trip rename
 const gj = poi.toGeoJSON(store.items(), store.trips());
 const back = poi.parseGeoJSON(JSON.stringify(gj));
 ok(back.trips[0].notes === 'hello' && back.trips[0].checklist[0].text === 'a', 'notes and checklist survive export and import');
+
+// ---------- forecast helpers
+const W = await load('src/tripweather.js');
+ok(W.weatherInfo(0).label === 'Clear' && W.weatherInfo(61).label === 'Rain' && W.weatherInfo(95).label === 'Thunderstorm' && W.weatherInfo(3).label === 'Overcast' && W.weatherInfo(NaN).label === 'No forecast', 'weather codes map to words');
+const days2 = T.planDays(items, trip).days;
+const spots = W.forecastSpots(days2, '2026-11-12');
+ok(spots.length === 2 && spots[0].date === '2026-11-12' && spots[0].lat === 30.78, 'a forecast spot is the first stop that is not a hotel, for each day that has a stop');
+ok(W.forecastSpots(days2, '2026-11-13').length === 1, 'days before today are not asked for');
+ok(W.forecastSpots(days2, '2026-10-01').length === 0, 'days more than 16 days away are not asked for');
