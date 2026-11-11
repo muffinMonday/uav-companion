@@ -9,6 +9,9 @@ import { createTripWeather, weatherInfo, forecastSpots } from './tripweather.js'
 import { getWindLimit } from './weather.js';
 import { getPrivacy } from './privacy.js';
 import { el } from './cards.js';
+import { routeLinks } from './maplinks-ui.js';
+import { MAX_STOPS } from './maplinks.js';
+import { loadPrefs } from './prefs.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -233,6 +236,11 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
           const fit = el('button', 'btn small', pg.day ? 'Fit map to this day' : 'Fit map to these'); fit.type = 'button';
           fit.addEventListener('click', () => poi.fitItems(stops.map((x) => x.id)));
           body.append(fit);
+        }
+        if (pg.day && stops.length >= 2 && stops.length <= MAX_STOPS) { // a route through the day's stops, in order
+          const nav = el('div', 'day-route');
+          nav.append(el('small', 'plan-km', 'Navigate this day'), ...routeLinks({ stops: stops.map((s) => ({ lat: s.lat, lon: s.lon, name: s.name })), mode: loadPrefs().mapMode ?? 'drive', home: false }));
+          body.append(nav);
         }
         prev.disabled = at === 0; next.disabled = at === pages.length - 1;
         pages.forEach((p, i) => {

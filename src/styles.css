@@ -643,3 +643,10 @@ body[data-panel=open] .dash{max-width:min(780px,calc(100% - 396px))}
   .dash-peek,.dash-tab{bottom:34px}
   .dash-peek{max-width:calc(100% - 24px)}
 }
+
+/* ---------- the dashboard: welcome line and the route card ---------- */
+.dash-welcome{flex:1 1 100%;font-size:13.5px}
+.dash-welcome small{display:block;margin-top:2px;color:var(--muted);font-size:11.5px}
+.dash-route{flex:1 1 300px;max-width:440px}
+.dash-route .route-stops{margin:6px 0}
+.day-route{display:grid;gap:4px;margin-top:8px}

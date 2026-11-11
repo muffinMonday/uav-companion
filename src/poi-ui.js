@@ -11,8 +11,8 @@ import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js'
 import { loadPrefs, savePrefs } from './prefs.js';
 import { visitGroups, visitLabel } from './places.js';
 import { dayInfo, dayText, tripSequence } from './trips.js';
-import { mapLinkIcons, routeLinks } from './maplinks-ui.js';
-import { MODES, MAX_STOPS } from './maplinks.js';
+import { mapLinkIcons } from './maplinks-ui.js';
+import { MODES } from './maplinks.js';
 import { planMove, stepSlot, groupKey, addDays } from './reorder.js';
 import { initReorder } from './reorder-ui.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
@@ -279,10 +279,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   // ----- a route through the ticked places -----
   let routeOrder = [];            // the ticked places in route order (tick order, until the visitor moves them)
   let routeMode = loadPrefs().mapMode ?? MODES[0].id;
-  const routeMode$ = $('route-mode');
-  for (const m of MODES) { const o = el('option', '', m.label); o.value = m.id; routeMode$.append(o); }
-  routeMode$.value = routeMode;
-  routeMode$.addEventListener('change', () => { routeMode = routeMode$.value; renderRoute(); });
+  const routeListeners = new Set(); // the dashboard draws the route and hears about every change
   /** Keeps routeOrder to the ticked places: new ticks go to the end, unticked ones drop out. */
   function syncRoute() {
     routeOrder = routeOrder.filter((id) => selected.has(id));
@@ -297,45 +294,24 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     }
     paintPins(); // the pins carry the same numbers
   }
-  function renderRoute() {
-    const box = $('route-box'), hint = $('route-hint');
-    const stopsItems = routeOrder.map((id) => store.get(id)).filter(Boolean);
-    box.hidden = stopsItems.length < 2;
-    hint.hidden = stopsItems.length >= 2 || !selecting;
-    $('route-links').replaceChildren();
-    if (stopsItems.length < 2) return;
-    const list = $('route-stops');
-    list.replaceChildren();
-    stopsItems.forEach((it, i) => {
-      const li = el('li', 'route-stop');
-      const name = el('span', 'route-name', it.name);
-      const small = el('small', '', typeOf(it.type).label);
-      const btn = (text, label, fn, disabled) => { const b = el('button', 'icon-btn route-btn', text); b.type = 'button'; b.setAttribute('aria-label', label); b.disabled = disabled; b.addEventListener('click', fn); return b; };
-      const move = (d) => { const j = i + d; [routeOrder[i], routeOrder[j]] = [routeOrder[j], routeOrder[i]]; renderRoute(); paintSelNums(); };
-      li.append(name, small,
-        btn('↑', `Move ${it.name} earlier`, () => move(-1), i === 0),
-        btn('↓', `Move ${it.name} later`, () => move(1), i === stopsItems.length - 1),
-        btn('✕', `Remove ${it.name} from the route`, () => { selected.delete(it.id); selConfirm.hidden = true; renderList(); }, false));
-      list.append(li);
-    });
-    $('route-sort').disabled = listMode(stopsItems) === 'plain';
-    const links = $('route-links');
-    if (stopsItems.length > MAX_STOPS) { links.append(el('small', 'route-note', `That is a lot of stops. Tick ${MAX_STOPS} places or fewer.`)); return; }
-    const stops = stopsItems.map((it) => ({ lat: it.lat, lon: it.lon, name: it.name }));
-    links.append(...routeLinks({ stops, mode: routeMode, home: stopsItems.some((it) => it.type === 'residence') }));
-  }
-  $('route-reverse').addEventListener('click', () => { routeOrder.reverse(); renderRoute(); paintSelNums(); });
-  $('route-sort').addEventListener('click', () => {
-    const items = routeOrder.map((id) => store.get(id)).filter(Boolean);
-    const mode = listMode(items);
-    if (mode === 'plain') return;
-    routeOrder = sortForList(items, mode).map((x) => x.id);
-    renderRoute(); paintSelNums();
-  });
+  function renderRoute() { for (const fn of routeListeners) { try { fn(); } catch (e) { console.error(e); } } }
+  const routeStops = () => routeOrder.map((id) => store.get(id)).filter(Boolean);
+  const routeApi = {
+    /** The route as it stands: { selecting, stops (markers, in order), mode, canSort }. */
+    state() { const stops = routeStops(); return { selecting, stops, mode: routeMode, canSort: stops.length > 0 && listMode(stops) !== 'plain' }; },
+    onChange(fn) { routeListeners.add(fn); },
+    setMode(m) { if (MODES.some((x) => x.id === m)) { routeMode = m; renderRoute(); } },
+    move(id, d) { const i = routeOrder.indexOf(id), j = i + d; if (i < 0 || j < 0 || j >= routeOrder.length) return; [routeOrder[i], routeOrder[j]] = [routeOrder[j], routeOrder[i]]; renderRoute(); paintSelNums(); },
+    reverse() { routeOrder.reverse(); renderRoute(); paintSelNums(); },
+    sort() { const items = routeStops(); const mode = listMode(items); if (mode === 'plain') return; routeOrder = sortForList(items, mode).map((x) => x.id); renderRoute(); paintSelNums(); },
+    remove(id) { selected.delete(id); selConfirm.hidden = true; renderList(); },
+    done() { setSelecting(false); },
+  };
   function setSelecting(on) {
     if (on) { setMode(null); map.closePopup(); panel.closeIfPhone(); } // exclusive with placing and editing; the map must be free to tap
     selecting = on; selected.clear(); selConfirm.hidden = true;
     renderList();
+    renderRoute(); // selecting ended (or began): the route card follows
   }
   const addToSelection = (match) => {
     for (const it of store.items()) if (visibleIds.has(it.id) && match(it)) selected.add(it.id);
@@ -1097,6 +1073,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
 
   return {
     store,
+    route: routeApi,
     showTrip, fitTrip,
     /** Flies to a marker and opens its window (the Trips tab's day list uses it). */
     openMarker: (id) => flyToItem(id),

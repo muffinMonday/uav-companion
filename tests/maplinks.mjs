@@ -93,11 +93,11 @@ await ctx.close();
 ({ ctx, p } = await session());
 await p.click('#poi-select');
 const tick = async (name) => { await p.click(`#poi-list .poi-item:has-text("${name}")`); await p.waitForTimeout(150); };
-ok(!(await p.isVisible('#route-box')) && (await p.isVisible('#route-hint')), 'with nothing ticked there is a hint and no route');
+ok(!(await p.isVisible('#route-box')) && /Tap pins/.test(await p.textContent('#banner-text')), 'with nothing ticked there is a hint and no route');
 await tick('Airport');
 ok(!(await p.isVisible('#route-box')), 'one place is not a route');
 await tick('Yellow Crane Tower'); await tick('East Lake');
-ok(await p.isVisible('#route-box'), 'two or more ticked places make a route');
+ok(await p.isVisible('#route-box') && await p.isVisible('#dash'), 'two or more ticked places make a route, and the dashboard opens to show it');
 const names = () => p.$$eval('#route-stops .route-name', (e) => e.map((x) => x.textContent));
 ok((await names()).join() === 'Airport,Yellow Crane Tower,East Lake', 'the stops are in the order they were ticked: ' + (await names()).join(' > '));
 const nums = await p.$$eval('#poi-list li.selecting', (li) => li.map((x) => `${x.dataset.id}:${x.querySelector('.sel-num').textContent}`).filter((s) => !/:$/.test(s)).sort());
@@ -129,7 +129,7 @@ ok(rl.length === 1 && rl[0].t === 'Open in Google Maps' && /every stop is in Chi
 await p.locator('#route-stops li:last-child button[aria-label^="Remove"]').click(); await p.waitForTimeout(200);
 ok((await names()).length === 3 && (await hrefs(p, '#route-links'))[0].t === 'Open in Amap', 'the cross removes a stop and untick its row; Amap is back');
 await p.click('#sel-none'); await p.waitForTimeout(200);
-ok(!(await p.isVisible('#route-box')), 'None clears the route');
+ok((await p.locator('#route-stops li').count()) === 0, 'None clears the route');
 
 // the Home marker in a route
 await tick('Airport'); await tick('Flat');
@@ -155,6 +155,7 @@ await ctx.close();
 ({ ctx, p } = await session({ viewport: { width: 360, height: 740 }, mobile: true }));
 await p.tap('#poi-select'); await p.tap('#banner-review'); await p.waitForTimeout(300); // on a phone the list closes while selecting; Review brings it back
 for (const n of ['Airport', 'Yellow Crane Tower', 'East Lake']) { await p.tap(`#poi-list .poi-item:has-text("${n}")`); await p.waitForTimeout(150); }
+await p.tap('#dash-peek'); await p.waitForTimeout(450); // on a phone the strip says "Route · 3 stops"; tap it for the route
 const fit = await p.evaluate(() => { const box = document.getElementById('route-box').getBoundingClientRect(); const over = [...document.querySelectorAll('#route-box button, #route-box a, #route-box select')].filter((e) => { const r = e.getBoundingClientRect(); return r.right > box.right + 1 || r.left < box.left - 1; }).length; return { over, page: document.documentElement.scrollWidth > innerWidth + 1 }; });
 ok(fit.over === 0 && !fit.page, 'at 360 px the route block fits with no sideways scrolling');
 await p.screenshot({ path: `${SP}/maplinks-phone.png` });

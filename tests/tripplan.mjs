@@ -76,6 +76,7 @@ ok(/Day 2 of 4/.test(await flipText(p)), 'a swipe to the left turns to the next 
 await nextBtn(p).click(); await p.waitForTimeout(200); await prevBtn(p).click(); await prevBtn(p).click(); await p.waitForTimeout(200);
 ok(/Warnings \(3\)/.test(await p.textContent('#trip-detail .trip-warnings summary')) && (await p.locator('#trip-detail .trip-warnings').evaluate((d) => d.open)), 'the warnings are listed (open when there are some)');
 await p.locator('#trip-detail .plan-stop', { hasText: 'Tower' }).click(); await p.waitForSelector('.poi-pop h3', { timeout: 8000 });
+ok(/Navigate this day/.test(await flipText(p)) && (await p.locator('#trip-detail .flip-body .day-route a.maplink').count()) >= 1, 'a day with two or more stops offers to navigate through them');
 ok((await p.textContent('.poi-pop h3')) === 'Tower', 'tapping a stop opens that marker on the map');
 await p.keyboard.press('Escape');
 await nextBtn(p).click(); await p.waitForTimeout(250);

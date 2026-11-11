@@ -159,3 +159,8 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Reasoning: it does not block the map, and its content (countdown, warnings, backup) stays useful after the first minute.
 - Alternatives: keep the modal and add the cards to it (rejected: still blocks the map and cannot be glanced at).
 - Consequences: on phones the dashboard and the side panel take turns; the old "Don't show again" choice is not carried over.
+
+### 2026-11-11: The route builder moves to the dashboard; welcome line; Navigate this day
+- Decision (owner): the Route block leaves the Points of Interest tab and becomes a card on the dashboard, shown while selecting markers (opens the dashboard at the second stop on a desktop; a strip on a phone). A welcome line tops the dashboard. Each day of a trip gets a Navigate this day route.
+- Reasoning: the route is built while looking at the map, and tapping pins already selects; the dashboard sits under the map and a phone no longer detours through the panel. Navigate this day needs no selecting.
+- Alternative considered and dropped: a flip card for the Points of Interest list (it would hide days from drag-and-drop and from select-all).

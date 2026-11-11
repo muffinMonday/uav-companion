@@ -107,7 +107,7 @@ await pin(p, 'Bravo').tap(); await p.waitForTimeout(250);
 s = await state(p);
 ok(/2 markers selected/.test(s.banner) && s.nums.Alpha === '1' && s.nums.Bravo === '2', 'the banner counts them and the pins are numbered: ' + s.banner);
 await p.tap('#banner-review'); await p.waitForTimeout(400);
-ok(await p.evaluate(() => !document.getElementById('panel').hidden && document.getElementById('route-box').offsetParent !== null), 'Review opens the list with the route');
+ok(await p.evaluate(() => !document.getElementById('panel').hidden), 'Review opens the list');
 await ctx.close();
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();

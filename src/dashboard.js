@@ -4,6 +4,9 @@
 import { comingTrips, countdownLabel, tripSummary, todayISO, tripLength, tripStatus, planDays, tripWarnings } from './trips.js';
 import { WHATS_NEW } from './whatsnew.js';
 import { load, save, unseenEntries, startState, backupDue } from './dashstate.js';
+import { routeLinks } from './maplinks-ui.js';
+import { MODES, MAX_STOPS } from './maplinks.js';
+import { typeOf } from './poi.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
@@ -21,6 +24,50 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
   let regions = { countries: [], goTo: null };
 
   // ---------- the cards ----------
+  function welcomeLine() {
+    const c = el('div', 'dash-welcome');
+    const first = firstRun && !store.items().length && !store.trips().length;
+    if (first) c.append(el('b', '', 'Welcome to UAV Companion.'), ' Check where you can fly a drone and plan your trip.');
+    else {
+      const coming = comingTrips(store.trips(), todayISO());
+      c.append(el('b', '', 'Welcome back.'), ' ' + (coming.length ? coming[0].trip.name + ': ' + countdownLabel(coming[0].status).toLowerCase() + '.' : 'Where to next?'));
+    }
+    c.append(el('small', '', 'A planning aid, not flight advice.'));
+    return c;
+  }
+  /** The route through the places ticked in Select mode: reorder, reverse, travel mode and the links. Shown only while selecting. */
+  function routeCard() {
+    const rs = poi.route.state();
+    if (!rs.selecting) return null;
+    const c = el('section', 'dash-card dash-route'); c.id = 'route-box';
+    c.append(el('h3', '', rs.stops.length ? 'Route · ' + rs.stops.length + ' stop' + (rs.stops.length === 1 ? '' : 's') : 'Route'));
+    if (rs.stops.length < 2) { c.append(el('p', 'hint', 'Tap pins on the map, or rows in the list, to add stops. Two or more make a route in Google Maps or Amap.')); return c; }
+    const list = el('ol', 'route-stops'); list.id = 'route-stops';
+    const tool = (text, label, fn, disabled) => { const b = el('button', 'icon-btn route-btn', text); b.type = 'button'; b.setAttribute('aria-label', label); b.disabled = disabled; b.addEventListener('click', fn); return b; };
+    rs.stops.forEach((it, i) => {
+      const li = el('li', 'route-stop');
+      li.append(el('span', 'route-name', it.name), el('small', '', typeOf(it.type).label),
+        tool('↑', 'Move ' + it.name + ' earlier', () => poi.route.move(it.id, -1), i === 0),
+        tool('↓', 'Move ' + it.name + ' later', () => poi.route.move(it.id, 1), i === rs.stops.length - 1),
+        tool('✕', 'Remove ' + it.name + ' from the route', () => poi.route.remove(it.id), false));
+      list.append(li);
+    });
+    c.append(list);
+    const row = el('div', 'btn-row');
+    const rev = el('button', 'btn small', 'Reverse'); rev.type = 'button'; rev.id = 'route-reverse'; rev.addEventListener('click', () => poi.route.reverse());
+    const sort = el('button', 'btn small', 'Use itinerary order'); sort.type = 'button'; sort.id = 'route-sort'; sort.disabled = !rs.canSort; sort.addEventListener('click', () => poi.route.sort());
+    row.append(rev, sort); c.append(row);
+    const field = el('label', 'field'); field.append(el('span', '', 'Travel by'));
+    const sel = el('select'); sel.id = 'route-mode';
+    for (const m of MODES) { const o = el('option', '', m.label); o.value = m.id; sel.append(o); }
+    sel.value = rs.mode; sel.addEventListener('change', () => poi.route.setMode(sel.value));
+    field.append(sel); c.append(field);
+    const links = el('div'); links.id = 'route-links';
+    if (rs.stops.length > MAX_STOPS) links.append(el('small', 'route-note', 'That is a lot of stops. Tick ' + MAX_STOPS + ' places or fewer.'));
+    else links.append(...routeLinks({ stops: rs.stops.map((s) => ({ lat: s.lat, lon: s.lon, name: s.name })), mode: rs.mode, home: rs.stops.some((s) => s.type === 'residence') }));
+    c.append(links);
+    return c;
+  }
   function whatsNewCard() {
     if (!fresh.length) return null;
     const c = el('section', 'dash-card dash-new');
@@ -136,13 +183,15 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
 
   function render() {
     body.replaceChildren();
-    for (const card of [whatsNewCard(), tripCard(), backupCard(), regionsCard()]) if (card) body.append(card);
+    body.append(welcomeLine());
+    for (const card of [routeCard(), whatsNewCard(), tripCard(), backupCard(), regionsCard()]) if (card) body.append(card);
     body.append(guideCard());
     updatePeek();
   }
   function updatePeek() {
     const coming = comingTrips(store.trips(), todayISO());
-    const text = coming.length ? coming[0].trip.name + ' · ' + countdownLabel(coming[0].status) : 'Dashboard';
+    const rs = poi.route.state();
+    const text = rs.selecting && rs.stops.length ? 'Route · ' + rs.stops.length + ' stop' + (rs.stops.length === 1 ? '' : 's') : coming.length ? coming[0].trip.name + ' · ' + countdownLabel(coming[0].status) : 'Dashboard';
     $('dash-peek-text').textContent = text;
     peek.setAttribute('aria-label', 'Open the dashboard: ' + text);
   }
@@ -178,6 +227,18 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
   dash.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setState('peek'); peek.focus(); } });
   panel.onOpen?.(() => { if (isPhone() && state === 'expanded') setState('peek'); }); // on a phone the panel and the dashboard take turns
   store.onChange(() => { if (state === 'expanded') render(); else updatePeek(); });
+
+  // a route being built: a desktop opens the dashboard at the second stop, a phone brings up the strip (the map needs the room); both go
+  // back to how they were when selecting ends
+  let beforeRoute = null;
+  poi.route.onChange(() => {
+    const rs = poi.route.state();
+    if (rs.selecting && rs.stops.length >= 2 && beforeRoute === null) {
+      if (!isPhone() && state !== 'expanded') { beforeRoute = state; setState('expanded'); }
+      else if (isPhone() && state === 'hidden') { beforeRoute = state; setState('peek'); }
+    } else if (!rs.selecting && beforeRoute !== null) { const back = beforeRoute; beforeRoute = null; setState(back); }
+    if (state === 'expanded') render(); else updatePeek();
+  });
 
   // the Help card: bring it back, and choose whether it opens at start
   $('help-open').addEventListener('click', () => { panel.closeIfPhone(); setState('expanded', { guide: true }); });

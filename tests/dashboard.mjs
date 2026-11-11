@@ -129,5 +129,34 @@ ok(await stateOf(p) === 'peek' && !(await p.evaluate(() => document.getElementBy
 await p.tap('#dash-peek'); await p.waitForTimeout(350);
 ok(await stateOf(p) === 'expanded' && await p.evaluate(() => document.getElementById('panel').hidden), 'opening the dashboard closes the panel');
 await ctx.close();
+// ================= the welcome line and the route card
+({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: { ...RETURNING, showOnStart: false } }));
+await p.evaluate(() => document.getElementById('tab-poi').click()); await p.waitForTimeout(200);
+await p.click('#poi-select'); await p.waitForTimeout(200);
+await p.click('#poi-list .poi-item:has-text("Today stop")'); await p.waitForTimeout(250);
+ok(await stateOf(p) === 'hidden', 'one ticked place is not a route: the dashboard stays where it was');
+await p.click('#poi-list .poi-item:has-text("Second stop")'); await p.waitForTimeout(450);
+ok(await stateOf(p) === 'expanded' && await p.isVisible('#route-box') && /Route · 2 stops/.test(await p.textContent('#route-box')), 'the second stop opens the dashboard with a Route card');
+ok((await p.$$eval('#route-stops .route-name', (e) => e.map((x) => x.textContent))).join() === 'Today stop,Second stop', 'its stops are in the order they were ticked');
+await p.click('#route-reverse'); await p.waitForTimeout(250);
+ok((await p.$$eval('#route-stops .route-name', (e) => e.map((x) => x.textContent))).join() === 'Second stop,Today stop' && /Open in Amap/.test(await p.textContent('#route-links')), 'Reverse turns it round, and the link for the route is there');
+ok(/Welcome back/.test(await p.textContent('#dash .dash-welcome')) && /Under way: day 2 of 3/.test(await p.textContent('#dash .dash-welcome')) && /not flight advice/.test(await p.textContent('#dash .dash-welcome')), 'the welcome line says what is next and carries the reminder: ' + (await p.textContent('#dash .dash-welcome')).slice(0, 80));
+await p.click('#sel-done'); await p.waitForTimeout(450);
+ok(await stateOf(p) === 'hidden' && !(await p.isVisible('#route-box')), 'finishing selecting puts the dashboard back as it was, and the card is gone from view');
+await ctx.close();
+
+({ ctx, p } = await open({ width: 390, height: 780 }, true, { dash: { ...RETURNING, showOnStart: false } }));
+await p.tap('#dock button[data-tab=poi]'); await p.waitForTimeout(300);
+await p.tap('#poi-select'); await p.tap('#banner-review'); await p.waitForTimeout(350);
+await p.tap('#poi-list .poi-item:has-text("Today stop")'); await p.waitForTimeout(200);
+await p.tap('#poi-list .poi-item:has-text("Second stop")'); await p.waitForTimeout(450);
+ok(await stateOf(p) === 'peek' && /Route · 2 stops/.test(await p.textContent('#dash-peek')), 'on a phone the strip says "Route · 2 stops" and the dashboard stays out of the way');
+await p.tap('#dash-peek'); await p.waitForTimeout(400);
+ok(await p.isVisible('#route-box') && await p.evaluate(() => document.getElementById('panel').hidden), 'tapping it shows the route card (and the panel steps aside)');
+await ctx.close();
+
+({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: null, data: false }));
+ok(/Welcome to UAV Companion/.test(await p.textContent('#dash .dash-welcome')), 'a first visit gets the welcome message');
+await ctx.close();
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();
