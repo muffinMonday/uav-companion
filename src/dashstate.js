@@ -42,6 +42,27 @@ export function startState({ firstRun = false, unseen = 0, showOnStart = true, h
   return phone ? 'peek' : 'expanded';
 }
 
+export const STORAGE_QUOTA = 5_000_000; // characters a browser typically allows one site in localStorage (about 5 MB)
+export const STORAGE_WARN = 0.8;
+
+/** How much of this site's browser storage the app's own keys use: { chars, quota, pct, warn }. `storage` is a localStorage-like object. */
+export function storageUse(storage, quota = STORAGE_QUOTA) {
+  let chars = 0;
+  try {
+    for (let i = 0; i < storage.length; i++) {
+      const k = storage.key(i);
+      if (k && k.startsWith('uavzones.v1.')) chars += k.length + (storage.getItem(k) || '').length;
+    }
+  } catch { return null; }
+  const pct = chars / quota;
+  return { chars, quota, pct, warn: pct >= STORAGE_WARN };
+}
+
+/** "62 KB" / "1.4 MB" for the readout. */
+export function sizeLabel(chars) {
+  return chars < 1_000_000 ? Math.max(1, Math.round(chars / 1000)) + ' KB' : (chars / 1_000_000).toFixed(1) + ' MB';
+}
+
 /** Is a backup worth asking for? null if not; { never: true } or { days } when there are markers and the last backup is old or missing. */
 export function backupDue(lastBackup, markers, now = Date.now()) {
   if (!markers) return null;

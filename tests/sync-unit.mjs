@@ -76,3 +76,11 @@ store.replaceAll([], []);
 ok(store.items().length === 0 && store.trips().length === 0, 'replaceAll with nothing empties the store');
 ok(store.replaceAll('x', null).items === 0, 'replaceAll tolerates garbage');
 ok(fired >= 3, 'and every replacement tells the listeners (' + fired + ')');
+
+// ---------- the import ceiling
+{
+  const many = Array.from({ length: 2500 }, (_, i) => ({ id: 'c' + i, name: 'M' + i, lat: 30, lon: 114 }));
+  const r = store.replaceAll(many, []);
+  ok(r.items === 2000, 'the store holds at most 2,000 markers: ' + r.items);
+  store.replaceAll([], []);
+}

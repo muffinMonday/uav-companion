@@ -13,7 +13,7 @@ The one place to see what is being built, what is queued and what is waiting. St
 | W1 | Backend phase 1: accounts and cloud persistence | **In progress** | 2026-11-11 | Done: database, access rules, 42 tests, both migrations on the dev project (`e4e0206`). Built and committed: sync rules, engine, Supabase adapter, sign-in card, conflict dialog, dashboard line (79 unit + 17 browser assertions with a mocked server, and 16 live checks of the adapter and access rules on the dev project); inactive on the live site. Remaining: the owner signs in once with a real email link on `npm run dev` (the one step that cannot be automated), then Done. |
 | W2 | Check-in discoverability (options A to D) | **Waiting on owner** | 2026-11-11 | Needs the owner's choice of A (show the button even when off), B (button in the marker window), C (manual "mark as visited"), D (What's new entry). |
 | W3 | Faster tests: run them in parallel | **In progress** | 2026-11-11 | Step (a) done: `node tests/run.mjs` now runs 4 suites at once (`--jobs N`, `--jobs 1` for serial): full set 262 s instead of about 960 s, all 48 suites passing, no flakiness seen. Remaining steps (b) to (f) below; they matter less now (the slowest suite, `trip` at 135 s, and the total work divided by 4 are close to the same figure). |
-| W4 | Optimization backlog (storage readout, orphan cache cleanup, import ceiling) | **Queued** (none urgent) | 2026-11-11 | See "Optimization backlog". |
+| W4 | Optimization backlog (storage readout, orphan cache cleanup, import ceiling) | **Done** (awaiting full-run confirmation, then commit) | 2026-11-11 | Storage readout on the dashboard (warns at 80%), orphan weather and elevation entries dropped at start-up, import ceiling 2,000. Zone-file hosting item stays a note for when more regions arrive. |
 | W5 | Backend phase 2: profiles and friends | **Planned** | after W1 | About 1 week solo; see the decision of 2026-11-11. |
 | W6 | Backend phase 3: flight sessions, invitations, public lobby | **Planned** | after W5 | Approximate area for public sessions; moderation and privacy policy first. |
 | W7 | Diagnostics 4a: USB connection to a flight controller (MSP), read-only | **Planned** | after W1 or in parallel | Browser only (Web Serial, desktop Chrome and Edge); `PROJECT.md` section 9. |
@@ -70,9 +70,9 @@ Trips tab upgrades (day-by-day plan, forecast per day, no-fly check of stops, no
 
 ## Optimization backlog (later, none urgent)
 Measured 2026-11-11: a marker is about 360 bytes (810 at its limits), a weather cache entry about 170, an elevation entry about 70; 100 markers with caches are about 60 KB of the browser's roughly 5 MB. The app bundle is 417 KB (about 130 KB compressed); the Hubei zone file is 6.7 MB, read in small pieces.
-- Show storage use in the Backup card ("Using 62 KB of about 5 MB") with a warning past about 80%.
-- At start-up, drop weather and elevation cache entries whose marker no longer exists (delete already forgets them; another tab or an import could leave strays).
-- Lower the import ceiling from 5,000 markers to about 2,000: 5,000 markers at their maximum size with caches would exceed the quota (the app already warns when the browser refuses to store).
+- **Done 2026-11-11:** storage use shown in the dashboard's Your data card ("Using 62 KB of about 5 MB of this browser's storage") with a warning past 80% (`storageUse` in `dashstate.js`, test suite `storage`).
+- **Done 2026-11-11:** at start-up, weather and elevation cache entries whose marker no longer exists are dropped (`prune` in `markerweather.js` and `elevation.js`; trip forecasts already pruned).
+- **Done 2026-11-11:** the ceiling is 2,000 markers (`MAX_ITEMS` in `poi.js`): 5,000 at their maximum size with caches would exceed the quota.
 - When more regions arrive (Singapore, a second Chinese province): keep one zone file per region; revisit moving tiles to object storage if bandwidth grows (GitHub Pages: 1 GB per site, 100 MB per file).
 
 ## Known issues and risks

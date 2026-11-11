@@ -138,6 +138,8 @@ export function createMarkerWeather({ getItems, onChange }) {
     refreshMissing: () => (isOn() ? run(ids().filter((id) => !cache.items[id]), { bulk: false }) : Promise.resolve()),
     invalidate(id) { delete cache.items[id]; save(); },
     forget(id) { delete cache.items[id]; pending.delete(id); save(); },
+    /** Drops cached entries whose marker no longer exists (another tab or an import can leave them). Returns how many. */
+    prune(ids) { const keep = new Set(ids); let n = 0; for (const id of Object.keys(cache.items)) if (!keep.has(id)) { delete cache.items[id]; n++; } if (n) save(); return n; },
 
     get(id) {
       const entry = cache.items[id] || null;

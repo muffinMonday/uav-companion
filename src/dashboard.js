@@ -3,7 +3,7 @@
 // peek strip (V), and hidden behind a small ^ tab (close). How it starts is decided in dashstate.js.
 import { comingTrips, countdownLabel, tripSummary, todayISO, tripLength, tripStatus, planDays, tripWarnings } from './trips.js';
 import { WHATS_NEW } from './whatsnew.js';
-import { load, save, unseenEntries, startState, backupDue } from './dashstate.js';
+import { load, save, unseenEntries, startState, backupDue, storageUse, sizeLabel } from './dashstate.js';
 import { animateOut } from './motion.js';
 import { routeLinks } from './maplinks-ui.js';
 import { MODES, MAX_STOPS } from './maplinks.js';
@@ -221,6 +221,13 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
     const row = el('div', 'btn-row');
     row.append(...dataNodes.slice(0, 4)); // export, import, share link and the (hidden) file chooser
     c.append(row, dataNodes[4]);
+    let use = null;
+    try { use = storageUse(localStorage); } catch { /* storage blocked: no readout */ }
+    if (use) {
+      const p = el('p', 'hint storage-use' + (use.warn ? ' warn' : ''), 'Using ' + sizeLabel(use.chars) + ' of about 5 MB of this browser’s storage.' + (use.warn ? ' It is nearly full: export a backup and remove markers or trips you no longer need, or the browser may refuse to save new ones.' : ''));
+      if (use.warn) p.setAttribute('role', 'alert');
+      c.append(p);
+    }
     const line = cloud.handle?.line();
     if (line) { // signed in to the optional cloud copy: one line of status that opens its settings
       const b = el('button', 'btn small cloud-line', 'Cloud copy: ' + line); b.type = 'button';

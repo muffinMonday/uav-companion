@@ -66,6 +66,8 @@ export function createMarkerElevation({ getItems, onChange }) {
     },
     invalidate(id) { delete cache[id]; failed.delete(id); save(); },
     forget(id) { delete cache[id]; failed.delete(id); save(); },
+    /** Drops cached entries whose marker no longer exists (another tab or an import can leave them). Returns how many. */
+    prune(ids) { const keep = new Set(ids); let n = 0; for (const id of Object.keys(cache)) if (!keep.has(id)) { delete cache[id]; n++; } if (n) save(); return n; },
 
     setEnabled(on) {
       setPrivacy({ fetchAltitude: on });

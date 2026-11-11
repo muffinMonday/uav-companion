@@ -8,13 +8,13 @@ import os from 'node:os';
 import path from 'node:path';
 
 const UNIT = ['ai-unit', 'trip-unit', 'trips-unit', 'rain-unit', 'places-unit', 'reorder-unit', 'maplinks-unit', 'coordparse-unit', 'onemap-unit', 'plan-unit', 'dashstate-unit', 'checkin-unit', 'share-unit', 'db-unit', 'sync-unit', 'sync-engine-unit'];
-const BROWSER = ['stops', 'days', 'search', 'maplinks', 'reorder', 'visits', 'window', 'dashboard', 'hold', 'rain', 'ui', 'bulk', 'poi1', 'poi2', 'edit', 'prefs', 'opacity', 'mw', 'priv', 'ai', 'trip', 'trips', 'sg', 'tools', 'mapsel', 'tripplan', 'shell', 'checkin', 'motion', 'dayroute', 'snow', 'cloud', 'smoke'];
+const BROWSER = ['stops', 'days', 'search', 'maplinks', 'reorder', 'visits', 'window', 'dashboard', 'hold', 'rain', 'ui', 'bulk', 'poi1', 'poi2', 'edit', 'prefs', 'opacity', 'mw', 'priv', 'ai', 'trip', 'trips', 'sg', 'tools', 'mapsel', 'tripplan', 'shell', 'checkin', 'motion', 'dayroute', 'snow', 'cloud', 'storage', 'smoke'];
 const args = process.argv.slice(2);
 const onlyUnit = args.includes('--unit');
 const ji = args.indexOf('--jobs');
 const jobsArg = ji >= 0 ? args[ji + 1] : '4';
 const JOBS = Math.max(1, jobsArg === 'auto' ? Math.min(6, Math.floor(os.cpus().length / 2)) : parseInt(jobsArg, 10) || 1);
-const words = args.filter((a, i) => !a.startsWith('--') && i !== ji + 1);
+const words = args.filter((a, i) => !a.startsWith('--') && (ji < 0 || i !== ji + 1));
 
 let names = onlyUnit ? UNIT : [...UNIT, ...BROWSER];
 if (words.length) names = names.filter((n) => words.some((w) => n.includes(w)));

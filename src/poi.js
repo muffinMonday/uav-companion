@@ -9,7 +9,7 @@ export const KEY = 'uavzones.v1.pois';
 export const TRIPS_KEY = 'uavzones.v1.trips';
 const BACKUP_KEY = 'uavzones.v1.lastBackup';
 const MAX_TRIPS = 200;
-const MAX_ITEMS = 5000;       // import ceiling
+const MAX_ITEMS = 2000;       // import ceiling (5,000 markers at their largest, with caches, would not fit the browser's storage)
 const MAX_IMPORT_BYTES = 2e6; // import file ceiling
 
 // Each type differs in glyph as well as colour, so the markers stay distinguishable without colour vision.

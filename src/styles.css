@@ -777,3 +777,4 @@ input[type=email]:focus{border-color:var(--accent)}
 .cloud-dialog h2{margin:0 0 6px;font-size:18px}
 .cloud-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;font-size:14px}
 .cloud-line{margin-top:8px;text-align:left;white-space:normal}
+.storage-use.warn{color:var(--danger);font-weight:600}

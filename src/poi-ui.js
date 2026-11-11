@@ -61,6 +61,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   // Weather summaries and ground elevation for markers: both opt-in, see privacy.js
   const mw = createMarkerWeather({ getItems: () => store.items(), onChange: () => { renderWxStatus(); wxLine?.render(); } });
   const elev = createMarkerElevation({ getItems: () => store.items(), onChange: () => { renderWxStatus(); wxLine?.render(); } });
+  { const live = store.items().map((i) => i.id); mw.prune(live); elev.prune(live); } // forget weather and elevation for markers that are gone
   const mwStatus = $('mw-status');
 
   const typesEl = $('poi-types'), listEl = $('poi-list'), filterEl = $('poi-filter'), countEl = $('poi-count');

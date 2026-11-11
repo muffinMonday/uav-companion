@@ -44,3 +44,16 @@ const s = S.sanitize({ showOnStart: false, hideUntil: '2026-11-11', seen: 'x', w
 ok(s.showOnStart === false && s.hideUntil === '2026-11-11' && s.seen === 'x' && s.welcomed === true, 'valid values are kept');
 const bad = S.sanitize({ showOnStart: 'no', hideUntil: 'tomorrow', seen: 5, welcomed: 'yes' });
 ok(bad.showOnStart === true && bad.hideUntil === null && bad.seen === null && bad.welcomed === false, 'damaged values fall back to the defaults');
+
+// ---------- storage readout
+{
+  const { storageUse, sizeLabel, STORAGE_QUOTA } = await import('../src/dashstate.js');
+  const fake = (o) => ({ get length() { return Object.keys(o).length; }, key: (i) => Object.keys(o)[i] ?? null, getItem: (k) => o[k] ?? null });
+  const u = storageUse(fake({ 'uavzones.v1.pois': 'x'.repeat(1000), 'other.site.key': 'y'.repeat(9999) }));
+  ok(u.chars === 'uavzones.v1.pois'.length + 1000, 'storage use counts only the app\'s own keys: ' + u.chars);
+  ok(!u.warn && u.pct < 0.01, 'a small store raises no warning');
+  ok(storageUse(fake({ 'uavzones.v1.pois': 'x'.repeat(STORAGE_QUOTA * 0.81) })).warn, 'past 80% of the quota it warns');
+  ok(!storageUse(fake({ 'uavzones.v1.pois': 'x'.repeat(STORAGE_QUOTA * 0.79) })).warn, 'just under 80% it does not');
+  ok(storageUse({ get length() { throw new Error('blocked'); } }) === null, 'blocked storage gives no readout instead of an error');
+  ok(sizeLabel(62000) === '62 KB' && sizeLabel(10) === '1 KB' && sizeLabel(1400000) === '1.4 MB', 'size labels: ' + sizeLabel(62000) + ', ' + sizeLabel(1400000));
+}
