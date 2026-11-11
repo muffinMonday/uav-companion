@@ -21,3 +21,9 @@ planning/
 
 # Regions marked "publish": false are built here and never deployed (see scripts/strip-local.js)
 public/data-local/
+
+# Supabase: the link to a project and any local secrets stay on this machine
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+.env

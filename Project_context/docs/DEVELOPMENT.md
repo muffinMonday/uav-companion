@@ -31,6 +31,9 @@ node tests/trips.mjs              # one suite directly; prints PASS/FAIL lines
 - The runner counts lines starting with `PASS`/`FAIL`; `smoke` prints none, so it shows 0 pass and passes if it does not crash or log console errors.
 - Last full run (this document's date, 2026-11-11): see CURRENT_STATUS for the latest count on the dev server; counts in `CURRENT_STATUS.md`.
 
+## Backend (`supabase/`)
+See `supabase/README.md`: migrations, how the access rules are tested without Docker (`node tests/db-unit.mjs`, PGlite), how to push to the hosted project (`npx supabase db push --remote --dry-run`, then `--yes`; the password is read from the `SUPABASE_DB_PASSWORD` environment variable), and what must never be committed. The project address and publishable key are in `.env.development.local` (git-ignored, used by `npm run dev` only).
+
 ## Writing tests that can run in parallel
 The suites will be run side by side (see the "Faster tests" item in `CURRENT_STATUS.md`), so every new or changed suite follows these rules even while the runner is still serial:
 - **Self-contained.** A suite seeds everything it needs itself (an `addInitScript` that writes `localStorage`, guarded by `sessionStorage.__seeded` so a reload keeps the state) and never depends on another suite having run, or on the order.

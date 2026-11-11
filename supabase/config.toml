@@ -1,0 +1,20 @@
+# Settings for the local Supabase stack (only used if it is ever started with "supabase start"). The hosted project is configured in its dashboard.
+project_id = "uav-companion"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+major_version = 17
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173", "https://muffinmonday.github.io/uav-companion/"]
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false

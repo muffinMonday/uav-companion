@@ -23,6 +23,7 @@
     "protomaps-leaflet": "^5.1.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "geojson-vt": "^5.0.4",
     "gh-pages": "^6.3.0",
     "playwright-core": "^1.65.0",
