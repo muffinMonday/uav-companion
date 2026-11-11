@@ -1,4 +1,4 @@
-// The dashboard's expand toggle on a phone: normal height <-> 90% of the screen, with expand, collapse and close always reachable.
+// The dashboard's expand toggle on a phone: normal height <-> 90% of the screen, remembered, with expand, collapse and close always reachable.
 import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
@@ -62,15 +62,25 @@ await p.evaluate(() => { document.getElementById('dash-body').style.paddingBotto
 await p.tap('#dash-expand'); await p.waitForTimeout(350);
 ok(Math.abs((await box(p, '#dash')).h - normal.h) < 6, 'pressing it again shrinks the dashboard back to its usual height');
 
-// collapse and close both reset it
+// the size is remembered: collapsing, closing and reloading keep it
+const saved = () => p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}').dashTall === true);
 await p.tap('#dash-expand'); await p.waitForTimeout(300);
+const tallH = (await box(p, '#dash')).h;
+ok(await saved(), 'expanding saves the choice in the settings');
 await p.tap('#dash-collapse'); await p.waitForSelector('#dash-peek:not([hidden])');
 await openDash(p);
-ok(Math.abs((await box(p, '#dash')).h - normal.h) < 6, 'collapsing to the strip and opening again gives the usual height');
-await p.tap('#dash-expand'); await p.waitForTimeout(300);
+ok(Math.abs((await box(p, '#dash')).h - tallH) < 6 && (await p.getAttribute('#dash-expand', 'aria-pressed')) === 'true', 'collapsing to the strip and opening again keeps it expanded');
 await p.tap('#dash-close'); await p.waitForSelector('#dash-tab:not([hidden])');
 await openDash(p);
-ok(Math.abs((await box(p, '#dash')).h - normal.h) < 6 && (await p.getAttribute('#dash-expand', 'aria-pressed')) === 'false', 'closing it and opening again gives the usual height too');
+ok(Math.abs((await box(p, '#dash')).h - tallH) < 6, 'closing it and opening again keeps it expanded too');
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(900);
+await openDash(p);
+ok(Math.abs((await box(p, '#dash')).h - tallH) < 6 && await reachable(p, '#dash-close') && await reachable(p, '#dash-expand'), 'after a reload it is still expanded, with its buttons reachable');
+await p.tap('#dash-expand'); await p.waitForTimeout(300);
+ok(!(await saved()) && Math.abs((await box(p, '#dash')).h - normal.h) < 6, 'shrinking it back clears the saved choice');
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(900);
+await openDash(p);
+ok(Math.abs((await box(p, '#dash')).h - normal.h) < 6, 'and after a reload it is at its usual height');
 await ctx.close();
 
 // ---------- a short phone: the top edge stays on the screen

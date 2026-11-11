@@ -5,6 +5,7 @@ import { comingTrips, countdownLabel, tripSummary, todayISO, tripLength, tripSta
 import { WHATS_NEW } from './whatsnew.js';
 import { load, save, unseenEntries, startState, backupDue, storageUse, sizeLabel } from './dashstate.js';
 import { animateOut } from './motion.js';
+import { loadPrefs, savePrefs } from './prefs.js';
 import { routeLinks } from './maplinks-ui.js';
 import { MODES, MAX_STOPS } from './maplinks.js';
 import { typeOf } from './poi.js';
@@ -324,16 +325,18 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
   }
 
   // ---------- the three states ----------
-  // On a phone the dashboard can grow to 90% of the screen (the button beside close). Not remembered: it is normal height each time it opens.
+  // On a phone the dashboard can grow to 90% of the screen (the button beside close). The choice is remembered (prefs.dashTall).
   const expandBtn = $('dash-expand');
-  function setTall(on) {
+  function setTall(on, { save = true } = {}) {
     dash.classList.toggle('tall', on);
+    if (save) savePrefs({ dashTall: on || null });
     expandBtn.setAttribute('aria-pressed', String(on));
     const label = on ? 'Shrink the dashboard back to its usual height' : 'Expand the dashboard';
     expandBtn.setAttribute('aria-label', label); expandBtn.title = on ? 'Shrink back' : 'Expand';
     lift();
   }
   expandBtn.addEventListener('click', () => setTall(!dash.classList.contains('tall')));
+  if (loadPrefs().dashTall) setTall(true, { save: false });
   // the forecast card and other bottom-left cards rise above the dashboard; a tall dashboard covers the screen, so they stay put behind it
   function lift() { document.documentElement.style.setProperty('--dash-lift', state === 'expanded' && !dash.classList.contains('tall') ? Math.round(dash.offsetHeight) + 'px' : '0px'); }
   const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(lift) : null;
@@ -353,7 +356,6 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
     const apply = () => {
       if (token !== stateToken) return;
       dash.hidden = next !== 'expanded';
-      if (next !== 'expanded') setTall(false);
       peek.hidden = next !== 'peek';
       tab.hidden = next !== 'hidden';
       peek.setAttribute('aria-expanded', 'false');

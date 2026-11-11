@@ -51,6 +51,18 @@ export function initPanel() {
     changed();
   }
 
+  // On a phone the bottom sheet can grow to 90% of the screen (the handle on its top edge). The choice is remembered (prefs.panelTall).
+  const expandBtn = $('panel-expand');
+  function setTall(on, { save = true } = {}) {
+    panel.classList.toggle('tall', on);
+    if (save) savePrefs({ panelTall: on || null });
+    expandBtn.setAttribute('aria-pressed', String(on));
+    expandBtn.setAttribute('aria-label', on ? 'Shrink the panel back to its usual height' : 'Expand the panel');
+    expandBtn.title = on ? 'Shrink back' : 'Expand';
+  }
+  expandBtn.addEventListener('click', () => setTall(!panel.classList.contains('tall')));
+  if (loadPrefs().panelTall) setTall(true, { save: false });
+
   /** Remembers a choice made by the visitor on a computer (a phone always starts with the panel out of the way). */
   const remember = (collapsed) => { if (!isPhone()) savePrefs({ panelCollapsed: collapsed || null }); };
   function open(tab, { save = true } = {}) { selectTab(tab || current); setOpen(true); if (save) remember(false); }
