@@ -17,7 +17,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `prefs.js` | Validated remembered settings | load/save | none |
 | `units.js` | km/mi formatting (pure) | format helpers | none |
 | `panel.js` | Side panel, dock, tabs (generic over `[role=tab]`), phone bottom sheet | `initPanel` (`open`, `closeIfPhone`) | none |
-| `poi.js` (pure) | Marker and trip model: types, sanitize, store, list sorting, GeoJSON export/import | `createStore` (incl. `removeMany`/`restore` for bulk delete and Undo), `TYPES`, `sanitize`, `sanitizeTrip`, `tripFields`, `toGeoJSON`, `parseGeoJSON`, `sortForList` | countries |
+| `poi.js` (pure) | Marker and trip model: types, sanitize, store, list sorting, GeoJSON export/import | `createStore` (incl. `removeMany`/`restore` for bulk delete and Undo, `setMany` for reorder and Undo), `TYPES`, `sanitize`, `sanitizeTrip`, `tripFields`, `toGeoJSON`, `parseGeoJSON`, `sortForList` | countries |
 | `poi-ui.js` | Marker UI: place/edit/drag, list with trip groups and filter, select-and-delete mode, marker window, import/export | `initPOI` returns store, showTrip, fitTrip, get/setCurrentTrip, setNewTripHandler, tagMarker, handleMapClick, items, addMany, fitToItems | poi, distance, trips, cards, weather, elevation |
 | `distance.js` (pure) | Nearest Home point/Hotel (own trip, date overlap) and nearest Home | `nearestBases`, `needsDistance`, `lineApplies`, `inSameTrip`, `beyondRange`, `BASE_TYPES` | none |
 | `trips.js` (pure) | Trip length, labels, "outside trip dates" check, sort | `tripLength`, `tripSummary`, `outsideTrip`, `sortTrips`, `todayISO`, `tripStatus`, `comingTrips`, `countdownLabel` | poi, countries |
@@ -30,6 +30,8 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `view.js` | Centre the map on a coordinate (aware of the side panel) and the tallest window that fits above it | `centreOn`, `popupMaxHeight`, `expandedMaxHeight`, `defaultExpanded`, `panelInset` | none |
 | `welcome.js` | Welcome dialog, opt-out, countdown card (uses `comingTrips` etc. from `trips.js`) | `initWelcome` (`maybeShow`, `open`) | trips |
 | `places.js` | Markers that share a spot (within 15 m): groups, visit order, labels (pure) | `visitGroups`, `visitLabel`, `metres`, `SAME_PLACE_M` | poi |
+| `reorder.js` | What a move does to date, day, stop and hotel end date: `planMove`, `stepSlot`, `groupsOf`, `addDays`, `nextTripDate` (pure) | as listed | poi, trips |
+| `reorder-ui.js` | Hold 2 s then drag a row; ghost, drop line, auto-scroll, Escape, Alt+arrows | `initReorder` | none |
 | `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
 | `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
 

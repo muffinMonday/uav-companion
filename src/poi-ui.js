@@ -10,6 +10,8 @@ import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, comp
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { visitGroups, visitLabel } from './places.js';
+import { planMove, stepSlot, groupKey, addDays } from './reorder.js';
+import { initReorder } from './reorder-ui.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer } from './cards.js';
 
@@ -129,18 +131,28 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (!items.length) selecting = false;
     for (const id of [...selected]) if (!visibleIds.has(id)) selected.delete(id); // the count always matches what is shown
     renderSelectBar(items);
+    $('poi-drag-hint').hidden = true; // shown below once the list is drawn, if any row can be dragged
 
     // One group of markers. Inside it: date headings once any marker has a date, else "Day N" headings once any has a day,
     // else a plain list, newest first. `mode` is decided by the caller so headings and order always agree.
-    const renderGroup = (group, mode, head) => {
+    const renderGroup = (group, mode, head, scope = 'none') => {
       if (head) listEl.append(head);
+      // dragging is for dated or day-numbered lists only, with no type filter on, and not while selecting
+      const dragOk = !selecting && filter === 'all' && mode !== 'plain';
+      const heading = (label, key) => { const h = el('li', 'day-head', label); h.setAttribute('role', 'presentation'); h.dataset.scope = scope; h.dataset.gkey = String(key); return h; };
       let lastGroup = null;
       for (const it of sortForList(group, mode)) {
         if (mode !== 'plain') {
           const label = groupLabel(it, mode);
-          if (label !== lastGroup) { const h = el('li', 'day-head', label); h.setAttribute('role', 'presentation'); listEl.append(h); lastGroup = label; }
+          if (label !== lastGroup) {
+            listEl.append(heading(label, groupKey(it, mode)));
+            lastGroup = label;
+          }
         }
-        listEl.append(renderItem(it, items, mode));
+        const row = renderItem(it, items, mode);
+        row.dataset.id = it.id; row.dataset.scope = scope; row.dataset.mode = mode; row.dataset.gkey = String(groupKey(it, mode));
+        if (dragOk && it.type !== 'residence') row.dataset.drag = '1';
+        listEl.append(row);
       }
     };
     const heading = (text, trip) => {
@@ -153,19 +165,61 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     };
 
     if (!trips.length) {
-      renderGroup(visible, listMode(items), null); // no trips yet: the list is exactly as it was before trips existed
+      renderGroup(visible, listMode(items), null, 'none'); // no trips yet: the list is exactly as it was before trips existed
     } else {
       for (const t of sortTrips(trips)) {
         const group = visible.filter((i) => i.tripId === t.id);
-        if (group.length || tripFilter === t.id) renderGroup(group, listMode(group), heading(t.name, t));
+        if (group.length || tripFilter === t.id) renderGroup(group, listMode(group), heading(t.name, t), t.id);
       }
       const loose = visible.filter((i) => !i.tripId && i.type !== 'residence');
-      if (loose.length) renderGroup(loose, listMode(loose), heading('No trip'));
+      if (loose.length) renderGroup(loose, listMode(loose), heading('No trip'), 'none');
       const homes = visible.filter((i) => i.type === 'residence');
       if (homes.length) renderGroup(homes, 'plain', heading('Home'));
       if (!listEl.children.length) listEl.append(el('li', 'poi-none', 'Nothing matches this filter.'));
     }
+    $('poi-drag-hint').hidden = !listEl.querySelector('li[data-drag="1"]');
   }
+
+  // ---------- reordering by holding a row ----------
+  /** The markers a drag works on: those of one trip (or none), without the Home marker. */
+  const scopeMembers = (scope) => store.items().filter((i) => (i.tripId ?? 'none') === scope && i.type !== 'residence');
+  function applyMove(id, scope, mode, key, index) {
+    const members = scopeMembers(scope);
+    const targetKey = mode === 'day' && key !== 'none' ? Number(key) : key;
+    const plan = planMove({ members, mode, movedId: id, targetKey, index, trip: scope === 'none' ? null : store.getTrip(scope) });
+    if (!plan) return false;
+    const res = store.setMany(plan.items);
+    const m = plan.moved;
+    const where = targetKey === 'none' ? 'out of the itinerary' : `to ${[m.date && dateLabel({ date: m.date }), tripLabel(m)].filter(Boolean).join(' · ')}`;
+    toast(`Moved “${m.name}” ${where}.${res.ok ? '' : ' The browser would not store it.'}`, 10000, { label: 'Undo', run: () => { store.setMany(res.previous); toast('Move undone.', 3000); } });
+    return true;
+  }
+  initReorder({
+    list: listEl, scroller: listEl.closest('.sp-body') || listEl,
+    // While a row is lifted, the trip's dates that have no markers yet appear as places to drop. They are added to the list as it is,
+    // not by drawing it again: the row under the finger must stay in the page, or the touch loses its target and the browser scrolls instead.
+    onLift: (scope) => {
+      const trip = scope === 'none' ? null : store.getTrip(scope);
+      if (!trip?.startDate || !trip.endDate) return;
+      const heads = [...listEl.querySelectorAll(`li.day-head[data-scope="${scope}"]`)];
+      if (!heads.length || heads.every((h) => h.dataset.gkey !== 'none' && !/^\d{4}-/.test(h.dataset.gkey))) return; // not a list of dates
+      const have = new Set(heads.map((h) => h.dataset.gkey));
+      for (let d = trip.startDate, n = 0; d <= trip.endDate && n < 62; d = addDays(d, 1), n++) {
+        if (have.has(d)) continue;
+        const h = el('li', 'day-head drop-only', groupLabel({ date: d }, 'date'));
+        h.setAttribute('role', 'presentation'); h.dataset.scope = scope; h.dataset.gkey = d;
+        const later = [...listEl.querySelectorAll(`li.day-head[data-scope="${scope}"]`)].find((x) => x.dataset.gkey === 'none' || x.dataset.gkey > d);
+        if (later) later.before(h);
+        else [...listEl.querySelectorAll(`li[data-scope="${scope}"]`)].pop().after(h);
+      }
+    },
+    onEnd: () => { for (const h of listEl.querySelectorAll('li.drop-only')) h.remove(); },
+    onDrop: ({ id, scope, mode, key, index }) => { applyMove(id, scope, mode, key, index); },
+    onStep: (id, scope, mode, dir) => {
+      const slot = stepSlot(scopeMembers(scope), mode, id, dir);
+      if (slot && applyMove(id, scope, mode, slot.key, slot.index)) requestAnimationFrame(() => listEl.querySelector(`li[data-id="${CSS.escape(id)}"] .poi-item`)?.focus());
+    },
+  });
 
   // ---------- selecting several markers to delete ----------
   const selRow = $('poi-select-row'), selBar = $('poi-selbar'), selDelete = $('sel-delete'), selConfirm = $('sel-confirm');

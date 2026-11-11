@@ -252,6 +252,21 @@ export function createStore() {
       return { ok };
     },
 
+    /** Replaces several markers in one go (each is checked like any marker, the list order is kept). Returns { ok, previous } with the markers as they were, which setMany() takes to undo it. */
+    setMany(list) {
+      const previous = [];
+      for (const next of list) {
+        const i = items.findIndex((x) => x.id === next.id);
+        if (i < 0) continue;
+        const clean = sanitize({ ...next, id: next.id });
+        if (!clean) continue;
+        if (clean.tripId && !tripsExist().has(clean.tripId)) delete clean.tripId;
+        previous.push(items[i]);
+        items[i] = clean;
+      }
+      const ok = save(); emit();
+      return { ok, previous };
+    },
     /** Deletes several markers at once. Returns { ok, removed: [{ item, index }] }, which restore() takes to undo it. */
     removeMany(ids) {
       const set = new Set(ids);
