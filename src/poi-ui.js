@@ -806,11 +806,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
 
   // ---------- placing ----------
-  function place(latlng) {
-    const ll = latlng.wrap();
+  function place(latlng) { addAt(latlng, ''); }
+  /** Saves a marker at a spot, of the chosen type and in the chosen trip, and opens its form. `name` defaults to the type's name. */
+  function addAt(latlng, name) {
+    const ll = latlng.wrap ? latlng.wrap() : L.latLng(latlng.lat, latlng.lng).wrap();
     const t = typeOf(selectedType);
     // new markers go into the chosen "current trip"; a Home marker is never in one
-    const res = store.add({ type: t.id, name: t.label, note: '', lat: ll.lat, lon: ll.lng, tripId: t.id === 'residence' ? undefined : currentTripId ?? undefined });
+    const res = store.add({ type: t.id, name: (name || t.label).slice(0, 80), note: '', lat: ll.lat, lon: ll.lng, tripId: t.id === 'residence' ? undefined : currentTripId ?? undefined });
     if (!res.item) { toast('Could not add that marker.'); return; }
     if (!res.ok) toast('Added for now, but the browser would not store it. Export your markers to keep them.');
     ensureVisible();
@@ -1054,6 +1056,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     tagMarker(markerId, tripId) { return store.update(markerId, { tripId: tripId ?? null }); },
     /** True if the click was used by a marker mode, so the normal point check should be skipped. */
     isBusy: () => mode !== null,
+    addAt,
     handleMapClick(e) {
       if (mode === 'place') { setMode(null); place(e.latlng); return true; }
       return mode === 'edit';

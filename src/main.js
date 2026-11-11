@@ -52,7 +52,7 @@ onDistanceSettings((s) => setScaleUnits(s.units)); // the scale bar follows the 
 const panel = initPanel();
 initControls(); // modern number and date fields, also for markers' windows built later
 // the search box is narrow on a phone: a shorter hint there
-{ const q = $('q'), full = q.placeholder, narrow = matchMedia('(max-width:520px)'); const set = () => { q.placeholder = narrow.matches ? 'Search places' : full; }; set(); narrow.addEventListener('change', set); }
+{ const q = $('q'), full = q.placeholder, narrow = matchMedia('(max-width:520px)'); const set = () => { q.placeholder = narrow.matches ? 'Search places or coordinates' : full; }; set(); narrow.addEventListener('change', set); }
 
 const applyPopOpacity = (v) => document.documentElement.style.setProperty('--pop-alpha', String(v));
 $('pop-op').value = prefs.popupOpacity ?? 0.8;
@@ -83,7 +83,7 @@ function showWeather(lat, lon, label) {
   weather.show(lat, lon, label);
 }
 /** Adds what the privacy settings allow to a point-check popup: ground elevation, and the weather button. */
-function decorate(content, latlng, label, onResize) {
+function decorate(content, latlng, label, onResize, extras = {}) {
   if (getPrivacy().fetchAltitude) {
     const t = tile('elev', 'Elevation', '…');
     const box = document.createElement('div');
@@ -95,16 +95,32 @@ function decorate(content, latlng, label, onResize) {
   }
   content.append(weatherButton(() => { map.closePopup(); showWeather(latlng.lat, latlng.lng, label); }));
   content.append(mapLinksBlock({ lat: latlng.lat, lon: latlng.lng, name: label }));
+  // save the spot as a marker; a searched spot also has a pin that can be removed
+  const acts = document.createElement('div');
+  acts.className = 'acts check-acts';
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button'; addBtn.className = 'btn small'; addBtn.textContent = 'Add as marker';
+  addBtn.addEventListener('click', () => setTimeout(() => { map.closePopup(); extras.onAdded?.(); poi.addAt(latlng, label); }, 0));
+  acts.append(addBtn);
+  if (extras.onRemovePin) {
+    const rm = document.createElement('button');
+    rm.type = 'button'; rm.className = 'btn small'; rm.textContent = 'Remove pin';
+    rm.addEventListener('click', () => setTimeout(() => { map.closePopup(); extras.onRemovePin(); }, 0));
+    acts.append(rm);
+  }
+  content.append(acts);
   return content;
 }
 
 // Point check popup shared by map clicks and the location pin
-async function showCheck(latlng, title) {
+// opts: offsetY (how far above the spot the window starts: a pin is in the way), zoom (to zoom to), onRemovePin, onAdded
+async function showCheck(latlng, title, opts = {}) {
+  const offsetY = opts.offsetY ?? 0;
+  centreOn(map, latlng, { zoom: opts.zoom }); // the spot is centred at once, before the check has read its tile
   const res = await checkPoint(latlng.lat, latlng.lng);
-  // the spot is centred; a window too tall to fit above it scrolls inside instead of pushing the map around
-  const popup = L.popup({ maxWidth: Math.min(320, window.innerWidth - 32), minWidth: Math.min(250, window.innerWidth - 40), autoPan: false, closeOnClick: false, maxHeight: popupMaxHeight(map, 0) }).setLatLng(latlng);
-  centreOn(map, latlng);
-  popup.setContent(decorate(describeCheck(res, title), latlng, title, () => popup.update())).openOn(map);
+  // a window too tall to fit above the spot scrolls inside instead of pushing the map around
+  const popup = L.popup({ maxWidth: Math.min(320, window.innerWidth - 32), minWidth: Math.min(250, window.innerWidth - 40), offset: [0, offsetY], autoPan: false, closeOnClick: false, maxHeight: popupMaxHeight(map, offsetY) }).setLatLng(latlng);
+  popup.setContent(decorate(describeCheck(res, title), latlng, title, () => popup.update(), opts)).openOn(map);
 }
 
 let quietFix = false; // true while a marker is being placed at the user's location: its own popup must stay open
@@ -159,7 +175,7 @@ try {
   const regions = manifests.flatMap((m) => m.regions);
   const places = placeLists.flat();
   initPointCheck(regions);
-  initSearch(map, places);
+  initSearch(map, places, { show: showCheck });
 
   // Country shortcut: re-centres on a country's view box, whether or not it has zone data yet
   const countrySel = $('country');

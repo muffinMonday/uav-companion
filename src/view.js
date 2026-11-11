@@ -10,8 +10,8 @@ export function panelInset() {
 }
 
 /** Pans so `latlng` is in the middle of the visible map (left of a docked side panel), keeping the zoom. */
-export function centreOn(map, latlng, { animate = true } = {}) {
-  const z = map.getZoom();
+export function centreOn(map, latlng, { animate = true, zoom } = {}) {
+  const z = zoom ?? map.getZoom();
   const p = map.project(latlng, z);
   p.x += panelInset() / 2;
   map.setView(map.unproject(p, z), z, { animate });

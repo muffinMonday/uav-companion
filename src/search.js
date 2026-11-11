@@ -1,10 +1,15 @@
 import L from 'leaflet';
+import { parseCoordinates } from './coordparse.js';
 
 const KIND = { city: 'City', county: 'District / county', landmark: 'Landmark' };
 const norm = (t) => t.toLowerCase().replace(/[\s'’\-]/g, '');
 const strip = (t) => t.replace(/(土家族自治县|林区|市|区|县)$/, '');
 
-export function initSearch(map, places) {
+/**
+ * The search box: place names (offline, then online) and coordinates (typed or from a pasted map link).
+ * Picking a result drops a blue pin and opens the point-check window for it, through `show` (see showCheck in main.js).
+ */
+export function initSearch(map, places, { show }) {
   const qEl = document.getElementById('q');
   const resEl = document.getElementById('results');
   let items = [], sel = -1, marker = null;
@@ -24,8 +29,26 @@ export function initSearch(map, places) {
     return out.sort((a, b) => a.score - b.score).slice(0, 8);
   }
 
-  function render(list, q) {
+  /** What the text means: coordinates (or a map link) are read here and never searched online; anything else is a place name. */
+  function interpret(q) {
+    const c = parseCoordinates(q);
+    if (c === null) return { list: offline(q), coords: false, error: '' };
+    if (!c.ok) return { list: [], coords: true, error: c.error };
+    return { list: c.candidates.map((x) => ({ ...x, zoom: 15 })), coords: true, error: '' };
+  }
+
+  function msg(t) {
+    resEl.innerHTML = '';
+    const li = document.createElement('li');
+    li.className = 'msg'; li.textContent = t;
+    resEl.appendChild(li);
+    resEl.hidden = false;
+    qEl.setAttribute('aria-expanded', 'true');
+  }
+
+  function render(list, q, { coords = false, error = '' } = {}) {
     items = list; sel = -1; resEl.innerHTML = '';
+    if (error) { msg(error); return; }
     list.forEach((it, i) => {
       const li = document.createElement('li');
       li.setAttribute('role', 'option');
@@ -36,7 +59,7 @@ export function initSearch(map, places) {
       li.addEventListener('mousedown', (e) => { e.preventDefault(); go(it); });
       resEl.appendChild(li);
     });
-    if (q.trim()) {
+    if (q.trim() && !coords) { // coordinates never go to an online search
       const li = document.createElement('li');
       li.className = 'online';
       li.textContent = list.length ? `Search online for “${q.trim()}”` : `No offline match. Search online for “${q.trim()}”`;
@@ -45,14 +68,6 @@ export function initSearch(map, places) {
     }
     resEl.hidden = !resEl.children.length;
     qEl.setAttribute('aria-expanded', String(!resEl.hidden));
-  }
-
-  function msg(t) {
-    resEl.innerHTML = '';
-    const li = document.createElement('li');
-    li.className = 'msg'; li.textContent = t;
-    resEl.appendChild(li);
-    resEl.hidden = false;
   }
 
   async function online(q) {
@@ -79,14 +94,21 @@ export function initSearch(map, places) {
     } catch { msg('Online search unavailable (no connection, or the service blocked the request). Offline names still work.'); }
   }
 
+  function removePin() { if (marker) { map.removeLayer(marker); marker = null; } }
+
+  /** The picked result: a blue pin, and the point-check window above it (the same window as a press and hold gives). */
   function go(it) {
-    map.setView([it.lat, it.lon], it.zoom);
-    if (marker) map.removeLayer(marker);
-    marker = L.marker([it.lat, it.lon]).addTo(map).bindPopup(it.label).openPopup();
+    removePin();
+    const ll = L.latLng(it.lat, it.lon);
+    marker = L.marker(ll, { title: it.label, alt: it.label, keyboard: true }).addTo(map);
+    const open = (zoom) => show(ll, it.label, { offsetY: -38, zoom, onRemovePin: removePin, onAdded: removePin });
+    marker.on('click', () => open(undefined)); // the pin reopens the window without moving the zoom
+    open(it.zoom);
     resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); qEl.blur();
   }
 
-  qEl.addEventListener('input', () => render(offline(qEl.value), qEl.value));
+  const refresh = () => { const r = interpret(qEl.value); render(r.list, qEl.value, r); };
+  qEl.addEventListener('input', refresh);
   qEl.addEventListener('keydown', (e) => {
     const lis = [...resEl.querySelectorAll('li[role=option]')];
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -99,9 +121,9 @@ export function initSearch(map, places) {
       e.preventDefault();
       if (sel >= 0 && items[sel]) go(items[sel]);
       else if (items.length) go(items[0]);
-      else if (qEl.value.trim()) online(qEl.value.trim());
+      else if (qEl.value.trim() && parseCoordinates(qEl.value) === null) online(qEl.value.trim()); // coordinates are never sent to a search service
     } else if (e.key === 'Escape') { resEl.hidden = true; }
   });
   qEl.addEventListener('blur', () => setTimeout(() => { resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); }, 150));
-  qEl.addEventListener('focus', () => { if (qEl.value.trim()) render(offline(qEl.value), qEl.value); });
+  qEl.addEventListener('focus', () => { if (qEl.value.trim()) refresh(); });
 }

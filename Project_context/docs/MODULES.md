@@ -35,6 +35,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `coords.js` | WGS-84 <-> GCJ-02 conversion and `inChina` (coarse outline) (pure) | `wgs84ToGcj02`, `gcj02ToWgs84`, `inChina` | data/china-outline.js |
 | `maplinks.js` | Google Maps / Amap links for a place, directions-here and routes (limits, parts) (pure) | `appsFor`, `placeUrl`, `hereUrl`, `routeUrls`, `chunk`, `MODES` | coords |
 | `maplinks-ui.js` | The buttons: `mapLinksBlock` (marker and check windows), `routeLinks` (Route block); Home asks first | as listed | maplinks |
+| `coordparse.js` | Reads coordinates and pasted map links from text: formats, hemispheres, DMS, longitude-first, China two-reading rows (pure) | `parseCoordinates` | coords |
 | `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
 | `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
 

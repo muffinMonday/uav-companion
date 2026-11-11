@@ -58,7 +58,7 @@ await p.mouse.up(); await p.waitForTimeout(500);
 ok((await popups(p)) === 1, 'letting go does not close the new window (the release is not a click)');
 const mr = await mapRect(p);
 let t = await tipRect(p);
-ok(Math.abs(t.cx - (mr.x + mr.w / 2)) < 14 && Math.abs(t.bottom - (mr.y + mr.h / 2)) < 14, 'the held spot is centred on the map: window tip at (' + Math.round(t.cx) + ',' + Math.round(t.bottom) + ') vs centre (' + Math.round(mr.x + mr.w / 2) + ',' + Math.round(mr.y + mr.h / 2) + ')');
+ok(Math.abs(t.cx - (mr.x + mr.w / 2)) < 14 && Math.abs(t.bottom + 20 - (mr.y + mr.h / 2)) < 8, 'the held spot is centred on the map: window tip at (' + Math.round(t.cx) + ',' + Math.round(t.bottom + 20) + ') vs centre (' + Math.round(mr.x + mr.w / 2) + ',' + Math.round(mr.y + mr.h / 2) + ')');
 ok(t.top >= 0, 'the window is fully on screen');
 await p.mouse.click(BLANK.x + 200, BLANK.y + 100); await p.waitForTimeout(500);
 ok((await popups(p)) === 0, 'a quick click on blank map closes the open window');

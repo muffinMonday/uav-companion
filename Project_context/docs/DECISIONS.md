@@ -108,3 +108,9 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision: plain links, no API keys. Amap first then Google Maps inside China; Google Maps only elsewhere (owner's choice). Multi-stop routes in Select mode; limits from the official docs (Google: 9 stops between, 3 on mobile; Amap: one `via`, driving only), with longer routes opened as parts. Amap navigation has no coordinate setting, so coordinates are converted to GCJ-02 in the app; the marker link uses `coordinate=wgs84`. The Home marker asks before any link opens. "In China" is a coarse Natural Earth outline (not Taiwan; Hong Kong and Macao by box).
 - Alternatives: map-provider APIs (need keys, quotas); sending WGS-84 to Amap navigation unconverted (would be about 500 m off).
 - Consequences: new static data file (about 14 KB) and a generator script; links are only checked for form, not against the live apps.
+
+### 2026-11-11: Search results open the point-check window; coordinates never leave the browser
+- Context: a search result only dropped a pin with its name. Travellers also have coordinates (typed, or in map links) and want the zone verdict for them.
+- Decision: the search box reads coordinates and pasted Google/Amap links in the browser (never sent to an online search). Inside China, typed coordinates give two rows, as typed (GPS) and converted from GCJ-02, because coordinates copied from Amap would otherwise land about 500 m off. Any picked result drops a blue pin and opens the point-check window above it. Add as marker and Remove pin go in that window (owner's choice for Add as marker).
+- Alternatives: pins for every candidate at once (owner chose the picked result only); resolving short links (not possible from the browser).
+- Consequences: the check window is now the one place for verdict, links, Add as marker; `showCheck` takes options (offset, zoom, remove-pin).

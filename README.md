@@ -37,6 +37,8 @@ src/                                           map, search, point check, locatio
 
 Saved places (the Points of Interest tab) are stored only in the visitor's browser (`localStorage`) and can be exported and imported as GeoJSON. They are not part of the generated data and never touch the server.
 
+The search box takes place names, coordinates (decimal or degrees-minutes-seconds, also from a pasted Google Maps or Amap link) and shows the zone verdict for the picked spot, with buttons to open it in Amap or Google Maps.
+
 Weather and ground elevation come from Open-Meteo and are off until the visitor opts in under the shield button (privacy settings), where they can also choose whether weather uses an estimated (about 1 km) or precise location. Elevation always uses the exact location.
 
 Markers can be grouped into **trips** (name, country, dates, description; own Trips tab) and carry their own dates. Each waypoint shows its straight-line distance to the nearest home point and hotel in its own trip whose dates overlap its own, and every marker shows its distance to the nearest Home, with units (km or miles) and an optional max range in the Points of Interest tab. The **Home** marker is the traveller's residence, distinct from the drone's **Home point**; it is kept out of share links and automatic lookups, and does not count toward the max range.
