@@ -9,6 +9,12 @@ import { getPrivacy, onPrivacyChange } from './privacy.js';
 import { el } from './cards.js';
 
 const $ = (id) => document.getElementById(id);
+/** The importable-format rules, as the plain text an AI is given (public/ai/prompt.md). Throws if it cannot be fetched. */
+export async function loadPrompt() {
+  const res = await fetch(new URL('ai/prompt.md', document.baseURI));
+  if (!res.ok) throw new Error(String(res.status));
+  return res.text();
+}
 const LONG_LINK = 4000; // some chat and messaging apps cut links longer than this
 
 export function initAI({ map, toast, panel, poi }) {
@@ -27,9 +33,7 @@ export function initAI({ map, toast, panel, poi }) {
   // ---------- the prompt ----------
   $('ai-copy').addEventListener('click', async () => {
     try {
-      const res = await fetch(new URL('ai/prompt.md', document.baseURI));
-      if (!res.ok) throw new Error(String(res.status));
-      await navigator.clipboard.writeText(await res.text());
+      await navigator.clipboard.writeText(await loadPrompt());
       toast('Prompt copied. Paste it into any AI assistant and add your itinerary after it.', 6000);
     } catch {
       toast('Could not copy the prompt. Open ai/prompt.md on this site and copy it by hand.', 7000);

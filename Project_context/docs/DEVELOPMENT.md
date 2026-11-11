@@ -54,6 +54,7 @@ See `supabase/README.md`: migrations, how the access rules are tested without Do
 ### Swipe gestures (`src/swipe.js`)
 - `onSwipe(el, { direction, onDismiss, canStart, enabled, follow })` is built on touch events; it only takes a gesture over once it is clearly along the chosen direction, and never starts on a form control, `[data-no-swipe]`, the trip card flip, a sideways scroller, or while a row is being dragged (`body.reordering`). Put `data-no-swipe` on anything new that needs its own gestures.
 - Tests use real touch events through the browser protocol (`ctx.newCDPSession(p)` and `Input.dispatchTouchEvent`, as in `tests/hold.mjs` and `tests/swipe.mjs`). The panel bodies scroll smoothly, so wait until `scrollTop` has arrived before measuring a control or starting a swipe.
+- A first visit now shows the quick setup (`tests/splash.mjs`). Suites that need a clean first visit remove the `uavzones.v1.dash` key, then click `#splash-skip` (or Escape) before using the dashboard; `tests/lib.mjs` seeds `welcomed: true` for everything else. Chrome swallows the first synthetic tap after a drag that began on the folded rail circle (`tests/swipe.mjs` taps again).
 
 ## Writing tests that can run in parallel
 The runner runs four suites side by side by default (see the "Faster tests" item in `CURRENT_STATUS.md`), so every new or changed suite follows these rules:

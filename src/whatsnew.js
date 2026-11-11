@@ -2,6 +2,15 @@
 // (the date is a good id): visitors who have not seen it get the dashboard opened with it, once. Keep each entry to a few short lines.
 export const WHATS_NEW = [
   {
+    id: '2026-11-12-setup',
+    date: '2026-11-12',
+    title: 'Quick setup',
+    items: [
+      'New visitors now choose to plan a trip or plan a flight. You can run it again from the ? button at the top of this dashboard, or under Map Configs.',
+      'Plan a trip hands you a prompt for any AI assistant, from a few questions or from an itinerary link, in a format this app can import.',
+    ],
+  },
+  {
     id: '2026-11-12-swipes',
     date: '2026-11-12',
     title: 'More swipes, and a shorter map key',

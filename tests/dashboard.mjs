@@ -106,7 +106,7 @@ await ctx.close();
 
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: { showOnStart: true, welcomed: true, seen: null, hideUntil: TODAY } }));
 ok(await stateOf(p) === 'expanded' && /What’s new/.test(await p.textContent('#dash-body')) && /Singapore no-fly zones/.test(await p.textContent('#dash-body')), 'a What\'s new entry the visitor has not seen opens it, even after "not for today"');
-ok(/Check in at your markers/.test(await p.textContent('#dash-body')), 'the check-in entry is announced to a visitor who has not seen it');
+ok(/Quick setup/.test(await p.textContent('#dash-body')) && /More swipes/.test(await p.textContent('#dash-body')), 'the newest entries are announced to a visitor who has not seen them (at most three are shown)');
 await p.click('#dash-collapse'); await p.waitForTimeout(250);
 ok((await dashSaved(p)).seen === LATEST_SEEN, 'putting it away marks the entry as seen');
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1000);
@@ -114,7 +114,9 @@ ok(await stateOf(p) === 'peek' && !/What’s new/.test(await p.textContent('#das
 await ctx.close();
 
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: null, data: false }));
-ok(await stateOf(p) === 'expanded' && (await p.locator('#dash-body .dash-guide').count()) === 1 && /Create your first trip/.test(await p.textContent('#dash-body')), 'a first visit opens it with the guide and a first-trip button');
+ok(await stateOf(p) === 'peek' && await p.$eval('#splash', (d) => d.open), 'a first visit starts with the quick setup over the strip');
+await p.click('#splash-skip'); await p.waitForTimeout(300);
+ok(await stateOf(p) === 'expanded' && (await p.locator('#dash-body .dash-guide').count()) === 1 && /Create your first trip/.test(await p.textContent('#dash-body')), 'skipping it opens the dashboard with the guide and a first-trip button');
 await p.locator('#dash-body .btn', { hasText: 'Create your first trip' }).click(); await p.waitForTimeout(400);
 ok(await p.isVisible('#trip-form-card'), 'which starts a new trip');
 await ctx.close();
@@ -160,6 +162,7 @@ ok(await p.isVisible('#route-box') && await p.evaluate(() => document.getElement
 await ctx.close();
 
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: null, data: false }));
+await p.click('#splash-skip'); await p.waitForTimeout(300);
 ok(/Welcome!/.test(await p.textContent('#dash .dash-hello')) && /plan your trip/.test(await p.textContent('#dash .dash-hello-sub')), 'a first visit gets the welcome message');
 ok((await p.$eval('#dash .dash-hello', (e) => parseFloat(getComputedStyle(e).fontSize))) >= 24, 'the greeting is large');
 await ctx.close();

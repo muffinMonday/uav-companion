@@ -170,6 +170,17 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
     control, request,
     /** The map turned back to north-up and following stopped; used by the compass button. */
     northUp() { exitFollow({ north: false }); rotation?.animateTo(0, 280, 'reset'); },
+    /** Like the first press of the button (permission, marker, arrow, centre on you; no zone check, no popup), or a recentre if already located. Resolves true when there is a position, false when there is none (the button's error has said why). */
+    show() {
+      return new Promise((resolve) => {
+        const done = () => { map.off('locationfound', ok); map.off('locationerror', fail); };
+        const ok = () => { done(); resolve(true); };
+        const fail = () => { done(); resolve(false); };
+        if (last && dot) { own(() => map.setView(last, Math.max(map.getZoom(), 15))); resolve(true); return; }
+        map.on('locationfound', ok); map.on('locationerror', fail);
+        if (mode === 'off' && !press()) { done(); resolve(false); }
+      });
+    },
     mode: () => mode,
     isManual: () => manual,
     heading: shown,

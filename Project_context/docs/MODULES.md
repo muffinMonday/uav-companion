@@ -34,6 +34,8 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `view.js` | Centre the map on a coordinate (aware of the side panel) and the tallest window that fits above it | `centreOn`, `popupMaxHeight`, `expandedMaxHeight`, `defaultExpanded`, `panelInset` | none |
 | `checkin.js` (pure) | Check-in rules (300 m, 150 m accuracy), the stored record, label, tooltip wording, visited count | `checkinState`, `checkinTitle`, `sanitizeCheckin`, `checkinLabel`, `visitedCount` | distance |
 | `checkin-ui.js` | The opt-in position watcher and the Check in control at the right of a row | `createCheckin`, `checkinCell` | privacy, checkin |
+| `splash.js` | The first-visit quick setup dialog (trip form or link prompt, paste step, flight: use my location) | `initSplash({ dash, panel, ai, locate, loadPrompt, toast })` returns `{ open }` |
+| `aiprompt.js` | Pure prompt builders for the quick setup; `checkUrl` allows only http and https | `buildTripPrompt`, `buildLinkPrompt`, `checkUrl` |
 | `dashboard.js` | The dashboard: What's new, next trip with ‹ ›, backup reminder, region buttons, guide; three states | `initDashboard` (`setRegions`, `open`) | dashstate, whatsnew, trips |
 | `dashstate.js` (pure) | What the dashboard remembers; start rules; unseen What's new; backup reminder rule | `startState`, `unseenEntries`, `backupDue`, `load`, `save` | - |
 | `whatsnew.js` | The What's new entries, newest first (add one to announce a change) | `WHATS_NEW` | - |

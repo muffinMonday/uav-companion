@@ -16,7 +16,7 @@ const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 const isPhone = () => window.matchMedia('(max-width: 520px)').matches;
 
-export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, actions = {} }) {
+export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, splash = false, actions = {} }) {
   const dash = $('dash'), body = $('dash-body'), peek = $('dash-peek'), tab = $('dash-tab');
   const store = poi.store;
   // parts that live elsewhere in the page and are shown on the dashboard while it is open (their handlers stay attached; they wait in
@@ -31,7 +31,9 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
   const firstRun = !saved.welcomed && store.items().length === 0 && store.trips().length === 0;
   let fresh = unseenEntries(WHATS_NEW, saved.seen);   // entries to show until the visitor has seen them
   let state = null, stateToken = 0;
-  let guideOpen = firstRun;
+  const splashFirst = firstRun && splash;           // a first visit that the quick-setup splash will greet: the dashboard waits as its strip
+  let guideOpen = firstRun && !splashFirst;
+  let quickSetup = null;                             // opens the quick setup again (set by the page once it exists)
   let tripFade = false;                              // the trip card eases in after ‹ or ›
   let tripIx = 0;                                    // which of the coming trips the trip card shows
   let regions = { countries: [], goTo: null };
@@ -321,6 +323,9 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
     ]) { const li = el('li'); li.append(el('b', '', t[0] + ' '), t[1]); ol.append(li); }
     d.append(ol);
     const names = regions.countries.map((k) => k.name);
+    const again = el('button', 'btn small', 'Run the quick setup again'); again.type = 'button'; again.id = 'dash-setup';
+    again.addEventListener('click', () => quickSetup?.());
+    d.append(again);
     d.append(el('p', 'w-note', 'A planning aid, not flight advice: check the official platform before every flight. Zone data covers ' + (names.length ? names.join(' and ') : 'a few regions') + '. Singapore’s no-fly zones are approximate; every window links to the official OneMap Drone Query.'));
     return d;
   }
@@ -430,12 +435,19 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
   startSwitch.checked = saved.showOnStart;
   startSwitch.addEventListener('change', () => save({ showOnStart: startSwitch.checked }));
 
-  setState(startState({ firstRun, unseen: fresh.length, showOnStart: saved.showOnStart, hideUntil: saved.hideUntil, today: todayISO(), phone: isPhone(), shared }));
+  $('setup-open').addEventListener('click', () => { panel.closeIfPhone(); quickSetup?.(); });
+  setState(splashFirst ? 'peek' : startState({ firstRun, unseen: fresh.length, showOnStart: saved.showOnStart, hideUntil: saved.hideUntil, today: todayISO(), phone: isPhone(), shared }));
 
   return {
     /** The regions the map covers and how to go to one (known once the data index has loaded). */
     setRegions(countries, goTo) { regions = { countries, goTo }; if (state === 'expanded') render(); },
     open: (opts) => setState('expanded', opts),
+    /** Fold to the one-line strip. */
+    fold: () => setState('peek'),
+    /** True on a first visit that the splash should greet (the dashboard waits as its strip). */
+    splashFirst,
+    onQuickSetup(fn) { quickSetup = fn; },
+    get regions() { return regions; },
     get state() { return state; },
   };
 }
