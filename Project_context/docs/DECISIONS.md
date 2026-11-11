@@ -178,3 +178,6 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 ### 2026-11-11: Marker click can skip the details window; a selected marker shows its day
 - Decision (owner): a switch (map button plus Points of Interest tab, remembered) makes a marker click select instead of open the window, so the displacement lines stay visible; a selected marker also shows its day's route with bold arrows into and out of it.
 - Consequences: a name tag with an ⓘ keeps the window one tap away; the chain ignores hotels (they keep their dashed displacement lines).
+
+### 2026-11-11: Eye in the window, v hides into the ⓘ, fixed map controls, larger greeting
+- Decision (owner): an eye in the marker window's bar mirrors the details setting (synchronised with the map button and the Points of Interest switch); with details off the window's v button hides it into the name tag's ⓘ; the dashboard no longer lifts the scale bar and attribution (it stands above them on a common baseline, with the strip and tab); the greeting is a large "Welcome back!" with a trip sentence beneath.

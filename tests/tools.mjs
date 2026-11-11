@@ -16,7 +16,7 @@ const open = async (vp, mobile, name) => {
   await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(1000);
   return { ctx, p };
 };
-const tools = (p) => p.$$eval('.poi-pop .pop-tools .btn.tool', (b) => b.map((x) => x.title));
+const tools = (p) => p.$$eval('.poi-pop .pop-tools .btn.tool:not(.pop-eye)', (b) => b.map((x) => x.title));
 
 // desktop
 let { ctx, p } = await open({ width: 1200, height: 800 }, false, 'Yellow Crane');

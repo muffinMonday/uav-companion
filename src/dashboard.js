@@ -28,12 +28,24 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
   function welcomeLine() {
     const c = el('div', 'dash-welcome');
     const first = firstRun && !store.items().length && !store.trips().length;
-    if (first) c.append(el('b', '', 'Welcome to UAV Companion.'), ' Check where you can fly a drone and plan your trip.');
+    c.append(el('div', 'dash-hello', first ? 'Welcome!' : 'Welcome back!'));
+    const sub = el('div', 'dash-hello-sub');
+    if (first) sub.textContent = 'Check where you can fly a drone and plan your trip.';
     else {
       const coming = comingTrips(store.trips(), todayISO());
-      c.append(el('b', '', 'Welcome back.'), ' ' + (coming.length ? coming[0].trip.name + ': ' + countdownLabel(coming[0].status).toLowerCase() + '.' : 'Where to next?'));
+      if (!coming.length) {
+        sub.append("You don't have any upcoming plans. ");
+        const plan = el('button', 'dash-link', 'Plan a trip'); plan.type = 'button';
+        plan.addEventListener('click', () => { panel.open('trips'); $('trip-new').click(); });
+        sub.append(plan);
+      } else {
+        const { trip, status } = coming[0];
+        const name = el('b', '', trip.name);
+        if (status.state === 'upcoming') sub.append('Your next trip, ', name, status.days === 1 ? ', is tomorrow.' : ', is in ' + status.days + ' days.');
+        else sub.append(name, status.of === 1 ? ' is today.' : ' is under way: day ' + status.day + ' of ' + status.of + '.');
+      }
     }
-    c.append(el('small', '', 'A planning aid, not flight advice.'));
+    c.append(sub);
     return c;
   }
   /** The route through the places ticked in Select mode: reorder, reverse, travel mode and the links. Shown only while selecting. */
@@ -199,7 +211,7 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
   }
 
   // ---------- the three states ----------
-  function lift() { document.documentElement.style.setProperty('--dash-lift', state === 'expanded' ? Math.round(dash.offsetHeight + 12) + 'px' : '0px'); }
+  function lift() { document.documentElement.style.setProperty('--dash-lift', state === 'expanded' ? Math.round(dash.offsetHeight) + 'px' : '0px'); }
   const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(lift) : null;
   ro?.observe(dash);
 

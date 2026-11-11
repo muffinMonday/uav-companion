@@ -78,15 +78,17 @@ const PATHS = {
   pin: 'M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10zM12 8v6M9 11h6',
   unpin: 'M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10zM9.5 8.5l5 5M14.5 8.5l-5 5',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
+  eye: ['M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z', 'M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z', 'M4 4l16 16'], // the last stroke is the slash, shown when the setting is off
 };
 /**
  * An icon button (the label is the tooltip and the accessible name). The icon is built from constants only.
  * `danger`: the first press turns it into "Confirm <label>" for four seconds, the second one acts.
  */
-export function toolButton({ icon, label, onClick, danger = false }) {
-  const b = el('button', danger ? 'btn tool danger' : 'btn tool');
+export function toolButton({ icon, label, onClick, danger = false, cls = '' }) {
+  const b = el('button', ['btn tool', danger && 'danger', cls].filter(Boolean).join(' '));
   b.type = 'button'; b.title = label;
-  b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${PATHS[icon]}"/></svg>`;
+  const paths = [].concat(PATHS[icon]).map((d, i, all) => `<path d="${d}"${all.length > 2 && i === all.length - 1 ? ' class="slash"' : ''}/>`).join('');
+  b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
   const text = el('span', 'tool-label', label);
   b.append(text);
   let armed = null;

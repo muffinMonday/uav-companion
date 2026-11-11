@@ -71,10 +71,13 @@ await p.click('#tab-config'); await p.click('#help-open'); await p.waitForTimeou
 ok(await p.$eval('.dash-guide', (d) => d.open), 'How it works (Map Configs) opens the dashboard with the guide unfolded');
 
 // the three states
-const expandedLift = await lift(p);
-ok(expandedLift > 100 && await p.$eval('.leaflet-bottom', (e, v) => parseFloat(getComputedStyle(e).bottom) >= v - 1, expandedLift), 'the map\'s own controls sit above the open dashboard (lifted ' + Math.round(expandedLift) + ' px)');
+const scaleY = () => p.$eval('.leaflet-control-scale', (e) => Math.round(e.getBoundingClientRect().y));
+const expandedScale = await scaleY();
+const dashBottom = (await rect(p, '#dash')).b;
+ok(dashBottom <= expandedScale + 1, 'the open dashboard stands above the scale bar: its bottom ' + Math.round(dashBottom) + ', the scale at ' + expandedScale);
 await p.click('#dash-collapse'); await p.waitForTimeout(250);
-ok(await stateOf(p) === 'peek' && /Under way · Day 2 of 3/.test(await p.textContent('#dash-peek')) && await lift(p) === 0, 'V drops it to a one-line strip with the countdown, and the controls come back down');
+ok(await stateOf(p) === 'peek' && /Under way · Day 2 of 3/.test(await p.textContent('#dash-peek')) && await scaleY() === expandedScale, 'V drops it to a one-line strip with the countdown, and the scale bar has not moved');
+ok((await rect(p, '#dash-peek')).b === dashBottom, 'the strip stands on the same line as the open dashboard');
 const peek = await rect(p, '#dash-peek');
 ok(peek.h < 50 && peek.w < 600, 'the strip is slim (' + Math.round(peek.h) + ' px high)');
 await p.click('#dash-peek'); await p.waitForTimeout(250);
@@ -140,7 +143,7 @@ ok(await stateOf(p) === 'expanded' && await p.isVisible('#route-box') && /Route 
 ok((await p.$$eval('#route-stops .route-name', (e) => e.map((x) => x.textContent))).join() === 'Today stop,Second stop', 'its stops are in the order they were ticked');
 await p.click('#route-reverse'); await p.waitForTimeout(250);
 ok((await p.$$eval('#route-stops .route-name', (e) => e.map((x) => x.textContent))).join() === 'Second stop,Today stop' && /Open in Amap/.test(await p.textContent('#route-links')), 'Reverse turns it round, and the link for the route is there');
-ok(/Welcome back/.test(await p.textContent('#dash .dash-welcome')) && /Under way: day 2 of 3/.test(await p.textContent('#dash .dash-welcome')) && /not flight advice/.test(await p.textContent('#dash .dash-welcome')), 'the welcome line says what is next and carries the reminder: ' + (await p.textContent('#dash .dash-welcome')).slice(0, 80));
+ok(/Welcome back!/.test(await p.textContent('#dash .dash-hello')) && /Under way is under way: day 2 of 3/.test(await p.textContent('#dash .dash-hello-sub')) && /not flight advice/.test(await p.textContent('#dash .dash-foot')), 'the welcome line says what is next and carries the reminder: ' + (await p.textContent('#dash .dash-welcome')).slice(0, 80));
 await p.click('#sel-done'); await p.waitForTimeout(450);
 ok(await stateOf(p) === 'hidden' && !(await p.isVisible('#route-box')), 'finishing selecting puts the dashboard back as it was, and the card is gone from view');
 await ctx.close();
@@ -156,7 +159,8 @@ ok(await p.isVisible('#route-box') && await p.evaluate(() => document.getElement
 await ctx.close();
 
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: null, data: false }));
-ok(/Welcome to UAV Companion/.test(await p.textContent('#dash .dash-welcome')), 'a first visit gets the welcome message');
+ok(/Welcome!/.test(await p.textContent('#dash .dash-hello')) && /plan your trip/.test(await p.textContent('#dash .dash-hello-sub')), 'a first visit gets the welcome message');
+ok((await p.$eval('#dash .dash-hello', (e) => parseFloat(getComputedStyle(e).fontSize))) >= 26, 'the greeting is large');
 await ctx.close();
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();

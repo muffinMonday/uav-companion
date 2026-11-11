@@ -603,7 +603,7 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 @media (max-width:520px){.sidepanel.rolled{height:auto;top:auto;bottom:8px}}
 
 /* ---------- the dashboard ---------- */
-.dash{position:absolute;z-index:1004;left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:12px;width:max-content;max-width:min(780px,calc(100% - 24px - var(--panel-w,0px)));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:dash-up .22s ease-out}
+.dash{position:absolute;z-index:1004;left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:36px;width:max-content;max-width:min(780px,calc(100% - 24px - var(--panel-w,0px)));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:dash-up .22s ease-out}
 .dash[hidden],.dash-peek[hidden],.dash-tab[hidden]{display:none}
 body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, strip and tab centre in the map beside it */
 @keyframes dash-up{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
@@ -629,19 +629,18 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 .dash-guide summary{cursor:pointer;font-weight:700;font-size:13px}
 .dash-guide .w-steps{margin-top:10px}
 .dash-foot{display:flex;justify-content:flex-end;padding:6px 10px;border-top:1px solid var(--line)}
-.dash-peek,.dash-tab{position:absolute;z-index:1004;left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;width:fit-content;bottom:12px;background:var(--surface);box-shadow:var(--shadow-sm);color:var(--fg);cursor:pointer}
+.dash-peek,.dash-tab{position:absolute;z-index:1004;left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;width:fit-content;bottom:36px;background:var(--surface);box-shadow:var(--shadow-sm);color:var(--fg);cursor:pointer}
 .dash-peek{display:flex;align-items:center;gap:8px;max-width:max(200px,calc(100% - 464px - var(--panel-w,0px)));padding:7px 14px 7px 10px;border:0;border-radius:999px;font-weight:600}
 .dash-peek span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dash-peek svg{flex:none;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .dash-tab{width:46px;height:30px;border-radius:999px}
-/* the map's own controls and the weather card sit above the open dashboard */
-.leaflet-bottom{bottom:var(--dash-lift,0px)}
+/* the weather card sits above the open dashboard; the map's own controls do not move: the dashboard stands above them */
 .wx{bottom:calc(44px + var(--dash-lift,0px))}
 @media (max-width:520px){
-  .dash{left:8px;right:8px;bottom:8px;width:auto;max-width:none;max-height:58vh}
+  .dash{left:8px;right:8px;bottom:40px;width:auto;max-width:none;max-height:54vh}
   body[data-panel=open]{--panel-w:0px}
   .dash-card{max-width:none}
-  .dash-peek,.dash-tab{bottom:34px}
+  .dash-peek,.dash-tab{bottom:40px}
   .dash-peek{max-width:calc(100% - 24px)}
 }
 
@@ -707,3 +706,15 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 .details-btn .slash{display:none}
 .details-btn.off{color:var(--muted)!important}
 .details-btn.off .slash{display:inline}
+
+/* ---------- the greeting, the eye in the window's bar ---------- */
+.dash-hello{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.dash-hello-sub{margin-top:3px;font-size:13.5px;color:var(--muted)}
+.dash-hello-sub b{color:var(--fg)}
+.dash-link{padding:0;border:0;background:none;color:var(--accent);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline}
+.dash-foot{justify-content:space-between;align-items:center;gap:10px}
+.dash-reminder{color:var(--muted);font-size:11.5px}
+.pop-eye .slash{display:none}
+.pop-eye.off .slash{display:inline}
+.pop-eye.off{color:var(--muted)}
+@media (max-width:520px){.dash-hello{font-size:22px}}

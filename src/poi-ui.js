@@ -537,10 +537,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') clearSelection(); });
   // the switch: a button on the map and a switch in the Points of Interest tab share one setting
   let detailsBtn = null;
+  const eyeLabel = () => `Open details when I click a marker: ${detailsOn ? 'on (press to turn off)' : 'off (press to turn on)'}`;
   function setDetails(on) {
     detailsOn = on;
     savePrefs({ markerDetails: on ? null : false });
     $('poi-details').checked = on;
+    for (const t of document.querySelectorAll('.poi-pop .pop-toggle')) t.dispatchEvent(new Event('detailschange'));
+    for (const eye of document.querySelectorAll('.pop-eye')) { eye.classList.toggle('off', !on); eye.title = eyeLabel(); const t = eye.querySelector('.tool-label'); if (t) t.textContent = eyeLabel(); } // a window that is open follows
     if (detailsBtn) { detailsBtn.classList.toggle('off', !on); detailsBtn.setAttribute('aria-pressed', String(on)); detailsBtn.title = 'Marker details: ' + (on ? 'on' : 'off') + ' (click to switch)'; }
     if (on) clearSelection();
   }
@@ -703,12 +706,21 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const toggle = el('button', 'pop-toggle'); toggle.type = 'button';
       // both arrows are always there and CSS shows one: replacing the clicked element mid-click would make Leaflet close the window
       toggle.innerHTML = '<svg class="ic-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><svg class="ic-down" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-      const paintToggle = () => { toggle.setAttribute('aria-label', expanded ? 'Collapse window' : 'Expand window'); toggle.title = expanded ? 'Collapse' : 'Expand'; toggle.setAttribute('aria-expanded', String(expanded)); };
+      const paintToggle = () => {
+        if (!detailsOn) { // details off: the button tucks the window away into the name tag's ⓘ
+          toggle.setAttribute('aria-label', 'Hide the window (back to the name tag)'); toggle.title = 'Hide into the ⓘ'; toggle.setAttribute('aria-expanded', 'true');
+          return;
+        }
+        toggle.setAttribute('aria-label', expanded ? 'Collapse window' : 'Expand window'); toggle.title = expanded ? 'Collapse' : 'Expand'; toggle.setAttribute('aria-expanded', String(expanded));
+      };
       paintToggle();
-      toggle.addEventListener('click', () => { setWindowMode(!expanded); paintToggle(); });
+      toggle.addEventListener('detailschange', paintToggle); // the setting changed while this window is open
+      toggle.addEventListener('click', () => { if (!detailsOn) { selectMarker(id); return; } setWindowMode(!expanded); paintToggle(); });
       root.append(toggle);
       const trip0 = tripLabel(it, store.getTrip(it.tripId));
       const phone = window.matchMedia('(max-width: 520px)').matches;
+      // the eye: the same setting as the map button and the switch in the Points of Interest tab
+      const tEye = { icon: 'eye', label: eyeLabel(), cls: detailsOn ? 'pop-eye' : 'pop-eye off', onClick: () => { const turningOff = detailsOn; setDetails(!detailsOn); if (turningOff) selectMarker(id); } };
       const tEdit = { icon: 'edit', label: 'Edit', onClick: () => setTimeout(editForm, 0) };
       // swap the contents after the click has finished: removing the clicked button mid-click would make Leaflet close the window
       const tVisit = { icon: 'visit', label: 'Add visit', onClick: () => setTimeout(() => addVisit(id), 0) };
@@ -716,7 +728,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const isHome = it.type === 'residence';
       root.append(toolBar({
         caption: trip0 ? `${typeOf(it.type).label} · ${trip0}` : typeOf(it.type).label,
-        tools: phone ? [tEdit] : isHome ? [tEdit, tDelete] : [tEdit, tVisit, tDelete],
+        tools: phone ? [tEye, tEdit] : isHome ? [tEye, tEdit, tDelete] : [tEye, tEdit, tVisit, tDelete],
         menu: phone ? (isHome ? [tDelete] : [tVisit, tDelete]) : [],
       }));
       const head = el('div', 'pop-head');
