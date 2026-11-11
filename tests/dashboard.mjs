@@ -1,5 +1,5 @@
 // The dashboard along the bottom of the map: its three states, how it starts, its cards, and how it shares the screen with the side panel.
-import { chromium, CHANNEL } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const iso = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -14,7 +14,7 @@ const items = [
   mk('tw', 'Today stop', 30.6, 114.31, { tripId: 't3', date: iso(0), order: 1 }),
   mk('tw2', 'Second stop', 30.61, 114.32, { tripId: 't3', date: iso(0), order: 2 }),
 ];
-const RETURNING = { showOnStart: true, welcomed: true, seen: '2026-11-11' };
+const RETURNING = { showOnStart: true, welcomed: true, seen: LATEST_SEEN };
 
 const b = await chromium.launch({ channel: CHANNEL });
 async function open(vp, mobile, { dash = RETURNING, data = true, backup = null, hash = '' } = {}) {
@@ -106,8 +106,9 @@ await ctx.close();
 
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: { showOnStart: true, welcomed: true, seen: null, hideUntil: TODAY } }));
 ok(await stateOf(p) === 'expanded' && /What’s new/.test(await p.textContent('#dash-body')) && /Singapore no-fly zones/.test(await p.textContent('#dash-body')), 'a What\'s new entry the visitor has not seen opens it, even after "not for today"');
+ok(/Check in at your markers/.test(await p.textContent('#dash-body')), 'the check-in entry is announced to a visitor who has not seen it');
 await p.click('#dash-collapse'); await p.waitForTimeout(250);
-ok((await dashSaved(p)).seen === '2026-11-11', 'putting it away marks the entry as seen');
+ok((await dashSaved(p)).seen === LATEST_SEEN, 'putting it away marks the entry as seen');
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1000);
 ok(await stateOf(p) === 'peek' && !/What’s new/.test(await p.textContent('#dash-body')), 'the next start follows "not for today" again, and the entry is gone');
 await ctx.close();

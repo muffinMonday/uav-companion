@@ -2,6 +2,15 @@
 // (the date is a good id): visitors who have not seen it get the dashboard opened with it, once. Keep each entry to a few short lines.
 export const WHATS_NEW = [
   {
+    id: '2026-11-11-checkin',
+    date: '2026-11-11',
+    title: 'Check in at your markers',
+    items: [
+      'Turn on Check in at markers under the shield button (privacy settings). When you are within 300 m of a marker, a Check in button opens on its row in the Markers list.',
+      'A check-in saves the time and your position with the marker, in this browser only. Your position is read only while the markers list is showing, and it is never sent anywhere.',
+    ],
+  },
+  {
     id: '2026-11-11',
     date: '2026-11-11',
     title: 'Trip planning, Singapore and a tidier map',

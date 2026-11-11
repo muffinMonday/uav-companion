@@ -13,13 +13,16 @@ export const CHANNEL = process.env.BROWSER_CHANNEL || 'msedge';
 // The browser, with the welcome screen switched off in every new context (it would cover the page the suites click on).
 // The welcome suite uses playwright-core directly to see the real thing.
 import { chromium as real } from 'playwright-core';
+import { WHATS_NEW } from '../src/whatsnew.js';
+/** The id of the newest What's new entry: what a returning visitor has already seen. Suites use it so announcing something new does not reopen the dashboard in every test. */
+export const LATEST_SEEN = WHATS_NEW[0].id;
 export const chromium = {
   async launch(options) {
     const browser = await real.launch(options);
     const newContext = browser.newContext.bind(browser);
     browser.newContext = async (opts) => {
       const ctx = await newContext({ reducedMotion: 'reduce', ...opts }); // moving elements make timing flaky; motion.mjs asks for it back
-      await ctx.addInitScript(() => { try { if (localStorage.getItem('uavzones.v1.dash') === null) localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: false, welcomed: true, seen: '2026-11-11' })); } catch { /* ignore */ } });
+      await ctx.addInitScript((seen) => { try { if (localStorage.getItem('uavzones.v1.dash') === null) localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: false, welcomed: true, seen })); } catch { /* ignore */ } }, LATEST_SEEN);
       return ctx;
     };
     return browser;

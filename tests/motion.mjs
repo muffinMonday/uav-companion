@@ -1,12 +1,12 @@
 // Motion: the dashboard, strip and tab centre in the free map area; the basic animations run for visitors who have not asked for less motion
 // and are absent when they have. (The rest of the suite runs with reduced motion, see lib.mjs.)
-import { chromium, CHANNEL } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const b = await chromium.launch({ channel: CHANNEL });
 async function open(reduced) {
   const ctx = await b.newContext({ viewport: { width: 1300, height: 850 }, reducedMotion: reduced ? 'reduce' : 'no-preference' });
-  await ctx.addInitScript(() => { if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1'; localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: true, welcomed: true, seen: '2026-11-11' })); localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: [['a', 'Alpha', 30.59, 114.3, 1], ['b', 'Bravo', 30.60, 114.31, 2], ['c', 'Charlie', 30.61, 114.32, 3]].map(([id, name, lat, lon, order]) => ({ id, type: 'photo', name, note: '', lat, lon, created: '2026-11-01T00:00:0' + order + '.000Z', date: '2026-11-20', order })) })); localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.6, lon: 114.3, zoom: 11 }, basemap: 'osm' })); });
+  await ctx.addInitScript((seen) => { if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1'; localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: true, welcomed: true, seen })); localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: [['a', 'Alpha', 30.59, 114.3, 1], ['b', 'Bravo', 30.60, 114.31, 2], ['c', 'Charlie', 30.61, 114.32, 3]].map(([id, name, lat, lon, order]) => ({ id, type: 'photo', name, note: '', lat, lon, created: '2026-11-01T00:00:0' + order + '.000Z', date: '2026-11-20', order })) })); localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.6, lon: 114.3, zoom: 11 }, basemap: 'osm' })); }, LATEST_SEEN);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
