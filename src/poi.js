@@ -93,18 +93,25 @@ export function sanitize(raw) {
 // ---------- trips ----------
 // Eight colours for trips; a trip's colour is the dot on its markers' pins. Chosen to stay apart from each other, and each
 // is shown with a white edge on the pin, so none depends on telling hues apart.
+export const MAX_NOTES = 2000, MAX_CHECKLIST = 30;
 export const TRIP_COLORS = ['#e91e63', '#3949ab', '#00897b', '#fb8c00', '#6d4c41', '#546e7a', '#7cb342', '#8e24aa'];
 
 /**
  * The editable fields of a trip, validated, or null if there is no usable name.
  * name (required, up to 80); country (a known country, stored as its ISO code, else dropped); startDate and endDate
- * (real dates; the end only with a start and not before it, one day is start = end); description (up to 500).
+ * (real dates; the end only with a start and not before it, one day is start = end); description (up to 500);
+ * notes (free text, up to 2000); checklist (up to 30 items of { text up to 80, done }).
  */
 export function tripFields(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const name = typeof raw.name === 'string' ? raw.name.trim().slice(0, 80) : '';
   if (!name) return null;
   const out = { name, description: typeof raw.description === 'string' ? raw.description.slice(0, 500) : '' };
+  if (typeof raw.notes === 'string' && raw.notes.trim()) out.notes = raw.notes.slice(0, MAX_NOTES);
+  const checklist = Array.isArray(raw.checklist)
+    ? raw.checklist.map((c) => ({ text: typeof c?.text === 'string' ? c.text.trim().slice(0, 80) : '', done: c?.done === true })).filter((c) => c.text).slice(0, MAX_CHECKLIST)
+    : [];
+  if (checklist.length) out.checklist = checklist;
   const country = countryCode(raw.country);
   if (country) out.country = country;
   const startDate = isoDate(raw.startDate);
@@ -399,7 +406,7 @@ export function toGeoJSON(items, trips = []) {
   return {
     type: 'FeatureCollection',
     uavzones: 1,
-    ...(trips.length && { trips: trips.map(({ id, name, country, startDate, endDate, description, color }) => ({ id, name, ...(country && { country }), ...(startDate && { startDate }), ...(endDate && { endDate }), description, color })) }),
+    ...(trips.length && { trips: trips.map(({ id, name, country, startDate, endDate, description, color, notes, checklist }) => ({ id, name, ...(country && { country }), ...(startDate && { startDate }), ...(endDate && { endDate }), description, color, ...(notes && { notes }), ...(checklist && { checklist }) })) }),
     features: items.map((i) => ({
       type: 'Feature',
       properties: {

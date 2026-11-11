@@ -1,7 +1,10 @@
 // The Trips tab: create, edit and delete trips, see what is in each, and jump to its markers.
 // A trip groups markers; distances from a waypoint to a hotel or home point stay inside its trip. Data is in poi.js.
 import { COUNTRIES, countryCode, countryName } from './countries.js';
-import { sortTrips, tripSummary, tripLength } from './trips.js';
+import { sortTrips, tripSummary, tripLength, tripStatus, countdownLabel, todayISO, isPastTrip, planDays, tripWarnings, warningsLine, dayInfo, dayText } from './trips.js';
+import { formatDate, typeOf, MAX_NOTES, MAX_CHECKLIST } from './poi.js';
+import { getDistanceSettings } from './units.js';
+import { fmtDistance } from './distance.js';
 import { el } from './cards.js';
 
 const $ = (id) => document.getElementById(id);
@@ -19,48 +22,195 @@ export function initTripsUI({ poi, panel, toast }) {
   for (const [, name] of COUNTRIES) { const o = document.createElement('option'); o.value = name; $('country-list').append(o); }
 
   // ---------- the list ----------
+  let openId = null;      // the trip whose detail screen is showing, or null for the list
+  const listCard = list.closest('.card'), detail = $('trip-detail'), aiCard = $('ai-card');
+  const pastBox = $('trips-past'), pastList = $('trips-past-list');
+
+  function tripCard(t, items, today) {
+    const n = items.filter((i) => i.tripId === t.id).length;
+    const isCurrent = poi.getCurrentTrip() === t.id;
+    const li = el('li', 'trip-card clickable');
+    const head = el('div', 'trip-card-head');
+    const dot = el('i', 'trip-dot-sm'); dot.style.background = t.color;
+    const name = el('b', '', t.name);
+    if (isCurrent) name.append(' ', el('span', 'badge ok', 'For new markers'));
+    head.append(dot, name);
+    const status = tripStatus(t, today);
+    if (status) head.append(el('span', 'trip-countdown', countdownLabel(status)));
+    li.append(head);
+    const summary = tripSummary(t);
+    if (summary) li.append(el('div', 'trip-card-sub', summary));
+    if (!t.startDate || !t.endDate) li.append(el('div', 'trip-card-warn', 'No dates yet. Add them (Edit) to see day numbers and the countdown.'));
+    else {
+      const line = warningsLine(tripWarnings(items, t));
+      if (line) li.append(el('div', 'trip-card-warn', '⚠ ' + line));
+    }
+    if (t.description) li.append(el('p', 'trip-card-desc', t.description));
+    const done = t.checklist ? t.checklist.filter((c) => c.done).length : 0;
+    li.append(el('div', 'trip-card-count', [n + ' marker' + (n === 1 ? '' : 's'), t.checklist && done + ' of ' + t.checklist.length + ' checked'].filter(Boolean).join(' · ')));
+
+    const acts = el('div', 'btn-row trip-acts');
+    const btn = (text, fn, cls = '') => { const b = el('button', ('btn small ' + cls).trim(), text); b.type = 'button'; b.addEventListener('click', fn); acts.append(b); return b; };
+    btn('Open', () => openDetail(t.id), 'primary');
+    btn('Show markers', () => poi.showTrip(t.id));
+    btn('Fit map', () => { if (poi.fitTrip(t.id)) panel.closeIfPhone(); });
+    if (!isCurrent) btn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast('New markers will go into “' + t.name + '”.', 4000); });
+    btn('Edit', () => openForm(t));
+    btn('Delete', deleteHandler(t, n), 'danger');
+    li.append(acts);
+    li.addEventListener('click', (e) => { if (!e.target.closest('button, a, input')) openDetail(t.id); });
+    return li;
+  }
+  /** The two-step Delete shared by the card and the detail screen. */
+  function deleteHandler(t, n) {
+    let armed = null;
+    return (e) => {
+      const b = e.currentTarget;
+      if (!armed) {
+        b.textContent = n ? 'Confirm: ' + n + ' marker' + (n === 1 ? '' : 's') + ' stay without a trip' : 'Confirm delete';
+        armed = setTimeout(() => { b.textContent = 'Delete'; armed = null; }, 5000);
+        return;
+      }
+      clearTimeout(armed);
+      const res = store.removeTrip(t.id);
+      toast('Deleted “' + t.name + '”.' + (res.untagged ? ' Its ' + res.untagged + ' marker' + (res.untagged === 1 ? ' is' : 's are') + ' kept, with no trip.' : ''), 6000);
+    };
+  }
+
   function render() {
     const trips = sortTrips(store.trips());
     const items = store.items();
-    count.textContent = trips.length ? `(${trips.length})` : '';
+    const today = todayISO();
+    count.textContent = trips.length ? '(' + trips.length + ')' : '';
     empty.hidden = trips.length > 0;
-    list.replaceChildren();
-    for (const t of trips) {
-      const n = items.filter((i) => i.tripId === t.id).length;
-      const isCurrent = poi.getCurrentTrip() === t.id;
-      const li = el('li', 'trip-card');
-      const head = el('div', 'trip-card-head');
-      const dot = el('i', 'trip-dot-sm'); dot.style.background = t.color;
-      const name = el('b', '', t.name);
-      if (isCurrent) name.append(' ', el('span', 'badge ok', 'For new markers'));
-      head.append(dot, name);
-      li.append(head);
-      const summary = tripSummary(t);
-      if (summary) li.append(el('div', 'trip-card-sub', summary));
-      if (!t.startDate || !t.endDate) li.append(el('div', 'trip-card-warn', 'No dates yet. Add them (Edit) to see day numbers and the countdown.'));
-      if (t.description) li.append(el('p', 'trip-card-desc', t.description));
-      li.append(el('div', 'trip-card-count', `${n} marker${n === 1 ? '' : 's'}`));
+    list.replaceChildren(); pastList.replaceChildren();
+    const past = trips.filter((t) => isPastTrip(t, today));
+    for (const t of trips) (past.includes(t) ? pastList : list).append(tripCard(t, items, today));
+    pastBox.hidden = !past.length;
+    $('trips-past-title').textContent = 'Past trips (' + past.length + ')';
+    const open = openId && store.getTrip(openId);
+    if (!open) openId = null;
+    listCard.hidden = !!open; aiCard.hidden = !!open; detail.hidden = !open;
+    if (open) renderDetail(open, items, today);
+  }
 
-      const acts = el('div', 'btn-row trip-acts');
-      const btn = (text, fn, cls = '') => { const b = el('button', `btn small ${cls}`.trim(), text); b.type = 'button'; b.addEventListener('click', fn); acts.append(b); return b; };
-      btn('Show markers', () => poi.showTrip(t.id));
-      btn('Fit map', () => { if (poi.fitTrip(t.id)) panel.closeIfPhone(); });
-      if (!isCurrent) btn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast(`New markers will go into “${t.name}”.`, 4000); });
-      btn('Edit', () => openForm(t));
-      let armed = null;
-      const del = btn('Delete', () => {
-        if (!armed) {
-          del.textContent = n ? `Confirm: ${n} marker${n === 1 ? '' : 's'} stay without a trip` : 'Confirm delete';
-          armed = setTimeout(() => { del.textContent = 'Delete'; armed = null; }, 5000);
-          return;
-        }
-        clearTimeout(armed);
-        const res = store.removeTrip(t.id);
-        toast(`Deleted “${t.name}”.${res.untagged ? ` Its ${res.untagged} marker${res.untagged === 1 ? ' is' : 's are'} kept, with no trip.` : ''}`, 6000);
-      }, 'danger');
-      li.append(acts);
-      list.append(li);
+  // ---------- one trip: warnings, the days, notes and the checklist ----------
+  function openDetail(id) { openId = id; render(); panel.open('trips'); $('pane-trips').scrollTop = 0; detail.scrollIntoView({ block: 'start' }); }
+  function closeDetail() { openId = null; render(); }
+
+  function renderDetail(t, items, today) {
+    detail.replaceChildren();
+    const top = el('div', 'trip-detail-top');
+    const back = el('button', 'btn small', '‹ Trips'); back.type = 'button'; back.addEventListener('click', closeDetail);
+    const edit = el('button', 'btn small', 'Edit'); edit.type = 'button'; edit.addEventListener('click', () => openForm(t));
+    top.append(back, edit);
+    const h = el('h2', 'trip-detail-title');
+    const dot = el('i', 'trip-dot-sm'); dot.style.background = t.color;
+    h.append(dot, t.name);
+    detail.append(top, h);
+    const status = tripStatus(t, today);
+    const sub = el('div', 'trip-card-sub', [tripSummary(t), status && countdownLabel(status)].filter(Boolean).join(' · '));
+    detail.append(sub);
+    if (t.description) detail.append(el('p', 'trip-card-desc full', t.description));
+    const acts = el('div', 'btn-row trip-acts');
+    const btn = (text, fn, cls = '') => { const x = el('button', ('btn small ' + cls).trim(), text); x.type = 'button'; x.addEventListener('click', fn); acts.append(x); return x; };
+    btn('Show markers', () => poi.showTrip(t.id));
+    btn('Fit map', () => { if (poi.fitTrip(t.id)) panel.closeIfPhone(); });
+    if (poi.getCurrentTrip() !== t.id) btn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast('New markers will go into “' + t.name + '”.', 4000); });
+    const n = items.filter((i) => i.tripId === t.id).length;
+    btn('Delete', deleteHandler(t, n), 'danger');
+    detail.append(acts);
+
+    const dated = !!tripLength(t);
+    if (dated) {
+      const w = tripWarnings(items, t);
+      const msgs = [];
+      if (w.undated) msgs.push(w.undated + ' marker' + (w.undated === 1 ? ' has' : 's have') + ' no date (listed under “No date” below).');
+      if (w.outside) msgs.push(w.outside + ' marker' + (w.outside === 1 ? ' is' : 's are') + ' dated outside the trip (listed under “Outside the dates”).');
+      for (const d of w.noHotel) msgs.push('No hotel for the night of Day ' + d + '.');
+      const box = el('details', 'trip-warnings'); box.open = msgs.length > 0;
+      box.append(el('summary', '', msgs.length ? 'Warnings (' + msgs.length + ')' : 'No warnings'));
+      if (msgs.length) { const ul = el('ul'); for (const m of msgs) ul.append(el('li', '', m)); box.append(ul); }
+      else box.append(el('p', 'hint', 'Every marker is dated inside the trip' + (items.some((i) => i.tripId === t.id && i.type === 'hotel') ? ', and every night has a hotel.' : '.')));
+      detail.append(box);
     }
+
+    // the days
+    const units = getDistanceSettings().units;
+    const plan = planDays(items, t);
+    const stopRow = (it, day) => {
+      const row = el('button', 'plan-stop'); row.type = 'button';
+      const info = dayInfo(it, t);
+      const mark = el('span', 'plan-n', it.order !== undefined ? String(it.order) : '•');
+      const text = el('span', 'plan-name');
+      text.append(el('b', '', it.name), el('small', '', [typeOf(it.type).label, day === undefined && it.date && formatDate(it.date), info && info.last > info.day && dayText(info)].filter(Boolean).join(' · ')));
+      row.append(mark, text);
+      row.addEventListener('click', () => poi.openMarker(it.id));
+      return row;
+    };
+    if (dated) {
+      const days = el('div', 'plan-days');
+      for (const d of plan.days) {
+        const sec = el('section', 'plan-day');
+        const head = el('div', 'plan-day-head');
+        head.append(el('b', '', 'Day ' + d.day + ' · ' + formatDate(d.date)));
+        if (d.km >= 0.1) head.append(el('small', '', '≈ ' + fmtDistance(d.km * 1000, units) + ' between stops'));
+        sec.append(head);
+        if (!d.stops.length) sec.append(el('small', 'plan-empty', 'Nothing planned'));
+        for (const it of d.stops) sec.append(stopRow(it, d.day));
+        days.append(sec);
+      }
+      detail.append(days);
+    }
+    for (const [label, listItems] of [['No date', plan.undated], ['Outside the dates', plan.outside]]) {
+      if (!listItems.length) continue;
+      const sec = el('section', 'plan-day');
+      sec.append(el('div', 'plan-day-head').appendChild(el('b', '', label + ' (' + listItems.length + ')')).parentNode);
+      for (const it of listItems) sec.append(stopRow(it));
+      detail.append(sec);
+    }
+    if (!dated) detail.append(el('p', 'hint', 'Add start and end dates (Edit) to see the days.'));
+    if (dated) detail.append(el('p', 'hint', 'Distances are straight lines between the stops of a day, not driving distances.'));
+
+    // notes
+    const notes = el('section', 'trip-notes');
+    notes.append(el('h3', '', 'Notes'));
+    const ta = el('textarea'); ta.rows = 4; ta.maxLength = MAX_NOTES; ta.value = t.notes ?? ''; ta.placeholder = 'Anything to remember for this trip';
+    ta.setAttribute('aria-label', 'Trip notes');
+    ta.addEventListener('change', () => { store.updateTrip(t.id, { notes: ta.value }); });
+    notes.append(ta, el('small', 'hint', 'Saved in this browser when you leave the box.'));
+    detail.append(notes);
+
+    // checklist
+    const checks = el('section', 'trip-checklist');
+    const list0 = t.checklist ?? [];
+    checks.append(el('h3', '', list0.length ? 'Checklist (' + list0.filter((c) => c.done).length + ' of ' + list0.length + ')' : 'Checklist'));
+    const ul = el('ul', 'check-list');
+    list0.forEach((c, i) => {
+      const li = el('li');
+      const cb = el('input'); cb.type = 'checkbox'; cb.checked = c.done; cb.setAttribute('aria-label', c.text);
+      cb.addEventListener('change', () => store.updateTrip(t.id, { checklist: list0.map((x, j) => (j === i ? { ...x, done: cb.checked } : x)) }));
+      const label = el('span', c.done ? 'done' : '', c.text);
+      const rm = el('button', 'icon-btn', '✕'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove ' + c.text);
+      rm.addEventListener('click', () => store.updateTrip(t.id, { checklist: list0.filter((_, j) => j !== i) }));
+      li.append(cb, label, rm); ul.append(li);
+    });
+    checks.append(ul);
+    const add = el('div', 'check-add');
+    const input = el('input'); input.type = 'text'; input.maxLength = 80; input.placeholder = 'Add an item, e.g. Batteries charged'; input.setAttribute('aria-label', 'New checklist item');
+    const addBtn = el('button', 'btn small', 'Add'); addBtn.type = 'button';
+    const addItem = () => {
+      const text = input.value.trim();
+      if (!text) return;
+      if (list0.length >= MAX_CHECKLIST) { toast('A checklist can have ' + MAX_CHECKLIST + ' items.'); return; }
+      store.updateTrip(t.id, { checklist: [...list0, { text, done: false }] });
+      detail.querySelector('.check-add input')?.focus();
+    };
+    addBtn.addEventListener('click', addItem);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } });
+    add.append(input, addBtn);
+    checks.append(add);
+    detail.append(checks);
   }
 
   // ---------- the form ----------

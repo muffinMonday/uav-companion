@@ -1,7 +1,8 @@
 // Helpers for trips: wording, length, ordering and a date check. Pure functions; storage is in poi.js.
 import { dateLabel, listMode, sortForList } from './poi.js';
 import { countryName } from './countries.js';
-import { daysBetween } from './dates.js';
+import { daysBetween, addDays } from './dates.js';
+import { haversineM } from './distance.js';
 
 export { daysBetween };
 
@@ -103,4 +104,71 @@ export const dayText = (info) => (info ? (info.last > info.day ? `Day ${info.day
 export function tripSequence(items, tripId) {
   const members = items.filter((i) => i.tripId === tripId && (i.date !== undefined || i.day !== undefined));
   return sortForList(members, listMode(members));
+}
+
+// ---------- the plan of a trip, day by day ----------
+
+/** Has the trip ended before `today`? A trip with no dates never has. */
+export function isPastTrip(trip, today) {
+  const end = trip.endDate ?? trip.startDate;
+  return !!end && end < today;
+}
+
+const byStop = (a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || String(a.created).localeCompare(String(b.created));
+
+/**
+ * A trip laid out by day: { days: [{ day, date, stops, km }], undated, outside }.
+ * Every day of the trip is there, empty or not. A stay of several days is listed on its first day. `stops` are in stop order
+ * (markers with no stop number last); `km` is the straight-line length of the chain of stops (0 for fewer than two).
+ * `undated` have no date (an old stored day does not count); `outside` are dated before or after the trip.
+ */
+export function planDays(items, trip) {
+  const mine = items.filter((i) => i.tripId === trip.id);
+  const n = tripLength(trip) ?? 0;
+  const days = Array.from({ length: n }, (_, k) => ({ day: k + 1, date: addDays(trip.startDate, k), stops: [], km: 0 }));
+  const undated = [], outside = [];
+  for (const it of mine) {
+    if (!it.date) { undated.push(it); continue; }
+    const info = dayInfo(it, trip);
+    if (info && days[info.day - 1]) days[info.day - 1].stops.push(it); else outside.push(it);
+  }
+  for (const d of days) {
+    d.stops.sort(byStop);
+    let m = 0;
+    for (let i = 1; i < d.stops.length; i++) m += haversineM(d.stops[i - 1].lat, d.stops[i - 1].lon, d.stops[i].lat, d.stops[i].lon);
+    d.km = m / 1000;
+  }
+  undated.sort(byStop); outside.sort((a, b) => a.date.localeCompare(b.date) || byStop(a, b));
+  return { days, undated, outside };
+}
+
+/**
+ * What to look at in a trip: { undated, outside, noHotel } (counts and the days). `noHotel` lists the nights (day numbers) with no hotel,
+ * but only when the trip has a hotel at all (staying with friends is not a gap). A hotel covers the nights from its first day up to
+ * the day before it ends (a one-day entry covers that night). The last day of a trip has no night.
+ */
+export function tripWarnings(items, trip) {
+  const plan = planDays(items, trip);
+  const hotels = items.filter((i) => i.tripId === trip.id && i.type === 'hotel');
+  const noHotel = [];
+  if (hotels.length) {
+    const covered = new Set();
+    for (const h of hotels) {
+      const info = dayInfo(h, trip);
+      if (!info) continue;
+      const lastNight = info.last > info.day ? info.last - 1 : info.day;
+      for (let d = info.day; d <= lastNight; d++) covered.add(d);
+    }
+    for (let d = 1; d < plan.days.length; d++) if (!covered.has(d)) noHotel.push(d);
+  }
+  return { undated: plan.undated.length, outside: plan.outside.length, noHotel };
+}
+
+/** One line for the trip card: "2 without a date · 1 outside the dates · no hotel on Day 2, 3", or '' when all is well. */
+export function warningsLine(w) {
+  const parts = [];
+  if (w.undated) parts.push(`${w.undated} without a date`);
+  if (w.outside) parts.push(`${w.outside} outside the dates`);
+  if (w.noHotel.length) parts.push(`no hotel for the night of ${w.noHotel.length === 1 ? 'Day' : 'Days'} ${w.noHotel.join(', ')}`);
+  return parts.join(' · ');
 }

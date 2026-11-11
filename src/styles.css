@@ -525,3 +525,36 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .poi-pin.sel-pin svg{outline:3px solid var(--accent);outline-offset:3px;border-radius:50%/40%}
 .poi-pin.sel-pin[data-n]::after{content:attr(data-n);position:absolute;left:-8px;top:-8px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:9px;background:var(--accent);color:var(--accent-fg);font:700 11px/18px var(--font);text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .poi-pin.sel-dim{opacity:.35}
+
+/* ---------- trips: countdown, past trips, the detail screen ---------- */
+.trip-card.clickable{cursor:pointer}
+.trip-card.clickable:hover{border-color:var(--accent)}
+.trip-countdown{margin-left:auto;padding-left:8px;flex:none;color:var(--accent);font-size:12px;font-weight:700;white-space:nowrap}
+.past-trips{margin-top:12px}
+.past-trips>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:650}
+.trip-detail-top{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}
+.trip-detail-title{display:flex;align-items:center;margin:4px 0}
+.trip-card-desc.full{display:block;-webkit-line-clamp:unset}
+.trip-warnings{margin-top:10px;padding:8px 10px;border-radius:10px;background:var(--unk-bg);color:var(--unk);font-size:12.5px}
+.trip-warnings>summary{cursor:pointer;font-weight:700}
+.trip-warnings ul{margin:6px 0 0;padding-left:18px}
+.plan-days{margin-top:10px;display:grid;gap:10px}
+.plan-day{display:grid;gap:4px;margin-top:10px}
+.plan-days .plan-day{margin-top:0}
+.plan-day-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px;padding-bottom:3px;border-bottom:1px solid var(--line);font-size:13px}
+.plan-day-head small,.plan-empty{color:var(--muted);font-size:12px}
+.plan-stop{display:flex;align-items:center;gap:10px;width:100%;padding:7px 8px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--fg);text-align:left;cursor:pointer;font:inherit}
+.plan-stop:hover{background:var(--surface-2)}
+.plan-n{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font:700 11.5px/1 var(--font)}
+.plan-name{display:grid;min-width:0}
+.plan-name b{overflow-wrap:anywhere;font-size:13.5px}
+.plan-name small{color:var(--muted);font-size:12px}
+.trip-notes,.trip-checklist{margin-top:14px}
+.trip-notes h3,.trip-checklist h3{margin:0 0 6px;font-size:14px}
+.trip-notes textarea{width:100%;box-sizing:border-box}
+.check-list{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:4px}
+.check-list li{display:flex;align-items:center;gap:8px}
+.check-list li span{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13.5px}
+.check-list li span.done{color:var(--muted);text-decoration:line-through}
+.check-add{display:flex;gap:6px}
+.check-add input{flex:1;min-width:0}

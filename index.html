@@ -120,8 +120,11 @@
         <p class="hint" id="trips-intro">A trip groups markers. A waypoint's distance to a hotel or home point only looks within its own trip. Your Home marker belongs to no trip.</p>
         <ul class="trip-list" id="trips-list"></ul>
         <p class="hint" id="trips-empty">No trips yet. Create one, then choose it for new markers or tag existing ones.</p>
+        <details class="past-trips" id="trips-past" hidden><summary id="trips-past-title">Past trips</summary><ul class="trip-list" id="trips-past-list"></ul></details>
         <div class="btn-row"><button type="button" class="btn primary" id="trip-new">New trip</button></div>
       </div>
+
+      <div class="card" id="trip-detail" hidden></div>
 
       <div class="card" id="trip-form-card" hidden>
         <h2 id="trip-form-title">New trip</h2>

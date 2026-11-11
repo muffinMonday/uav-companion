@@ -230,6 +230,13 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Pins hidden by the list's type or trip filter are dimmed and ignored. Where visits to one place are stacked, a tap picks the top pin.
 - A banner says how many are selected, with **Review** (opens the list with the route and the delete button) and **Done**; Escape also ends selecting. On phones the list closes when selecting starts so the map can be tapped. Selecting is exclusive with placing and Edit mode (starting one ends the other).
 
+**F34. Trip plan: countdown, warnings, days, notes, checklist (built, part 1)**
+- A trip card shows the countdown (`12 days to go`, `Day 2 of 3`), a one-line warning summary and the checklist progress. Tapping a card, or **Open**, shows the trip's detail screen in place of the list; **‹ Trips** goes back.
+- Trips that ended before today move into a collapsed **Past trips (n)** section.
+- Detail screen: warnings (markers with no date; markers dated outside the trip; nights with no hotel, only when the trip has a hotel), then every day of the trip with its stops in stop order and the straight-line distance between them (a stay is listed on its first day; markers with no date or outside the dates have their own sections). Tapping a stop opens it on the map.
+- **Notes** (up to 2,000 characters, saved when the box loses focus) and a **checklist** (up to 30 items of up to 80 characters, per trip). Both are part of the trip and travel in the export and import.
+- Not yet: the per-day weather strip and the on-tap no-fly check of stops (part 2).
+
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.
 - First visit (nothing saved): the map fits the first covered region (Hubei); other regions are reached with the country menu. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.

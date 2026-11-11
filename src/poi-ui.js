@@ -1100,6 +1100,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   return {
     store,
     showTrip, fitTrip,
+    /** Flies to a marker and opens its window (the Trips tab's day list uses it). */
+    openMarker: (id) => flyToItem(id),
     getCurrentTrip: () => currentTripId,
     setCurrentTrip(id) {
       currentTripId = id && store.getTrip(id) ? id : null;
