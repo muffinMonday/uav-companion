@@ -194,3 +194,7 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 
 ### 2026-11-11: Overnight arrows go through the hotel
 - Decision (owner): a hotel is the end of the day. The route's overnight arrows pass through the hotel that covers the night (a hotel covers its first night up to the night before check-out); a selected hotel shows an arrow in from the last stop of its first day and out to the first stop of the day after check-out. Without a hotel for that night the arrow goes straight to the neighbouring day's stop. Hotels still take no part in the thin day chain.
+
+### 2026-11-11: The dashboard takes the backup actions and the map key; more cards
+- Decision (owner): move Export, Import and Copy share link, and the zone legend with the coverage note, to the dashboard (the Backup card of the Points of Interest tab and the About this map card of Map Configs are gone); mirror the layer controls; add quick actions, checklist ticks, the first-day forecast and Today with check-in.
+- Consequences: the moved elements stay in hidden holders so their handlers survive the dashboard's redraws; tests that clicked the export or share buttons open the dashboard first (dashClick in tests/lib.mjs).

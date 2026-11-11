@@ -25,3 +25,12 @@ export const chromium = {
     return browser;
   },
 };
+
+/** Opens the dashboard if it is tucked away, clicks something inside it, and folds it to the strip again. */
+export async function dashClick(p, selector) {
+  if (await p.locator('#dash').isHidden()) await p.locator('#dash-tab:visible, #dash-peek:visible').first().click();
+  await p.waitForSelector('#dash:not([hidden])');
+  await p.click(selector);
+  await p.waitForTimeout(150);
+  await p.click('#dash-collapse');
+}

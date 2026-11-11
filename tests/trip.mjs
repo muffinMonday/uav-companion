@@ -3,6 +3,7 @@ import { chromium } from './lib.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { dashClick } from './lib.mjs';
 const dist = await import(pathToFileURL(path.join(ROOT, 'src/distance.js')).href);
 const aiimp = await import(pathToFileURL(path.join(ROOT, 'src/aiimport.js')).href);
 // the Distances settings live in the privacy settings: open them, act, and come back to the list
@@ -200,7 +201,7 @@ await S.ctx.close();
 // ================= 6c. the new name
 S = await session({ keys: ['W1'] }); p = S.page;
 ok((await p.title()) === 'UAV Companion', '6c: the page title is "UAV Companion"');
-const [dlc] = await Promise.all([p.waitForEvent('download'), p.click('#poi-export')]);
+const [dlc] = await Promise.all([p.waitForEvent('download'), dashClick(p, '#poi-export')]);
 ok(/^uav-companion-markers-\d{4}-\d{2}-\d{2}\.geojson$/.test(dlc.suggestedFilename()), '6c: the export file is named uav-companion-markers-DATE.geojson: ' + dlc.suggestedFilename());
 await p.click('#tab-trips'); await p.click('#ai-copy'); await p.waitForTimeout(400);
 const clipp = await p.evaluate(() => navigator.clipboard.readText());
@@ -346,7 +347,7 @@ await open(p, 'Tower'); await p.waitForTimeout(500);
 ok(S.el.length === 1 && (await p.locator('.poi-pop .stat').count()) === 4, '12: for any other marker, elevation is looked up and tiles are shown');
 await closePopup(p);
 // share link
-await p.click('#poi-share'); await p.waitForTimeout(500);
+await dashClick(p, '#poi-share'); await p.waitForTimeout(500);
 const link = await p.evaluate(() => navigator.clipboard.readText());
 const json = await aiimp.decodeShare(link.split('#import=')[1]);
 const feats = JSON.parse(json).features;
@@ -354,14 +355,14 @@ ok(feats.length === 3 && !feats.some((f) => f.properties.name === 'My flat') && 
 ok(/Home marker was left out/.test(await p.textContent('#toast')), '12: the toast says the Home marker was left out');
 ok(feats.find((f) => f.properties.name === 'Hotel One').properties.date === '2026-11-12' && feats.find((f) => f.properties.name === 'Hotel One').properties.endDate === '2026-11-14', '12: dates travel in the link');
 // export keeps it, with a warning
-const [dl2] = await Promise.all([p.waitForEvent('download'), p.click('#poi-export')]); await dl2.saveAs(SP + '/trip-export.geojson');
+const [dl2] = await Promise.all([p.waitForEvent('download'), dashClick(p, '#poi-export')]); await dl2.saveAs(SP + '/trip-export.geojson');
 const exp = JSON.parse(fs.readFileSync(SP + '/trip-export.geojson', 'utf8'));
 ok(exp.features.some((f) => f.properties.name === 'My flat' && f.properties.type === 'residence'), '12: the export (a backup) does include the Home marker');
 ok(/export includes your Home marker/i.test(await p.textContent('#poi-note')) && /Share links leave it out/.test(await p.textContent('#poi-note')), '12: and the Backup note warns about it');
 await S.ctx.close();
 // only a Home marker
 S = await session({ keys: ['RES'] }); p = S.page;
-await p.click('#poi-share'); await p.waitForTimeout(400);
+await dashClick(p, '#poi-share'); await p.waitForTimeout(400);
 ok(/Nothing to share/.test(await p.textContent('#toast')) && /never put in a link/.test(await p.textContent('#toast')), '12: with only a Home marker, there is nothing to put in a link, and it says why');
 ok(!/Home marker/.test(await p.textContent('#poi-note')) === false, '12: the note mentions it when one exists');
 await S.ctx.close();

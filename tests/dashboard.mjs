@@ -162,5 +162,91 @@ await ctx.close();
 ok(/Welcome!/.test(await p.textContent('#dash .dash-hello')) && /plan your trip/.test(await p.textContent('#dash .dash-hello-sub')), 'a first visit gets the welcome message');
 ok((await p.$eval('#dash .dash-hello', (e) => parseFloat(getComputedStyle(e).fontSize))) >= 24, 'the greeting is large');
 await ctx.close();
+// ================= more on the dashboard: quick actions, layers, your data, the map key, the checklist, today with check-in, the forecast
+({ ctx, p } = await open({ width: 1300, height: 850 }, false));
+const cards = await p.$$eval('#dash-body .dash-card h3', (e) => e.map((x) => x.textContent));
+ok(['Quick actions', 'Layers', 'Your data', 'Map key'].every((c) => cards.includes(c)), 'the dashboard has Quick actions, Layers, Your data and Map key: ' + cards.join(' · '));
+ok(!(await p.locator('#panel h2:has-text("About this map")').count()) && !(await p.locator('#panel h2:has-text("Backup")').count()), 'the cards they came from are gone from the side panel');
+ok((await p.locator('#dash .dash-key #legend > div').count()) >= 2 && (await p.locator('#dash .dash-key .key-line').count()) === 4 && /Coverage/.test(await p.textContent('#dash .dash-key #regions-note')), 'the Map key holds the zone legend, the coverage note and four line samples');
+// the checklist, to tick here
+await p.locator('#dash-body .dash-trip-nav .btn').nth(1).click(); await p.waitForTimeout(200);
+ok((await p.locator('#dash .dash-check li').count()) === 2, 'the next trip shows its checklist');
+await p.locator('#dash .dash-check li', { hasText: 'Permit' }).locator('input').check(); await p.waitForTimeout(250);
+ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.trips')).trips.find((x) => x.id === 't1').checklist[1].done)) === true && /2 of 2 checked/.test(await p.textContent('#dash .dash-trip')), 'ticking an item here saves it in the trip');
+// your data
+const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#dash .dash-data #poi-export')]);
+await p.waitForTimeout(300);
+ok(/\.geojson$/.test(dl.suggestedFilename()) && /Last backup/.test(await p.textContent('#dash .dash-data #poi-note')), 'Export in Your data downloads the file, and the card shows the date of the last backup');
+// layers, mirrored
+await p.locator('#dash .dash-layers select').selectOption('sat'); await p.waitForTimeout(200);
+ok((await p.inputValue('#base')) === 'sat' && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).basemap)) === 'sat', 'a basemap chosen on the dashboard changes the map\'s setting and is remembered');
+await p.evaluate(() => { const s = document.getElementById('base'); s.value = 'topo'; s.dispatchEvent(new Event('change')); });
+ok((await p.locator('#dash .dash-layers select').inputValue()) === 'topo', 'and a change made in Map Configs shows on the dashboard');
+await p.locator('#dash .dash-layers input[type=checkbox]').uncheck(); await p.waitForTimeout(150);
+ok(!(await p.locator('#show').isChecked()), 'Show zones on the dashboard turns the zones off');
+// quick actions
+const count0 = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length);
+await p.locator('#dash .dash-actions .btn', { hasText: 'Place at map centre' }).click(); await p.waitForTimeout(500);
+ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length)) === count0 + 1, 'Place at map centre adds a marker');
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
+await p.locator('#dash .dash-actions .btn', { hasText: 'Select markers' }).click(); await p.waitForTimeout(300);
+ok(/Tap pins/.test(await p.textContent('#banner-text')), 'Select markers starts selecting');
+await ctx.close();
+
+async function openX({ prefs = {}, geo = null, weather = false } = {}) {
+  const c = await b.newContext({ viewport: { width: 1300, height: 850 }, ...(geo ? { permissions: ['geolocation'], geolocation: geo } : {}) });
+  await c.addInitScript(([po, tr, pf, rd]) => {
+    const g = navigator.geolocation;
+    if (g) { const w = g.watchPosition.bind(g), cl = g.clearWatch.bind(g); window.__watches = new Set(); g.watchPosition = (a, e, o) => { const id = w(a, e, o); window.__watches.add(id); return id; }; g.clearWatch = (id) => { window.__watches.delete(id); return cl(id); }; }
+    if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
+    localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, ...rd })); localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po })); localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr }));
+    localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.6, lon: 114.3, zoom: 11 }, basemap: 'osm', ...pf }));
+  }, [items, trips, prefs, RETURNING]);
+  if (weather) await c.route('**/api.open-meteo.com/**', (route) => {
+    const url = route.request().url();
+    if (!url.includes('daily=')) return route.fulfill({ status: 500, body: '' });
+    const n = new URL(url).searchParams.get('latitude').split(',').length;
+    const times = Array.from({ length: 16 }, (_, k) => iso(k));
+    const one = () => ({ utc_offset_seconds: 28800, timezone_abbreviation: 'CST', daily: { time: times, weather_code: times.map(() => 0), temperature_2m_max: times.map(() => 22.4), temperature_2m_min: times.map(() => 14.1), precipitation_probability_max: times.map(() => 10), wind_speed_10m_max: times.map(() => 4.2) } });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(n === 1 ? one() : Array.from({ length: n }, one)) });
+  });
+  const pg = await c.newPage();
+  pg.on('pageerror', (e) => errs.push('pageerror ' + e.message));
+  await pg.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
+  return { c, pg };
+}
+
+// check my spot: the zone verdict for where I am
+{
+  const { c, pg } = await openX({ geo: { latitude: 30.5928, longitude: 114.3055, accuracy: 20 } });
+  await pg.locator('#dash .dash-actions .btn', { hasText: 'Check my spot' }).click();
+  await pg.waitForSelector('.leaflet-popup', { timeout: 15000 }); await pg.waitForTimeout(800);
+  ok(/zone/i.test(await pg.textContent('.leaflet-popup')) && /Your location/.test(await pg.textContent('.leaflet-popup')), 'Check my spot opens the zone verdict for where I am: ' + (await pg.textContent('.leaflet-popup')).replace(/\s+/g, ' ').slice(0, 70));
+  await c.close();
+}
+
+// today, with check-in buttons, and the position read only while they show
+{
+  const { c, pg } = await openX({ geo: { latitude: 30.60, longitude: 114.31, accuracy: 20 }, prefs: { checkIn: true } });
+  ok(/Today stop/.test(await pg.textContent('#dash .dash-today')) && (await pg.locator('#dash .dash-today .checkin-btn').count()) === 2, 'a trip under way lists today\'s stops, each with a Check in button');
+  ok((await pg.evaluate(() => window.__watches.size)) === 1, 'the position is being watched while they are on show');
+  await pg.waitForFunction(() => { const r = [...document.querySelectorAll('#dash .dash-stop-row')].find((x) => x.textContent.includes('Today stop')); const bt = r?.querySelector('.checkin-btn'); return bt && !bt.disabled; }, null, { timeout: 15000 });
+  ok(await pg.locator('#dash .dash-stop-row', { hasText: 'Second stop' }).locator('.checkin-btn').isDisabled(), 'the button of the stop I am at opens; the other one stays shut');
+  await pg.locator('#dash .dash-stop-row', { hasText: 'Today stop' }).locator('.checkin-btn').click(); await pg.waitForTimeout(500);
+  ok(!!(await pg.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.find((x) => x.id === 'tw').checkin)) && /✓/.test(await pg.locator('#dash .dash-stop-row', { hasText: 'Today stop' }).textContent()), 'pressing it records the check-in, and the row shows it');
+  await pg.click('#dash-collapse'); await pg.waitForTimeout(500);
+  ok((await pg.evaluate(() => window.__watches.size)) === 0, 'with the dashboard folded (and the panel on Map Configs) the position is no longer read');
+  await c.close();
+}
+
+// the first day's forecast on the next trip
+{
+  const { c, pg } = await openX({ prefs: { autoWeather: true }, weather: true });
+  await pg.locator('#dash-body .dash-trip-nav .btn').nth(1).click();
+  await pg.waitForFunction(() => /First day:/.test(document.querySelector('#dash .dash-trip')?.textContent || ''), null, { timeout: 15000 }).catch(() => {});
+  const txt = await pg.textContent('#dash .dash-trip');
+  ok(/First day: .*22°\/14°/.test(txt), 'with automatic weather on, the next trip shows the forecast for its first day: ' + (txt.match(/First day:[^·]*/) || [''])[0].trim());
+  await c.close();
+}
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();

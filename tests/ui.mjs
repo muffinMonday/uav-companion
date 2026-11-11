@@ -35,18 +35,15 @@ ok(!(await vis(p, 'h2:has-text("Weather and elevation")')) && !(await vis(p, 'h2
 await open(p, 'trips');
 ok(!(await vis(p, 'h2:has-text("Weather and elevation")')) && !(await vis(p, 'h2:has-text("Backup")')) && (await vis(p, '#ai-card')) && (await vis(p, '#trips-empty')), 'Trips shows trips and Plan with an AI, and no weather or backup');
 await open(p, 'poi');
-ok(!(await vis(p, 'h2:has-text("Weather and elevation")')) && (await vis(p, 'h2:has-text("Backup")')) && !(await vis(p, '#ai-card')), 'Points of Interest shows backup, and no weather card or AI card');
+ok(!(await vis(p, 'h2:has-text("Weather and elevation")')) && !(await vis(p, 'h2:has-text("Backup")')) && !(await vis(p, '#ai-card')), 'Points of Interest shows no backup (it is on the dashboard now), and no weather card or AI card');
 const struct = await p.evaluate(() => ({
   weatherInPoi: !document.querySelector('#pane-poi #mw-status') && !!document.querySelector('#privacy #mw-status'),
-  backupInPoi: !!document.querySelector('#pane-poi .aux #poi-export'),
+  backupInPoi: !document.querySelector('#pane-poi #poi-export') && !document.querySelector('#pane-poi .aux') && !!document.querySelector('#dash-body #poi-export, #datastore #poi-export'),
   aiInTrips: !!document.querySelector('#pane-trips #ai-card #ai-preview'),
   bodyChildren: [...document.querySelector('#panel > .sp-body').children].map((c) => c.id).join(','),
-  border: getComputedStyle(document.querySelector('.aux')).borderTopStyle,
-  label: getComputedStyle(document.querySelector('.aux'), '::before').content,
   scroll: getComputedStyle(document.querySelector('.sp-body')).scrollbarWidth,
 }));
 ok(struct.weatherInPoi && struct.backupInPoi && struct.aiInTrips && struct.bodyChildren === 'pane-config,pane-trips,pane-poi', 'the markup is balanced: the cards sit inside their own tab panes');
-ok(struct.border === 'dashed' && /Backup/.test(struct.label), 'the backup block is set apart: dashed outline and a "Backup" label');
 ok(struct.scroll === 'thin', 'scroll bars are thin');
 
 // ================= modern controls

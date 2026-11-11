@@ -1,6 +1,7 @@
 import { OUT as SP, ROOT, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
 import fs from 'node:fs';
+import { dashClick } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const exampleText = fs.readFileSync(`${ROOT}/public/ai/example.geojson`, 'utf8');
@@ -196,14 +197,14 @@ ok(!(await p.locator('#poi-list .poi-item:has-text("Maybe Here") .badge').count(
 await closePopup(p);
 
 // ============ 11. export keeps day / order / unverified
-const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#poi-export')]); await dl.saveAs(SP + '/ai-export.geojson');
+const [dl] = await Promise.all([p.waitForEvent('download'), dashClick(p, '#poi-export')]); await dl.saveAs(SP + '/ai-export.geojson');
 const ex1 = JSON.parse(fs.readFileSync(SP + '/ai-export.geojson', 'utf8'));
 const f4 = ex1.features.find((f) => f.properties.name === 'P4');
 ok(f4.properties.day === 2 && !('order' in f4.properties) && f4.properties.unverified === true, '11: export includes day/order/unverified only where they exist');
 ok(ex1.features.find((f) => f.properties.name === 'Maybe Here').properties.unverified === undefined, '11: a checked marker exports without the flag');
 
 // ============ 12. share link
-await p.click('#poi-share'); await p.waitForTimeout(400);
+await dashClick(p, '#poi-share'); await p.waitForTimeout(400);
 const link = await p.evaluate(() => navigator.clipboard.readText());
 ok(/^http:\/\/localhost:5173\/#import=z2\.[A-Za-z0-9_-]+$/.test(link), `12: "Copy share link" copies a link with a compact, compressed fragment (${link.length} characters)`);
 ok(!/Riverside|P1|Maybe/.test(link), '12: the link does not show names in clear text');

@@ -2,6 +2,7 @@
 import { chromium, CHANNEL, ROOT } from './lib.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { dashClick } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const iso = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -81,7 +82,7 @@ ok(!(await stored(p, 'tw')).checkin && await row(p, 'Tower').locator('.checkin-b
 await row(p, 'Tower').locator('.checkin-btn').click(); await p.waitForTimeout(400);
 
 // a share link leaves it out, the export keeps it
-await p.click('#poi-share'); await p.waitForTimeout(600);
+await dashClick(p, '#poi-share'); await p.waitForTimeout(600);
 const link = await p.evaluate(() => navigator.clipboard.readText());
 const { decodeShare } = await import(pathToFileURL(path.join(ROOT, 'src/aiimport.js')).href);
 const shared = JSON.stringify(await decodeShare(link.split('#import=')[1]));

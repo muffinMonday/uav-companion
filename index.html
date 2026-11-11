@@ -104,13 +104,6 @@
       </div>
 
       <div class="card">
-        <h2>About this map</h2>
-        <div id="regions-note" class="hint">Loading regions…</div>
-        <div id="legend" class="legend"></div>
-        <p class="hint">A planning aid, not flight advice. Zones can change, so check the official platform for the place you are flying (for China, UOM) before every flight.</p>
-      </div>
-
-      <div class="card">
         <h2>Help</h2>
         <div class="btn-row"><button type="button" class="btn" id="help-open">How it works</button></div>
         <label class="switch"><span>Show the dashboard when the app starts <small>Off keeps it tucked behind the ^ tab at the bottom of the map.</small></span><input type="checkbox" id="dash-start" checked></label>
@@ -195,18 +188,6 @@
         <p class="hint" id="poi-empty">No markers yet. Choose a type above, then tap Place on map.</p>
       </div>
 
-      <div class="aux" role="group" aria-label="Backup">
-      <div class="card">
-        <h2>Backup</h2>
-        <div class="btn-row">
-          <button type="button" class="btn" id="poi-export">Export GeoJSON</button>
-          <button type="button" class="btn" id="poi-import">Import…</button>
-          <button type="button" class="btn" id="poi-share" title="Copy a link that carries your markers, to open on another device">Copy share link</button>
-          <input type="file" id="poi-file" accept=".geojson,.json,application/geo+json,application/json" hidden>
-        </div>
-        <p class="hint" id="poi-note"></p>
-      </div>
-      </div>
     </section>
   </div>
 
@@ -282,6 +263,18 @@
   </div>
 </aside>
 
+<!-- parts that the dashboard shows while it is open; they wait here otherwise -->
+<div id="keystore" hidden>
+  <div id="regions-note" class="hint">Loading regions…</div>
+  <div id="legend" class="legend"></div>
+</div>
+<div id="datastore" hidden>
+  <button type="button" class="btn" id="poi-export">Export GeoJSON</button>
+  <button type="button" class="btn" id="poi-import">Import…</button>
+  <button type="button" class="btn" id="poi-share" title="Copy a link that carries your markers, to open on another device">Copy share link</button>
+  <input type="file" id="poi-file" accept=".geojson,.json,application/geo+json,application/json" hidden>
+  <p class="hint" id="poi-note"></p>
+</div>
 <div class="wx" id="weather" hidden aria-live="polite"></div>
 <div class="banner" id="banner" hidden role="status"><span id="banner-text"></span><button type="button" class="btn small" id="banner-review" hidden>Review</button><button type="button" class="btn small" id="banner-action">Cancel</button></div>
 <section class="dash" id="dash" role="region" aria-label="Dashboard" hidden>

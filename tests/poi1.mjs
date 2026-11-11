@@ -1,6 +1,7 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
 import fs from 'node:fs';
+import { dashClick } from './lib.mjs';
 const openSearch = (p) => p.evaluate(() => { if (document.getElementById('search').classList.contains('collapsed')) document.getElementById('search-toggle').click(); }); // the search box starts folded into a magnifying glass
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const b = await chromium.launch({ channel: CHANNEL });
@@ -81,7 +82,7 @@ await p.click('#tab-poi');
 ok((await p.locator('#poi-list .poi-item').count()) === 3, 'markers survive a reload');
 
 // ---- export
-const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#poi-export')]);
+const [dl] = await Promise.all([p.waitForEvent('download'), dashClick(p, '#poi-export')]);
 const path = SP + '/export.geojson'; await dl.saveAs(path);
 const gj = JSON.parse(fs.readFileSync(path, 'utf8'));
 ok(gj.type === 'FeatureCollection' && gj.features.length === 3 && gj.features[0].geometry.type === 'Point', 'export is a GeoJSON FeatureCollection of 3 Points: ' + dl.suggestedFilename());

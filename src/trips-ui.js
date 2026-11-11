@@ -36,7 +36,8 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   const syncDay = () => poi.showDay?.(dayShown && panel.isOpen() && !panel.isRolled() && panel.getTab() === 'trips' ? dayShown.tripId : null, dayShown?.date);
   panel.onChange?.(syncDay);
   let openId = null;      // the trip whose detail screen is showing, or null for the list
-  const tw = createTripWeather({ onChange: () => render() }); // per-day forecasts, only while automatic weather is on
+  const forecastListeners = new Set();
+  const tw = createTripWeather({ onChange: () => { render(); for (const fn of forecastListeners) fn(); } }); // per-day forecasts, only while automatic weather is on
   const pageOf = new Map();       // tripId -> the page (day) of its flip card, kept while the page is open
   const zoneChecks = new Map(); // tripId -> Map(markerId -> { sig, s }): what the map data says about each stop, until the page closes
   const sigOf = (it) => `${it.lat},${it.lon}`;
@@ -390,5 +391,15 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   store.onChange(render);
   onPrivacyChange(render); // check-in switched on or off changes the rows
   render();
-  return { openForm, openDetail };
+  return {
+    openForm, openDetail,
+    /** The first day of a trip that has a forecast: { date, text }, or null (weather off, no forecast yet, or the trip is out of range). */
+    forecastFor(tripId) {
+      const t = store.getTrip(tripId), fc = t && tw.get(tripId);
+      if (!fc) return null;
+      const day = planDays(store.items(), t).days.find((d) => fc[d.date]);
+      return day ? { date: day.date, text: dayWeatherText(fc[day.date]) } : null;
+    },
+    onForecast(fn) { forecastListeners.add(fn); },
+  };
 }

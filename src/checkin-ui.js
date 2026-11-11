@@ -14,7 +14,9 @@ export function createCheckin({ store, panel, toast }) {
   const emit = () => { for (const fn of subs) { try { fn(); } catch (e) { console.error(e); } } for (const set of bound.values()) for (const fn of set) fn(); };
 
   const enabled = () => !!getPrivacy().checkIn;
-  const wanted = () => enabled() && status !== 'denied' && status !== 'unavailable' && !document.hidden && panel.isOpen() && !panel.isRolled() && ['poi', 'trips'].includes(panel.getTab());
+  const extra = []; // other screens that show check-in buttons (the dashboard)
+  const panelShows = () => panel.isOpen() && !panel.isRolled() && ['poi', 'trips'].includes(panel.getTab());
+  const wanted = () => enabled() && status !== 'denied' && status !== 'unavailable' && !document.hidden && (panelShows() || extra.some((fn) => fn()));
 
   function stop() {
     if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
@@ -57,6 +59,9 @@ export function createCheckin({ store, panel, toast }) {
     },
     clear(id) { return !!store.update(id, { checkin: null }).item; },
     onChange(fn) { subs.add(fn); },
+    /** Another screen that shows check-in buttons says when it is on show (fn returns true), and calls sync() when that changes. */
+    also(fn) { extra.push(fn); },
+    sync,
     /** Cells register to be refreshed on every new position; a screen unbinds its namespace before it redraws. */
     bind(ns, fn) { if (!bound.has(ns)) bound.set(ns, new Set()); bound.get(ns).add(fn); },
     unbind(ns) { bound.delete(ns); },

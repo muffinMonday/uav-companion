@@ -8,14 +8,23 @@ import { animateOut } from './motion.js';
 import { routeLinks } from './maplinks-ui.js';
 import { MODES, MAX_STOPS } from './maplinks.js';
 import { typeOf } from './poi.js';
+import { checkinCell } from './checkin-ui.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 const isPhone = () => window.matchMedia('(max-width: 520px)').matches;
 
-export function initDashboard({ poi, panel, trips, shared = false }) {
+export function initDashboard({ poi, panel, trips, shared = false, actions = {} }) {
   const dash = $('dash'), body = $('dash-body'), peek = $('dash-peek'), tab = $('dash-tab');
   const store = poi.store;
+  // parts that live elsewhere in the page and are shown on the dashboard while it is open (their handlers stay attached; they wait in
+  // holders while the cards are rebuilt)
+  const keystore = $('keystore'), datastore = $('datastore');
+  const keyNodes = [$('regions-note'), $('legend')];
+  const dataNodes = [$('poi-export'), $('poi-import'), $('poi-share'), $('poi-file'), $('poi-note')];
+  const park = () => { keystore.append(...keyNodes); datastore.append(...dataNodes); };
+  let todayShown = false;  // the Today card, with its check-in buttons, is on show
+  const layerEls = {};     // the layer controls mirrored here, so changes made in Map Configs show
   const saved = load();
   const firstRun = !saved.welcomed && store.items().length === 0 && store.trips().length === 0;
   let fresh = unseenEntries(WHATS_NEW, saved.seen);   // entries to show until the visitor has seen them
@@ -125,6 +134,8 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
     c.append(head);
     const sum = tripSummary(trip);
     if (sum) c.append(el('div', 'dash-sub', sum));
+    const fc = trips.forecastFor?.(trip.id);
+    if (fc) c.append(el('div', 'dash-sub', 'First day: ' + fc.text));
     const facts = [];
     if (tripLength(trip)) {
       const w = tripWarnings(store.items(), trip);
@@ -133,6 +144,16 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
     }
     if (trip.checklist?.length) facts.push(trip.checklist.filter((x) => x.done).length + ' of ' + trip.checklist.length + ' checked');
     if (facts.length) c.append(el('div', 'dash-sub', facts.join(' · ')));
+    if (trip.checklist?.length) { // the checklist, to tick here
+      const ul = el('ul', 'dash-check');
+      trip.checklist.slice(0, 5).forEach((item, i) => {
+        const li = el('li'), cb = el('input'); cb.type = 'checkbox'; cb.checked = item.done; cb.setAttribute('aria-label', item.text);
+        cb.addEventListener('change', () => store.updateTrip(trip.id, { checklist: trip.checklist.map((x, j) => (j === i ? { ...x, done: cb.checked } : x)) }));
+        li.append(cb, el('span', item.done ? 'done' : '', item.text)); ul.append(li);
+      });
+      if (trip.checklist.length > 5) ul.append(el('li', 'dash-more', '+' + (trip.checklist.length - 5) + ' more in the trip'));
+      c.append(ul);
+    }
     if (status.state === 'now' && tripLength(trip)) { // under way: today's stops
       const day = planDays(store.items(), trip).days[status.day - 1];
       if (day?.stops.length) {
@@ -142,7 +163,11 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
           const b = el('button', 'dash-stop'); b.type = 'button';
           b.append(el('span', 'plan-n', s.order !== undefined ? String(s.order) : '•'), el('span', '', s.name));
           b.addEventListener('click', () => { if (isPhone()) setState('peek'); poi.openMarker(s.id); }); // on a phone the map needs the room
-          list.append(b);
+          const line = el('div', 'dash-stop-row'); line.append(b);
+          const cell = checkinCell({ cin: poi.checkin, store, id: s.id, ns: 'dash' }); // Check in, or what was recorded
+          if (cell) line.append(cell);
+          list.append(line);
+          todayShown = true;
         }
         c.append(list);
       }
@@ -152,6 +177,63 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
     open.addEventListener('click', () => trips.openDetail(trip.id));
     row.append(open);
     c.append(row);
+    return c;
+  }
+  function actionsCard() {
+    const c = el('section', 'dash-card dash-actions');
+    c.append(el('h3', '', 'Quick actions'));
+    const grid = el('div', 'dash-btns');
+    const mk = (text, fn, disabled = false) => {
+      const b = el('button', 'btn small', text); b.type = 'button'; b.disabled = disabled;
+      b.addEventListener('click', () => { if (isPhone()) setState('peek'); fn(); }); // on a phone the map needs the room
+      grid.append(b);
+    };
+    mk('Place at map centre', () => $('poi-center').click());
+    mk('Place at my location', () => $('poi-here').click());
+    mk('Select markers', () => $('poi-select').click(), !store.items().length);
+    mk('Check my spot', () => actions.checkHere?.(), !actions.checkHere);
+    c.append(grid);
+    return c;
+  }
+  function layersCard() {
+    const c = el('section', 'dash-card dash-layers');
+    c.append(el('h3', '', 'Layers'));
+    const sw = el('label', 'switch'), cb = el('input'); cb.type = 'checkbox'; cb.checked = $('show').checked;
+    cb.addEventListener('change', () => { $('show').checked = cb.checked; $('show').dispatchEvent(new Event('change')); });
+    sw.append(el('span', '', 'Show zones'), cb);
+    const op = el('label', 'field'), rg = el('input'); rg.type = 'range'; rg.min = '0.1'; rg.max = '0.9'; rg.step = '0.05'; rg.value = $('op').value;
+    rg.addEventListener('input', () => { $('op').value = rg.value; $('op').dispatchEvent(new Event('input')); });
+    rg.addEventListener('change', () => $('op').dispatchEvent(new Event('change')));
+    op.append(el('span', '', 'Zone opacity'), rg);
+    const bs = el('label', 'field'), sel = el('select');
+    for (const o of $('base').options) { const n = el('option', '', o.textContent); n.value = o.value; sel.append(n); }
+    sel.value = $('base').value;
+    sel.addEventListener('change', () => { $('base').value = sel.value; $('base').dispatchEvent(new Event('change')); });
+    bs.append(el('span', '', 'Basemap'), sel);
+    Object.assign(layerEls, { cb, rg, sel });
+    c.append(sw, op, bs);
+    return c;
+  }
+  function dataCard() {
+    const c = el('section', 'dash-card dash-data');
+    c.append(el('h3', '', 'Your data'));
+    const row = el('div', 'btn-row');
+    row.append(...dataNodes.slice(0, 4)); // export, import, share link and the (hidden) file chooser
+    c.append(row, dataNodes[4]);
+    return c;
+  }
+  function keyCard() {
+    const c = el('section', 'dash-card dash-key');
+    c.append(el('h3', '', 'Map key'), keyNodes[0], keyNodes[1]);
+    const lines = el('div', 'key-lines');
+    lines.append(el('small', 'key-title', 'Lines on the map'));
+    const arrow = (attrs) => '<svg viewBox="0 0 44 12" aria-hidden="true"><line x1="2" y1="6" x2="33" y2="6" ' + attrs + '/><path d="M31 2l10 4-10 4z" fill="currentColor"/></svg>'; // built from constants only
+    const row = (svg, text) => { const r = el('div', 'key-line'), s = el('span', 'key-sample'); s.innerHTML = svg; r.append(s, text); lines.append(r); };
+    row(arrow('stroke="currentColor" stroke-width="2" opacity=".45"'), 'A day\'s stops, in order');
+    row(arrow('stroke="currentColor" stroke-width="5"'), 'Into and out of the selected stop, with the distance');
+    row(arrow('stroke="currentColor" stroke-width="5" stroke-dasharray="8 5"'), 'Overnight: through the hotel, or on to the next day');
+    row('<svg viewBox="0 0 44 12" aria-hidden="true"><line x1="2" y1="6" x2="42" y2="6" stroke="currentColor" stroke-width="3" stroke-dasharray="6 5" opacity=".85"/></svg>', 'To the nearest hotel or Home point, with the distance');
+    c.append(lines, el('p', 'hint', 'Arrows take the colour of their trip. A planning aid, not flight advice: zones can change, so check the official platform for the place you are flying (for China, UOM) before every flight.'));
     return c;
   }
   function backupCard() {
@@ -197,11 +279,13 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
   }
 
   function render() {
+    park(); poi.checkin.unbind('dash'); todayShown = false;
     body.replaceChildren();
     body.append(welcomeLine());
-    for (const card of [routeCard(), whatsNewCard(), tripCard(), backupCard(), regionsCard()]) if (card) body.append(card);
+    for (const card of [routeCard(), whatsNewCard(), tripCard(), actionsCard(), layersCard(), backupCard(), dataCard(), keyCard(), regionsCard()]) if (card) body.append(card);
     body.append(guideCard());
     updatePeek();
+    poi.checkin.sync(); // the position is wanted while Today shows check-in buttons
   }
   function updatePeek() {
     const coming = comingTrips(store.trips(), todayISO());
@@ -235,6 +319,7 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
       peek.setAttribute('aria-expanded', 'false');
       document.body.dataset.dash = next;
       lift();
+      poi.checkin.sync();
     };
     if (leaving) animateOut(dash, 'closing', apply); else apply(); // slides down, then the strip or the tab appears
   }
@@ -247,6 +332,12 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
   dash.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setState('peek'); peek.focus(); } });
   panel.onOpen?.(() => { if (isPhone() && state === 'expanded') setState('peek'); }); // on a phone the panel and the dashboard take turns
   store.onChange(() => { if (state === 'expanded') render(); else updatePeek(); });
+  poi.checkin.also(() => state === 'expanded' && todayShown);
+  trips.onForecast?.(() => { if (state === 'expanded') render(); });
+  // Map Configs changes show in the mirrored layer controls
+  $('show').addEventListener('change', () => { if (layerEls.cb) layerEls.cb.checked = $('show').checked; });
+  $('op').addEventListener('input', () => { if (layerEls.rg) layerEls.rg.value = $('op').value; });
+  $('base').addEventListener('change', () => { if (layerEls.sel) layerEls.sel.value = $('base').value; });
 
   // a route being built: a desktop opens the dashboard at the second stop, a phone brings up the strip (the map needs the room); both go
   // back to how they were when selecting ends

@@ -1,6 +1,7 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
 import fs from 'node:fs';
+import { dashClick } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const OFFSET = 28800; // mock location is UTC+8
 const errs = [];
@@ -93,7 +94,7 @@ const cache = await lsGet(S.page, 'uavzones.v1.wxcache');
 ok(Object.keys(cache.items).length === 3 && typeof cache.lastBulk === 'number', 'B: cache holds 3 markers and the bulk-refresh time');
 const pois = await lsGet(S.page, 'uavzones.v1.pois');
 ok(pois.items.every((i) => Object.keys(i).sort().join() === 'created,id,lat,lon,name,note,type'), 'B: weather is not stored on the markers themselves');
-const [dl] = await Promise.all([S.page.waitForEvent('download'), S.page.click('#poi-export')]); await dl.saveAs(SP + '/mw-export.geojson');
+const [dl] = await Promise.all([S.page.waitForEvent('download'), dashClick(S.page, '#poi-export')]); await dl.saveAs(SP + '/mw-export.geojson');
 ok(!/temp|wind|gust/i.test(fs.readFileSync(SP + '/mw-export.geojson', 'utf8')), 'B: the GeoJSON export contains no weather');
 await closePopup(S.page);
 
