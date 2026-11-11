@@ -90,3 +90,9 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision: the marker window can be expanded (centred on the coordinate, covering the pin, up to 85% of the map height) or collapsed (above the pin). Desktop opens expanded, phones open collapsed (owner's choice), with a remembered toggle; expanded is capped at 60% on phones so the map stays draggable.
 - Alternatives: marker pushed to the right edge with the window to its left (rejected: the side panel and phone widths leave no room).
 - Consequences: the expanded window hides the pin, so tests that need to press a pin collapse the window first; tall windows scroll inside.
+
+### 2026-11-11: Each visit to a place is its own marker
+- Context: a landmark visited on day 1 and day 3 was impossible to keep: the AI import skipped the second one as a duplicate, and two markers at one spot hid each other.
+- Decision: keep one marker per visit (own date, day, stop, trip). Markers within 15 m are shown as one place: a ×N badge, a strip of visit chips in the window, and an Add visit button. The AI import calls a repeat a duplicate only when the dates match or either has none; different dates make it another visit.
+- Alternatives: one marker holding a list of visits (rejected: reworks distances, date and trip rules, export and the AI format); spreading overlapping pins apart on the map (not needed with the chips).
+- Consequences: no data-model change or migration; weather and elevation lookups are shared per spot.

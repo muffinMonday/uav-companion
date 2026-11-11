@@ -72,6 +72,11 @@ export function createMarkerWeather({ getItems, onChange }) {
     // The Home marker is the traveller's residence: it is never sent to a weather service automatically.
     const points = wanted.filter((id) => live.has(id) && live.get(id).type !== 'residence').map((id) => ({ id, lat: live.get(id).lat, lon: live.get(id).lon }));
     if (!points.length) return;
+    // several visits to one place share a spot: ask for it once and give every one of them the answer
+    const keyOf = (p) => `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`;
+    const twins = new Map(), unique = [];
+    for (const p of points) { const k = keyOf(p); if (twins.has(k)) twins.get(k).push(p.id); else { twins.set(k, [p.id]); unique.push(p); } }
+    const keyById = new Map(unique.map((u) => [u.id, keyOf(u)]));
     if (running) { points.forEach((p) => pending.add(p.id)); return; } // picked up when the current run ends
     running = true;
     points.forEach((p) => loading.add(p.id));
@@ -80,12 +85,12 @@ export function createMarkerWeather({ getItems, onChange }) {
     emit();
     let ok = true;
     try {
-      for (let i = 0; i < points.length; i += CHUNK) {
-        const results = await fetchSummaries(points.slice(i, i + CHUNK));
+      for (let i = 0; i < unique.length; i += CHUNK) {
+        const results = await fetchSummaries(unique.slice(i, i + CHUNK));
         if (!isOn()) break; // switched off while the request was in flight: keep nothing
         const stillThere = new Set(ids());
         const t = Date.now();
-        for (const r of results) if (stillThere.has(r.id)) cache.items[r.id] = { t, temp: r.temp, wind: r.wind, gust: r.gust, n: r.n, start: r.start, tz: r.tz, pp: r.pp, pr: r.pr };
+        for (const r of results) for (const id of twins.get(keyById.get(r.id)) ?? []) if (stillThere.has(id)) cache.items[id] = { t, temp: r.temp, wind: r.wind, gust: r.gust, n: r.n, start: r.start, tz: r.tz, pp: r.pp, pr: r.pr };
         save();
         emit();
       }

@@ -1,6 +1,6 @@
 // "Plan with an AI": copy a prompt for any assistant, paste its answer (or open a share link), preview, then add.
 // Nothing is added until the preview is confirmed. See aiimport.js for what is accepted and public/ai/ for the spec.
-import { parseItinerary, isDuplicate, geocode, pause, encodeShare, decodeShare, MAX_LOOKUPS } from './aiimport.js';
+import { parseItinerary, isDuplicate, isRevisit, geocode, pause, encodeShare, decodeShare, MAX_LOOKUPS } from './aiimport.js';
 import { typeOf, toGeoJSON, dateLabel } from './poi.js';
 import { tripDatesLabel } from './trips.js';
 import { countryName } from './countries.js';
@@ -44,6 +44,7 @@ export function initAI({ map, toast, panel, poi }) {
     let lookupIndex = 0;
     rows.forEach((r) => {
       r.dup = isDuplicate(r, existing);
+      r.revisit = isRevisit(r, existing);
       r.block = blocked(r, r.status === 'lookup' ? lookupIndex++ : 0);
       if (r.block) r.include = false;
     });
@@ -78,7 +79,7 @@ export function initAI({ map, toast, panel, poi }) {
       const body = el('span', 'pbody');
       const trip = [r.date && dateLabel(r), r.day && `Day ${r.day}`, r.order && `Stop ${r.order}`].filter(Boolean).join(' · ');
       body.append(el('b', '', r.name || '(no name)'), el('small', '', `${typeOf(r.type).label}${trip ? ` · ${trip}` : ''}`));
-      body.append(el('small', r.block ? 'pwarn' : 'pstat', r.block || (r.status === 'ok' ? `${r.lat.toFixed(5)}, ${r.lon.toFixed(5)}` : `Will look up “${r.query}”`)));
+      body.append(el('small', r.block ? 'pwarn' : 'pstat', r.block || ((r.status === 'ok' ? `${r.lat.toFixed(5)}, ${r.lon.toFixed(5)}` : `Will look up “${r.query}”`) + (r.revisit ? ' · another visit (you have this place on a different date)' : ''))));
       lab.append(cb, body);
       li.append(lab);
       list.append(li);

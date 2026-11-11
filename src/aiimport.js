@@ -109,11 +109,25 @@ export function parseItinerary(text) {
   return { rows, trips, skipped, notes, appExport };
 }
 
-/** Same name within about 30 m of an existing marker: probably the same place pasted twice. */
+const sameSpot = (row, e) => {
+  const m = 30 / 111320;
+  return e.name.toLowerCase() === row.name.toLowerCase() && Math.abs(e.lat - row.lat) < m && Math.abs(e.lon - row.lon) < m / Math.max(0.2, Math.cos(row.lat * Math.PI / 180));
+};
+/** Both are dated and the dates differ: the same place visited again on another day. */
+const otherDate = (row, e) => Boolean(row.date) && Boolean(e.date) && (row.date !== e.date || (row.endDate || '') !== (e.endDate || ''));
+
+/**
+ * The same place pasted twice: same name within about 30 m of an existing marker, unless both have dates and the dates differ
+ * (that is a second visit, see isRevisit). A row with no date, or an existing marker with none, still counts as a duplicate.
+ */
 export function isDuplicate(row, existing) {
   if (row.status !== 'ok') return false;
-  const m = 30 / 111320;
-  return existing.some((e) => e.name.toLowerCase() === row.name.toLowerCase() && Math.abs(e.lat - row.lat) < m && Math.abs(e.lon - row.lon) < m / Math.max(0.2, Math.cos(row.lat * Math.PI / 180)));
+  return existing.some((e) => sameSpot(row, e) && !otherDate(row, e));
+}
+/** A row for a place already saved, but on a different date: it is added as another visit. */
+export function isRevisit(row, existing) {
+  if (row.status !== 'ok') return false;
+  return existing.some((e) => sameSpot(row, e) && otherDate(row, e)) && !isDuplicate(row, existing);
 }
 
 // ---------- place lookup (opt-in, see privacy.js) ----------

@@ -9,6 +9,7 @@ import { getDistanceSettings, setDistanceSettings, onDistanceSettings } from './
 import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, compass, toDisplay, fromDisplay } from './distance.js';
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
+import { visitGroups, visitLabel } from './places.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer } from './cards.js';
 
@@ -17,9 +18,9 @@ const HOLD_MS = 380; // press and hold this long before a pin can be moved
 const SLOP = 8;      // px of movement during the hold that cancels it (it was a swipe, not a hold)
 
 /** The pin, with a small dot in its trip's colour when the marker belongs to a trip. The colour comes from the fixed palette in poi.js. */
-const makeIcon = (type, tripColor, seq = '') => L.divIcon({
+const makeIcon = (type, tripColor, seq = '', visits = 0) => L.divIcon({
   className: 'poi-pin',
-  html: pinSvg(type) + (tripColor ? `<i class="trip-dot" style="background:${tripColor}"></i>` : '') + (seq ? `<b class="seq">${seq}</b>` : ''),
+  html: pinSvg(type) + (tripColor ? `<i class="trip-dot" style="background:${tripColor}"></i>` : '') + (seq ? `<b class="seq">${seq}</b>` : '') + (visits > 1 ? `<b class="visits">×${visits}</b>` : ''),
   iconSize: [30, 40], iconAnchor: [15, 38],
 });
 const fmt = (v) => v.toFixed(5);
@@ -41,6 +42,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let newTripHandler = null;  // set by the Trips tab: starts a new trip and tags a marker with it
   let suppressClick = false;
   let popup = null;
+  let visitMap = new Map();   // id -> every marker at the same spot (two or more), see places.js
+  const visitCount = (id) => visitMap.get(id)?.length ?? 0;
   let selecting = false;      // "Select markers" mode in the list, for deleting several at once
   const selected = new Set(); // ids ticked in that mode (only ever markers that are shown)
   let visibleIds = new Set(); // the markers the list shows now
@@ -407,22 +410,25 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
 
   // ---------- markers ----------
+  const iconOf = (it) => makeIcon(it.type, tripColor(it), seqBadge(it), visitCount(it.id));
+  const sigOf = (it) => `${it.type}|${tripColor(it) ?? ''}|${seqBadge(it)}|${visitCount(it.id)}`;
   function addMarker(item) {
-    const m = L.marker([item.lat, item.lon], { icon: makeIcon(item.type, tripColor(item), seqBadge(item)), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
-    m._sig = `${item.type}|${tripColor(item) ?? ''}|${seqBadge(item)}`;
+    const m = L.marker([item.lat, item.lon], { icon: iconOf(item), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
+    m._sig = sigOf(item);
     m.on('click', () => { if (!suppressClick) openPopup(item.id); });
     markers.set(item.id, m);
     layer.addLayer(m);
   }
   /** Redraws any pin whose type or trip colour changed (a trip was edited or deleted, a marker was re-tagged). */
   function refreshIcons() {
+    visitMap = visitGroups(store.items());
     for (const it of store.items()) {
       const m = markers.get(it.id);
-      const sig = `${it.type}|${tripColor(it) ?? ''}|${seqBadge(it)}`;
-      if (m && m._sig !== sig) { m.setIcon(makeIcon(it.type, tripColor(it), seqBadge(it))); m._sig = sig; }
+      if (m && m._sig !== sigOf(it)) { m.setIcon(iconOf(it)); m._sig = sigOf(it); }
     }
   }
   function rebuildMarkers() {
+    visitMap = visitGroups(store.items());
     layer.clearLayers();
     markers.clear();
     for (const it of store.items()) addMarker(it);
@@ -499,6 +505,20 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       titles.append(el('div', 'coords', `${fmt(it.lat)}, ${fmt(it.lon)}`));
       head.append(badge, titles);
       root.append(head);
+      const visits = visitMap.get(id);
+      if (visits) {
+        // the same place saved for other dates: each visit is a button that switches the window to it
+        const strip = el('div', 'pop-visits');
+        strip.append(el('span', 'pop-visits-label', `${visits.length} visits here`));
+        for (const v of visits) {
+          const chip = el('button', 'chip visit-chip', visitLabel(v, { tripName: v.tripId && v.tripId !== it.tripId ? store.getTrip(v.tripId)?.name ?? '' : '' }));
+          chip.type = 'button';
+          if (v.id === id) chip.setAttribute('aria-current', 'true');
+          else chip.addEventListener('click', () => setTimeout(() => openPopup(v.id), 0)); // after the click, so the old window going away is not seen as a map click
+          strip.append(chip);
+        }
+        root.append(strip);
+      }
       if (tripRec && outsideTrip(it, tripRec)) {
         const w = el('div', 'trip-warn');
         w.append(el('strong', '', 'Outside the trip\'s dates'), el('small', '', `This marker is dated ${dateLabel(it)}, but the trip runs ${tripDatesLabel(tripRec)}. Change one of them if that is a mistake.`));
@@ -553,7 +573,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         clearTimeout(armed);
         remove(id);
       });
-      acts.append(edit, del);
+      if (it.type === 'residence') acts.append(edit, del);
+      else {
+        const again = el('button', 'btn small', 'Add visit'); again.type = 'button';
+        again.title = 'Save this place again for another date';
+        again.addEventListener('click', () => setTimeout(() => addVisit(id), 0));
+        acts.append(edit, again, del);
+      }
       root.append(weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), acts, disclaimer());
     }
 
@@ -626,7 +652,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         if (!res.ok) toast('Changed for now, but the browser would not store it. Export your markers to keep them.');
         const m = markers.get(id);
         if (m) {
-          m.setIcon(makeIcon(res.item.type, tripColor(res.item), seqBadge(res.item))); m._sig = `${res.item.type}|${tripColor(res.item) ?? ''}|${seqBadge(res.item)}`;
+          m.setIcon(iconOf(res.item)); m._sig = sigOf(res.item);
           m.options.title = res.item.name;
           m.getElement()?.setAttribute('title', res.item.name);
         }
@@ -651,6 +677,18 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const res = store.remove(id);
     map.closePopup();
     if (!res.ok) toast('Deleted for now, but the browser would not update its storage.');
+  }
+
+  /** Saves the same place again, with the dates and stop cleared, and opens its form to set them. */
+  function addVisit(id) {
+    const it = store.get(id);
+    if (!it || it.type === 'residence') return;
+    const res = store.add({ type: it.type, name: it.name, note: it.note, lat: it.lat, lon: it.lon, tripId: it.tripId, unverified: it.unverified });
+    if (!res.item) { toast('Could not add that visit.'); return; }
+    if (!res.ok) toast('Added for now, but the browser would not store it. Export your markers to keep them.');
+    addMarker(res.item);
+    mw.refresh([res.item.id]);
+    openPopup(res.item.id, true); // the form, to give it its date
   }
 
   // ---------- placing ----------

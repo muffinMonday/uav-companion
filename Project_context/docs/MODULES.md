@@ -23,12 +23,13 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `trips.js` (pure) | Trip length, labels, "outside trip dates" check, sort | `tripLength`, `tripSummary`, `outsideTrip`, `sortTrips`, `todayISO`, `tripStatus`, `comingTrips`, `countdownLabel` | poi, countries |
 | `trips-ui.js` | Trips tab: list, form, delete, current trip | `initTripsUI` | poi, trips, countries, cards |
 | `countries.js` (pure) | ISO country list, code/name/alias resolution | `COUNTRIES`, `countryCode`, `countryName` | none |
-| `aiimport.js` (pure apart from geocode) | Lenient parse of AI text, sanitize, geocode, share-link encode/decode | `parseItinerary`, `isDuplicate`, `geocode`, `encodeShare`, `decodeShare` | poi |
+| `aiimport.js` (pure apart from geocode) | Lenient parse of AI text, sanitize, geocode, share-link encode/decode | `parseItinerary`, `isDuplicate`, `isRevisit`, `geocode`, `encodeShare`, `decodeShare` | poi |
 | `ai-ui.js` | "Plan with an AI" (in the Trips tab): paste/preview/import, trip select, share link | `initAI` | aiimport, poi-ui |
 | `controls.js` | Modern number (− / +) and date (clear button) fields; observer enhances fields created later | `initControls` | none |
 | `holdcheck.js` | Press-and-hold (2 s) point check, right-click and Enter; ring feedback; swallows the click after a hold | `initHoldCheck`, `HOLD_MS` | none |
 | `view.js` | Centre the map on a coordinate (aware of the side panel) and the tallest window that fits above it | `centreOn`, `popupMaxHeight`, `expandedMaxHeight`, `defaultExpanded`, `panelInset` | none |
 | `welcome.js` | Welcome dialog, opt-out, countdown card (uses `comingTrips` etc. from `trips.js`) | `initWelcome` (`maybeShow`, `open`) | trips |
+| `places.js` | Markers that share a spot (within 15 m): groups, visit order, labels (pure) | `visitGroups`, `visitLabel`, `metres`, `SAME_PLACE_M` | poi |
 | `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
 | `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
 

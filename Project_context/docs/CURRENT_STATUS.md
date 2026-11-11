@@ -16,6 +16,7 @@ Open-source, static map of drone suitable-flight zones (Hubei live data; Singapo
 - Hold-to-check (2 s) + right-click + Enter; blank click only closes windows; markers/checks centre the map and tall windows scroll (F24). New `hold` suite; `smoke`/`priv` use a hold for point checks. Popups use `closeOnClick:false` (Leaflet closes on the release that ends a hold otherwise); `main.js` closes them on a real map click.
 - Welcome screen with trip countdown, "Don't show again", How it works in Map Configs (F25). New `welcome` suite; all suites import `chromium` from `tests/lib.mjs` (welcome off by default).
 - Expanded/collapsed marker window (F26): tall centred window over the pin by default on desktop, collapsed on phones, chevron toggle remembered. New `window` suite. Gotcha: never replace the clicked element's children mid-click inside a popup (Leaflet closes the popup); the chevron uses two always-present SVGs.
+- Same place on several dates (F27): ×N pin badge, visit chips, Add visit, AI import treats a different date as another visit, shared weather/elevation per spot. New `places-unit` and `visits` suites.
 - Docs updated for trips (`PROJECT.md` F19, `AI.md`, `README.md`); this `Project_context/` set created; root `CLAUDE.md` points to `AGENTS.md`.
 - Initial commit `11aa7ce` pushed to `https://github.com/muffinMonday/uav-companion` (`main`, identity muffinMonday, repo-local git config).
 

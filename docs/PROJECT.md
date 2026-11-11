@@ -185,6 +185,13 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - A marker window has two sizes, switched by a chevron button beside its close button and remembered (`windowExpanded` in the settings). **Expanded** (the default on a desktop): a tall window centred on the coordinate that covers the pin, up to 85% of the map height, with no pointer tip. **Collapsed** (the default on a phone): the short window above the pin. Longer content scrolls inside either size.
 - On a phone the expanded window is capped at 60% of the screen height so the map can still be dragged around it. The switch happens in place, so an open edit form or scroll position survives. The point-check window has no expanded size.
 
+**F27. The same place on several dates (built)**
+- Each visit is its own marker, with its own date, day, stop and trip, so distances and trip rules are unchanged. Markers within 15 m of each other (the Home marker excluded) are treated as one place.
+- A pin of a shared place shows a small **×2** (×3, …) badge. The marker window gets a **visits here** strip: one chip per visit in date order ("Day 3 · Stop 1 · Sat, Nov 14", with the trip's name when it differs), the current one marked; tapping another switches the window to it.
+- **Add visit** (beside Edit and Delete; not for the Home marker) saves the same place again in the same trip with the dates, day and stop cleared, and opens its form.
+- AI import: the same name within about 30 m is a duplicate only when the dates match, or when either side has no date. Both dated with different dates is **another visit**: it is added and the preview says so. (Before, the second visit was silently skipped.)
+- Visits at one spot share one weather request, and a visit at a spot with a known elevation reuses it.
+
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.
 - First visit (nothing saved): the map fits all covered regions. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.

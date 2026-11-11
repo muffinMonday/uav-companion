@@ -34,6 +34,9 @@ The format is in `public/ai/` and served from the site root: `ai/prompt.md` (the
 
 ## What the app does with the result
 
+A place that appears twice with different dates (a landmark on day 1 and day 3) is fine: the app keeps both as separate visits. Repeating the same place with the same date, or with no date, is treated as a duplicate and skipped.
+
+
 Besides the zone check, each waypoint shows its straight-line distance to the nearest **home point** and **hotel** in its own trip whose dates overlap its own (an undated one applies to every date), and every marker except Home shows its distance to the nearest **Home** (residence), whatever the trip or dates. A reply with a `trip` object creates that trip (or reuses a saved trip with the same name, country and dates) unless the person picks another trip or none in the import preview. So an itinerary that gives hotels check-in and check-out dates gets the right hotel for each day. The AI does not need to compute any distances.
 
 ## The rule that matters most: no invented coordinates

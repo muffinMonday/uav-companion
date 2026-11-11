@@ -51,6 +51,8 @@ export function createMarkerElevation({ getItems, onChange }) {
       if (!isOn() || loading.has(id) || here(id)) return;
       const it = getItems().find((i) => i.id === id);
       if (!it || it.type === 'residence') return; // the Home marker (a residence) is never looked up automatically
+      const twin = Object.values(cache).find((c) => r4(c.lat) === r4(it.lat) && r4(c.lon) === r4(it.lon)); // another visit at this spot
+      if (twin) { cache[id] = { m: twin.m, lat: it.lat, lon: it.lon }; save(); emit(); return; }
       loading.add(id); failed.delete(id); emit();
       try {
         const [m] = await fetchElevations([{ lat: it.lat, lon: it.lon }]);
