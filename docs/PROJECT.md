@@ -259,6 +259,11 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - **Opt-in:** the **Check-in** switch in the privacy settings (off by default). Only while it is on, and only while the panel is open, not rolled up, on the Points of Interest or Trips tab and the page is visible, the app watches the position (`watchPosition`); it stops otherwise and forgets the position. The position is never sent anywhere. If permission is denied the buttons stay disabled and say so.
 - A check-in is kept on the marker in this browser. It is included in the **export** (and a restore brings it back; the backup note says the file contains check-in positions) and **left out of share links**.
 
+**F38. Basic animations, and a centred dashboard (built, part 1)**
+- The dashboard, its peek strip and its ^ tab are centred in the free map area, beside the open side panel (or on the screen when the panel is closed or rolled up), and glide when the panel opens or closes.
+- Animations are short (about 0.12 to 0.3 s), use only transform, scale and opacity, and exist only for visitors who have **not** asked for reduced motion (`prefers-reduced-motion`): buttons ease on hover and shrink slightly when pressed; a tab's contents and the trip screen fade or slide in; the dashboard slides up and its strip and tab pop in; the trip card in the dashboard rises in after ‹ or ›; the search box grows open and folds back; the banner and toasts rise in; a new pin drops onto the map; a selected pin's ring settles in; a fresh check-in pops. The flip card, the hold bar and the dashboard entrance keep their own reduced-motion rules.
+- Part 2 (planned): exit animations (rows, windows, the panel closing), the panel rolling up smoothly and a reordered row settling into place.
+
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.
 - First visit (nothing saved): the map fits the first covered region (Hubei); other regions are reached with the country menu. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.

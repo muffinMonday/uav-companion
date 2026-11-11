@@ -169,3 +169,8 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision (owner): a Check in button on each marker row enables within 300 m and records position and time. Rules chosen with the owner: an opt-in privacy switch, a 150 m accuracy limit, one check-in per marker (cleared with an ✕), exported but not shared, and "visited" counts on the trip cards.
 - Reasoning: enabling a button as someone walks needs continuous location, so it follows the same consent model as weather and elevation; the position is read only while markers are on show and never leaves the browser.
 - Consequences: export files contain where the owner was; share links never do.
+
+### 2026-11-11: Motion is opt-out, in CSS, subtle; the test suite runs with reduced motion
+- Decision (owner): add basic animations to the app's interactions; centre the dashboard like its strip.
+- Rules: 0.12 to 0.3 s, ease-out, transform/scale/opacity only; every new rule sits under `prefers-reduced-motion: no-preference`; individual `translate`/`scale` properties are used so they never clash with the transforms that centre the banner, toast and Leaflet's own positioning.
+- Consequences: the browser tests emulate reduced motion (lib.mjs) so nothing is mid-move when clicked; `motion.mjs` turns motion on and checks the key animations and the glide.

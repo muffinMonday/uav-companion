@@ -853,6 +853,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (!res.ok) toast('Added for now, but the browser would not store it. Export your markers to keep them.');
     ensureVisible();
     addMarker(res.item);
+    markers.get(res.item.id)?.getElement()?.classList.add('drop'); // the new pin drops onto the map
     mw.refresh([res.item.id]); // no-op unless automatic weather is on
     openPopup(res.item.id, true); // opens in edit form so it can be named straight away
   }

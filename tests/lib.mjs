@@ -18,7 +18,7 @@ export const chromium = {
     const browser = await real.launch(options);
     const newContext = browser.newContext.bind(browser);
     browser.newContext = async (opts) => {
-      const ctx = await newContext(opts);
+      const ctx = await newContext({ reducedMotion: 'reduce', ...opts }); // moving elements make timing flaky; motion.mjs asks for it back
       await ctx.addInitScript(() => { try { if (localStorage.getItem('uavzones.v1.dash') === null) localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: false, welcomed: true, seen: '2026-11-11' })); } catch { /* ignore */ } });
       return ctx;
     };

@@ -81,6 +81,7 @@ export function checkinCell({ cin, store, id, ns }) {
         shape = 'done:' + it.checkin.at;
         wrap.replaceChildren();
         const done = el('span', 'checkin-done', '✓ ' + checkinLabel(it.checkin));
+        if (Date.now() - Date.parse(it.checkin.at) < 3000) done.classList.add('pop'); // just recorded: a short pop
         const from = it.checkin.acc !== undefined ? ` (GPS accuracy about ${fmtDistance(it.checkin.acc, units)})` : '';
         done.title = `Checked in ${checkinLabel(it.checkin)} at ${it.checkin.lat.toFixed(5)}, ${it.checkin.lon.toFixed(5)}${from}`;
         const clear = el('button', 'icon-btn checkin-clear', '✕'); clear.type = 'button';

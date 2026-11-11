@@ -588,7 +588,8 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .search-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .search input{padding-left:42px}
 .search.collapsed{width:40px}
-.search.collapsed input,.search.collapsed .results{display:none}
+.search.collapsed .results{display:none}
+.search.collapsed input{width:0;padding:0;opacity:0;pointer-events:none}
 .search.collapsed .search-btn{background:var(--surface);box-shadow:var(--shadow-sm);color:var(--fg)}
 .search.collapsed .search-btn:hover{color:var(--accent)}
 
@@ -602,9 +603,9 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 @media (max-width:520px){.sidepanel.rolled{height:auto;top:auto;bottom:8px}}
 
 /* ---------- the dashboard ---------- */
-.dash{position:absolute;z-index:1004;left:12px;bottom:12px;width:max-content;max-width:min(780px,calc(100% - 24px));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:dash-up .22s ease-out}
+.dash{position:absolute;z-index:1004;left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:12px;width:max-content;max-width:min(780px,calc(100% - 24px - var(--panel-w,0px)));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:dash-up .22s ease-out}
 .dash[hidden],.dash-peek[hidden],.dash-tab[hidden]{display:none}
-body[data-panel=open] .dash{max-width:min(780px,calc(100% - 396px))}
+body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, strip and tab centre in the map beside it */
 @keyframes dash-up{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.dash{animation:none}}
 .dash-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 6px 14px;border-bottom:1px solid var(--line)}
@@ -628,8 +629,8 @@ body[data-panel=open] .dash{max-width:min(780px,calc(100% - 396px))}
 .dash-guide summary{cursor:pointer;font-weight:700;font-size:13px}
 .dash-guide .w-steps{margin-top:10px}
 .dash-foot{display:flex;justify-content:flex-end;padding:6px 10px;border-top:1px solid var(--line)}
-.dash-peek,.dash-tab{position:absolute;z-index:1004;left:50%;bottom:12px;transform:translateX(-50%);background:var(--surface);box-shadow:var(--shadow-sm);color:var(--fg);cursor:pointer}
-.dash-peek{display:flex;align-items:center;gap:8px;max-width:calc(100% - 440px);padding:7px 14px 7px 10px;border:0;border-radius:999px;font-weight:600}
+.dash-peek,.dash-tab{position:absolute;z-index:1004;left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;width:fit-content;bottom:12px;background:var(--surface);box-shadow:var(--shadow-sm);color:var(--fg);cursor:pointer}
+.dash-peek{display:flex;align-items:center;gap:8px;max-width:max(200px,calc(100% - 464px - var(--panel-w,0px)));padding:7px 14px 7px 10px;border:0;border-radius:999px;font-weight:600}
 .dash-peek span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dash-peek svg{flex:none;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .dash-tab{width:46px;height:30px;border-radius:999px}
@@ -638,7 +639,7 @@ body[data-panel=open] .dash{max-width:min(780px,calc(100% - 396px))}
 .wx{bottom:calc(44px + var(--dash-lift,0px))}
 @media (max-width:520px){
   .dash{left:8px;right:8px;bottom:8px;width:auto;max-width:none;max-height:58vh}
-  body[data-panel=open] .dash{max-width:none}
+  body[data-panel=open]{--panel-w:0px}
   .dash-card{max-width:none}
   .dash-peek,.dash-tab{bottom:34px}
   .dash-peek{max-width:calc(100% - 24px)}
@@ -663,3 +664,28 @@ body[data-panel=open] .dash{max-width:min(780px,calc(100% - 396px))}
 .plan-row{display:flex;align-items:center;gap:6px}
 .plan-row .plan-stop{flex:1;min-width:0;width:auto}
 .pop-checkin{margin-top:2px;color:var(--ok);font-size:12px;font-weight:650}
+
+/* ---------- motion: short, subtle, transform and opacity only; nothing here applies with "reduce motion" ---------- */
+:root{--dur-fast:.12s;--dur:.2s;--dur-slow:.28s;--ease:cubic-bezier(.2,.7,.2,1)}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes rise-in{from{opacity:0;translate:0 10px}to{opacity:1;translate:0 0}}
+@keyframes pop-in{from{opacity:0;scale:.86}to{opacity:1;scale:1}}
+@keyframes slide-in-r{from{opacity:0;translate:18px 0}to{opacity:1;translate:0 0}}
+@keyframes pin-drop{0%{opacity:0;translate:0 -30px}55%{opacity:1;translate:0 3px}100%{opacity:1;translate:0 0}}
+@keyframes ring-pop{from{outline-color:transparent;outline-offset:9px}to{outline-offset:3px}}
+@media (prefers-reduced-motion:no-preference){
+  .btn,.icon-btn,.dock button,.search-btn,.wx-btn,.pop-toggle,.dash-stop,.plan-stop,.flip-dot{transition:background-color var(--dur-fast),border-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),scale var(--dur-fast) var(--ease),opacity var(--dur-fast)}
+  .btn:active:not(:disabled),.icon-btn:active,.dock button:active,.search-btn:active,.wx-btn:active,.dash-stop:active{scale:.96}
+  .sp-body [role=tabpanel]:not([hidden]){animation:fade-in var(--dur) var(--ease)}
+  #trip-detail:not([hidden]){animation:slide-in-r var(--dur-slow) var(--ease)}
+  .dash-peek,.dash-tab{animation:pop-in var(--dur) var(--ease)}
+  .dash,.dash-peek,.dash-tab{transition:right var(--dur-slow) var(--ease)}
+  .dash-trip.swap{animation:rise-in var(--dur) var(--ease)}
+  .banner:not([hidden]),.toast:not([hidden]){animation:rise-in var(--dur) var(--ease)}
+  .search{transition:width var(--dur-slow) var(--ease)}
+  .search input{transition:width var(--dur-slow) var(--ease),padding var(--dur-slow) var(--ease),opacity var(--dur) var(--ease)}
+  .poi-pin.drop svg{animation:pin-drop .42s var(--ease)}
+  .poi-pin.sel-pin svg{animation:ring-pop var(--dur) var(--ease)}
+  .checkin-done.pop{animation:pop-in var(--dur-slow) var(--ease)}
+  .tool.armed{animation:pop-in var(--dur) var(--ease)}
+}

@@ -16,8 +16,9 @@ export function initSearch(map, places, { show }) {
   let items = [], sel = -1, marker = null;
 
   // collapsed to a magnifying glass until it is needed
-  const expand = () => { box.classList.remove('collapsed'); toggle.setAttribute('aria-expanded', 'true'); qEl.focus(); };
-  const collapse = () => { box.classList.add('collapsed'); toggle.setAttribute('aria-expanded', 'false'); resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); if (document.activeElement === qEl) qEl.blur(); };
+  const expand = () => { box.classList.remove('collapsed'); toggle.setAttribute('aria-expanded', 'true'); qEl.tabIndex = 0; qEl.focus(); };
+  qEl.tabIndex = -1; // folded: out of the tab order
+  const collapse = () => { box.classList.add('collapsed'); qEl.tabIndex = -1; toggle.setAttribute('aria-expanded', 'false'); resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); if (document.activeElement === qEl) qEl.blur(); };
   /** Out of use: nothing typed and no list showing. */
   const idle = () => !qEl.value.trim() && resEl.hidden;
   toggle.addEventListener('click', () => { if (box.classList.contains('collapsed')) expand(); else if (idle()) collapse(); else qEl.focus(); });

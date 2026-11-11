@@ -20,6 +20,7 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
   let fresh = unseenEntries(WHATS_NEW, saved.seen);   // entries to show until the visitor has seen them
   let state = null;
   let guideOpen = firstRun;
+  let tripFade = false;                              // the trip card eases in after ‹ or ›
   let tripIx = 0;                                    // which of the coming trips the trip card shows
   let regions = { countries: [], goTo: null };
 
@@ -86,6 +87,7 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
     const today = todayISO();
     const coming = comingTrips(store.trips(), today);
     const c = el('section', 'dash-card dash-trip');
+    if (tripFade) { c.classList.add('swap'); tripFade = false; }
     if (!coming.length) {
       if (store.items().length || store.trips().length) return null;
       c.append(el('h3', '', 'Get started'), el('p', 'hint', 'Create a trip, then drop markers for hotels, takeoff spots and photo spots. Or place a marker straight away.'));
@@ -100,7 +102,7 @@ export function initDashboard({ poi, panel, trips, shared = false }) {
     const { trip, status } = coming[tripIx];
     if (coming.length > 1) { // ‹ 2 of 3 › moves through the trips
       const nav = el('div', 'dash-trip-nav');
-      const arrow = (label, path, to) => { const b = el('button', 'btn tool'); b.type = 'button'; b.title = label; b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + path + '"/></svg>'; b.append(el('span', 'tool-label', label)); b.disabled = to < 0 || to >= coming.length; b.addEventListener('click', () => { tripIx = to; render(); }); return b; };
+      const arrow = (label, path, to) => { const b = el('button', 'btn tool'); b.type = 'button'; b.title = label; b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + path + '"/></svg>'; b.append(el('span', 'tool-label', label)); b.disabled = to < 0 || to >= coming.length; b.addEventListener('click', () => { tripIx = to; tripFade = true; render(); }); return b; };
       nav.append(arrow('Previous trip', 'M15 6l-6 6 6 6', tripIx - 1), el('span', '', (tripIx + 1) + ' of ' + coming.length), arrow('Next trip', 'M9 6l6 6-6 6', tripIx + 1));
       c.append(nav);
     }
