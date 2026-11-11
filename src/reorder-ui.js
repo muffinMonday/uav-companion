@@ -1,10 +1,10 @@
-// Press and hold a row in the Saved places list for 2 seconds, then drag it to a new place. Alt + Up / Down does the same a step at a time.
+// Press and hold a row in the Saved places list for 1 second, then drag it to a new place. Alt + Up / Down does the same a step at a time.
 // This file only does the dragging: where a drop lands is worked out by the list (poi-ui.js) and reorder.js.
 //
 // The list marks its rows: li[data-drag="1"][data-id][data-scope][data-mode][data-gkey], and its headings: li.day-head[data-scope][data-gkey].
 // A drop is only possible inside the group of rows with the same data-scope (one trip, or the markers with no trip).
 
-export const HOLD_REORDER_MS = 2000;
+export const HOLD_REORDER_MS = 1000;
 const SLOP = 8;
 
 /**

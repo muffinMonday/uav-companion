@@ -1,9 +1,9 @@
-// Reordering saved places: press and hold a row for 2 s, drag it between dates, and the date, day and stop follow. Alt + arrows too.
+// Reordering saved places: press and hold a row for 1 s, drag it between dates, and the date, day and stop follow. Alt + arrows too.
 import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
-const HOLD = 2300;
+const HOLD = 1300;
 
 const mk = (id, name, n, extra = {}) => ({ id, type: 'photo', name, note: '', lat: 30.5 + n * 0.02, lon: 114.2 + n * 0.02, created: `2026-11-01T00:00:0${n}.000Z`, tripId: 't1', ...extra });
 const seed = { v: 1, items: [
@@ -46,7 +46,7 @@ ok((await p.locator('#poi-list li[data-id="L"][data-drag], #poi-list li[data-id=
 
 // ---- a short hold is just a click
 let r0 = await rect(p, 'B');
-await p.mouse.move(r0.x, r0.y); await p.mouse.down(); await p.waitForTimeout(800);
+await p.mouse.move(r0.x, r0.y); await p.mouse.down(); await p.waitForTimeout(500);
 ok((await p.locator('.poi-item.holding').count()) === 1 && (await p.locator('.drag-ghost').count()) === 0, 'while holding, the row shows a filling bar, and nothing is lifted yet');
 await p.mouse.up(); await p.waitForTimeout(1500);
 ok((await p.locator('.drag-ghost').count()) === 0 && (await p.locator('.poi-item.holding').count()) === 0, 'letting go early lifts nothing');
@@ -57,12 +57,12 @@ ok(JSON.stringify(await stored(p)) === JSON.stringify(original), 'nothing was ch
 // ---- moving during the hold cancels it
 r0 = await rect(p, 'B');
 await p.mouse.move(r0.x, r0.y); await p.mouse.down(); await p.waitForTimeout(600); await p.mouse.move(r0.x, r0.y + 40, { steps: 4 }); await p.waitForTimeout(HOLD);
-ok((await p.locator('.drag-ghost').count()) === 0, 'moving during the 2 s cancels the hold (that was scrolling)');
+ok((await p.locator('.drag-ghost').count()) === 0, 'moving during the 1 s cancels the hold (that was scrolling)');
 await p.mouse.up(); await p.waitForTimeout(300);
 
 // ---- lift, then Escape
 await hold(p, 'B');
-ok((await p.locator('.drag-ghost').count()) === 1 && (await p.locator('li.lift-source').count()) === 1 && (await p.evaluate(() => document.body.classList.contains('reordering'))), 'after 2 s the row is lifted: a copy follows the pointer and the original dims');
+ok((await p.locator('.drag-ghost').count()) === 1 && (await p.locator('li.lift-source').count()) === 1 && (await p.evaluate(() => document.body.classList.contains('reordering'))), 'after 1 s the row is lifted: a copy follows the pointer and the original dims');
 ok((await p.locator('#poi-list li.day-head.drop-only').count()) === 1 && (await headRect(p, '2026-11-14')).top > 0, 'the trip\'s empty last day (14 Nov) appears as a place to drop');
 await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 await p.mouse.up(); await p.waitForTimeout(400);
@@ -113,6 +113,7 @@ ok(f(now.H) === '2026-11-14|-|3|1', 'the hotel dropped on the last day of the tr
 await p.click('#toast .toast-action'); await p.waitForTimeout(500);
 
 // ---- a row cannot be dropped in another group
+await p.evaluate(() => { document.getElementById('toast').hidden = true; }); // the earlier Undo message may still be showing
 await hold(p, 'A');
 const lr = await rect(p, 'L');
 await dragTo(p, lr.y);
@@ -155,7 +156,7 @@ const cdp = await ctx.newCDPSession(p);
 const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
 const rb = await rect(p, 'B');
 await touch('touchStart', rb.x, rb.y); await p.waitForTimeout(HOLD);
-ok((await p.locator('.drag-ghost').count()) === 1, 'phone: holding a row for 2 s lifts it');
+ok((await p.locator('.drag-ghost').count()) === 1, 'phone: holding a row for 1 s lifts it');
 const rdd = await rect(p, 'D');
 await touch('touchMove', rb.x, (rb.y + rdd.top) / 2); await touch('touchMove', rb.x, rdd.top + 2); await p.waitForTimeout(250);
 await touch('touchEnd'); await p.waitForTimeout(700);

@@ -31,7 +31,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `welcome.js` | Welcome dialog, opt-out, countdown card (uses `comingTrips` etc. from `trips.js`) | `initWelcome` (`maybeShow`, `open`) | trips |
 | `places.js` | Markers that share a spot (within 15 m): groups, visit order, labels (pure) | `visitGroups`, `visitLabel`, `metres`, `SAME_PLACE_M` | poi |
 | `reorder.js` | What a move does to date, day, stop and hotel end date: `planMove`, `stepSlot`, `groupsOf`, `addDays`, `nextTripDate` (pure) | as listed | poi, trips |
-| `reorder-ui.js` | Hold 2 s then drag a row; ghost, drop line, auto-scroll, Escape, Alt+arrows | `initReorder` | none |
+| `reorder-ui.js` | Hold 1 s then drag a row; ghost, drop line, auto-scroll, Escape, Alt+arrows | `initReorder` | none |
 | `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
 | `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
 

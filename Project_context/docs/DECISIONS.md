@@ -99,6 +99,6 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 
 ### 2026-11-11: Reorder by holding a row; a move rewrites date, day and stop
 - Context: markers could only be reordered by editing each one's date, day and stop by hand.
-- Decision: press-and-hold 2 s then drag a row within its group (a trip, or no trip), in dated or day-numbered lists only (the owner's rules). A drop sets the date and day of the heading it lands under and renumbers stops. A hotel gets the new date as its start and the next trip day as its end (the last trip day: start = end). Undo for 10 s; Alt+arrows for the keyboard. Plain lists cannot be dragged.
+- Decision: press-and-hold 1 s then drag a row within its group (a trip, or no trip), in dated or day-numbered lists only (the owner's rules). A drop sets the date and day of the heading it lands under and renumbers stops. A hotel gets the new date as its start and the next trip day as its end (the last trip day: start = end). Undo for 10 s; Alt+arrows for the keyboard. Plain lists cannot be dragged.
 - Alternatives: a drag handle on each row (rejected: the hold matches the map and keeps rows uncluttered); drops across trips (not allowed).
 - Consequences: the logic is pure (`reorder.js`) and unit-tested; the drag layer must not redraw the touched row while dragging.
