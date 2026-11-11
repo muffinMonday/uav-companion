@@ -81,6 +81,8 @@ export function initPanel() {
   foldBtn.addEventListener('click', () => setFolded(true));
   circle.addEventListener('click', () => setFolded(false));
   onSwipe(dock, { direction: 'up', distance: 28, follow: icons, ignore: '[data-no-swipe]', enabled: () => !isFolded() && !dock.hidden, onDismiss: () => setFolded(true) });
+  // swiping the unfolded icons toward the map (left) pulls the panel out, the way it came in
+  onSwipe(dock, { direction: 'left', distance: 28, follow: dock, ignore: '[data-no-swipe]', enabled: () => !isFolded() && !dock.hidden, onDismiss: () => open() });
   onSwipe(dock, { direction: 'down', distance: 28, follow: circle, ignore: '[data-no-swipe]', enabled: () => isFolded() && !dock.hidden, onDismiss: () => setFolded(false) });
   if (loadPrefs().railFolded) setFolded(true, { save: false, focus: false });
 
@@ -91,11 +93,11 @@ export function initPanel() {
     if (instant) done(); else animateOut(panel, 'closing', done); // slides out to the right, then the rail comes back (a swipe has already slid it away)
   }
 
-  // Swipe to dismiss: the phone's bottom sheet goes down; on a computer or tablet the panel goes to the right, the way it leaves. A swipe starts in the header or handle,
+  // Swipe to dismiss: the phone's bottom sheet goes down, and on every screen size the panel goes to the right, the way it leaves. A swipe starts in the header or handle,
   // or in the body once it is scrolled to the top.
   const inHeader = (t) => !!t.closest('.sp-head, .sp-grab');
   onSwipe(panel, { direction: 'down', enabled: () => isPhone() && !panel.hidden, canStart: (t) => inHeader(t) || atTop(t, panel), onDismiss: () => close({ instant: true }) });
-  onSwipe(panel, { direction: 'right', enabled: () => !isPhone() && !panel.hidden, onDismiss: () => close({ instant: true }) });
+  onSwipe(panel, { direction: 'right', enabled: () => !panel.hidden, onDismiss: () => close({ instant: true }) }); // to the right, on a phone as well as on a computer
 
   function wireTab(t) {
     t.addEventListener('click', () => selectTab(t.dataset.tab));

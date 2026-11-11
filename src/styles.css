@@ -625,10 +625,11 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .dash-stop{display:flex;align-items:center;gap:8px;padding:4px 6px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--fg);text-align:left;cursor:pointer;font:inherit;font-size:13px}
 .dash-stop:hover{background:var(--surface-2)}
 .dash-card .btn-row{margin:10px 0 0}
-.dash-guide{margin-top:10px}
 .dash-card.wide{flex-basis:100%}
-.dash-guide summary{cursor:pointer;font-weight:700;font-size:13px}
-.dash-guide .w-steps{margin-top:10px}
+.dash-guide .w-steps{margin-top:6px}
+.key-body{overflow:hidden}
+.key-body.clamped{-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+.key-more{margin-top:6px}
 .dash-foot{display:flex;justify-content:flex-end;padding:6px 10px;border-top:1px solid var(--line)}
 .dash-peek,.dash-tab{position:absolute;z-index:1004;left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;width:fit-content;bottom:36px;background:var(--surface);box-shadow:var(--shadow-sm);color:var(--fg);cursor:pointer}
 .dash-peek{display:flex;align-items:center;gap:8px;max-width:max(200px,calc(100% - 464px - var(--panel-w,0px)));padding:7px 14px 7px 10px;border:0;border-radius:999px;font-weight:600}
@@ -834,7 +835,7 @@ input[type=email]:focus{border-color:var(--accent)}
 .dock.folded #dock-circle:hover,#dock-fold:hover{background:var(--accent-soft)}
 #dock-fold{border-top:1px solid var(--line);border-radius:8px 8px 50% 50%;height:34px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.dock-icons,.dock.folded .dock-icons{transition:none}}
-.sp-head,.sp-grab,.dash-head,.dash-peek{touch-action:pan-x}
+.sp-head,.sp-grab,.dash-head,.dash-peek,.dash-tab{touch-action:pan-x}
 .sp-body,.dash-body{overscroll-behavior:contain}
 
 /* online status */

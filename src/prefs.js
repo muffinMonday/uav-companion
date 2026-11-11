@@ -21,6 +21,7 @@ function sanitize(raw) {
   if (raw.markerDetails === false) out.markerDetails = false; // a click on a marker only selects it (no details window)
   if (raw.railFolded === true) out.railFolded = true; // the rail of tab icons is folded up into one circle
   if (raw.panelTall === true) out.panelTall = true; // on a phone the side panel is expanded to 90% of the screen
+  if (raw.keyOpen === true) out.keyOpen = true; // the Map key on the dashboard shows all of itself, not the first half
   if (raw.dashTall === true) out.dashTall = true; // on a phone the dashboard is expanded to 90% of the screen
   if (raw.panelCollapsed === true || raw.panelRolled === true) out.panelCollapsed = true; // the side panel is collapsed to its rail (panelRolled is what an older version saved)
   if (typeof raw.autoWeather === 'boolean') out.autoWeather = raw.autoWeather;

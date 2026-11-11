@@ -240,7 +240,9 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
   }
   function keyCard() {
     const c = el('section', 'dash-card dash-key');
-    c.append(el('h3', '', 'Map key'), keyNodes[0], keyNodes[1]);
+    const kb = el('div', 'key-body');
+    c.append(el('h3', '', 'Map key'), kb);
+    kb.append(keyNodes[0], keyNodes[1]);
     const lines = el('div', 'key-lines');
     lines.append(el('small', 'key-title', 'Lines on the map'));
     const arrow = (attrs) => '<svg viewBox="0 0 44 12" aria-hidden="true"><line x1="2" y1="6" x2="33" y2="6" ' + attrs + '/><path d="M31 2l10 4-10 4z" fill="currentColor"/></svg>'; // built from constants only
@@ -249,8 +251,24 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
     row(arrow('stroke="currentColor" stroke-width="5"'), 'Into and out of the selected stop, with the distance');
     row(arrow('stroke="currentColor" stroke-width="5" stroke-dasharray="8 5"'), 'Overnight: through the hotel, or on to the next day');
     row('<svg viewBox="0 0 44 12" aria-hidden="true"><line x1="2" y1="6" x2="42" y2="6" stroke="currentColor" stroke-width="3" stroke-dasharray="6 5" opacity=".85"/></svg>', 'To the nearest hotel or Home point, with the distance');
-    c.append(lines, el('p', 'hint', 'Arrows take the colour of their trip. A planning aid, not flight advice: zones can change, so check the official platform for the place you are flying (for China, UOM) before every flight.'));
+    kb.append(lines, el('p', 'hint', 'Arrows take the colour of their trip. A planning aid, not flight advice: zones can change, so check the official platform for the place you are flying (for China, UOM) before every flight.'));
+    const more = el('button', 'dash-link key-more', 'See more'); more.type = 'button'; more.hidden = true;
+    more.addEventListener('click', () => { const open = !loadPrefs().keyOpen; savePrefs({ keyOpen: open || null }); fitKey(c); });
+    c.append(more);
     return c;
+  }
+  /** Show the first half of the Map key (never less than ~110 px) with See more / See less, unless it is short or the visitor opened it. Needs the card on the page. */
+  function fitKey(c = body.querySelector('.dash-key')) {
+    const kb = c?.querySelector('.key-body'), more = c?.querySelector('.key-more');
+    if (!kb || !more) return;
+    const open = !!loadPrefs().keyOpen;
+    kb.style.maxHeight = ''; kb.classList.remove('clamped');
+    const full = kb.scrollHeight;
+    const half = Math.max(110, Math.round(full / 2));
+    const clampable = full > 160;
+    more.hidden = !clampable;
+    more.textContent = open ? 'See less' : 'See more'; more.setAttribute('aria-expanded', String(open));
+    if (clampable && !open) { kb.style.maxHeight = half + 'px'; kb.classList.add('clamped'); }
   }
   function friendsCard() { // friend requests waiting (only when signed in to the optional cloud features)
     const n = cloud.friends?.incoming ?? 0, v = cloud.friends?.invites ?? 0;
@@ -287,16 +305,13 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
       }
       c.append(row);
     }
-    const g = guideCard(); // How it works folds out under the buttons; open, the card takes the whole row so the steps stay readable
-    c.classList.toggle('wide', g.open);
-    g.addEventListener('toggle', () => c.classList.toggle('wide', g.open));
-    c.append(g);
     return c;
   }
+  /** How it works: opened by the ? button in the header, at the top of the cards. */
   function guideCard() {
-    const d = el('details', 'dash-guide'); d.open = guideOpen;
-    d.addEventListener('toggle', () => { guideOpen = d.open; });
-    d.append(el('summary', '', 'How it works'));
+    if (!guideOpen) return null;
+    const d = el('section', 'dash-card dash-guide wide');
+    d.append(el('h3', '', 'How it works'));
     const ol = el('ol', 'w-steps');
     for (const t of [
       ['Check a spot.', 'Press and hold on the map for 2 seconds (or right-click) to see whether you can fly there. Search takes places and coordinates.'],
@@ -314,7 +329,9 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
     park(); poi.checkin.unbind('dash'); todayShown = false;
     body.replaceChildren();
     body.append(welcomeLine());
-    for (const card of [routeCard(), whatsNewCard(), friendsCard(), tripCard(), actionsCard(), layersCard(), backupCard(), dataCard(), keyCard(), regionsCard()]) if (card) body.append(card);
+    for (const card of [guideCard(), routeCard(), whatsNewCard(), friendsCard(), tripCard(), actionsCard(), layersCard(), backupCard(), dataCard(), keyCard(), regionsCard()]) if (card) body.append(card);
+    fitKey();
+    syncHelp();
     updatePeek();
     poi.checkin.sync(); // the position is wanted while Today shows check-in buttons
   }
@@ -328,6 +345,10 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
 
   // ---------- the three states ----------
   // On a phone the dashboard can grow to 90% of the screen (the button beside close). The choice is remembered (prefs.dashTall).
+  const helpBtn = $('dash-help');
+  function syncHelp() { helpBtn.setAttribute('aria-pressed', String(guideOpen)); }
+  helpBtn.addEventListener('click', () => { guideOpen = !guideOpen; render(); });
+  window.addEventListener('resize', () => { if (state === 'expanded') fitKey(); });
   const expandBtn = $('dash-expand');
   function setTall(on, { save = true } = {}) {
     dash.classList.toggle('tall', on);
@@ -371,6 +392,9 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
   // Swipe down puts the dashboard away to its tab, like Close. It starts in the header, or in the cards once they are scrolled to the top; the strip swipes down too.
   onSwipe(dash, { direction: 'down', enabled: () => state === 'expanded', canStart: (t) => !!t.closest('.dash-head') || atTop(t, dash), onDismiss: () => setState('hidden', { instant: true }) });
   onSwipe(peek, { direction: 'down', distance: 24, enabled: () => state === 'peek', onDismiss: () => setState('hidden', { instant: true }) });
+  // and swiping the collapsed dashboard up (the strip, or the chevron when it is put away) opens it
+  onSwipe(peek, { direction: 'up', distance: 24, enabled: () => state === 'peek', onDismiss: () => setState('expanded', { instant: true }) });
+  onSwipe(tab, { direction: 'up', distance: 24, enabled: () => state === 'hidden', onDismiss: () => setState('expanded', { instant: true }) });
   $('dash-collapse').addEventListener('click', () => setState('peek'));
   $('dash-close').addEventListener('click', () => setState('hidden'));
   peek.addEventListener('click', () => setState('expanded'));

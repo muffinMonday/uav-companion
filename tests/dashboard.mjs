@@ -47,7 +47,7 @@ ok(/Today/.test(txt) && /Today stop/.test(txt) && /Second stop/.test(txt), 'a tr
 ok(/1 of 2/.test(txt), 'with ‹ 1 of 2 › to move through the coming trips');
 ok(/Back up your markers/.test(txt) && /45 days ago/.test(txt), 'a backup 45 days old gets a reminder');
 ok(/Fly in/.test(txt) && (await p.locator('#dash-body .btn', { hasText: 'Singapore' }).count()) === 1, 'there is a button for each covered region');
-ok(!(await p.$eval('.dash-guide', (d) => d.open)) && !/What’s new/.test(txt), 'the guide is folded and there is no What\'s new for a visitor who has seen it');
+ok((await p.locator('.dash-guide').count()) === 0 && !/What’s new/.test(txt), 'the guide is not showing and there is no What\'s new for a visitor who has seen it');
 await p.locator('#dash-body .dash-stop', { hasText: 'Today stop' }).click(); await p.waitForSelector('.poi-pop h3', { timeout: 8000 });
 ok((await p.textContent('.poi-pop h3')) === 'Today stop', 'tapping a stop opens it on the map');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(300);
@@ -68,7 +68,7 @@ await p.locator('#dash-body .btn', { hasText: 'Singapore' }).click(); await p.wa
 const view = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).view);
 ok(Math.abs(view.lat - 1.35) < 0.5 && Math.abs(view.lon - 103.8) < 0.5, 'the Singapore button centres the map there: ' + JSON.stringify(view));
 await p.click('#tab-config'); await p.click('#help-open'); await p.waitForTimeout(300);
-ok(await p.$eval('.dash-guide', (d) => d.open), 'How it works (Map Configs) opens the dashboard with the guide unfolded');
+ok((await p.locator('#dash-body .dash-guide').count()) === 1 && (await p.getAttribute('#dash-help', 'aria-pressed')) === 'true', 'How it works (Map Configs) opens the dashboard with the guide showing');
 
 // the three states
 const scaleY = () => p.$eval('.leaflet-control-scale', (e) => Math.round(e.getBoundingClientRect().y));
@@ -114,7 +114,7 @@ ok(await stateOf(p) === 'peek' && !/What’s new/.test(await p.textContent('#das
 await ctx.close();
 
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: null, data: false }));
-ok(await stateOf(p) === 'expanded' && await p.$eval('.dash-guide', (d) => d.open) && /Create your first trip/.test(await p.textContent('#dash-body')), 'a first visit opens it with the guide and a first-trip button');
+ok(await stateOf(p) === 'expanded' && (await p.locator('#dash-body .dash-guide').count()) === 1 && /Create your first trip/.test(await p.textContent('#dash-body')), 'a first visit opens it with the guide and a first-trip button');
 await p.locator('#dash-body .btn', { hasText: 'Create your first trip' }).click(); await p.waitForTimeout(400);
 ok(await p.isVisible('#trip-form-card'), 'which starts a new trip');
 await ctx.close();
@@ -279,11 +279,26 @@ const grid = await p.evaluate(() => {
 });
 ok(grid.rows.length >= 2 && grid.rows.every((row) => Math.abs(Math.max(...row.map((c) => c.right)) - grid.inner.r) <= 2 && Math.abs(Math.min(...row.map((c) => c.left)) - grid.inner.l) <= 2), 'the cards fill their rows edge to edge: ' + grid.rows.map((r) => r.length).join(' + ') + ' cards in ' + grid.rows.length + ' rows');
 ok(grid.rows.every((row) => new Set(row.map((c) => c.bottom)).size === 1), 'and the cards in a row are the same height');
-ok(await p.locator('#dash .dash-fly .dash-guide').count() === 1 && await p.locator('#dash .dash-fly .btn', { hasText: 'Singapore' }).count() === 1, 'How it works sits under the Fly in buttons, in the same card');
-const flyW = await p.$eval('.dash-fly', (e) => e.getBoundingClientRect().width);
-await p.locator('#dash .dash-guide summary').click(); await p.waitForTimeout(250);
-const openW = await p.$eval('.dash-fly', (e) => e.getBoundingClientRect().width), bodyW = await p.$eval('#dash-body', (e) => e.clientWidth);
-ok(openW >= bodyW - 30 && await p.locator('.dash-fly.wide').count() === 1, 'opened, the card takes the whole row so the steps stay readable (' + Math.round(flyW) + ' then ' + Math.round(openW) + ' px of ' + bodyW + ')');
+ok(await p.locator('#dash .dash-guide').count() === 0 && await p.locator('#dash .dash-fly .btn', { hasText: 'Singapore' }).count() === 1, 'How it works is not in the Fly in card; it waits behind the ? button');
+const heads = await p.$$eval('.dash-tools button', (bs) => bs.filter((b) => b.offsetParent).map((b) => b.id));
+ok(heads[0] === 'dash-help' && heads.slice(-2).join() === 'dash-collapse,dash-close', 'the ? button is the first of the header buttons, left of the collapse chevron and the X: ' + heads.join(', '));
+await p.click('#dash-help'); await p.waitForTimeout(250);
+const gBox = await p.$eval('#dash-body .dash-guide', (e) => { const r = e.getBoundingClientRect(), f = document.querySelector('.dash-welcome').getBoundingClientRect(); return { w: r.width, top: r.top, welcomeBottom: f.bottom }; });
+const bodyW = await p.$eval('#dash-body', (e) => e.clientWidth);
+ok(gBox.w >= bodyW - 30 && gBox.top >= gBox.welcomeBottom - 1 && await p.getAttribute('#dash-help', 'aria-pressed') === 'true', 'it opens as a full-width card at the top of the dashboard');
+await p.click('#dash-help'); await p.waitForTimeout(200);
+ok(await p.locator('#dash .dash-guide').count() === 0 && await p.getAttribute('#dash-help', 'aria-pressed') === 'false', 'and the same button puts it away');
+// the Map key shows about half of itself, with See more / See less
+const keyH = () => p.$eval('.key-body', (e) => ({ shown: e.clientHeight, full: e.scrollHeight }));
+const k0 = await keyH();
+ok(k0.shown < k0.full * 0.65 && k0.shown >= 100 && (await p.textContent('.key-more')) === 'See more', 'the Map key shows about half (' + k0.shown + ' of ' + k0.full + ' px), with See more');
+await p.click('.key-more'); await p.waitForTimeout(200);
+const k1 = await keyH();
+ok(k1.shown >= k1.full - 1 && (await p.textContent('.key-more')) === 'See less' && await p.getAttribute('.key-more', 'aria-expanded') === 'true' && (await p.locator('.key-line').count()) === 4, 'See more shows all of it, with the four line samples');
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(900);
+ok((await keyH()).shown >= (await keyH()).full - 1, 'the choice is remembered after a reload');
+await p.click('.key-more'); await p.waitForTimeout(200);
+ok((await keyH()).shown < k0.full * 0.65 && (await p.textContent('.key-more')) === 'See more', 'See less puts it back to half');
 await ctx.close();
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: RETURNING }));
 await p.evaluate(() => localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ ...JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}'), crosshair: false })));

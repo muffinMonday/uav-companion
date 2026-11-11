@@ -61,8 +61,8 @@ await swipe([sh.cx, sh.y + 220], [sh.cx, sh.y + 120]);
 ok(await visible(p, '#panel'), 'a swipe up does nothing');
 await swipe([sh.cx, sh.y + 20], [sh.cx, sh.y + 45]);
 ok(await visible(p, '#panel') && await p.$eval('#panel', (e) => e.style.transform === ''), 'a short swipe snaps back and leaves nothing behind');
-await swipe([sh.cx, sh.y + 20], [sh.cx + 150, sh.y + 40]);
-ok(await visible(p, '#panel'), 'a mostly sideways swipe is left alone');
+await swipe([sh.cx, sh.y + 20], [sh.cx - 150, sh.y + 40]);
+ok(await visible(p, '#panel'), 'a mostly sideways swipe to the left is left alone (to the right it now closes the sheet)');
 
 // places where a swipe must not start (the body is put back at the top and left to settle first, so the control is where it was measured)
 const settle = async () => { await p.$eval('.sp-body', (e) => { e.scrollTop = 0; }); await p.waitForFunction(() => document.querySelector('.sp-body').scrollTop === 0); await p.waitForTimeout(300); };
@@ -84,6 +84,15 @@ await p.$eval('.sp-body', (e) => e.removeAttribute('data-no-swipe'));
 await p.tap('#panel-expand'); await p.waitForTimeout(350); sh = await box(p, '#panel');
 await swipe([sh.cx, sh.y + 12], [sh.cx, sh.y + 220]);
 ok(!(await visible(p, '#panel')) && (await prefs(p)).panelTall === true, 'an expanded sheet is dismissed the same way, and stays expanded for next time');
+
+// to the right, on a phone as well
+await openSheet(p); sh = await box(p, '#panel');
+await swipe([sh.cx - 100, sh.y + 70], [sh.cx + 110, sh.y + 74]);
+ok(!(await visible(p, '#panel')) && await visible(p, '#dock'), 'on a phone, swiping the sheet to the right closes it too');
+await openSheet(p); sh = await box(p, '#panel');
+await swipe([sh.cx + 100, sh.y + 70], [sh.cx - 60, sh.y + 74]);
+ok(await visible(p, '#panel'), 'and a swipe to the left leaves it open');
+await p.tap('#panel-close'); await p.waitForSelector('#panel', { state: 'hidden' });
 
 // ================= phone: the dashboard
 await dashOpen(p);
@@ -112,6 +121,21 @@ await p.tap('#dash-collapse'); await p.waitForSelector('#dash-peek:not([hidden])
 d = await box(p, '#dash-peek');
 await swipe([d.cx, d.cy], [d.cx, d.cy + 120]);
 ok(await dashState(p) === 'hidden', 'swiping the one-line strip down puts it away to the tab');
+
+// swiping the collapsed dashboard up opens it: the chevron tab, and the summary strip
+d = await box(p, '#dash-tab');
+await swipe([d.cx, d.cy + 6], [d.cx, d.cy - 140]);
+ok(await dashState(p) === 'expanded' && await visible(p, '#dash'), 'swiping the chevron tab up opens the dashboard');
+await p.tap('#dash-collapse'); await p.waitForSelector('#dash-peek:not([hidden])');
+d = await box(p, '#dash-peek');
+await swipe([d.cx, d.cy + 6], [d.cx, d.cy - 140]);
+ok(await dashState(p) === 'expanded', 'swiping the summary strip up opens it too');
+await p.tap('#dash-collapse'); await p.waitForSelector('#dash-peek:not([hidden])');
+d = await box(p, '#dash-peek');
+await swipe([d.cx - 40, d.cy], [d.cx + 80, d.cy - 6]);
+ok(await dashState(p) === 'peek', 'and neither does a sideways one');
+await p.tap('#dash-peek'); await p.waitForTimeout(500);
+ok(await dashState(p) === 'expanded', 'a tap on the strip still opens it');
 await ctx.close();
 
 // ================= with animation (not reduced motion)
@@ -165,6 +189,20 @@ ok(await p.$eval('#dock', (e) => e.classList.contains('folded')), 'a swipe up on
 rail = await box(p, '#dock-circle');
 await swipe([rail.cx, rail.cy - 4], [rail.cx, rail.cy + 60], { steps: 6 });
 ok(!(await p.$eval('#dock', (e) => e.classList.contains('folded'))), 'a swipe down on the circle unfolds it');
+// a swipe left on the unfolded rail pulls the panel out; on the folded circle it does nothing
+rail = await box(p, '#dock');
+await swipe([rail.cx + 6, rail.y + 70], [rail.cx - 130, rail.y + 74], { steps: 8 });
+ok(await visible(p, '#panel') && !(await visible(p, '#dock')), 'a swipe left on the unfolded rail opens the panel');
+await p.tap('#panel-close'); await p.waitForSelector('#panel', { state: 'hidden' });
+await p.tap('#dock-fold'); await p.waitForTimeout(500);
+rail = await box(p, '#dock-circle');
+await swipe([rail.cx + 4, rail.cy], [rail.cx - 130, rail.cy + 2], { steps: 8 });
+ok(!(await visible(p, '#panel')) && await p.$eval('#dock', (e) => e.classList.contains('folded')), 'on the folded circle a swipe left does nothing');
+await p.tap('#dock-circle'); await p.waitForTimeout(500); // the first synthetic tap after a drag that began on the circle is swallowed by Chrome; a second one lands
+if (await p.$eval('#dock', (e) => e.classList.contains('folded'))) { await p.tap('#dock-circle'); await p.waitForTimeout(500); }
+rail = await box(p, '#dock');
+await swipe([rail.cx, rail.y + 70], [rail.cx - 20, rail.y + 72], { steps: 4 });
+ok(!(await visible(p, '#panel')), 'and a short swipe left on the unfolded rail does nothing');
 // an icon still opens its tab
 await p.tap('#dock button[data-tab=trips]'); await p.waitForSelector('#panel:not([hidden])');
 ok(await visible(p, '#panel') && !(await visible(p, '#dock')) && (await p.getAttribute('#tab-trips', 'aria-selected')) === 'true', 'an icon on the unfolded rail still opens its tab');

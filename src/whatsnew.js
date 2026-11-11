@@ -2,6 +2,16 @@
 // (the date is a good id): visitors who have not seen it get the dashboard opened with it, once. Keep each entry to a few short lines.
 export const WHATS_NEW = [
   {
+    id: '2026-11-12-swipes',
+    date: '2026-11-12',
+    title: 'More swipes, and a shorter map key',
+    items: [
+      'Swipe the side panel to the right to close it, on a phone too. Swipe the unfolded icons to the left to open it. Swipe the collapsed dashboard (the strip or the arrow) up to open it.',
+      'How it works moved to the ? button at the top of the dashboard.',
+      'The map key shows half of itself; See more shows the rest.',
+    ],
+  },
+  {
     id: '2026-11-12-compass',
     date: '2026-11-12',
     title: 'A map that turns with you, and OpenStreetMap layers',
