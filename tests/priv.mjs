@@ -1,5 +1,5 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from './lib.mjs';
+import { chromium, dashClick } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const OFFSET = 28800;
 const errs = [];
@@ -160,8 +160,10 @@ await closePopup(S.page);
 await S.page.mouse.move(300, 300); await S.page.mouse.down(); await S.page.waitForTimeout(2300); await S.page.mouse.up(); await S.page.waitForSelector('.leaflet-popup .status'); await S.page.waitForTimeout(900);
 ok((await S.page.locator('.leaflet-popup .stat[data-k=elev] .v').count()) === 1 && /^\d+ m$/.test(await S.page.locator('.leaflet-popup .stat[data-k=elev] .v').innerText()), '3: a point check also shows elevation: ' + await S.page.locator('.leaflet-popup .stat[data-k=elev] .v').innerText());
 await closePopup(S.page);
-await S.page.click('.locate-btn'); await S.page.waitForSelector('.leaflet-popup .stat[data-k=elev]', { timeout: 8000 });
-ok(true, '3: the location pin popup shows elevation');
+await S.page.click('.locate-btn'); await S.page.waitForSelector('.you-dot', { timeout: 8000 }); await S.page.waitForTimeout(1200);
+ok((await S.page.locator('.leaflet-popup').count()) === 0, '3: locating no longer runs a point check or opens a popup by itself');
+await dashClick(S.page, 'text=Check my spot'); await S.page.waitForSelector('.leaflet-popup .stat[data-k=elev]', { timeout: 8000 });
+ok(true, '3: "Check my spot" shows a popup for where you are, with elevation');
 await closePopup(S.page);
 
 // turning altitude off forgets and hides

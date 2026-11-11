@@ -47,6 +47,7 @@ await s.p.click('.locate-btn'); await s.p.waitForSelector('.you-dot', { timeout:
 st = await btn(s.p);
 ok(st.active && !st.following && /Follow me and turn/.test(st.label), 'press 1: your position is shown and the button now offers to follow and turn the map');
 ok(!(await arrow(s.p)).has, 'there is no arrow until the phone says which way it points');
+ok((await s.p.locator('.leaflet-popup').count()) === 0, 'locating does not run a point check or open a popup by itself');
 ok(await bearing(s.p) === 0, 'and the map is still north-up');
 
 await face(s.p, 90, 3);

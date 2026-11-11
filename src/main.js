@@ -139,29 +139,17 @@ async function showCheck(latlng, title, opts = {}) {
   popup.setContent(decorate(describeCheck(res, title, opts.note), latlng, title, () => popup.update(), { ...opts, official: res.region?.officialMap })).openOn(map);
 }
 
-let quietFix = false; // true while a marker is being placed at the user's location: its own popup must stay open
 const rotation = createRotation(map); // turning the map (the locate button's compass mode, and two fingers by hand)
 rotation.enableTouchTurn();
 const locate = addLocateControl(map, {
   rotation,
   onFollow: () => panel.closeIfPhone(), // the bottom sheet would hide the map that is following you
   onError: (m) => toast(m, 7000),
-  onFix: (() => {
-    let first = true;
-    return (dot, e) => {
-      if (!first) return;
-      first = false;
-      if (quietFix) return;
-      checkPoint(e.latlng.lat, e.latlng.lng)
-        .then((res) => dot.bindPopup(decorate(describeCheck(res, 'Your location'), e.latlng, 'Your location', () => dot.getPopup()?.update()), { maxWidth: Math.min(320, window.innerWidth - 32), minWidth: Math.min(250, window.innerWidth - 40) }).openPopup())
-        .catch(() => {});
-    };
-  })(),
 });
 
 // Points of interest (markers saved in this browser)
 const poi = initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWeather, panel,
-  locateOnce: () => { quietFix = true; return locate.request().finally(() => { quietFix = false; }); },
+  locateOnce: () => locate.request(),
 });
 { // day numbers now follow from dates: say once if saved markers were changed to match
   const mig = poi.store.takeMigration();
@@ -174,7 +162,7 @@ const opensShareLink = /^#import=/.test(location.hash); // read before fromHash(
 ai.fromHash();
 const cross = initCrosshair(map); // a crosshair at the centre of the map (the button goes under the marker-details button)
 // the zone verdict for where I am now (the position is read once, when the button is pressed)
-const checkHere = () => { quietFix = true; return locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ }).finally(() => { quietFix = false; }); };
+const checkHere = () => locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ });
 const cloud = { handle: null, refresh: null }; // the optional cloud copy: filled in once its code has loaded (only when this build has a project address)
 addCompassControl(map, { rotation, onPress: () => locate.northUp() }); // after the other left-hand buttons, so their places do not move
 const dash = initDashboard({ poi, panel, trips, cloud, shared: opensShareLink, actions: { checkHere, crosshair: cross } });

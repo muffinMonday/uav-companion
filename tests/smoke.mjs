@@ -40,8 +40,8 @@ await page.keyboard.press('Escape');
 // location button
 await page.click('.locate-btn');
 await page.waitForSelector('.you-dot', { timeout: 8000 });
-await page.waitForSelector('.leaflet-popup .check');
-console.log('location popup:', (await page.locator('.leaflet-popup .check').first().innerText()).replace(/\n/g, ' | '));
+await page.waitForTimeout(1500);
+console.log('popups open after locating (should be 0, the point check is no longer automatic):', await page.locator('.leaflet-popup').count());
 await page.screenshot({ path: `${SP}/4-location.png` });
 
 // pan away then re-centre

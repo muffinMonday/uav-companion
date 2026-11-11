@@ -15,7 +15,7 @@ const DOT = '<div class="you-wrap"><svg class="you-arrow" viewBox="0 0 44 44" ar
  * Turning the map by hand while following pauses the compass turning (the map keeps following you at the angle you chose).
  * `rotation` is the map turner (maprotate.js); `onNotice(text)` carries things worth telling the user; `onFollow()` is called when following starts.
  */
-export function addLocateControl(map, { onFix, onError, onNotice = onError, onFollow, rotation = null, headingSensor = null, wakeLock = () => globalThis.navigator?.wakeLock }) {
+export function addLocateControl(map, { onError, onNotice = onError, onFollow, rotation = null, headingSensor = null, wakeLock = () => globalThis.navigator?.wakeLock }) {
   let dot = null, ring = null, last = null, active = false;
   let mode = 'off', manual = false, ownMove = 0, zooming = false, compass = false, compassFailed = false, compassTold = false, lock = null, btn = null;
   let compassHeading = null, travel = { heading: null, speed: null };
@@ -156,7 +156,6 @@ export function addLocateControl(map, { onFix, onError, onNotice = onError, onFo
     showArrow();
     if (first) own(() => map.setView(e.latlng, Math.max(map.getZoom(), 15)));
     else if (mode === 'following') own(() => map.panTo(e.latlng, { animate: true, duration: 0.4, easeLinearity: 1, noMoveStart: true }));
-    onFix?.(dot, e);
   });
 
   map.on('locationerror', (e) => {
