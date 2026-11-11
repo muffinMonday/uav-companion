@@ -38,6 +38,7 @@ See `supabase/README.md`: migrations, how the access rules are tested without Do
 ### Cloud copy in the app (`src/sync/`, `src/sync-ui.js`)
 - `sync/core.js` holds the rules (what to push, pull or ask), `sync/engine.js` acts on them through an adapter, `sync/supabase.js` is the real adapter. The Supabase library is imported only when `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are set, so the live site loads none of it.
 - Tests: `sync-unit` and `sync-engine-unit` (the rules, and several simulated devices on an in-memory cloud, `tests/lib-sync.mjs`); `cloud` (browser, Supabase HTTP mocked by that same cloud); `node tests/cloud-live.mjs` (the real adapter and access rules on the hosted dev project, as a throwaway user the script creates and deletes; needs the CLI login; not in the default run).
+- **Deploying with sign-in on:** the build includes the cloud copy only when the project address and publishable key are in the environment of the build. Plain `npm run deploy` leaves them out (sign-in off). To deploy with it on, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (the public values in `.env.development.local`) in the shell for that one command. The sign-in link returns to the page the visitor came from, so that address must be listed under Supabase Authentication > URL Configuration > Redirect URLs.
 - The browser suites run against `npm run dev`, which reads `.env.development.local`, so the sign-in card is present in them.
 
 ## Writing tests that can run in parallel
