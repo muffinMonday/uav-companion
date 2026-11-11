@@ -133,6 +133,10 @@ await wake(p); await p.waitForTimeout(1500);
 ok(/Batteries charged/.test(await p.textContent('#trip-detail')), 'Alex sees it as soon as his page is back in view');
 ok(/Bea/.test(await party(p).textContent()) && !/Invited/.test(await party(p).textContent()) && /Party Members \(2\)/.test(await party(p).locator('summary').first().textContent()), 'and his Party Members shows Bea as joined (2)');
 
+// ---------- who is online in the party
+ok(/Online/.test(await party(p).textContent()) && await party(p).locator('.presence.on').count() >= 1, 'a party member who has the app open shows as online, with a green dot');
+ok(await party(p).locator('.party-row', { hasText: 'Bea' }).locator('.presence.on').count() === 1, 'Bea\'s row has the dot');
+
 // ---------- earlier versions
 await party(p).locator('.party-versions summary').click(); await p.waitForTimeout(800);
 ok(await party(p).locator('.party-version').count() >= 1 && /Bea|Alex/.test(await party(p).locator('.party-version').first().textContent()), 'earlier versions are listed with who saved them');

@@ -1,11 +1,12 @@
 // The Friends tab: your name and friend code, adding a friend by their code, requests, friends and blocked people.
 // Only built when this build has a project address (see sync-ui.js); the tab shows a sign-in pointer until the visitor is signed in.
-import { createSocial, formatCode } from './social.js';
+import { createSocial, formatCode, presenceText } from './social.js';
 import { describeWhen } from './sync/core.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 .3 5 2.6 5 5.8"/></svg>';
 const POLL_MS = 120000; // how often to look for new requests while signed in and the page is visible
+const LIVE_MS = 30000;   // while the Friends tab is showing: how often to refresh who is online
 
 /** `handle` is what initSyncUI returns: { sync, adapter, onChange }. `cloud` is the holder the dashboard reads (friends: { incoming, open }). */
 export function initFriendsUI({ panel, handle, toast, cloud }) {
@@ -79,6 +80,10 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     const cb = el('input'); cb.type = 'checkbox'; cb.id = 'fr-accepts'; cb.checked = profile.accepts_requests;
     cb.addEventListener('change', () => act(async () => { profile = await social.setAccepts(cb.checked); }));
     sw.append(sp, cb); me.append(sw);
+    const sho = el('label', 'switch'); const sp2 = el('span', '', 'Show when I am online'); sp2.append(el('small', '', 'Friends and trip party members see "online" or when you were last seen. Off: nothing is recorded or shown, and you do not see theirs either.'));
+    const cb2 = el('input'); cb2.type = 'checkbox'; cb2.id = 'fr-online'; cb2.checked = profile.show_online !== false;
+    cb2.addEventListener('change', () => act(async () => { profile = await social.setShowOnline(cb2.checked); }));
+    sho.append(sp2, cb2); me.append(sho);
     me.append(el('p', 'hint', 'Share your code only with people you know. Someone with it can send you a request, which you can accept, decline or block.'));
     pane.append(me);
 
@@ -94,9 +99,9 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     if (message) { const m = el('p', 'hint fr-message', message); m.setAttribute('role', 'status'); add.append(m); }
     pane.append(add);
 
-    const person = (name, sub, buttons) => {
+    const person = (name, sub, buttons, online = null) => {
       const r = el('div', 'fr-row');
-      const who = el('div', 'fr-who'); who.append(el('b', '', name)); if (sub) who.append(el('small', '', sub));
+      const who = el('div', 'fr-who'); const nm = el('b'); if (online !== null) { const dot = el('i', 'presence ' + (online ? 'on' : 'off')); dot.setAttribute('aria-hidden', 'true'); nm.append(dot); } nm.append(name); who.append(nm); if (sub) who.append(el('small', '', sub));
       const bs = el('div', 'fr-actions'); for (const [label, fn, cls] of buttons) { const b = el('button', 'btn small' + (cls ? ' ' + cls : ''), label); b.type = 'button'; b.addEventListener('click', fn); bs.append(b); }
       r.append(who, bs); return r;
     };
@@ -118,10 +123,10 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     const friends = list.filter((x) => x.status === 'friends');
     fc.append(el('h2', '', 'Friends (' + friends.length + ')'));
     if (!friends.length) fc.append(el('p', 'hint', 'No friends yet. Share your code, or enter theirs above.'));
-    for (const x of friends) fc.append(person(x.display_name, 'friends since ' + describeWhen(x.since), [
+    for (const x of friends) fc.append(person(x.display_name, [presenceText(x, describeWhen), 'friends since ' + describeWhen(x.since)].filter(Boolean).join(' · '), [
       ['Remove', () => { if (confirm('Remove ' + x.display_name + ' from your friends?')) act(() => social.remove(x.id), 'Removed.'); }],
       ['Block', () => { if (confirm('Block ' + x.display_name + '? This also removes them from your friends.')) act(() => social.block(x.id), 'Blocked.'); }, 'danger'],
-    ]));
+    ], x.online));
     pane.append(fc);
     // ---- blocked
     if (blocked.length) {
@@ -141,6 +146,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
   handle.onChange(() => { if (signedIn() && loadedFor !== handle.sync.status().session.email) load(); else if (!signedIn() && loadedFor) load(); });
   panel.onChange(() => { if (shown() && signedIn()) load({ withProfile: true }); else if (shown()) render(); });
   setInterval(() => { if (signedIn() && document.visibilityState === 'visible') load(); }, POLL_MS);
+  setInterval(() => { if (shown() && signedIn() && document.visibilityState === 'visible') load(); }, LIVE_MS);
   render();
   if (signedIn()) load();
   return { reload: () => load({ withProfile: true }) };

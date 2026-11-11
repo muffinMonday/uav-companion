@@ -836,3 +836,9 @@ input[type=email]:focus{border-color:var(--accent)}
 @media (prefers-reduced-motion:reduce){.dock-icons,.dock.folded .dock-icons{transition:none}}
 .sp-head,.sp-grab,.dash-head,.dash-peek{touch-action:pan-x}
 .sp-body,.dash-body{overscroll-behavior:contain}
+
+/* online status */
+.presence{display:inline-block;width:9px;height:9px;margin-right:6px;border-radius:50%;vertical-align:1px;border:1px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
+.presence.on{background:var(--ok);box-shadow:0 0 0 1px color-mix(in srgb,var(--ok) 40%,transparent)}
+.presence.off{background:var(--muted);opacity:.55}
+.presence-text{color:var(--muted);font-size:12px}

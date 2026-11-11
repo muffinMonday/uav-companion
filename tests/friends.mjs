@@ -109,6 +109,21 @@ ok(/Alex/.test(await bea.p.textContent('#fr-friends')) && !(await bea.p.locator(
 await p.evaluate(() => document.getElementById('tab-trips').click()); await p.waitForTimeout(200); await goFriends(p);
 ok(/Bea/.test(await p.textContent('#fr-friends')) && /Friends \(1\)/.test(await p.textContent('#fr-friends')), 'Alex sees Bea among his friends');
 
+// ---------- online status
+const wakeBoth = async () => { for (const pg of [p, bea.p]) await pg.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await p.waitForTimeout(900); };
+const refreshFriends = async (pg) => { await pg.evaluate(() => document.getElementById('tab-trips').click()); await pg.waitForTimeout(150); await goFriends(pg); };
+await wakeBoth(); await refreshFriends(p); await refreshFriends(bea.p);
+ok(/Online/.test(await p.textContent('#fr-friends')) && await p.locator('#fr-friends .presence.on').count() === 1, 'a friend who has the app open shows as online, with a green dot');
+ok(/Online/.test(await bea.p.textContent('#fr-friends')), 'and so does Alex to Bea');
+await bea.p.uncheck('#fr-online'); await bea.p.waitForTimeout(700);
+await refreshFriends(p); await refreshFriends(bea.p);
+ok(!/Online|Seen/.test(await p.textContent('#fr-friends')) && await p.locator('#fr-friends .presence').count() === 0, 'when Bea hides her status, Alex sees nothing for her');
+ok(await bea.p.locator('#fr-friends .presence').count() === 0 && !/Online|Seen/.test(await bea.p.textContent('#fr-friends')), 'and Bea, having hidden hers, does not see Alex\'s');
+ok(await bea.p.locator('#fr-online').isChecked() === false, 'the switch shows that it is off');
+await bea.p.check('#fr-online'); await bea.p.waitForTimeout(700); await wakeBoth();
+await refreshFriends(p);
+ok(await p.locator('#fr-friends .presence.on').count() === 1, 'switched back on, she shows as online again');
+
 // ---------- blocking
 await bea.p.click('#fr-friends >> text=Block'); await bea.p.waitForTimeout(700);
 ok(/Alex/.test(await bea.p.textContent('#fr-blocked')) && /No friends yet/.test(await bea.p.textContent('#fr-friends')), 'blocking removes the friend and lists them under Blocked');

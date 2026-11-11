@@ -3,6 +3,7 @@
 import { createTripsApi } from './sharedtrip/api.js';
 import { createSharedTrips } from './sharedtrip/engine.js';
 import { describeWhen } from './sync/core.js';
+import { presenceText } from './social.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const WHO_KEY = 'uavzones.v1.sharedwho';
@@ -21,19 +22,27 @@ export function initPartyUI({ handle, store, panel, toast, cloud }) {
   const openVersions = new Set(), versionsOf = new Map(); // the "Earlier versions" lists that are unfolded, and what they showed
 
   const refresh = () => view?.refresh?.();
-  async function loadMembers(id) {
+  async function loadMembers(id, { force = false } = {}) {
     const rev = eng.snapshot().trips[id]?.members_rev ?? null;
     const have = members.get(id);
-    if (asking.has(id) || (have && have.rev === rev)) return;
+    if (asking.has(id) || (!force && have && have.rev === rev)) return;
     asking.add(id);
+    let changed = true;
     try {
       const list = await eng.members(id);
+      changed = !have || JSON.stringify(have.list) !== JSON.stringify(list); // a refresh that finds nothing new does not redraw the screen
       members.set(id, { rev, list });
       if (store.getTrip(id)?.shared?.owner) invitable.set(id, await eng.invitable(id));
     } catch { /* shown as loading; the next check tries again */ }
     asking.delete(id);
-    refresh();
+    if (changed) refresh();
   }
+  // while a trip's Party Members is open, look every 30 s for who is online
+  setInterval(() => {
+    if (!signedIn() || document.visibilityState !== 'visible') return;
+    const id = document.querySelector('#trip-detail:not([hidden]) .trip-party[open]')?.dataset.trip;
+    if (id) loadMembers(id, { force: true });
+  }, 30000);
 
   // ---------- keeping the engine running while signed in
   let started = false;
@@ -110,10 +119,14 @@ export function initPartyUI({ handle, store, panel, toast, cloud }) {
       const ul = el('ul', 'party-list');
       for (const m of mem) {
         const li = el('li', 'party-row');
-        const who = el('span', 'party-who'); who.append(el('b', '', m.display_name));
+        const who = el('span', 'party-who');
+        if (m.online !== null && m.online !== undefined) { const dot = el('i', 'presence ' + (m.online ? 'on' : 'off')); dot.setAttribute('aria-hidden', 'true'); who.append(dot); }
+        who.append(el('b', '', m.display_name));
         if (m.is_me) who.append(' ', el('span', 'badge', 'You'));
         if (m.role === 'owner') who.append(' ', el('span', 'badge ok', 'Owner'));
         if (m.status === 'invited') who.append(' ', el('span', 'badge', 'Invited'));
+        const pt = m.status === 'joined' ? presenceText(m, describeWhen) : '';
+        if (pt) who.append(' ', el('small', 'presence-text', pt));
         li.append(who);
         if (owner && m.role !== 'owner') {
           const b = el('button', 'btn small', m.status === 'invited' ? 'Cancel invite' : 'Remove'); b.type = 'button';

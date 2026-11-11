@@ -46,6 +46,13 @@ try {
   await b.rpc('respond_friend', { p_id: lb[0].id, p_accept: true });
   const la = await a.rpc('list_friends');
   ok(la[0].status === 'friends' && la[0].display_name === 'Live Bea', 'accepting makes them friends');
+  await a.rpc('touch_presence'); await b.rpc('touch_presence');
+  const lp = await a.rpc('list_friends');
+  ok(lp[0].online === true && !!lp[0].last_seen && !JSON.stringify(lp).includes(b.id), 'a friend with the app open shows as online (and no user id comes back)');
+  await b.rpc('set_show_online', { p_on: false });
+  const lh = await a.rpc('list_friends');
+  ok(lh[0].online === null && lh[0].last_seen === null, 'a friend who hides their status shows nothing');
+  await b.rpc('set_show_online', { p_on: true });
   await a.rpc('block_user', { p_id: la[0].id });
   const again = await b.sb.rpc('request_friend', { p_code: pa.friend_code });
   ok(/that code was not found/.test(again.error?.message ?? '') && (await a.rpc('list_blocked')).length === 1, 'blocking ends it, and the blocked person cannot ask again');

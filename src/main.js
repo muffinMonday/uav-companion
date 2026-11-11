@@ -20,6 +20,7 @@ import { initPrivacyUI } from './privacy-ui.js';
 import { initSyncUI } from './sync-ui.js';
 import { initFriendsUI } from './friends-ui.js';
 import { initPartyUI } from './party-ui.js';
+import { initPresence } from './presence.js';
 import { initAI } from './ai-ui.js';
 import { initTripsUI } from './trips-ui.js';
 import { getPrivacy } from './privacy.js';
@@ -171,7 +172,7 @@ const cross = initCrosshair(map); // a crosshair at the centre of the map (the b
 const checkHere = () => { quietFix = true; return locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ }).finally(() => { quietFix = false; }); };
 const cloud = { handle: null, refresh: null }; // the optional cloud copy: filled in once its code has loaded (only when this build has a project address)
 const dash = initDashboard({ poi, panel, trips, cloud, shared: opensShareLink, actions: { checkHere, crosshair: cross } });
-initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud }); trips.setParty(cloud.party); initFriendsUI({ panel, handle: h, toast, cloud }); cloud.refresh?.(); } }).catch((e) => console.warn('cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
+initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud }); trips.setParty(cloud.party); initFriendsUI({ panel, handle: h, toast, cloud }); cloud.refresh?.(); } }).catch((e) => console.warn('cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch(() => toast('Point check failed. Check your connection and try again.'));
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.

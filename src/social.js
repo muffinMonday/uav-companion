@@ -22,7 +22,18 @@ export function createSocial(client) {
     blocked: () => rpc('list_blocked'),
     unblock: (id) => rpc('unblock', { p_id: id }),
     deleteProfile: () => rpc('delete_profile'),
+    /** Shows or hides this person's online status (and, with it, theirs to them). Returns the profile. */
+    setShowOnline: (on) => rpc('set_show_online', { p_on: !!on }),
+    /** "I am here": the app calls this every 30 s or so while it is open. */
+    touch: () => rpc('touch_presence'),
   };
+}
+
+/** "Online", "Seen 5 minutes ago", or "" when the status is hidden: from a row of list_friends or list_trip_members. */
+export function presenceText(row, when) {
+  if (!row || row.online === null || row.online === undefined) return '';
+  if (row.online) return 'Online';
+  return row.last_seen ? 'Seen ' + when(row.last_seen) : 'Offline';
 }
 
 /** "A1B2C-3D4E5" from the stored 10 characters. */
