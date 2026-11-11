@@ -34,25 +34,10 @@ node tests/trips.mjs              # one suite directly; prints PASS/FAIL lines
 ## Backend (`supabase/`)
 See `supabase/README.md`: migrations, how the access rules are tested without Docker (`node tests/db-unit.mjs`, PGlite), how to push to the hosted project (`npx supabase db push --remote --dry-run`, then `--yes`; the password is read from the `SUPABASE_DB_PASSWORD` environment variable), and what must never be committed. The project address and publishable key are in `.env.development.local` (git-ignored, used by `npm run dev` only).
 
-### Cloud copy in the app (, )
--  holds the rules (what to push, pull or ask),  acts on them through an adapter,  is the real adapter (the library is imported only when  and  are set, so the live site loads none of it).
-- Tests:  and  (rules and several simulated devices on an in-memory cloud, ),  (browser, Supabase HTTP mocked by that same cloud), and PASS  no session before sign-in
-PASS  the test user signs in and the adapter sees the session
-PASS  before the first save there is no cloud copy
-PASS  first save: revision 1
-PASS  second save from revision 1: revision 2
-PASS  a stale save is a conflict that names the device
-PASS  info reads the current revision (a number) and counts, not the document
-PASS  fetch reads the document whole
-PASS  the replaced revision is listed as a version
-PASS  restoring version 1 gives revision 3
-PASS  a second user sees no rows
-PASS  a direct insert is refused: permission denied for table user_data
-PASS  an anonymous visitor reads nothing
-PASS  and cannot save: permission denied for function save_user_data
-PASS  delete_user_data removes the cloud copy
-PASS  the test user and its data are gone (the real adapter on the hosted dev project as a throwaway user it creates and deletes; needs the CLI login; not in the default run).
-- The browser suites run against , which reads , so the sign-in card is present in them.
+### Cloud copy in the app (`src/sync/`, `src/sync-ui.js`)
+- `sync/core.js` holds the rules (what to push, pull or ask), `sync/engine.js` acts on them through an adapter, `sync/supabase.js` is the real adapter. The Supabase library is imported only when `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are set, so the live site loads none of it.
+- Tests: `sync-unit` and `sync-engine-unit` (the rules, and several simulated devices on an in-memory cloud, `tests/lib-sync.mjs`); `cloud` (browser, Supabase HTTP mocked by that same cloud); `node tests/cloud-live.mjs` (the real adapter and access rules on the hosted dev project, as a throwaway user the script creates and deletes; needs the CLI login; not in the default run).
+- The browser suites run against `npm run dev`, which reads `.env.development.local`, so the sign-in card is present in them.
 
 ## Writing tests that can run in parallel
 The suites will be run side by side (see the "Faster tests" item in `CURRENT_STATUS.md`), so every new or changed suite follows these rules even while the runner is still serial:
