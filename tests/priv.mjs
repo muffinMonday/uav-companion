@@ -136,6 +136,7 @@ await closePopup(S.page);
 await S.page.click('#tab-poi'); await S.page.check('#poi-edit');
 await S.page.click('#poi-list .poi-item:has-text("Seed A")'); await S.page.waitForTimeout(1200);
 // the window grows as tiles arrive and the map pans to keep it in view: wait until the pin holds still before pressing it
+if (await S.page.locator('.poi-pop .pop-toggle[aria-expanded=true]').count()) await S.page.click('.poi-pop .pop-toggle'); // collapsed, so the pin is not under the window
 let pin = null, still = 0;
 for (let i = 0; i < 40 && still < 4; i++) {
   const r = await S.page.evaluate(() => { const q = [...document.querySelectorAll('.poi-pin')].map((e) => e.getBoundingClientRect()).sort((a, b) => Math.abs(a.x - 408) - Math.abs(b.x - 408))[0]; return { x: q.x + q.width / 2, y: q.y + q.height / 2 }; });

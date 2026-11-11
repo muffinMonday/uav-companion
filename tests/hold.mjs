@@ -89,7 +89,8 @@ const far = await pinRect(p);
 await p.mouse.click(far.x, far.y); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(1200);
 const pinNow = await pinRect(p);
 ok(Math.abs(pinNow.x - (mr.x + mr.w / 2)) < 14 && Math.abs(pinNow.bottom - 2 - (mr.y + mr.h / 2)) < 50, 'clicking a pin centres the map on it: pin at (' + Math.round(pinNow.x) + ',' + Math.round(pinNow.y) + '), map centre (' + Math.round(mr.x + mr.w / 2) + ',' + Math.round(mr.y + mr.h / 2) + ')');
-const sc = await p.evaluate(() => { const c = document.querySelector('.leaflet-popup-content'); const w = document.querySelector('.leaflet-popup').getBoundingClientRect(); const pin = document.querySelector('.poi-pin').getBoundingClientRect(); return { scrolls: c.scrollHeight > c.clientHeight + 1, top: w.top, bottom: w.bottom, pinTop: pin.top }; });
+await p.click('.poi-pop .pop-toggle'); await p.waitForTimeout(400); // collapsed: the short window above the pin
+const sc = await p.evaluate(() => { const c = document.querySelector('.leaflet-popup-content'); const w = document.querySelector('.leaflet-popup-content-wrapper').getBoundingClientRect(); const pin = document.querySelector('.poi-pin').getBoundingClientRect(); return { scrolls: c.scrollHeight > c.clientHeight + 1, top: w.top, bottom: w.bottom, pinTop: pin.top }; });
 ok(sc.scrolls && sc.top >= 0 && sc.bottom <= sc.pinTop + 2, 'a window too tall for the space above the pin scrolls inside and stays on screen (top ' + Math.round(sc.top) + ', bottom ' + Math.round(sc.bottom) + ', pin top ' + Math.round(sc.pinTop) + ')');
 const zoomBefore = await p.evaluate(() => document.querySelector('.leaflet-control-scale-line').textContent);
 await p.evaluate(() => document.querySelector('.leaflet-popup-content').scrollTo(0, 9999)); await p.waitForTimeout(200);

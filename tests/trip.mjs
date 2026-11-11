@@ -222,6 +222,7 @@ for (let i = 0; i < 40 && still < 4; i++) {
   const r = await p.evaluate(() => { const q = [...document.querySelectorAll('.poi-pin')].map((e) => e.getBoundingClientRect()).sort((a, c) => Math.abs(a.x - 408) - Math.abs(c.x - 408))[0]; return { x: q.x + q.width / 2, y: q.y + q.height / 2 }; });
   still = pin && Math.abs(r.x - pin.x) < 0.5 && Math.abs(r.y - pin.y) < 0.5 ? still + 1 : 0; pin = r; await p.waitForTimeout(150);
 }
+if (await p.locator('.poi-pop .pop-toggle[aria-expanded=true]').count()) { await p.click('.poi-pop .pop-toggle'); await p.waitForTimeout(300); } // collapsed: the pin is not under the window
 await p.mouse.move(pin.x, pin.y); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.move(pin.x - 80, pin.y + 100, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(600);
 await p.click('#banner-action');
 const hpNow = (await store(p)).find((i) => i.id === 'hp');

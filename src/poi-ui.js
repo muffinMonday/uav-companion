@@ -9,7 +9,7 @@ import { getDistanceSettings, setDistanceSettings, onDistanceSettings } from './
 import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, compass, toDisplay, fromDisplay } from './distance.js';
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
-import { centreOn, popupMaxHeight } from './view.js';
+import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer } from './cards.js';
 
 const $ = (id) => document.getElementById(id);
@@ -439,15 +439,30 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     // runs off the screen and the map is never moved to fit it. On a phone the sheet is closed first so it does not cover the pin.
     const OFFSET_Y = -36;
     panel.closeIfPhone();
+    // Expanded: a tall window centred on the coordinate (covering the pin). Collapsed: a short one above the pin. The visitor's choice is remembered.
+    expanded = windowExpanded();
     popup = L.popup({
       maxWidth: Math.min(340, window.innerWidth - 32), minWidth: Math.min(290, window.innerWidth - 40), offset: [0, OFFSET_Y],
-      autoPan: false, closeOnClick: false, closeButton: true, maxHeight: popupMaxHeight(map, OFFSET_Y),
+      autoPan: false, closeOnClick: false, closeButton: true, maxHeight: windowMaxHeight(expanded), className: expanded ? 'is-expanded' : '',
     })
       .setLatLng(m.getLatLng())
       .setContent(popupContent(id, edit));
     popup._poiId = id; // read by the popupopen/popupclose handlers that draw and remove the distance lines
     centreOn(map, m.getLatLng());
     popup.openOn(map);
+  }
+
+  let expanded = true; // whether the open marker window is expanded
+  const windowExpanded = () => { const v = loadPrefs().windowExpanded; return typeof v === 'boolean' ? v : defaultExpanded(); };
+  const windowMaxHeight = (on) => (on ? expandedMaxHeight(map) : popupMaxHeight(map, -36));
+  /** Switches the open window between expanded and collapsed in place (no reopening, so a form or scroll position survives). */
+  function setWindowMode(on) {
+    expanded = on;
+    savePrefs({ windowExpanded: on });
+    if (!popup) return;
+    popup.options.maxHeight = windowMaxHeight(on);
+    popup.getElement()?.classList.toggle('is-expanded', on);
+    popup.update();
   }
 
   function popupContent(id, startEditing) {
@@ -459,6 +474,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       root.replaceChildren();
 
       // header: pin, type and name; coordinates underneath
+      const toggle = el('button', 'pop-toggle'); toggle.type = 'button';
+      // both arrows are always there and CSS shows one: replacing the clicked element mid-click would make Leaflet close the window
+      toggle.innerHTML = '<svg class="ic-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><svg class="ic-down" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+      const paintToggle = () => { toggle.setAttribute('aria-label', expanded ? 'Collapse window' : 'Expand window'); toggle.title = expanded ? 'Collapse' : 'Expand'; toggle.setAttribute('aria-expanded', String(expanded)); };
+      paintToggle();
+      toggle.addEventListener('click', () => { setWindowMode(!expanded); paintToggle(); });
+      root.append(toggle);
       const head = el('div', 'pop-head');
       const badge = el('span', 'pop-badge');
       badge.innerHTML = pinSvg(it.type); // built from constants only

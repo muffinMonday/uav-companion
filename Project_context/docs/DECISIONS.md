@@ -84,3 +84,9 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision: a modal `<dialog>` opens on every visit (the owner's choice) with a 4-step guide and, when a trip is coming up or under way, a countdown card. "Don't show again" is stored as `uavzones.v1.welcome` (separate from the settings entry, so clearing or rewriting settings does not bring it back); "How it works" in Map Configs reopens it and can turn it back on. Share links skip it.
 - Alternatives: first visit only (would not show the countdown on later visits); showing only when a trip is near (rejected by the owner).
 - Consequences: a modal covers the page on load, so test suites switch it off via `tests/lib.mjs`.
+
+### 2026-11-11: Expanded marker window by default on desktop
+- Context: centring the pin left only about 280 px above it, too short for the window's content.
+- Decision: the marker window can be expanded (centred on the coordinate, covering the pin, up to 85% of the map height) or collapsed (above the pin). Desktop opens expanded, phones open collapsed (owner's choice), with a remembered toggle; expanded is capped at 60% on phones so the map stays draggable.
+- Alternatives: marker pushed to the right edge with the window to its left (rejected: the side panel and phone widths leave no room).
+- Consequences: the expanded window hides the pin, so tests that need to press a pin collapse the window first; tall windows scroll inside.

@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 const UNIT = ['ai-unit', 'trip-unit', 'trips-unit', 'rain-unit'];
-const BROWSER = ['welcome', 'hold', 'rain', 'ui', 'bulk', 'poi1', 'poi2', 'edit', 'prefs', 'opacity', 'mw', 'priv', 'ai', 'trip', 'trips', 'smoke'];
+const BROWSER = ['window', 'welcome', 'hold', 'rain', 'ui', 'bulk', 'poi1', 'poi2', 'edit', 'prefs', 'opacity', 'mw', 'priv', 'ai', 'trip', 'trips', 'smoke'];
 const args = process.argv.slice(2);
 const onlyUnit = args.includes('--unit');
 const words = args.filter((a) => !a.startsWith('--'));

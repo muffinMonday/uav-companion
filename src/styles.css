@@ -422,3 +422,13 @@ dialog.welcome::backdrop{background:rgba(10,20,30,.5);-webkit-backdrop-filter:bl
 .w-steps li::before{content:counter(w);position:absolute;left:0;top:0;display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-weight:700;font-size:13px}
 .w-note{margin:0 0 4px;padding:9px 12px;border-radius:12px;background:var(--surface-2);color:var(--muted);font-size:12.5px}
 dialog.welcome .btn[hidden]{display:none}
+
+/* ---------- marker window: expanded (centred on the coordinate, covering the pin) or collapsed (above it) ---------- */
+.pop{position:relative}
+.pop-head{padding-right:62px}
+.pop-toggle{position:absolute;top:10px;right:40px;display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.pop-toggle:hover{background:var(--surface-2);color:var(--fg)}
+.pop-toggle svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.leaflet-popup.is-expanded .leaflet-popup-tip-container{display:none}
+.leaflet-popup.is-expanded .leaflet-popup-content-wrapper{transform:translateY(calc(50% + 36px))}
+.pop-toggle[aria-expanded=true] .ic-down,.pop-toggle[aria-expanded=false] .ic-up{display:none}
