@@ -1,0 +1,141 @@
+// The Friends tab in the browser. The real Supabase client talks to a mocked HTTP server whose functions run the real friends SQL on an
+// in-memory Postgres (PGlite), so the interface is tested against the real access rules. Two users, each in their own browser context.
+import { chromium, CHANNEL } from './lib.mjs';
+import { makeDb, as, A, B } from './lib-db.mjs';
+import fs from 'node:fs';
+const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
+const errs = [];
+
+const env = fs.readFileSync(new URL('../.env.development.local', import.meta.url), 'utf8');
+const URL_ = /VITE_SUPABASE_URL=(\S+)/.exec(env)?.[1];
+const REF = new URL(URL_).hostname.split('.')[0];
+const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+const session = (id, email) => {
+  const user = { id, email, aud: 'authenticated', role: 'authenticated' };
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  return { access_token: `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: id, email, role: 'authenticated', exp })}.sig`, refresh_token: 'r', token_type: 'bearer', expires_in: 3600, expires_at: exp, user };
+};
+
+const db = await makeDb();
+let lock = Promise.resolve(); // one database call at a time: the role is set per call
+const serial = (fn) => { const r = lock.then(fn, fn); lock = r.catch(() => {}); return r; };
+const SETOF = new Set(['list_friends', 'list_blocked']);
+const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+const calls = [];
+const mockFor = (uid) => async (route) => {
+  const req = route.request(), u = new URL(req.url());
+  if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
+  const reply = (body, status = 200) => route.fulfill({ status, headers: { ...CORS, 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  if (u.pathname.endsWith('/rest/v1/user_data')) return reply([]);
+  const m = /\/rest\/v1\/rpc\/(\w+)/.exec(u.pathname);
+  if (!m) return reply({ message: 'not mocked: ' + u.pathname }, 404);
+  const fn = m[1]; calls.push(fn);
+  const args = req.postData() ? JSON.parse(req.postData()) : {};
+  const names = Object.keys(args);
+  const sql = SETOF.has(fn)
+    ? `select to_jsonb(t) as j from public.${fn}(${names.map((n, i) => `${n} => $${i + 1}`).join(', ')}) t`
+    : `select public.${fn}(${names.map((n, i) => `${n} => $${i + 1}`).join(', ')}) as j`;
+  try {
+    const rows = await serial(() => as(db, uid, sql, names.map((n) => args[n])));
+    return reply(SETOF.has(fn) ? rows.map((r) => r.j) : rows[0].j);
+  } catch (e) { return reply({ message: String(e.message || e), code: 'P0001' }, 400); }
+};
+
+const b = await chromium.launch({ channel: CHANNEL });
+async function open(who, { vp = { width: 1300, height: 850 }, mobile = false, signedIn = true } = {}) {
+  const [uid, email] = who === 'a' ? [A, 'a@example.test'] : [B, 'b@example.test'];
+  const ctx = await b.newContext({ viewport: vp, hasTouch: mobile, isMobile: mobile });
+  await ctx.route(new RegExp('^' + URL_.replace(/[.]/g, '\\.') + '/'), mockFor(uid));
+  await ctx.addInitScript(([ref, sess, dash]) => {
+    if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
+    localStorage.setItem('uavzones.v1.dash', JSON.stringify(dash));
+    localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.6, lon: 114.3, zoom: 11 }, basemap: 'osm' }));
+    if (sess) localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify(sess));
+  }, [REF, signedIn ? session(uid, email) : null, { v: 1, showOnStart: false, welcomed: true, seen: '9999' }]);
+  const p = await ctx.newPage();
+  p.on('dialog', (d) => d.accept());
+  p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
+  p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::|status of 4/.test(m.text()) && errs.push(m.text()));
+  await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  return { ctx, p };
+}
+const goFriends = async (p) => { await p.evaluate(() => { const t = document.getElementById('tab-friends'); if (document.getElementById('panel').hidden) document.querySelector('#dock button[data-tab=friends]').click(); else t.click(); }); await p.waitForTimeout(700); };
+const code = (p) => p.locator('#fr-code').textContent();
+
+// ---------- signed out: the tab shows a pointer, nothing is sent
+let { ctx, p } = await open('a', { signedIn: false });
+ok(await p.locator('#tab-friends').count() === 1 && await p.locator('#dock button[data-tab=friends]').count() === 1, 'the Friends tab and its rail icon exist when this build has accounts');
+await goFriends(p);
+ok(/Sign in/.test(await p.textContent('#pane-friends')) && !calls.length, 'signed out, it explains and points to sign-in, and nothing is sent');
+await p.click('#pane-friends >> text=Sign in…'); await p.waitForSelector('#privacy:not([hidden])');
+ok(true, 'its button opens the privacy settings, where sign-in lives');
+await ctx.close();
+
+// ---------- Alex: profile
+({ ctx, p } = await open('a'));
+const tabs = await p.$$eval('#panel [role=tab]', (t) => t.map((x) => x.textContent.trim()));
+ok(tabs.join('|') === 'Map Configs|Trips|Points of Interest|Friends', 'four tabs in order: ' + tabs.join('|'));
+await goFriends(p);
+ok(await p.inputValue('#fr-name') === 'Pilot' && /^[0-9A-F]{5}-[0-9A-F]{5}$/.test(await code(p)), 'the first visit creates a profile with a default name and shows the friend code in two groups of five: ' + await code(p));
+await p.fill('#fr-name', 'Alex'); await p.click('#pane-friends form.fr-name:first-of-type button'); await p.waitForTimeout(600);
+ok(await p.inputValue('#fr-name') === 'Alex' && (await db.query(`select display_name from public.profiles where user_id = '${A}'`)).rows[0].display_name === 'Alex', 'the display name saves');
+const aCode = await code(p);
+ok(await p.locator('#fr-friends').textContent().then((t) => /No friends yet/.test(t)), 'no friends yet, and it says what to do');
+
+// ---------- Bea
+let bea = await open('b');
+await goFriends(bea.p);
+await bea.p.fill('#fr-name', 'Bea'); await bea.p.click('#pane-friends form.fr-name:first-of-type button'); await bea.p.waitForTimeout(600);
+const bCode = await code(bea.p);
+ok(bCode !== aCode, 'a second person gets a different code');
+
+// ---------- a request
+await p.fill('#fr-add', 'not a code'); await p.click('#pane-friends form.fr-name >> nth=1 >> button'); await p.waitForTimeout(600);
+ok(/that code was not found/.test(await p.textContent('.fr-message')), 'a wrong code says "that code was not found"');
+await p.fill('#fr-add', bCode.toLowerCase().replace('-', ' ')); await p.click('#pane-friends form.fr-name >> nth=1 >> button'); await p.waitForTimeout(700);
+ok(/Request sent/.test(await p.textContent('.fr-message')) && /Bea/.test(await p.textContent('#fr-requests')) && /waiting for an answer/.test(await p.textContent('#fr-requests')), 'a code typed in lower case with a space still works, and the request shows as waiting');
+// Bea looks again
+await bea.p.evaluate(() => document.getElementById('tab-trips').click()); await bea.p.waitForTimeout(200); await goFriends(bea.p);
+ok(/Alex/.test(await bea.p.textContent('#fr-requests')) && /wants to be friends/.test(await bea.p.textContent('#fr-requests')), 'Bea sees the incoming request with Alex\'s name');
+ok(await bea.p.locator('#tab-friends .tab-badge:not([hidden])').textContent() === '1', 'the Friends tab carries a badge with the number of requests');
+// the dashboard says so too
+await bea.p.evaluate(() => document.getElementById('panel-close').click()); await bea.p.waitForTimeout(500);
+await bea.p.evaluate(() => (document.getElementById('dash-tab') && !document.getElementById('dash-tab').hidden ? document.getElementById('dash-tab') : document.getElementById('dash-peek')).click()); await bea.p.waitForSelector('#dash:not([hidden])');
+ok(/1 friend request is waiting/.test(await bea.p.textContent('#dash .dash-friends')), 'the dashboard shows a card for it');
+await bea.p.click('#dash .dash-friends button'); await bea.p.waitForSelector('#pane-friends:not([hidden])');
+ok(true, 'its button opens the Friends tab');
+await bea.p.click('#fr-requests >> text=Accept'); await bea.p.waitForTimeout(700);
+ok(/Alex/.test(await bea.p.textContent('#fr-friends')) && !(await bea.p.locator('#fr-requests').count()) && await bea.p.locator('#tab-friends .tab-badge:not([hidden])').count() === 0, 'accepting moves Alex to Friends and clears the badge');
+await p.evaluate(() => document.getElementById('tab-trips').click()); await p.waitForTimeout(200); await goFriends(p);
+ok(/Bea/.test(await p.textContent('#fr-friends')) && /Friends \(1\)/.test(await p.textContent('#fr-friends')), 'Alex sees Bea among his friends');
+
+// ---------- blocking
+await bea.p.click('#fr-friends >> text=Block'); await bea.p.waitForTimeout(700);
+ok(/Alex/.test(await bea.p.textContent('#fr-blocked')) && /No friends yet/.test(await bea.p.textContent('#fr-friends')), 'blocking removes the friend and lists them under Blocked');
+await p.fill('#fr-add', bCode); await p.click('#pane-friends form.fr-name >> nth=1 >> button'); await p.waitForTimeout(700);
+ok(/that code was not found/.test(await p.textContent('.fr-message')), 'the blocked person asking again just gets "that code was not found"');
+await bea.p.click('#fr-blocked >> text=Unblock'); await bea.p.waitForTimeout(700);
+ok(!(await bea.p.locator('#fr-blocked').count()), 'unblocking clears the list');
+
+// ---------- switching requests off, new code, delete
+await bea.p.uncheck('#fr-accepts'); await bea.p.waitForTimeout(600);
+await p.fill('#fr-add', bCode); await p.click('#pane-friends form.fr-name >> nth=1 >> button'); await p.waitForTimeout(700);
+ok(/that code was not found/.test(await p.textContent('.fr-message')), 'with requests switched off the code gives the same answer as a wrong one');
+await bea.p.check('#fr-accepts'); await bea.p.waitForTimeout(500);
+await bea.p.click('#pane-friends >> text=New code'); await bea.p.waitForTimeout(700);
+ok(await code(bea.p) !== bCode, 'a new code replaces the old one');
+await bea.p.click('#pane-friends >> text=Delete my profile and friends'); await bea.p.waitForTimeout(800);
+ok((await db.query(`select count(*)::int as n from public.profiles where user_id = '${B}'`)).rows[0].n === 0, 'deleting the profile removes it from the database');
+await bea.ctx.close(); await ctx.close();
+
+// ---------- a phone: four tabs fit
+({ ctx, p } = await open('a', { vp: { width: 360, height: 740 }, mobile: true }));
+await p.tap('#dock button[data-tab=friends]'); await p.waitForSelector('#pane-friends:not([hidden])'); await p.waitForTimeout(500);
+const fit = await p.$eval('#panel .tabs', (t) => ({ sw: t.scrollWidth, cw: t.clientWidth }));
+const head = await p.$eval('#panel .sp-head', (h) => { const r = h.getBoundingClientRect(); const c = document.getElementById('panel-close').getBoundingClientRect(); return { right: r.right, close: c.right }; });
+ok(fit.sw <= fit.cw + 1 && head.close <= head.right, 'on a 360 px phone the four tabs fit and the > button is still in the header (' + fit.sw + ' of ' + fit.cw + ' px)');
+await ctx.close();
+
+ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
+await b.close();
+await db.close();

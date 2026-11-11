@@ -27,7 +27,7 @@ const toast = () => p.evaluate(() => document.querySelector('#toast, .toast')?.t
 await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1000);
 
 // ---------- tab
-ok((await p.$$eval('[role=tab]', (t) => t.map((x) => x.textContent.trim()))).join('|') === 'Map Configs|Trips|Points of Interest', 'three tabs in order: Map Configs, Trips, Points of Interest');
+ok((await p.$$eval('[role=tab]', (t) => t.map((x) => x.textContent.trim()))).join('|') === 'Map Configs|Trips|Points of Interest|Friends', 'four tabs in order (Friends is there because this build has accounts): Map Configs, Trips, Points of Interest');
 await p.click('#tab-trips');
 ok(await p.isVisible('#pane-trips') && !(await p.isVisible('#pane-poi')), 'the Trips tab opens its own pane');
 ok((await p.locator('#trips-list .trip-card').count()) === 1 && /Wuhan/.test(await p.textContent('#trips-list')) && /China/.test(await p.textContent('#trips-list')) && /3 days/.test(await p.textContent('#trips-list')), 'the saved trip is listed with country and length');

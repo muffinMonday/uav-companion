@@ -135,5 +135,6 @@ export async function initSyncUI({ store, toast }) {
     onChange: (fn) => listeners.add(fn),
     open: () => $('privacy-btn')?.click(),
     sync,
+    adapter,
   };
 }

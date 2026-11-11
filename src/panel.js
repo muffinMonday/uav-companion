@@ -59,7 +59,7 @@ export function initPanel() {
     animateOut(panel, 'closing', () => { setOpen(false); remember(true); $('dock-expand')?.focus(); }); // slides out to the right, then the rail comes back
   }
 
-  for (const t of tabs) {
+  function wireTab(t) {
     t.addEventListener('click', () => selectTab(t.dataset.tab));
     t.addEventListener('keydown', (e) => {
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
@@ -68,7 +68,29 @@ export function initPanel() {
       selectTab(tabs[(i + tabs.length) % tabs.length].dataset.tab, true);
     });
   }
+  for (const t of tabs) wireTab(t);
   for (const b of dock.querySelectorAll('button')) b.addEventListener('click', () => open(b.dataset.tab));
+
+  /** Adds a tab after start-up: { key, label, icon (svg markup built from constants), pane (the tab's content element) }. Returns { badge(n) } to show a count on its tab and rail icon. */
+  function addTab({ key, label, icon, pane }) {
+    const svg = icon;
+    const t = document.createElement('button');
+    t.type = 'button'; t.setAttribute('role', 'tab'); t.id = 'tab-' + key; t.dataset.tab = key;
+    t.setAttribute('aria-controls', pane.id); t.setAttribute('aria-selected', 'false'); t.tabIndex = -1;
+    t.innerHTML = svg + '<span class="tab-label"></span><span class="tab-badge" hidden></span>'; // icon markup comes from constants in the calling module
+    t.querySelector('.tab-label').textContent = label;
+    panel.querySelector('.tabs').append(t);
+    tabs.push(t); panes.set(key, pane); pane.hidden = true; pane.setAttribute('role', 'tabpanel'); pane.setAttribute('aria-labelledby', t.id);
+    panel.querySelector('.sp-body').append(pane);
+    wireTab(t);
+    const d = document.createElement('button');
+    d.type = 'button'; d.dataset.tab = key; d.setAttribute('aria-controls', 'panel'); d.setAttribute('aria-expanded', String(!panel.hidden)); d.setAttribute('aria-label', label); d.title = label;
+    d.innerHTML = svg + '<span></span><span class="tab-badge" hidden></span>';
+    d.querySelector('span').textContent = label;
+    d.addEventListener('click', () => open(key));
+    dock.append(d);
+    return { badge(n) { for (const b of [t.querySelector('.tab-badge'), d.querySelector('.tab-badge')]) { b.hidden = !n; b.textContent = n > 9 ? '9+' : String(n || ''); } } };
+  }
   $('panel-close').addEventListener('click', close);
   $('privacy-close').addEventListener('click', close); // the sub-panel covers the main header, so it needs its own
   $('privacy-btn').addEventListener('click', () => (sub.hidden ? openPrivacy() : closePrivacy()));
@@ -79,7 +101,7 @@ export function initPanel() {
   if (!isPhone() && !loadPrefs().panelCollapsed) open('config', { save: false }); // phones start with the map unobstructed
 
   return {
-    open, close, selectTab, openPrivacy, closePrivacy,
+    open, close, selectTab, openPrivacy, closePrivacy, addTab,
     isOpen: () => !panel.hidden,
     /** Calls fn whenever the panel opens (the dashboard steps aside for it on a phone). */
     onOpen(fn) { openers.push(fn); },

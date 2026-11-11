@@ -250,6 +250,16 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
     c.append(lines, el('p', 'hint', 'Arrows take the colour of their trip. A planning aid, not flight advice: zones can change, so check the official platform for the place you are flying (for China, UOM) before every flight.'));
     return c;
   }
+  function friendsCard() { // friend requests waiting (only when signed in to the optional cloud features)
+    const n = cloud.friends?.incoming ?? 0;
+    if (!n) return null;
+    const c = el('section', 'dash-card dash-friends');
+    c.append(el('h3', '', 'Friends'), el('p', 'hint', n === 1 ? '1 friend request is waiting for you.' : n + ' friend requests are waiting for you.'));
+    const b = el('button', 'btn small', 'Open Friends'); b.type = 'button';
+    b.addEventListener('click', () => { cloud.friends.open(); if (isPhone()) setState('peek'); });
+    c.append(b);
+    return c;
+  }
   function backupCard() {
     const due = backupDue(store.lastBackup(), store.items().length);
     if (!due) return null;
@@ -301,7 +311,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
     park(); poi.checkin.unbind('dash'); todayShown = false;
     body.replaceChildren();
     body.append(welcomeLine());
-    for (const card of [routeCard(), whatsNewCard(), tripCard(), actionsCard(), layersCard(), backupCard(), dataCard(), keyCard(), regionsCard()]) if (card) body.append(card);
+    for (const card of [routeCard(), whatsNewCard(), friendsCard(), tripCard(), actionsCard(), layersCard(), backupCard(), dataCard(), keyCard(), regionsCard()]) if (card) body.append(card);
     updatePeek();
     poi.checkin.sync(); // the position is wanted while Today shows check-in buttons
   }

@@ -19,7 +19,7 @@ await p.screenshot({ path: SP + '/ui-config.png' });
 await p.click('#tab-poi'); ok(await p.isVisible('#pane-poi') && !(await p.isVisible('#pane-config')), 'POI tab shows its pane');
 await p.focus('#tab-poi'); await p.keyboard.press('ArrowLeft'); await p.keyboard.press('ArrowLeft'); ok(await p.isVisible('#pane-config'), 'arrow keys switch tabs');
 await p.click('#panel-close'); ok(!(await p.isVisible('#panel')) && await p.isVisible('#dock'), 'close hides panel, shows dock');
-ok((await p.$$eval('#dock button[data-tab]', bs => bs.map(x => x.textContent.trim()))).join('|') === 'Map Configs|Trips|Points of Interest' && (await p.locator('#dock-expand').count()) === 1, 'the rail has the < button and the three tab icons (named for screen readers)');
+ok((await p.$$eval('#dock button[data-tab]', bs => bs.map(x => x.textContent.trim()))).join('|') === 'Map Configs|Trips|Points of Interest|Friends' && (await p.locator('#dock-expand').count()) === 1, 'the rail has the < button and one icon per tab (named for screen readers; Friends is there because this build has accounts)');
 await p.click('#dock [data-tab=poi]'); ok(await p.isVisible('#pane-poi'), 'dock POI button opens the panel on the POI tab');
 await p.screenshot({ path: SP + '/ui-poi-empty.png' });
 

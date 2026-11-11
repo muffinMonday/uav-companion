@@ -43,7 +43,7 @@ const struct = await p.evaluate(() => ({
   bodyChildren: [...document.querySelector('#panel > .sp-body').children].map((c) => c.id).join(','),
   scroll: getComputedStyle(document.querySelector('.sp-body')).scrollbarWidth,
 }));
-ok(struct.weatherInPoi && struct.backupInPoi && struct.aiInTrips && struct.bodyChildren === 'pane-config,pane-trips,pane-poi', 'the markup is balanced: the cards sit inside their own tab panes');
+ok(struct.weatherInPoi && struct.backupInPoi && struct.aiInTrips && struct.bodyChildren === 'pane-config,pane-trips,pane-poi,pane-friends', 'the markup is balanced: the cards sit inside their own tab panes');
 ok(struct.scroll === 'thin', 'scroll bars are thin');
 
 // ================= modern controls

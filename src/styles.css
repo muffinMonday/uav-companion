@@ -86,7 +86,13 @@ textarea{resize:vertical;min-height:60px}
 @keyframes slide-in{from{opacity:0;transform:translateX(48px)}to{opacity:1;transform:none}}
 .sp-head{display:flex;align-items:center;gap:8px;padding:10px 10px 8px 12px;border-bottom:1px solid var(--line)}
 .tabs{flex:1;display:flex;gap:2px;padding:3px;background:var(--surface-2);border-radius:999px}
-.tabs button{flex:1;padding:7px 8px;border:0;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap}
+.tabs button{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 8px;border:0;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap;min-width:0}
+.tabs button svg{flex:none;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-selected=true]{flex:2.6}
+.tabs button[aria-selected=false] .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)} /* only the selected tab shows its name; the others are icons (named for screen readers) */
+.tab-badge{position:absolute;top:1px;right:1px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;font-size:10.5px;font-weight:800;line-height:16px;text-align:center}
+.tab-badge[hidden]{display:none}
+.dock button .tab-badge{top:2px;right:2px}
 .tabs button[aria-selected=true]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(15,30,45,.2)}
 .sp-body{flex:1;overflow-y:auto;padding:12px;background:var(--surface-2)}
 .sp-body [role=tabpanel][hidden]{display:none}
@@ -779,3 +785,17 @@ input[type=email]:focus{border-color:var(--accent)}
 .cloud-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;font-size:14px}
 .cloud-line{margin-top:8px;text-align:left;white-space:normal}
 .storage-use.warn{color:var(--danger);font-weight:600}
+
+/* Friends tab */
+.fr-label{margin:10px 0 4px;font-size:12px;font-weight:700;color:var(--muted)}
+.fr-name{display:flex;gap:8px}
+.fr-name input{flex:1;min-width:0}
+.fr-code-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fr-code{font:700 20px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.08em;margin-right:auto}
+.fr-message{margin:8px 0 0}
+.fr-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.fr-row:first-of-type{border-top:0}
+.fr-who{min-width:0;display:flex;flex-direction:column}
+.fr-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fr-who small{color:var(--muted);font-size:12px}
+.fr-actions{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
