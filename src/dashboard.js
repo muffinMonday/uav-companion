@@ -314,7 +314,18 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
   }
 
   // ---------- the three states ----------
-  function lift() { document.documentElement.style.setProperty('--dash-lift', state === 'expanded' ? Math.round(dash.offsetHeight) + 'px' : '0px'); }
+  // On a phone the dashboard can grow to 90% of the screen (the button beside close). Not remembered: it is normal height each time it opens.
+  const expandBtn = $('dash-expand');
+  function setTall(on) {
+    dash.classList.toggle('tall', on);
+    expandBtn.setAttribute('aria-pressed', String(on));
+    const label = on ? 'Shrink the dashboard back to its usual height' : 'Expand the dashboard';
+    expandBtn.setAttribute('aria-label', label); expandBtn.title = on ? 'Shrink back' : 'Expand';
+    lift();
+  }
+  expandBtn.addEventListener('click', () => setTall(!dash.classList.contains('tall')));
+  // the forecast card and other bottom-left cards rise above the dashboard; a tall dashboard covers the screen, so they stay put behind it
+  function lift() { document.documentElement.style.setProperty('--dash-lift', state === 'expanded' && !dash.classList.contains('tall') ? Math.round(dash.offsetHeight) + 'px' : '0px'); }
   const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(lift) : null;
   ro?.observe(dash);
 
@@ -332,6 +343,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
     const apply = () => {
       if (token !== stateToken) return;
       dash.hidden = next !== 'expanded';
+      if (next !== 'expanded') setTall(false);
       peek.hidden = next !== 'peek';
       tab.hidden = next !== 'hidden';
       peek.setAttribute('aria-expanded', 'false');

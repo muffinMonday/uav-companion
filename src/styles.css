@@ -630,8 +630,16 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
 .dash-tab{width:46px;height:30px;border-radius:999px}
 /* the weather card sits above the open dashboard; the map's own controls do not move: the dashboard stands above them */
 .wx{bottom:calc(44px + var(--dash-lift,0px))}
+.dash-expand{display:none}
+.dash-expand svg{transition:transform var(--dur) var(--ease)}
+.dash.tall .dash-expand svg{transform:rotate(180deg)}
 @media (max-width:520px){
+  .dash-expand{display:inline-flex}
   .dash{left:8px;right:8px;bottom:40px;width:auto;max-width:none;max-height:54vh}
+  /* expanded: the top edge is at 10% of the screen (and never under the status bar); the header stays put and only the cards scroll, so shrink and close are always reachable. It sits above the banner and the forecast card so nothing can cover those buttons. */
+  .dash.tall{z-index:1070;height:min(calc(90vh - 40px),calc(100vh - 48px - env(safe-area-inset-top,0px)));max-height:none}
+  @supports (height:1dvh){.dash.tall{height:min(calc(90dvh - 40px),calc(100dvh - 48px - env(safe-area-inset-top,0px)))}}
+  .dash.tall .dash-head{flex:none}
   body[data-panel=open]{--panel-w:0px}
   .dash-card{max-width:none}
   .dash-peek,.dash-tab{bottom:40px}
