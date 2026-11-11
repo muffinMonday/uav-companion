@@ -2,14 +2,19 @@
 //   node tests/run.mjs            everything (browser suites need the app on http://localhost:5173, see docs)
 //   node tests/run.mjs --unit     only the suites that need no browser
 //   node tests/run.mjs trips ai   only suites whose file name contains one of these words
-import { spawnSync } from 'node:child_process';
+//   node tests/run.mjs --jobs 4   run up to 4 suites at once (default 4; --jobs 1 for one at a time, --jobs auto picks from the CPU count). Results print as each suite finishes.
+import { spawn } from 'node:child_process';
+import os from 'node:os';
 import path from 'node:path';
 
 const UNIT = ['ai-unit', 'trip-unit', 'trips-unit', 'rain-unit', 'places-unit', 'reorder-unit', 'maplinks-unit', 'coordparse-unit', 'onemap-unit', 'plan-unit', 'dashstate-unit', 'checkin-unit', 'share-unit', 'db-unit', 'sync-unit', 'sync-engine-unit'];
 const BROWSER = ['stops', 'days', 'search', 'maplinks', 'reorder', 'visits', 'window', 'dashboard', 'hold', 'rain', 'ui', 'bulk', 'poi1', 'poi2', 'edit', 'prefs', 'opacity', 'mw', 'priv', 'ai', 'trip', 'trips', 'sg', 'tools', 'mapsel', 'tripplan', 'shell', 'checkin', 'motion', 'dayroute', 'snow', 'cloud', 'smoke'];
 const args = process.argv.slice(2);
 const onlyUnit = args.includes('--unit');
-const words = args.filter((a) => !a.startsWith('--'));
+const ji = args.indexOf('--jobs');
+const jobsArg = ji >= 0 ? args[ji + 1] : '4';
+const JOBS = Math.max(1, jobsArg === 'auto' ? Math.min(6, Math.floor(os.cpus().length / 2)) : parseInt(jobsArg, 10) || 1);
+const words = args.filter((a, i) => !a.startsWith('--') && i !== ji + 1);
 
 let names = onlyUnit ? UNIT : [...UNIT, ...BROWSER];
 if (words.length) names = names.filter((n) => words.some((w) => n.includes(w)));
@@ -22,17 +27,36 @@ if (needsApp && !(await up())) {
 }
 
 let failed = 0;
-for (const n of names) {
-  const t0 = Date.now();
-  const r = spawnSync(process.execPath, ['--max-old-space-size=4096', path.join(import.meta.dirname, `${n}.mjs`)], { encoding: 'utf8', timeout: 900000 });
-  const out = `${r.stdout || ''}${r.stderr || ''}`;
+const SERIAL = new Set([]); // suites that cannot run beside others, with the reason beside each (none so far)
+
+function runSuite(n) {
+  return new Promise((resolve) => {
+    const t0 = Date.now();
+    const child = spawn(process.execPath, ['--max-old-space-size=4096', path.join(import.meta.dirname, `${n}.mjs`)], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '', timedOut = false;
+    child.stdout.on('data', (d) => { out += d; });
+    child.stderr.on('data', (d) => { out += d; });
+    const timer = setTimeout(() => { timedOut = true; child.kill(); }, 900000);
+    child.on('close', (status) => { clearTimeout(timer); resolve({ n, out, status: timedOut ? 1 : status, t0 }); });
+  });
+}
+
+function report({ n, out, status, t0 }) {
   const pass = (out.match(/^PASS/gm) || []).length, fail = (out.match(/^FAIL/gm) || []).length;
   const consoleErrors = /^errors: (?!none)/m.test(out);
-  const crashed = r.status !== 0 || /Error:|TimeoutError/.test(out.split('\n').filter((l) => !/^(PASS|FAIL)/.test(l)).join('\n')) && r.status !== 0;
+  const crashed = status !== 0;
   const bad = fail > 0 || crashed || consoleErrors;
   if (bad) failed++;
   console.log(`${bad ? 'FAIL' : 'ok  '}  ${n.padEnd(10)} ${String(pass).padStart(3)} pass, ${fail} fail${consoleErrors ? ', console errors' : ''}${crashed ? ', crashed' : ''}  (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
   if (bad) console.log(out.split('\n').filter((l) => /^FAIL|^errors|Error/.test(l)).slice(0, 8).map((l) => `      ${l.slice(0, 200)}`).join('\n'));
 }
-console.log(failed ? `\n${failed} suite(s) failed` : '\nall suites passed');
+
+// A pool: the slowest suites start first, so the last ones to finish are short; serial suites run alone at the end.
+const WEIGHT = { trip: 131, mw: 63, ai: 63, priv: 56, hold: 44, ui: 43 };
+const queue = names.filter((n) => !SERIAL.has(n)).sort((a, b) => (WEIGHT[b] || 0) - (WEIGHT[a] || 0));
+const t00 = Date.now();
+if (JOBS > 1) console.log(`running up to ${JOBS} suites at once`);
+await Promise.all(Array.from({ length: Math.min(JOBS, queue.length) }, async () => { while (queue.length) report(await runSuite(queue.shift())); }));
+for (const n of names.filter((x) => SERIAL.has(x))) report(await runSuite(n));
+console.log(`\n${failed ? failed + ' suite(s) failed' : 'all suites passed'}  (${((Date.now() - t00) / 1000).toFixed(0)} s)`);
 process.exit(failed ? 1 : 0);

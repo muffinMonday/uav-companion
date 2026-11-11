@@ -83,7 +83,7 @@ ok((await p.locator('#poi-list .poi-item').count()) === 3, 'markers survive a re
 
 // ---- export
 const [dl] = await Promise.all([p.waitForEvent('download'), dashClick(p, '#poi-export')]);
-const path = SP + '/export.geojson'; await dl.saveAs(path);
+const path = SP + '/poi1-export.geojson'; await dl.saveAs(path);
 const gj = JSON.parse(fs.readFileSync(path, 'utf8'));
 ok(gj.type === 'FeatureCollection' && gj.features.length === 3 && gj.features[0].geometry.type === 'Point', 'export is a GeoJSON FeatureCollection of 3 Points: ' + dl.suggestedFilename());
 ok(/Last backup/.test(await p.textContent('#poi-note')), 'backup note updated');
@@ -97,13 +97,13 @@ ok((await p.locator('#poi-list .poi-item').count()) === 3 && (await p.locator('.
 console.log('     toast:', await p.textContent('#toast'));
 await p.setInputFiles('#poi-file', path); await p.waitForTimeout(500);
 ok((await p.locator('#poi-list .poi-item').count()) === 3, 're-import adds no duplicates: ' + (await p.textContent('#toast')));
-fs.writeFileSync(SP + '/bad.txt', 'not json'); await p.setInputFiles('#poi-file', SP + '/bad.txt'); await p.waitForTimeout(400);
+fs.writeFileSync(SP + '/poi1-bad.txt', 'not json'); await p.setInputFiles('#poi-file', SP + '/poi1-bad.txt'); await p.waitForTimeout(400);
 ok(/not valid JSON/.test(await p.textContent('#toast')), 'bad file gives a readable error');
-fs.writeFileSync(SP + '/evil.geojson', JSON.stringify({ type: 'FeatureCollection', features: [
+fs.writeFileSync(SP + '/poi1-evil.geojson', JSON.stringify({ type: 'FeatureCollection', features: [
   { type: 'Feature', properties: { name: '<img src=x onerror=window.__pwn=1>', type: 'nope' }, geometry: { type: 'Point', coordinates: [114.3, 30.6] } },
   { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [999, 30] } },
   { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[1, 2], [3, 4]] } }] }));
-await p.setInputFiles('#poi-file', SP + '/evil.geojson'); await p.waitForTimeout(500);
+await p.setInputFiles('#poi-file', SP + '/poi1-evil.geojson'); await p.waitForTimeout(500);
 console.log('     toast:', await p.textContent('#toast'));
 await p.click('#poi-list .poi-item:has-text("<img")'); await p.waitForSelector('.poi-pop h3', { timeout: 5000 });
 ok((await p.evaluate(() => window.__pwn === undefined)) && (await p.textContent('.poi-pop h3')).startsWith('<img'), 'markup in an imported name is shown as text, not executed');
