@@ -39,6 +39,8 @@ export function rainBlock(outlook) {
   const head = el('div', 'rain-head');
   if (outlook.kind === 'prob') {
     head.append(el('b', '', `Rain chance up to ${Math.round(outlook.peak)}%`), outlook.peak > 0 ? ` around ${outlook.at}` : ' (none expected)');
+  } else if (outlook.kind === 'snow') {
+    head.append(el('b', '', `Snow: ${outlook.total.toFixed(1)} cm`), ` (up to ${outlook.peak.toFixed(1)} cm an hour, around ${outlook.at})`);
   } else if (outlook.kind === 'mm') {
     head.append(el('b', '', outlook.total > 0 ? `Rain expected: ${outlook.total.toFixed(1)} mm` : 'No rain forecast'), ' (no chance given for this place)');
   } else {
@@ -49,10 +51,10 @@ export function rainBlock(outlook) {
   box.append(head);
   const strip = el('div', 'rain-strip');
   strip.setAttribute('role', 'img');
-  const mmMax = Math.max(1, ...outlook.hours.map((x) => x.mm ?? 0));
+  const mmMax = Math.max(1, ...outlook.hours.map((x) => (outlook.kind === 'snow' ? x.cm : x.mm) ?? 0));
   const parts = [];
   for (const h of outlook.hours) {
-    const value = outlook.kind === 'prob' ? h.p : h.mm;
+    const value = outlook.kind === 'prob' ? h.p : outlook.kind === 'snow' ? h.cm : h.mm;
     const frac = value === null ? 0 : outlook.kind === 'prob' ? value / 100 : Math.min(1, value / mmMax);
     const col = el('div', 'rain-col');
     const bar = el('i', value === null ? 'rain-bar none' : 'rain-bar');
@@ -63,7 +65,7 @@ export function rainBlock(outlook) {
     strip.append(col);
     parts.push(`${h.label} ${text}`);
   }
-  strip.setAttribute('aria-label', `${outlook.kind === 'prob' ? 'Rain chance' : 'Expected rain in mm'} by hour: ${parts.join(', ')}`);
+  strip.setAttribute('aria-label', `${outlook.kind === 'prob' ? 'Rain chance' : outlook.kind === 'snow' ? 'Expected snowfall in cm' : 'Expected rain in mm'} by hour: ${parts.join(', ')}`);
   box.append(strip);
   return box;
 }

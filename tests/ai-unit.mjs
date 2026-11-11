@@ -86,8 +86,12 @@ ok(!ai.isDuplicate({ status: 'lookup', name: 'Riverside Hotel' }, existing), 'a 
 const items = [{ type: 'Feature', geometry: pt(114.3055, 30.5928), properties: { name: 'Hotel 酒店 "quoted" <b>', type: 'hotel', note: 'line1\nline2', day: 1, order: 2 } }];
 const text = JSON.stringify({ type: 'FeatureCollection', uavzones: 1, features: items });
 const enc = await ai.encodeShare(text);
-ok(enc.startsWith('z.') && /^z\.[A-Za-z0-9_-]+$/.test(enc), 'share fragment is compressed base64url: ' + enc.slice(0, 20) + '…');
-ok(await ai.decodeShare(enc) === text, 'share round trip preserves the text exactly (including non-ASCII, quotes, newlines)');
+ok(enc.startsWith('z2.') && /^z2\.[A-Za-z0-9_-]+$/.test(enc), 'an app export becomes a compact, compressed base64url fragment: ' + enc.slice(0, 20) + '…');
+const back = JSON.parse(await ai.decodeShare(enc)).features[0];
+ok(back.properties.name === 'Hotel 酒店 "quoted" <b>' && back.properties.note === 'line1\nline2' && back.properties.day === 1 && back.properties.order === 2 && back.geometry.coordinates[0] === 114.3055 && back.geometry.coordinates[1] === 30.5928, 'the compact round trip preserves names (non-ASCII, quotes), notes with newlines, day, stop and exact coordinates');
+const other = JSON.stringify({ note: 'wörld "x"\nline', n: [1, 2, 3] });
+const enc1 = await ai.encodeShare(other);
+ok(enc1.startsWith('z.') && /^z\.[A-Za-z0-9_-]+$/.test(enc1) && await ai.decodeShare(enc1) === other, 'anything that is not an app export keeps the older compressed form and its text exactly');
 const many = JSON.stringify({ type: 'FeatureCollection', uavzones: 1, features: Array.from({ length: 40 }, (_, i) => ({ type: 'Feature', geometry: pt(114 + i * 0.001, 30.5), properties: { name: 'Stop ' + i, type: 'photo', note: 'A scenic place number ' + i, day: 1 + (i % 4), order: i } })) });
 const encMany = await ai.encodeShare(many);
 ok(encMany.length < many.length * 0.6, `40 places: ${many.length} chars of JSON become a ${encMany.length} character link fragment`);

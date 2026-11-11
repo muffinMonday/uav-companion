@@ -6,7 +6,7 @@
 import { getPrivacy } from './privacy.js';
 
 const API = 'https://api.open-meteo.com/v1/forecast';
-const HOURLY = 'temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,wind_speed_120m,visibility';
+const HOURLY = 'temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,wind_speed_120m,visibility,snowfall,snow_depth';
 const HOURS = 12;
 const SUMMARY_HOURS = 5;
 const LIMIT_KEY = 'uavzones.windLimit';
@@ -31,7 +31,7 @@ const maxOf = (xs) => { const v = xs.filter((x) => x !== null); return v.length 
  */
 export async function fetchSummaries(points, signal) {
   const url = `${API}?latitude=${points.map((p) => coord(p.lat)).join(',')}&longitude=${points.map((p) => coord(wrapLon(p.lon))).join(',')}`
-    + '&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation_probability,precipitation&wind_speed_unit=ms&timezone=auto&forecast_days=2';
+    + '&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation_probability,precipitation,snowfall,snow_depth&wind_speed_unit=ms&timezone=auto&forecast_days=2';
   const res = await fetch(url, { signal });
   if (res.status === 429) throw new Error('busy');
   if (!res.ok) throw new Error(`http ${res.status}`);
@@ -46,7 +46,7 @@ export async function fetchSummaries(points, signal) {
     const winOpt = (key) => (Array.isArray(r.hourly[key]) ? r.hourly[key].slice(from, from + SUMMARY_HOURS).map(num) : []);
     return {
       id: points[i].id, temp: mean(win('temperature_2m')), wind: mean(win('wind_speed_10m')), gust: maxOf(win('wind_gusts_10m')),
-      pp: winOpt('precipitation_probability'), pr: winOpt('precipitation'),
+      pp: winOpt('precipitation_probability'), pr: winOpt('precipitation'), sf: winOpt('snowfall'), sd: num(r.hourly.snow_depth?.[from]), // snowfall per hour (cm) and the depth now (m)
       n: Math.min(SUMMARY_HOURS, r.hourly.time.length - from), start: r.hourly.time[from].slice(11, 16), tz: r.timezone_abbreviation || '',
     };
   });
@@ -69,12 +69,13 @@ async function fetchForecast(lat, lon, signal) {
     rows.push({
       time: h.time[i].slice(11, 16), temp: num(h.temperature_2m[i]), rain: num(h.precipitation[i]),
       wind10: num(h.wind_speed_10m[i]), gust: num(h.wind_gusts_10m[i]), wind120: num(h.wind_speed_120m[i]),
-      vis: num(h.visibility[i]),
+      vis: num(h.visibility[i]), snow: num(h.snowfall?.[i]),
     });
   }
   const today = nowLocal.slice(0, 10);
   const di = Math.max(0, j.daily.time.indexOf(today));
-  return { rows, sunrise: j.daily.sunrise[di]?.slice(11, 16), sunset: j.daily.sunset[di]?.slice(11, 16), tz: j.timezone_abbreviation };
+  const depth = num(h.snow_depth?.[start]);
+  return { rows, depth, sunrise: j.daily.sunrise[di]?.slice(11, 16), sunset: j.daily.sunset[di]?.slice(11, 16), tz: j.timezone_abbreviation };
 }
 
 export function getWindLimit() {
@@ -117,9 +118,11 @@ export function initWeather() {
 
     card.append(el('div', 'wx-sub',
       `Next ${d.rows.length} hours, local time${d.tz ? ` (${d.tz})` : ''}. Regional model, roughly 10 to 25 km: valleys, hills and coasts can differ a lot.`
-      + (d.sunrise ? ` Sunrise ${d.sunrise}, sunset ${d.sunset}.` : '')));
+      + (d.sunrise ? ` Sunrise ${d.sunrise}, sunset ${d.sunset}.` : '')
+      + (d.depth !== null && d.depth >= 0.01 ? ` ❄ ${Math.round(d.depth * 100)} cm of snow on the ground.` : '')));
 
-    const cols = [['Time'], ['Wind 10 m', 'm/s'], ['Gust', 'm/s'], ['Wind 120 m', 'm/s'], ['Rain', 'mm'], ['Vis.', 'km'], ['Temp', '°C']];
+    const snowy = d.rows.some((r) => r.snow > 0); // a Snow column only when some hour has snow
+    const cols = [['Time'], ['Wind 10 m', 'm/s'], ['Gust', 'm/s'], ['Wind 120 m', 'm/s'], ['Rain', 'mm'], ...(snowy ? [['Snow', 'cm']] : []), ['Vis.', 'km'], ['Temp', '°C']];
     const table = el('table', 'wx-table');
     const trh = el('tr');
     for (const [name, unit] of cols) { const th = el('th', '', name); if (unit) th.append(el('small', '', unit)); trh.append(th); }
@@ -135,7 +138,7 @@ export function initWeather() {
         const td = el('td', limit !== null && r[key] !== null && r[key] > limit ? 'over' : '', f(r[key]));
         tr.append(td);
       }
-      tr.append(el('td', r.rain > 0 ? 'wet' : '', f(r.rain)), el('td', '', r.vis === null ? '–' : f(r.vis / 1000, 0)), el('td', '', f(r.temp, 0)));
+      tr.append(el('td', r.rain > 0 ? 'wet' : '', f(r.rain)), ...(snowy ? [el('td', r.snow > 0 ? 'wet' : '', f(r.snow))] : []), el('td', '', r.vis === null ? '–' : f(r.vis / 1000, 0)), el('td', '', f(r.temp, 0)));
       body.append(tr);
     }
     table.append(body);

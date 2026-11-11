@@ -6,6 +6,7 @@
 // What is never trusted: everything is passed through poi.js sanitize before it can become a marker, names and notes are only
 // ever shown as text, and nothing is added until the person confirms the preview.
 import { TYPES, posInt, isoDate, tripFields } from './poi.js';
+import { compactShare, expandShare } from './sharecompact.js';
 
 const MAX_CHARS = 2e6;
 const MAX_ROWS = 200;
@@ -167,20 +168,29 @@ const bytesToB64 = (bytes) => { let s = ''; for (let i = 0; i < bytes.length; i 
 const b64ToBytes = (b64) => Uint8Array.from(atob(b64.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
 const pipe = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
 
-/** The fragment value for a list of GeoJSON text: compressed when the browser can, which keeps the link short. */
+/**
+ * The fragment value for a list of GeoJSON text. An app export (places and trips) is written in the compact form (z2.) and compressed, which keeps
+ * the link short; anything else is compressed as it is (z.), or left as plain text when the browser cannot compress.
+ */
 export async function encodeShare(jsonText) {
-  const raw = new TextEncoder().encode(jsonText);
   if (typeof CompressionStream === 'undefined') return encodeURIComponent(jsonText);
-  return `z.${bytesToB64(await pipe(raw, new CompressionStream('deflate-raw')))}`;
+  let prefix = 'z.', text = jsonText;
+  try {
+    const gj = JSON.parse(jsonText);
+    if (gj?.uavzones === 1 && Array.isArray(gj.features) && gj.features.every((f) => f?.geometry?.type === 'Point')) { text = JSON.stringify(compactShare(gj)); prefix = 'z2.'; }
+  } catch { /* not JSON we know: send it as it is */ }
+  return `${prefix}${bytesToB64(await pipe(new TextEncoder().encode(text), new CompressionStream('deflate-raw')))}`;
 }
 
 /** Back to JSON text, from either the compressed form or plain percent-encoded JSON. Throws a readable error. */
 export async function decodeShare(value) {
   try {
     if (value.length > 400000) throw new Error('long');
-    if (!value.startsWith('z.')) return decodeURIComponent(value);
-    const out = await pipe(b64ToBytes(value.slice(2)), new DecompressionStream('deflate-raw'));
+    const compact = value.startsWith('z2.');
+    if (!compact && !value.startsWith('z.')) return decodeURIComponent(value);
+    const out = await pipe(b64ToBytes(value.slice(compact ? 3 : 2)), new DecompressionStream('deflate-raw'));
     if (out.length > MAX_CHARS) throw new Error('long');
-    return new TextDecoder().decode(out);
+    const text = new TextDecoder().decode(out);
+    return compact ? JSON.stringify(expandShare(JSON.parse(text))) : text;
   } catch { throw new Error('That link could not be read. It may have been cut short when it was copied.'); }
 }

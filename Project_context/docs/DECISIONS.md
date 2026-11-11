@@ -184,3 +184,10 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 
 ### 2026-11-11: Marker window order: conditions before distances
 - Decision (owner): elevation and weather matter more than the distance to the hotel or Home, so they come straight after the zone verdict, with the Show weather here button in the same place, and the distance rows move below, side by side. Elevation stays one of the four tiles (the 2x2 layout).
+
+### 2026-11-11: Snow appears only where there is snow
+- Decision (owner): add snow to the weather without changing what places without snow see: the rain strip becomes a snow strip when snow dominates; a snow-on-the-ground line (over 1 cm) and a cold-battery hint (5 C or below) appear only when they apply; day cards show snowfall in place of the rain chance; the forecast table adds a Snow column only when needed. Centimetres everywhere; the 2x2 tile layout is untouched.
+
+### 2026-11-11: Share links use a compact, exact format (z2.)
+- Decision (owner): option 1 of the short-link discussion: a compact row format, with the 6-decimal coordinates kept exactly (3% longer than rounding to 5), old links still read. A third-party shortener is rejected (it would send the list of places to someone else); a real short link waits for the backend decision.
+- Consequences: a trip's notes and checklist are no longer part of a link (private planning); the sender's trip colour is not shared.

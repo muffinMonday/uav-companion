@@ -626,6 +626,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         const limit = getWindLimit();
         const over = limit !== null && e.gust !== null && e.gust > limit;
         tiles.push(tile('temp', 'Avg temp', `${f(e.temp, 1)} °C`), tile('wind', 'Avg wind', `${f(e.wind, 1)} m/s`), tile('gust', 'Peak gust', `${f(e.gust, 1)} m/s`, over ? 'over' : ''));
+        if (e.sd !== null && e.sd >= 0.01) notes.push(`❄ ${Math.round(e.sd * 100)} cm of snow on the ground`);
+        if (e.temp !== null && e.temp <= 5) notes.push('Cold: batteries lose capacity and flight time');
         notes.push(`${s.outdated ? 'Outdated. ' : ''}Next ${e.n} h · updated ${formatWhen(e.t)}${s.failed ? ' (latest refresh failed)' : ''} · forecast from ${e.start} local time there`);
       }
     }

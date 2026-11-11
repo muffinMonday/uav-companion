@@ -43,3 +43,15 @@ ok(Array.isArray(r.pp) && r.pp.length === 0 && Array.isArray(r.pr) && r.pr.lengt
 globalThis.fetch = reply({ precipitation_probability: time.map(() => null), precipitation: time.map(() => null) });
 r = (await weather.fetchSummaries([{ id: 'a', lat: 30, lon: 114 }]))[0];
 ok(mw.rainOutlook({ t: 1, start: r.start, n: 5, ...r }).kind === 'none', 'all-null rain fields count as unavailable');
+
+// ---------- snow: only where there is snow
+o = mw.rainOutlook(E({ pp: [], pr: [0.4, 1.2, 0.8, 0.2, 0], sf: [0.4, 1.2, 0.8, 0.2, 0] }));
+ok(o.kind === 'snow' && Math.abs(o.total - 2.6) < 1e-9 && o.peak === 1.2 && o.at === '15:00' && o.hours[1].cm === 1.2, 'mostly snow: a snow outlook, 2.6 cm in all, peaking at 1.2 cm an hour at 15:00');
+o = mw.rainOutlook(E({ pp: [10, 40, 70, 30, 0], pr: [0, 0.2, 1.4, 0.1, 0], sf: [0, 0, 0, 0, 0] }));
+ok(o.kind === 'prob' && o.peak === 70, 'a snowfall of 0 everywhere changes nothing: still the rain chance');
+o = mw.rainOutlook(E({ pp: [10, 40, 70, 30, 0], pr: [0, 3, 6, 2, 0], sf: [0, 0.3, 0, 0, 0] }));
+ok(o.kind === 'prob', 'a flurry in a rainy spell stays rain (snow is less than half of what falls)');
+o = mw.rainOutlook(E({ pp: [10, 40, 70, 30, 0], pr: [0, 0.2, 1.4, 0.1, 0], sf: [0, 0.05, 0, 0, 0] }));
+ok(o.kind === 'prob', 'under 0.1 cm of snow is ignored');
+o = mw.rainOutlook(E({ pp: [], pr: [0, 0.3, 0.9, 0, 0] }));
+ok(o.kind === 'mm', 'an entry saved before snow was fetched (no snowfall list) is read as before');

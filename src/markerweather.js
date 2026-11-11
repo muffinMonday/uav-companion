@@ -24,6 +24,15 @@ export function rainOutlook(e) {
   const [h0] = String(e.start).split(':').map(Number);
   const count = Math.max(e.pp.length, e.pr.length);
   const list = Array.from({ length: count }, (_, i) => ({ label: `${String(((Number.isFinite(h0) ? h0 : 0) + i) % 24).padStart(2, '0')}:00`, p: e.pp[i] ?? null, mm: e.pr[i] ?? null }));
+  // snow, when it is most of what is falling (an hour of snowfall in cm is about the same as its water in mm)
+  if (Array.isArray(e.sf) && e.sf.length) {
+    const cm = e.sf.reduce((a, x) => a + (x ?? 0), 0), water = e.pr.reduce((a, x) => a + (x ?? 0), 0);
+    if (cm >= 0.1 && cm >= water * 0.5) {
+      const hrs = list.map((x, i) => ({ ...x, cm: e.sf[i] ?? null }));
+      const peak = Math.max(...hrs.map((x) => x.cm ?? 0));
+      return { kind: 'snow', total: cm, peak, at: hrs.find((x) => (x.cm ?? 0) === peak).label, hours: hrs };
+    }
+  }
   const probs = list.filter((x) => x.p !== null);
   if (probs.length) {
     const peak = Math.max(...probs.map((x) => x.p));
@@ -42,7 +51,7 @@ function loadCache() {
     const items = {};
     for (const [id, e] of Object.entries(d.items)) {
       if (!e || !Number.isFinite(e.t) || typeof e.start !== 'string') continue;
-      items[id] = { t: e.t, temp: num(e.temp), wind: num(e.wind), gust: num(e.gust), n: Number.isFinite(e.n) ? e.n : 0, start: e.start.slice(0, 5), tz: String(e.tz || '').slice(0, 12), pp: hours(e.pp), pr: hours(e.pr) };
+      items[id] = { t: e.t, temp: num(e.temp), wind: num(e.wind), gust: num(e.gust), n: Number.isFinite(e.n) ? e.n : 0, start: e.start.slice(0, 5), tz: String(e.tz || '').slice(0, 12), pp: hours(e.pp), pr: hours(e.pr), sf: hours(e.sf), sd: num(e.sd) };
     }
     return { lastBulk: Number.isFinite(d.lastBulk) ? d.lastBulk : null, items };
   } catch { return empty; }
@@ -90,7 +99,7 @@ export function createMarkerWeather({ getItems, onChange }) {
         if (!isOn()) break; // switched off while the request was in flight: keep nothing
         const stillThere = new Set(ids());
         const t = Date.now();
-        for (const r of results) for (const id of twins.get(keyById.get(r.id)) ?? []) if (stillThere.has(id)) cache.items[id] = { t, temp: r.temp, wind: r.wind, gust: r.gust, n: r.n, start: r.start, tz: r.tz, pp: r.pp, pr: r.pr };
+        for (const r of results) for (const id of twins.get(keyById.get(r.id)) ?? []) if (stillThere.has(id)) cache.items[id] = { t, temp: r.temp, wind: r.wind, gust: r.gust, n: r.n, start: r.start, tz: r.tz, pp: r.pp, pr: r.pr, sf: r.sf, sd: r.sd };
         save();
         emit();
       }

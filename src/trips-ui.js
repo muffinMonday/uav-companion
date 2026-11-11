@@ -40,7 +40,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   const pageOf = new Map();       // tripId -> the page (day) of its flip card, kept while the page is open
   const zoneChecks = new Map(); // tripId -> Map(markerId -> { sig, s }): what the map data says about each stop, until the page closes
   const sigOf = (it) => `${it.lat},${it.lon}`;
-  const dayWeatherText = (w) => [`${weatherInfo(w.code).icon} ${w.max !== null ? Math.round(w.max) : '–'}°/${w.min !== null ? Math.round(w.min) : '–'}°`, w.rain !== null && `rain ${Math.round(w.rain)}%`, w.wind !== null && `wind ${w.wind.toFixed(0)} m/s`].filter(Boolean).join(' · ');
+  const dayWeatherText = (w) => [`${weatherInfo(w.code).icon} ${w.max !== null ? Math.round(w.max) : '–'}°/${w.min !== null ? Math.round(w.min) : '–'}°`, w.snow !== null && w.snow >= 0.1 ? `snow ${w.snow.toFixed(1)} cm` : w.rain !== null && `rain ${Math.round(w.rain)}%`, w.wind !== null && `wind ${w.wind.toFixed(0)} m/s`].filter(Boolean).join(' · ');
   const listCard = list.closest('.card'), detail = $('trip-detail'), aiCard = $('ai-card');
   const pastBox = $('trips-past'), pastList = $('trips-past-list');
 

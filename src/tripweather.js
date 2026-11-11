@@ -48,7 +48,7 @@ export async function fetchDaily(spots, signal) {
   const unique = [], index = new Map();
   for (const s of spots) { const k = keyOf(s); if (!index.has(k)) { index.set(k, unique.length); unique.push(s); } }
   const url = `${API}?latitude=${unique.map((p) => coord(p.lat)).join(',')}&longitude=${unique.map((p) => coord(wrapLon(p.lon))).join(',')}`
-    + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max'
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,snowfall_sum'
     + `&wind_speed_unit=ms&timezone=auto&forecast_days=${HORIZON_DAYS}`;
   const res = await fetch(url, { signal });
   if (res.status === 429) throw new Error('busy');
@@ -62,7 +62,7 @@ export async function fetchDaily(spots, signal) {
     const i = Array.isArray(r?.daily?.time) ? r.daily.time.indexOf(s.date) : -1;
     if (i < 0) continue;
     const d = r.daily;
-    out[s.date] = { code: num(d.weather_code?.[i]), max: num(d.temperature_2m_max?.[i]), min: num(d.temperature_2m_min?.[i]), rain: num(d.precipitation_probability_max?.[i]), wind: num(d.wind_speed_10m_max?.[i]) };
+    out[s.date] = { code: num(d.weather_code?.[i]), max: num(d.temperature_2m_max?.[i]), min: num(d.temperature_2m_min?.[i]), rain: num(d.precipitation_probability_max?.[i]), wind: num(d.wind_speed_10m_max?.[i]), snow: num(d.snowfall_sum?.[i]) };
   }
   return out;
 }

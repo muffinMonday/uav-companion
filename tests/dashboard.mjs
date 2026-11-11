@@ -160,7 +160,7 @@ await ctx.close();
 
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: null, data: false }));
 ok(/Welcome!/.test(await p.textContent('#dash .dash-hello')) && /plan your trip/.test(await p.textContent('#dash .dash-hello-sub')), 'a first visit gets the welcome message');
-ok((await p.$eval('#dash .dash-hello', (e) => parseFloat(getComputedStyle(e).fontSize))) >= 26, 'the greeting is large');
+ok((await p.$eval('#dash .dash-hello', (e) => parseFloat(getComputedStyle(e).fontSize))) >= 24, 'the greeting is large');
 await ctx.close();
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();

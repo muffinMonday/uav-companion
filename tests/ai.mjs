@@ -205,7 +205,7 @@ ok(ex1.features.find((f) => f.properties.name === 'Maybe Here').properties.unver
 // ============ 12. share link
 await p.click('#poi-share'); await p.waitForTimeout(400);
 const link = await p.evaluate(() => navigator.clipboard.readText());
-ok(/^http:\/\/localhost:5173\/#import=z\.[A-Za-z0-9_-]+$/.test(link), `12: "Copy share link" copies a link with a compressed fragment (${link.length} characters)`);
+ok(/^http:\/\/localhost:5173\/#import=z2\.[A-Za-z0-9_-]+$/.test(link), `12: "Copy share link" copies a link with a compact, compressed fragment (${link.length} characters)`);
 ok(!/Riverside|P1|Maybe/.test(link), '12: the link does not show names in clear text');
 const S2 = await session();
 const p2 = S2.page;
