@@ -573,3 +573,22 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .pop .map-icons .btn.tool.armed{width:auto;color:#fff}
 .btn.tool.armed.share{background:var(--accent);color:var(--accent-fg)}
 .pop-sub.has-icons{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+
+/* ---------- the days of a trip as a flip card ---------- */
+.flip{margin-top:12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);perspective:900px}
+.flip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.flip-nav{display:flex;align-items:center;gap:4px;padding:6px;border-bottom:1px solid var(--line)}
+.flip-title{flex:1;min-width:0;text-align:center;font-weight:700;font-size:13.5px}
+.flip-btn:disabled{opacity:.3;cursor:default}
+.flip-body{display:grid;gap:4px;padding:8px 10px 10px;touch-action:pan-y}
+.flip-body .plan-km,.flip-body .plan-empty{color:var(--muted);font-size:12px}
+.flip-body>.btn{justify-self:start;margin-top:6px}
+.flip-body.flip-next{animation:flip-from-right .26s ease-out}
+.flip-body.flip-prev{animation:flip-from-left .26s ease-out}
+@keyframes flip-from-right{from{transform:rotateY(-65deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes flip-from-left{from{transform:rotateY(65deg);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.flip-body.flip-next,.flip-body.flip-prev{animation:none}}
+.flip-dots{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;padding:0 6px 8px}
+.flip-dot{width:18px;height:18px;padding:0;border:0;background:transparent;cursor:pointer;display:grid;place-items:center}
+.flip-dot::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--line)}
+.flip-dot[aria-current=true]::before{background:var(--accent)}

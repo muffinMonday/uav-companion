@@ -145,3 +145,7 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 ### 2026-11-11: Map links as icons beside the coordinates; distance rows only when they exist
 - Decision (owner): Open and Navigate are icons next to the coordinates (marker window) or the title (point check); the Home marker's icons ask on a second tap; hotel and Home point rows with no distance are not shown.
 - Consequences: the sharing sentence is a tooltip plus a line in the Maps card (tooltips do not show on phones).
+
+### 2026-11-11: Trip days as a flip card
+- Decision (owner): the trip detail screen shows one day at a time on a card with ‹ and ›, instead of a long stack of days.
+- Consequences: no stops on the list-level trip cards; the card opens on today's day for a trip under way; no automatic map movement when turning pages (a Fit map button on each page).

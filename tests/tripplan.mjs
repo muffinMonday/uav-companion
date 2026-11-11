@@ -16,6 +16,7 @@ const items = [
   mk('c', 'Lake', 30.55, 114.37, { tripId: 't1', date: iso(6), order: 1 }),
   mk('u', 'Somewhere', 30.5, 114.3, { tripId: 't1' }),
   mk('o', 'Old place', 30.6, 114.3, { tripId: 't2', date: iso(-20), order: 1 }),
+  mk('tw', 'Today stop', 30.6, 114.31, { tripId: 't3', date: iso(0), order: 1 }),
 ];
 const b = await chromium.launch({ channel: CHANNEL });
 async function open(vp, mobile) {
@@ -29,6 +30,15 @@ async function open(vp, mobile) {
   await p.waitForTimeout(300);
   return { ctx, p };
 }
+const flipText = (p) => p.$eval('#trip-detail .flip', (e) => e.innerText.replace(/\n+/g, ' | '));
+const nextBtn = (p) => p.locator('#trip-detail .flip-btn').nth(1), prevBtn = (p) => p.locator('#trip-detail .flip-btn').nth(0);
+/** From the first page of the flip card to the last, collecting what `collect` returns on each. */
+const walk = async (p, collect) => {
+  await p.locator('#trip-detail .flip-dot').first().click(); await p.waitForTimeout(80);
+  const out = [];
+  for (;;) { out.push(await collect()); if (await nextBtn(p).isDisabled()) break; await nextBtn(p).click(); await p.waitForTimeout(80); }
+  return out;
+};
 const card = (p, name) => p.locator('#trips-list .trip-card', { hasText: name });
 
 let { ctx, p } = await open({ width: 1300, height: 900 }, false);
@@ -45,14 +55,32 @@ ok(await p.locator('#trips-past-list .trip-card', { hasText: 'Old trip' }).isVis
 // detail
 await card(p, 'Hubei spring').locator('.trip-card-head').click(); await p.waitForTimeout(300);
 ok(await p.isVisible('#trip-detail') && !(await p.isVisible('#trips-list')) && !(await p.isVisible('#ai-card')), 'tapping a card opens its detail screen in place of the list');
-const days = await p.$$eval('#trip-detail .plan-day', (s) => s.map((x) => x.innerText.replace(/\n+/g, ' | ')));
-ok(days.length === 5 && /Day 1/.test(days[0]) && /Airport/.test(days[0]) && /Tower/.test(days[0]) && /Hotel A/.test(days[0]) && /km between stops/.test(days[0]), 'the days are listed with their stops and the distance between them: ' + days[0]);
-ok(/Day 2/.test(days[1]) && /Lake/.test(days[1]) && /Nothing planned/.test(days[2]), 'a later day has its stop, an empty day says so');
-ok(/No date \(1\)/.test(days[4]) && /Somewhere/.test(days[4]), 'markers with no date are listed apart');
+ok(/Day 1 of 4/.test(await flipText(p)) && /Airport/.test(await flipText(p)) && /Tower/.test(await flipText(p)) && /Hotel A/.test(await flipText(p)) && /km between stops/.test(await flipText(p)), 'the trip opens on Day 1 as a card, with its stops and the distance between them: ' + (await flipText(p)).slice(0, 110));
+ok(await prevBtn(p).isDisabled() && !(await nextBtn(p).isDisabled()) && (await p.locator('#trip-detail .flip-dot').count()) === 5, 'there is no day before Day 1; five dots for four days and the markers with no date');
+await nextBtn(p).click(); await p.waitForTimeout(350);
+ok(/Day 2 of 4/.test(await flipText(p)) && /Lake/.test(await flipText(p)) && !/Airport/.test(await flipText(p)), '› turns to the next day, which shows only its own stops');
+await nextBtn(p).click(); await p.waitForTimeout(200);
+ok(/Day 3 of 4/.test(await flipText(p)) && /Nothing planned/.test(await flipText(p)), 'an empty day says so');
+await nextBtn(p).click(); await nextBtn(p).click(); await p.waitForTimeout(200);
+ok(/No date \(1\)/.test(await flipText(p)) && /Somewhere/.test(await flipText(p)) && await nextBtn(p).isDisabled(), 'the last page holds the markers with no date, and › stops there');
+await prevBtn(p).click(); await prevBtn(p).click(); await prevBtn(p).click(); await p.waitForTimeout(200);
+ok(/Day 2 of 4/.test(await flipText(p)), '‹ goes back a day');
+await p.locator('#trip-detail .flip-dot').first().click(); await p.waitForTimeout(200);
+ok(/Day 1 of 4/.test(await flipText(p)), 'a dot jumps to its day');
+await p.locator('#trip-detail .flip').focus(); await p.keyboard.press('ArrowRight'); await p.waitForTimeout(200);
+ok(/Day 2 of 4/.test(await flipText(p)), 'the right arrow key turns the page when the card has focus');
+await p.keyboard.press('ArrowLeft'); await p.waitForTimeout(200);
+await p.evaluate(() => { const bd = document.querySelector('#trip-detail .flip-body'); const ev = (type, x) => bd.dispatchEvent(new PointerEvent(type, { pointerType: 'touch', clientX: x, clientY: 200, bubbles: true })); ev('pointerdown', 300); ev('pointerup', 120); });
+await p.waitForTimeout(250);
+ok(/Day 2 of 4/.test(await flipText(p)), 'a swipe to the left turns to the next day');
+await nextBtn(p).click(); await p.waitForTimeout(200); await prevBtn(p).click(); await prevBtn(p).click(); await p.waitForTimeout(200);
 ok(/Warnings \(3\)/.test(await p.textContent('#trip-detail .trip-warnings summary')) && (await p.locator('#trip-detail .trip-warnings').evaluate((d) => d.open)), 'the warnings are listed (open when there are some)');
 await p.locator('#trip-detail .plan-stop', { hasText: 'Tower' }).click(); await p.waitForSelector('.poi-pop h3', { timeout: 8000 });
 ok((await p.textContent('.poi-pop h3')) === 'Tower', 'tapping a stop opens that marker on the map');
 await p.keyboard.press('Escape');
+await nextBtn(p).click(); await p.waitForTimeout(250);
+await p.locator('#trip-detail .flip-body .btn', { hasText: 'Fit map to this day' }).click(); await p.waitForTimeout(400);
+ok(!/Nothing to show/.test(await p.textContent('#toast')), 'Fit map to this day fits the map to its stops');
 
 // notes and checklist
 await p.fill('#trip-detail .trip-notes textarea', 'Bring ND filters'); await p.locator('#trip-detail .trip-notes textarea').blur(); await p.waitForTimeout(300);
@@ -61,6 +89,7 @@ await p.fill('#trip-detail .check-add input', 'Permit printed'); await p.click('
 ok((await p.locator('#trip-detail .check-list li').count()) === 2 && /Checklist \(0 of 2\)/.test(await p.textContent('#trip-detail .trip-checklist h3')), 'checklist items can be added (Enter or Add)');
 await p.locator('#trip-detail .check-list li').first().locator('input').check(); await p.waitForTimeout(200);
 ok(/Checklist \(1 of 2\)/.test(await p.textContent('#trip-detail .trip-checklist h3')) && (await p.locator('#trip-detail .check-list li span.done').count()) === 1, 'ticking one counts it and strikes it through');
+ok(/Day 2 of 4/.test(await flipText(p)), 'the card stays on its day when something else on the screen changes');
 const stored = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.trips')).trips.find((t) => t.id === 't1'));
 ok(stored.notes === 'Bring ND filters' && stored.checklist.length === 2 && stored.checklist[0].done === true, 'notes and checklist are saved');
 await p.locator('#trip-detail .check-list li').nth(1).locator('.icon-btn').click(); await p.waitForTimeout(200);
@@ -81,6 +110,7 @@ await ctx.close();
 await card(p, 'Under way').locator('.trip-card-head').tap(); await p.waitForTimeout(300);
 const overflow = await p.evaluate(() => { const d = document.getElementById('trip-detail'); return document.documentElement.scrollWidth > window.innerWidth || d.scrollWidth > d.clientWidth + 1; });
 ok(await p.isVisible('#trip-detail') && !overflow, 'on a phone the detail screen fits with no sideways scrolling');
+ok(/Day 2 of 3/.test(await flipText(p)) && /Today stop/.test(await flipText(p)), 'a trip under way opens on today: ' + (await flipText(p)).slice(0, 70));
 await p.screenshot({ path: `${OUT}/tripplan-phone.png` });
 await ctx.close();
 
@@ -112,15 +142,15 @@ await ctx.close();
   ok(asked.length >= 1 && asked.every((u) => u.includes('forecast_days=16')), 'with automatic weather on, a trip asks for its daily forecast (' + asked.length + ' request)');
   ok((await wp.locator('#trips-list .trip-card', { hasText: 'Hubei spring' }).locator('.trip-wx-strip span').count()) >= 2, 'the card shows a strip of weather symbols, one for each day that has a place');
   await wp.locator('#trips-list .trip-card', { hasText: 'Hubei spring' }).locator('.trip-card-head').click(); await wp.waitForTimeout(400);
-  const heads = await wp.$$eval('#trip-detail .plan-day .plan-wx', (e) => e.map((x) => ({ t: x.textContent, over: x.classList.contains('over') })));
+  const heads = (await walk(wp, () => wp.$$eval('#trip-detail .flip .plan-wx', (e) => e.map((x) => ({ t: x.textContent, over: x.classList.contains('over') }))))).flat();
   ok(heads.length >= 2 && /22°\/14°/.test(heads[0].t) && /rain \d+%/.test(heads[0].t) && /wind 4 m\/s/.test(heads[0].t), 'each day shows the high and low, rain chance and wind: ' + (heads[0] && heads[0].t));
   ok(heads.some((h) => h.over && /wind 12 m\/s/.test(h.t)), 'a day windier than the wind limit (10 m/s) is shown in red');
   ok(/Forecast per day from Open-Meteo/.test(await wp.textContent('#trip-detail')), 'the forecast is credited to Open-Meteo');
 
   // no-fly check
   await wp.click('#trip-detail >> text=Check stops against no-fly zones');
-  await wp.waitForFunction(() => document.querySelectorAll('#trip-detail .plan-zone').length >= 5, null, { timeout: 15000 });
-  const zones = await wp.$$eval('#trip-detail .plan-stop', (r) => r.map((x) => ({ n: x.querySelector('b').textContent, z: x.querySelector('.plan-zone')?.textContent || '', c: x.querySelector('.plan-zone')?.className || '' })));
+  await wp.waitForFunction(() => document.querySelectorAll('#trip-detail .plan-zone').length >= 1, null, { timeout: 15000 });
+  const zones = (await walk(wp, () => wp.$$eval('#trip-detail .flip .plan-stop', (r) => r.map((x) => ({ n: x.querySelector('b').textContent, z: x.querySelector('.plan-zone')?.textContent || '', c: x.querySelector('.plan-zone')?.className || '' }))))).flat();
   ok(zones.every((z) => z.z), 'every stop got a verdict: ' + zones.map((z) => z.n + ' = ' + z.z.slice(0, 22)).join('; '));
   const pad = zones.find((z) => z.n === 'Padang');
   ok(pad && /No-fly zone/.test(pad.z) && /\bno\b/.test(pad.c), 'the stop in Singapore\'s restricted area is marked: ' + (pad && pad.z));

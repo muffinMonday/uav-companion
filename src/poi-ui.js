@@ -1100,6 +1100,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     showTrip, fitTrip,
     /** Flies to a marker and opens its window (the Trips tab's day list uses it). */
     openMarker: (id) => flyToItem(id),
+    /** Zooms the map to these markers (a day of a trip). */
+    fitItems(ids) { const list = ids.map((id) => store.get(id)).filter(Boolean); if (!list.length) { toast('Nothing to show on the map for this page.'); return false; } fitToItems(list); return true; },
     getCurrentTrip: () => currentTripId,
     setCurrentTrip(id) {
       currentTripId = id && store.getTrip(id) ? id : null;

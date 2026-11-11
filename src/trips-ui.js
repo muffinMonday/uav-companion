@@ -27,6 +27,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   // ---------- the list ----------
   let openId = null;      // the trip whose detail screen is showing, or null for the list
   const tw = createTripWeather({ onChange: () => render() }); // per-day forecasts, only while automatic weather is on
+  const pageOf = new Map();       // tripId -> the page (day) of its flip card, kept while the page is open
   const zoneChecks = new Map(); // tripId -> Map(markerId -> { sig, s }): what the map data says about each stop, until the page closes
   const sigOf = (it) => `${it.lat},${it.lon}`;
   const dayWeatherText = (w) => [`${weatherInfo(w.code).icon} ${w.max !== null ? Math.round(w.max) : '–'}°/${w.min !== null ? Math.round(w.min) : '–'}°`, w.rain !== null && `rain ${Math.round(w.rain)}%`, w.wind !== null && `wind ${w.wind.toFixed(0)} m/s`].filter(Boolean).join(' · ');
@@ -199,28 +200,59 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
       row.addEventListener('click', () => poi.openMarker(it.id));
       return row;
     };
-    if (dated) {
-      const days = el('div', 'plan-days');
-      for (const d of plan.days) {
-        const sec = el('section', 'plan-day');
-        const head = el('div', 'plan-day-head');
-        head.append(el('b', '', 'Day ' + d.day + ' · ' + formatDate(d.date)));
-        if (d.km >= 0.1) head.append(el('small', '', '≈ ' + fmtDistance(d.km * 1000, units) + ' between stops'));
-        sec.append(head);
-        const w = fc?.[d.date];
-        if (w) { const line = el('small', 'plan-wx' + (limit !== null && w.wind !== null && w.wind > limit ? ' over' : ''), dayWeatherText(w)); line.title = weatherInfo(w.code).label; sec.append(line); }
-        if (!d.stops.length) sec.append(el('small', 'plan-empty', 'Nothing planned'));
-        for (const it of d.stops) sec.append(stopRow(it, d.day));
-        days.append(sec);
-      }
-      detail.append(days);
-    }
-    for (const [label, listItems] of [['No date', plan.undated], ['Outside the dates', plan.outside]]) {
-      if (!listItems.length) continue;
-      const sec = el('section', 'plan-day');
-      sec.append(el('div', 'plan-day-head').appendChild(el('b', '', label + ' (' + listItems.length + ')')).parentNode);
-      for (const it of listItems) sec.append(stopRow(it));
-      detail.append(sec);
+    // the days, as pages of one card: ‹ and › turn to the previous and next day
+    const pages = [];
+    if (dated) for (const d of plan.days) pages.push({ day: d });
+    if (plan.undated.length) pages.push({ label: 'No date', list: plan.undated });
+    if (plan.outside.length) pages.push({ label: 'Outside the dates', list: plan.outside });
+    if (pages.length) {
+      let at = pageOf.get(t.id);
+      if (at === undefined) at = status && status.state === 'now' ? status.day - 1 : 0; // a trip under way opens on today
+      at = Math.max(0, Math.min(at, pages.length - 1));
+      const flip = el('section', 'flip'); flip.tabIndex = 0; flip.setAttribute('aria-label', 'Days of the trip');
+      const turn = (label, path) => { const bt = el('button', 'btn tool flip-btn'); bt.type = 'button'; bt.title = label; bt.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + path + '"/></svg>'; bt.append(el('span', 'tool-label', label)); return bt; };
+      const prev = turn('Previous day', 'M15 6l-6 6 6 6'), next = turn('Next day', 'M9 6l6 6-6 6');
+      const title = el('div', 'flip-title'); title.setAttribute('aria-live', 'polite');
+      const nav = el('div', 'flip-nav'); nav.append(prev, title, next);
+      const body = el('div', 'flip-body'), dots = el('div', 'flip-dots');
+      flip.append(nav, body, dots);
+      const paint = (dir) => {
+        const pg = pages[at];
+        body.replaceChildren(); dots.replaceChildren();
+        const stops = pg.day ? pg.day.stops : pg.list;
+        title.textContent = pg.day ? 'Day ' + pg.day.day + ' of ' + plan.days.length + ' · ' + formatDate(pg.day.date) : pg.label + ' (' + pg.list.length + ')';
+        if (pg.day) {
+          const d = pg.day;
+          const w = fc?.[d.date];
+          if (w) { const line = el('small', 'plan-wx' + (limit !== null && w.wind !== null && w.wind > limit ? ' over' : ''), dayWeatherText(w)); line.title = weatherInfo(w.code).label; body.append(line); }
+          if (d.km >= 0.1) body.append(el('small', 'plan-km', '≈ ' + fmtDistance(d.km * 1000, units) + ' between stops'));
+          if (!stops.length) body.append(el('small', 'plan-empty', 'Nothing planned'));
+        }
+        for (const it of stops) body.append(stopRow(it, pg.day ? pg.day.day : undefined));
+        if (stops.length) {
+          const fit = el('button', 'btn small', pg.day ? 'Fit map to this day' : 'Fit map to these'); fit.type = 'button';
+          fit.addEventListener('click', () => poi.fitItems(stops.map((x) => x.id)));
+          body.append(fit);
+        }
+        prev.disabled = at === 0; next.disabled = at === pages.length - 1;
+        pages.forEach((p, i) => {
+          const dot = el('button', 'flip-dot'); dot.type = 'button'; dot.setAttribute('aria-label', p.day ? 'Day ' + p.day.day : p.label);
+          if (i === at) dot.setAttribute('aria-current', 'true');
+          dot.addEventListener('click', () => go(i));
+          dots.append(dot);
+        });
+        if (dir) { body.classList.remove('flip-next', 'flip-prev'); void body.offsetWidth; body.classList.add(dir > 0 ? 'flip-next' : 'flip-prev'); }
+      };
+      const go = (to) => { if (to < 0 || to >= pages.length || to === at) return; const dir = to > at ? 1 : -1; at = to; pageOf.set(t.id, at); paint(dir); };
+      prev.addEventListener('click', () => go(at - 1));
+      next.addEventListener('click', () => go(at + 1));
+      flip.addEventListener('keydown', (e) => { if (e.target.closest('input, textarea, select')) return; if (e.key === 'ArrowLeft') { e.preventDefault(); go(at - 1); } else if (e.key === 'ArrowRight') { e.preventDefault(); go(at + 1); } });
+      let sx = null, sy = null; // a swipe on a touch screen
+      body.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') { sx = e.clientX; sy = e.clientY; } });
+      body.addEventListener('pointerup', (e) => { if (sx === null) return; const dx = e.clientX - sx, dy = e.clientY - sy; sx = null; if (Math.abs(dx) > 50 && Math.abs(dy) < 40) go(at + (dx < 0 ? 1 : -1)); });
+      body.addEventListener('pointercancel', () => { sx = null; });
+      paint(0);
+      detail.append(flip);
     }
     if (!dated) detail.append(el('p', 'hint', 'Add start and end dates (Edit) to see the days.'));
     if (dated) detail.append(el('p', 'hint', 'Distances are straight lines between the stops of a day, not driving distances.'));
