@@ -6,6 +6,7 @@ The optional cloud side of UAV Companion. The app works fully without it (everyt
 - `migrations/`: the database as SQL, applied in file-name order. The same files run on a local database, in the tests and on the hosted project.
   - `20261111120000_user_data.sql`: one document per user (markers, trips, a few settings) with a revision number, the previous versions kept for 30 days (at most 20), row-level security, and the functions that are the only way to write (`save_user_data`, `list_user_data_versions`, `restore_user_data_version`, `delete_user_data`).
   - `20261111130000_friends.sql`: profiles (display name, friend code), friendships (request, accepted) and blocks, with the functions that are the only way in (`ensure_profile`, `set_accepts_requests`, `regenerate_friend_code`, `request_friend`, `respond_friend`, `remove_friendship`, `list_friends`, `block_user`, `list_blocked`, `unblock`, `delete_profile`). Tested in `tests/db-friends-unit.mjs`.
+  - `20261111140000_shared_trips.sql`: shared trips (one document per trip with a revision), their members (owner, invited, party members), earlier versions kept 30 days (at most 20), and the functions that are the only way in (`share_trip`, `invite_to_trip`, `list_invitable_friends`, `respond_trip_invite`, `leave_trip`, `remove_member`, `delete_shared_trip`, `list_my_trips`, `list_trip_members`, `get_shared_trip`, `save_shared_trip`, `list_shared_trip_versions`, `restore_shared_trip_version`). Tested in `tests/db-trips-unit.mjs`.
   - `20261111121000_harden_api_exposure.sql`: takes the API roles' access away from the platform's own `rls_auto_enable()` function.
 - `config.toml`: settings for the local stack (used only if the local stack is ever started).
 
@@ -19,7 +20,7 @@ Row-level security is on for every table. A signed-in user can read their own ro
 - **Tests (no Docker, no network):** `node tests/db-unit.mjs`. It builds a fresh in-memory Postgres (PGlite), adds the roles and `auth.uid()` that Supabase provides, applies every migration and checks the rules as different users.
 - **Apply migrations to the hosted project:** `npx supabase db push --remote --dry-run` shows what would run; `npx supabase db push --remote --yes` applies it. The database password is read from the environment variable `SUPABASE_DB_PASSWORD` (set it once in your Windows account; never put it in a file in this repository).
 - **Read-only look at the hosted database:** `npx supabase db query --remote --read-only "select ..."`.
-- **Live checks as throwaway users** (they create and delete their own users; need the CLI login): `node tests/cloud-live.mjs` (cloud copy) and `node tests/friends-live.mjs` (friends).
+- **Live checks as throwaway users** (they create and delete their own users; need the CLI login): `node tests/cloud-live.mjs` (cloud copy) and `node tests/friends-live.mjs` (friends) and `node tests/trips-live.mjs` (shared trips).
 - **Security check:** `npx supabase db advisors --remote`.
 - **The link to the project** is stored in `supabase/.temp/` (ignored by git), created by `npx supabase login` and `npx supabase link --project-ref <ref>`.
 

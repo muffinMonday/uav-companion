@@ -252,10 +252,11 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, a
     return c;
   }
   function friendsCard() { // friend requests waiting (only when signed in to the optional cloud features)
-    const n = cloud.friends?.incoming ?? 0;
-    if (!n) return null;
+    const n = cloud.friends?.incoming ?? 0, v = cloud.friends?.invites ?? 0;
+    if (!n && !v) return null;
     const c = el('section', 'dash-card dash-friends');
-    c.append(el('h3', '', 'Friends'), el('p', 'hint', n === 1 ? '1 friend request is waiting for you.' : n + ' friend requests are waiting for you.'));
+    const parts = [n && (n === 1 ? '1 friend request' : n + ' friend requests'), v && (v === 1 ? '1 trip invitation' : v + ' trip invitations')].filter(Boolean);
+    c.append(el('h3', '', 'Friends'), el('p', 'hint', parts.join(' and ') + (n + v === 1 ? ' is' : ' are') + ' waiting for you.'));
     const b = el('button', 'btn small', 'Open Friends'); b.type = 'button';
     b.addEventListener('click', () => { cloud.friends.open(); if (isPhone()) setState('peek'); });
     c.append(b);

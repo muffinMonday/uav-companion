@@ -7,8 +7,8 @@ import { spawn } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 
-const UNIT = ['ai-unit', 'trip-unit', 'trips-unit', 'rain-unit', 'places-unit', 'reorder-unit', 'maplinks-unit', 'coordparse-unit', 'onemap-unit', 'plan-unit', 'dashstate-unit', 'checkin-unit', 'share-unit', 'db-unit', 'sync-unit', 'sync-engine-unit', 'db-friends-unit'];
-const BROWSER = ['stops', 'days', 'search', 'maplinks', 'reorder', 'visits', 'window', 'dashboard', 'hold', 'rain', 'ui', 'bulk', 'poi1', 'poi2', 'edit', 'prefs', 'opacity', 'mw', 'priv', 'ai', 'trip', 'trips', 'sg', 'tools', 'mapsel', 'tripplan', 'shell', 'checkin', 'motion', 'dayroute', 'snow', 'cloud', 'storage', 'dashtall', 'paneltall', 'friends', 'smoke'];
+const UNIT = ['ai-unit', 'trip-unit', 'trips-unit', 'rain-unit', 'places-unit', 'reorder-unit', 'maplinks-unit', 'coordparse-unit', 'onemap-unit', 'plan-unit', 'dashstate-unit', 'checkin-unit', 'share-unit', 'db-unit', 'sync-unit', 'sync-engine-unit', 'db-friends-unit', 'db-trips-unit', 'sharedtrip-unit', 'sharedstore-unit', 'sharedtrip-engine-unit'];
+const BROWSER = ['stops', 'days', 'search', 'maplinks', 'reorder', 'visits', 'window', 'dashboard', 'hold', 'rain', 'ui', 'bulk', 'poi1', 'poi2', 'edit', 'prefs', 'opacity', 'mw', 'priv', 'ai', 'trip', 'trips', 'sg', 'tools', 'mapsel', 'tripplan', 'shell', 'checkin', 'motion', 'dayroute', 'snow', 'cloud', 'storage', 'dashtall', 'paneltall', 'friends', 'party', 'smoke'];
 const args = process.argv.slice(2);
 const onlyUnit = args.includes('--unit');
 const ji = args.indexOf('--jobs');

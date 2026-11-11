@@ -25,6 +25,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   const card = $('trip-form-card'), form = $('trip-form'), title = $('trip-form-title');
   const fName = $('trip-name'), fCountry = $('trip-country'), fStart = $('trip-start'), fEnd = $('trip-end'), fDesc = $('trip-desc');
   const lengthEl = $('trip-length'), errorEl = $('trip-error');
+  let party = null;       // shared trips (party-ui.js), once it has loaded; only in a build with accounts
   let editingId = null;   // the trip being edited, or null for a new one
   let assignId = null;    // a marker to put in the new trip once it is saved ("New trip…" in a marker's form)
 
@@ -59,6 +60,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     li.append(head);
     const summary = tripSummary(t);
     if (summary) li.append(el('div', 'trip-card-sub', summary));
+    if (t.shared) { const c = party?.membersCount(t.id); li.append(el('div', 'trip-card-sub party-line', '👥 Shared · ' + (t.shared.owner ? 'you own it' : 'by ' + (t.shared.ownerName || 'a friend')) + (c ? ' · ' + c + ' in the party' : ''))); }
     if (!t.startDate || !t.endDate) li.append(el('div', 'trip-card-warn', 'No dates yet. Add them (Edit) to see day numbers and the countdown.'));
     else {
       const line = warningsLine(tripWarnings(items, t));
@@ -88,22 +90,34 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     btn('Fit map', () => { if (poi.fitTrip(t.id)) panel.closeIfPhone(); });
     if (!isCurrent) btn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast('New markers will go into “' + t.name + '”.', 4000); });
     btn('Edit', () => openForm(t));
-    btn('Delete', deleteHandler(t, n), 'danger');
+    deleteOrLeave(btn, t, n);
     li.append(acts);
     li.addEventListener('click', (e) => { if (!e.target.closest('button, a, input')) openDetail(t.id); });
     return li;
   }
-  /** The two-step Delete shared by the card and the detail screen. */
+  /** Delete for a trip of your own; Leave for a shared trip you were invited to (only the owner deletes a shared trip). */
+  function deleteOrLeave(btn, t, n) {
+    if (t.shared && !t.shared.owner) {
+      const b = btn('Leave trip', () => party?.leave(t), 'danger');
+      if (!party?.ready()) { b.disabled = true; b.title = 'Sign in to leave a shared trip'; }
+    } else btn('Delete', deleteHandler(t, n), 'danger');
+  }
+  /** The two-step Delete shared by the card and the detail screen. For a shared trip the owner deletes it for the whole party. */
   function deleteHandler(t, n) {
     let armed = null;
-    return (e) => {
+    const sharedOwner = !!t.shared?.owner;
+    return async (e) => {
       const b = e.currentTarget;
       if (!armed) {
-        b.textContent = n ? 'Confirm: ' + n + ' marker' + (n === 1 ? '' : 's') + ' stay without a trip' : 'Confirm delete';
+        b.textContent = sharedOwner ? 'Confirm: deletes it for the whole party' : n ? 'Confirm: ' + n + ' marker' + (n === 1 ? '' : 's') + ' stay without a trip' : 'Confirm delete';
         armed = setTimeout(() => { b.textContent = 'Delete'; armed = null; }, 5000);
         return;
       }
       clearTimeout(armed);
+      if (sharedOwner) {
+        if (!party?.ready()) { toast('Sign in to delete a shared trip.', 5000); b.textContent = 'Delete'; armed = null; return; }
+        if (!(await party.deleteShared(t))) { b.textContent = 'Delete'; armed = null; return; }
+      }
       const res = store.removeTrip(t.id);
       toast('Deleted “' + t.name + '”.' + (res.untagged ? ' Its ' + res.untagged + ' marker' + (res.untagged === 1 ? ' is' : 's are') + ' kept, with no trip.' : ''), 6000);
     };
@@ -169,8 +183,9 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     btn('Fit map', () => { if (poi.fitTrip(t.id)) panel.closeIfPhone(); });
     if (poi.getCurrentTrip() !== t.id) btn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast('New markers will go into “' + t.name + '”.', 4000); });
     const n = items.filter((i) => i.tripId === t.id).length;
-    btn('Delete', deleteHandler(t, n), 'danger');
+    deleteOrLeave(btn, t, n);
     detail.append(acts);
+    if (party) detail.append(party.section(t)); // Party Members: share the trip, invite friends, see who is in it
 
     const dated = !!tripLength(t);
     if (dated) {
@@ -393,6 +408,9 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   render();
   return {
     openForm, openDetail,
+    refresh: render,
+    /** Shared trips: the Party Members section and the Leave button appear once this is set. */
+    setParty(p) { party = p; p.attach({ refresh: render }); render(); },
     /** The first day of a trip that has a forecast: { date, text }, or null (weather off, no forecast yet, or the trip is out of range). */
     forecastFor(tripId) {
       const t = store.getTrip(tripId), fc = t && tw.get(tripId);

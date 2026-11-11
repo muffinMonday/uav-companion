@@ -37,9 +37,10 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     publish(); render();
   }
   function publish() {
-    const n = list.filter((f) => f.status === 'incoming').length;
-    tab.badge(n);
-    if (cloud.friends.incoming !== n) { cloud.friends.incoming = n; cloud.refresh?.(); }
+    const reqs = list.filter((f) => f.status === 'incoming').length;
+    const invites = cloud.party?.invitations().length ?? 0;
+    tab.badge(reqs + invites);
+    if (cloud.friends.incoming !== reqs || cloud.friends.invites !== invites) { cloud.friends.incoming = reqs; cloud.friends.invites = invites; cloud.refresh?.(); }
   }
 
   function render() {
@@ -53,6 +54,8 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     }
     if (!profile) { const c = el('div', 'card'); c.append(el('p', 'hint', 'Loading…')); pane.append(c); return; }
 
+    const invites = cloud.party?.invitationsCard(); // trip invitations come first: they are what someone is waiting on
+    if (invites) pane.append(invites);
     // ---- you
     const me = el('div', 'card');
     me.append(el('h2', '', 'You'));
@@ -134,7 +137,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     dc.append(del); pane.append(dc);
   }
 
-  cloud.friends = { incoming: 0, open: () => panel.open('friends') };
+  cloud.friends = { incoming: 0, invites: 0, open: () => panel.open('friends'), recount: () => { publish(); render(); } };
   handle.onChange(() => { if (signedIn() && loadedFor !== handle.sync.status().session.email) load(); else if (!signedIn() && loadedFor) load(); });
   panel.onChange(() => { if (shown() && signedIn()) load({ withProfile: true }); else if (shown()) render(); });
   setInterval(() => { if (signedIn() && document.visibilityState === 'visible') load(); }, POLL_MS);

@@ -807,3 +807,18 @@ input[type=email]:focus{border-color:var(--accent)}
 .fr-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fr-who small{color:var(--muted);font-size:12px}
 .fr-actions{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+
+/* Party Members (a shared trip) */
+.trip-party{margin:12px 0;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.trip-party>summary{cursor:pointer;font-weight:700;font-size:13px}
+.trip-party[open]>summary{margin-bottom:6px}
+.party-status{margin:2px 0 6px}
+.party-list{list-style:none;margin:0 0 8px;padding:0}
+.party-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+.party-row:first-child{border-top:0}
+.party-invite{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 8px}
+.party-invite select{flex:1;min-width:0}
+.party-versions{margin-top:8px}
+.party-versions>summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
+.party-version{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;font-size:12.5px}
+.party-line{color:var(--accent)}

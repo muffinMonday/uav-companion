@@ -77,6 +77,7 @@ export function sanitize(raw) {
     type, name: str(raw.name, 80).trim() || typeOf(type).label, note: str(raw.note, 500),
     lat: r6(lat), lon: r6(lon), created,
   };
+  if (Number.isFinite(Date.parse(raw.updated))) item.updated = new Date(raw.updated).toISOString(); // when it was last changed; kept only for markers of a shared trip
   const day = posInt(raw.day), order = posInt(raw.order);
   if (day !== null) item.day = day;
   if (order !== null) item.order = order;
@@ -130,7 +131,12 @@ export function tripFields(raw) {
 export function sanitizeTrip(raw) {
   const f = tripFields(raw);
   if (!f) return null;
+  // when it was last changed, and, for a trip shared with friends, who owns it (the shared trip has the same id)
+  const updated = Number.isFinite(Date.parse(raw.updated)) ? new Date(raw.updated).toISOString() : null;
+  const shared = raw.shared && typeof raw.shared === 'object' ? { owner: raw.shared.owner === true, ownerName: typeof raw.shared.ownerName === 'string' ? raw.shared.ownerName.slice(0, 40) : '' } : null;
   return {
+    ...(updated && { updated }),
+    ...(shared && { shared }),
     id: typeof raw.id === 'string' && raw.id.length > 0 && raw.id.length <= 64 ? raw.id : newId(),
     created: Number.isFinite(Date.parse(raw.created)) ? new Date(raw.created).toISOString() : new Date().toISOString(),
     color: TRIP_COLORS.includes(raw.color) ? raw.color : TRIP_COLORS[0],
@@ -234,6 +240,10 @@ export function createStore() {
     const fixed = new Map(m.items.map((i) => [i.id, i]));
     items = items.map((i) => fixed.get(i.id) ?? i);
   };
+  const nowIso = () => new Date().toISOString();
+  const sharedTrip = (tripId) => (tripId ? trips.find((t) => t.id === tripId)?.shared : undefined);
+  /** A marker of a shared trip is stamped with the time of the change, so that the merge can tell which of two edits is the later one. */
+  const stamp = (item) => { if (sharedTrip(item.tripId)) item.updated = nowIso(); return item; };
   /** A marker can only point at a trip that exists. */
   const tripsExist = () => new Set(trips.map((t) => t.id));
   const dropDangling = () => { const ids = tripsExist(); items = items.map((i) => (i.tripId && !ids.has(i.tripId) ? withoutTrip(i) : i)); };
@@ -281,7 +291,7 @@ export function createStore() {
       const item = sanitize({ ...partial, id: newId(), created: new Date().toISOString() });
       if (!item) return { ok: false };
       if (item.tripId && !tripsExist().has(item.tripId)) delete item.tripId;
-      settle(item);
+      settle(item); stamp(item);
       items.unshift(item);
       const ok = save(); emit();
       if (ok && ls && navigator.storage?.persist) navigator.storage.persist().catch(() => {}); // ask the browser not to evict it
@@ -293,7 +303,7 @@ export function createStore() {
       const next = sanitize({ ...items[i], ...patch, id });
       if (!next) return { ok: false };
       if (next.tripId && !tripsExist().has(next.tripId)) delete next.tripId;
-      settle(next);
+      settle(next); stamp(next);
       items[i] = next;
       const ok = save(); emit();
       return { ok, item: next };
@@ -313,7 +323,7 @@ export function createStore() {
         const clean = sanitize({ ...next, id: next.id });
         if (!clean) continue;
         if (clean.tripId && !tripsExist().has(clean.tripId)) delete clean.tripId;
-        settle(clean);
+        settle(clean); stamp(clean);
         previous.push(items[i]);
         items[i] = clean;
       }
@@ -356,7 +366,7 @@ export function createStore() {
     updateTrip(id, patch) {
       const i = trips.findIndex((t) => t.id === id);
       if (i < 0) return { ok: false };
-      const next = sanitizeTrip({ ...trips[i], ...patch, id });
+      const next = sanitizeTrip({ ...trips[i], ...patch, id, ...(trips[i].shared && { updated: nowIso() }) });
       if (!next) return { ok: false };
       trips[i] = next;
       settleTrip(id); // new dates can make stored day numbers redundant
@@ -365,11 +375,65 @@ export function createStore() {
     },
     /** Deletes a trip. Its markers are kept, just without the tag. Returns how many were untagged. */
     removeTrip(id) {
+      const t0 = trips.find((t) => t.id === id);
+      if (t0?.shared && !t0.shared.owner) return { ok: false, reason: 'shared', untagged: 0 }; // only the owner deletes a shared trip; a party member leaves it instead
       trips = trips.filter((t) => t.id !== id);
       let untagged = 0;
       items = items.map((i) => (i.tripId === id ? (untagged++, withoutTrip(i)) : i));
       const ok = saveTrips() && save(); emit();
       return { ok, untagged };
+    },
+    // ----- shared trips (see sharedtrip/) -----
+    /** Marks a trip as shared ({ owner, ownerName }), or, with null, as private again (its markers and everything else stay). */
+    setTripShared(id, info) {
+      const i = trips.findIndex((t) => t.id === id);
+      if (i < 0) return { ok: false };
+      const { shared, ...rest } = trips[i]; // eslint-disable-line no-unused-vars
+      trips[i] = info ? sanitizeTrip({ ...rest, shared: info }) : rest;
+      const ok = saveTrips(); emit();
+      return { ok };
+    },
+    /**
+     * Puts a shared document into the store: the trip's fields, and exactly its markers (others tagged with this trip are removed; a marker with the same id
+     * elsewhere moves in). This device's own check-ins stay. The markers keep the document's times. Returns { ok, added, removed, changed }.
+     */
+    applyShared(tripId, doc) {
+      const i = trips.findIndex((t) => t.id === tripId);
+      if (i < 0 || !doc?.trip) return { ok: false };
+      const cur = trips[i];
+      const next = sanitizeTrip({ ...doc.trip, id: tripId, color: TRIP_COLORS.includes(doc.trip.color) ? doc.trip.color : cur.color, shared: cur.shared });
+      if (!next) return { ok: false };
+      trips[i] = next;
+      const local = new Map(items.filter((x) => x.tripId === tripId).map((x) => [x.id, x]));
+      const incoming = (Array.isArray(doc.items) ? doc.items : []).map((raw) => sanitize({ ...raw, tripId })).filter(Boolean).slice(0, MAX_ITEMS);
+      const keep = new Set(incoming.map((x) => x.id));
+      let added = 0, changed = 0;
+      for (const inc of incoming) {
+        const prev = local.get(inc.id);
+        if (!prev) added++; else if (JSON.stringify(prev) !== JSON.stringify(inc)) changed++;
+        if (prev?.checkin && !inc.checkin) inc.checkin = prev.checkin;
+        settle(inc);
+      }
+      const removed = [...local.keys()].filter((id) => !keep.has(id)).length;
+      items = items.filter((x) => !keep.has(x.id) && x.tripId !== tripId).concat(incoming);
+      items.sort((a, b) => b.created.localeCompare(a.created));
+      const ok = saveTrips() && save(); emit();
+      return { ok, added, removed, changed };
+    },
+    /** Brings a shared trip onto this device: links the trip if it is already here, otherwise adds it, then applies the document. */
+    adoptShared(doc, info) {
+      const id = doc?.trip?.id;
+      if (typeof id !== 'string') return { ok: false };
+      if (!trips.some((t) => t.id === id)) {
+        if (trips.length >= MAX_TRIPS) return { ok: false, reason: 'limit' };
+        const t = sanitizeTrip({ ...doc.trip, shared: info });
+        if (!t) return { ok: false };
+        trips.push(t);
+      } else {
+        const j = trips.findIndex((t) => t.id === id);
+        trips[j] = sanitizeTrip({ ...trips[j], shared: info });
+      }
+      return this.applyShared(id, doc);
     },
     /** The saved trip that matches these fields (same name, country and dates), or a new one. */
     ensureTrip(fields) {

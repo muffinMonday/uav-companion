@@ -14,6 +14,8 @@ All reads are validated; damaged entries fall back to defaults. If storage is bl
 | `uavzones.v1.elevcache` | `elevation.js` | `{ v: 1, items }` | Per-marker ground elevation |
 | `uavzones.v1.dash` | `dashstate.js` | `{ v: 1, showOnStart, hideUntil, seen, welcomed }` | dashboard start choices: start open (default on), snoozed until a day (YYYY-MM-DD), the newest What's new id seen, first-run guide shown. The earlier `uavzones.v1.welcome` key is ignored. |
 | `uavzones.v1.lastBackup` | `poi.js` | ISO timestamp string | Set when the user exports |
+| `uavzones.v1.shared` | `sharedtrip/engine.js` | `{ v: 1, bases: { [tripId]: { rev, doc } } }` | Per shared trip, the revision and document this device last synced (the common version for the three-way merge). A trip in `uavzones.v1.trips` may carry `shared: { owner, ownerName }` (the shared trip has the same id) and `updated`; a marker of a shared trip carries `updated` (ISO time of its last change). None of these are exported or put in share links. |
+| `uavzones.v1.sharedwho` | `party-ui.js` | email string | Who was signed in when shared trips were last synced on this device; a different person signing in resets the links (the trips and markers stay). |
 | `uavzones.windLimit` | `weather.js` | number as string | Wind limit; older key without `v1`, kept as is |
 
 Limits: import file 2 MB, 5000 items per import.
