@@ -11,7 +11,7 @@ import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js'
 import { loadPrefs, savePrefs } from './prefs.js';
 import { visitGroups, visitLabel } from './places.js';
 import { dayInfo, dayText, tripSequence } from './trips.js';
-import { mapLinksBlock, routeLinks } from './maplinks-ui.js';
+import { mapLinkIcons, routeLinks } from './maplinks-ui.js';
 import { MODES, MAX_STOPS } from './maplinks.js';
 import { planMove, stepSlot, groupKey, addDays } from './reorder.js';
 import { initReorder } from './reorder-ui.js';
@@ -466,26 +466,22 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     box.hidden = false;
     const over = beyondRange(b, maxRangeM);
     let approx = false;
+    let shown = 0;
     for (const t of lines) {
       const r = b[t.id];
-      if (!r.exists) continue;
+      if (!r.found) continue; // nothing to measure to (none in this trip, or none for these dates): say nothing
+      shown++;
       const row = el("div", `dist-row${over && r.found && t.launch ? " over" : ""}`);
       const ic = el('span', 'dist-ic');
       ic.innerHTML = pinSvg(t.id); // built from constants only
       ic.firstChild.setAttribute('width', '16'); ic.firstChild.setAttribute('height', '21');
       const txt = el('div', 'dist-txt');
-      if (r.found) {
-        approx ||= r.found.approx;
-        txt.append(el('div', 'dist-v', `${r.found.approx ? '≈ ' : ''}${fmtDistance(r.found.m, units)} ${compass(r.found.bearing)}`), el('small', '', `from ${t.short} ${r.found.item.name}`));
-      } else if (!r.inTrip) {
-        txt.append(el('div', 'dist-v none', `No ${t.short} ${it.tripId ? 'in this trip' : 'outside a trip'}`),
-          el('small', '', it.tripId ? 'Distances only look within the waypoint\'s own trip.' : 'This waypoint has no trip, so it is only measured to ones with no trip.'));
-      } else {
-        txt.append(el('div', 'dist-v none', `No ${t.short} for these dates`), el('small', '', 'None of them overlaps this waypoint\'s dates.'));
-      }
+      approx ||= r.found.approx;
+      txt.append(el('div', 'dist-v', `${r.found.approx ? '≈ ' : ''}${fmtDistance(r.found.m, units)} ${compass(r.found.bearing)}`), el('small', '', `from ${t.short} ${r.found.item.name}`));
       row.append(ic, txt);
       box.append(row);
     }
+    box.hidden = shown === 0;
     if (over) box.append(el('small', 'stats-note over', `Beyond your ${fmtDistance(maxRangeM, units)} max range from every home point and hotel that applies.`));
     if (approx) box.append(el('small', 'stats-note', '≈ means a location involved is unverified, so the distance is approximate.'));
   }
@@ -660,7 +656,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         titles.append(line);
       }
       if (it.date) titles.append(el('div', 'pop-dates', dateLabel(it)));
-      titles.append(el('div', 'coords', `${fmt(it.lat)}, ${fmt(it.lon)}`));
+      const coordRow = el('div', 'coords-row');
+      coordRow.append(el('span', 'coords', `${fmt(it.lat)}, ${fmt(it.lon)}`), mapLinkIcons({ lat: it.lat, lon: it.lon, name: it.name, home: it.type === 'residence' }));
+      titles.append(coordRow);
       head.append(badge, titles);
       root.append(head);
       const visits = visitMap.get(id);
@@ -715,7 +713,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
 
       if (it.note) root.append(el('p', 'note', it.note));
 
-      root.append(weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), mapLinksBlock({ lat: it.lat, lon: it.lon, name: it.name, home: it.type === 'residence' }), disclaimer());
+      root.append(weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), disclaimer());
 
       // previous / next stop of the trip, in itinerary order, pinned to the bottom of the window
       const seq = it.tripId ? tripSequence(store.items(), it.tripId) : [];

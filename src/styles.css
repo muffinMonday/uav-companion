@@ -565,3 +565,11 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .plan-name small.plan-zone{font-size:11.5px;font-weight:650}
 .plan-zone.ok{color:var(--ok)}
 .plan-zone.no{color:var(--danger)}
+
+/* ---------- the map-app icons beside the coordinates ---------- */
+.coords-row{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.map-icons{display:inline-flex;gap:0;margin:0;padding:0}
+.pop .map-icons .btn.tool{width:26px;height:26px;color:var(--accent);text-decoration:none}
+.pop .map-icons .btn.tool.armed{width:auto;color:#fff}
+.btn.tool.armed.share{background:var(--accent);color:var(--accent-fg)}
+.pop-sub.has-icons{display:flex;align-items:center;flex-wrap:wrap;gap:4px}

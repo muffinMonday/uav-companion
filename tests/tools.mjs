@@ -22,7 +22,9 @@ const tools = (p) => p.$$eval('.poi-pop .pop-tools .btn.tool', (b) => b.map((x) 
 let { ctx, p } = await open({ width: 1200, height: 800 }, false, 'Yellow Crane');
 ok((await tools(p)).join() === 'Edit,Add visit,Delete', 'desktop: Edit, Add visit and Delete are icons in the bar at the top: ' + (await tools(p)).join());
 ok((await p.locator('.poi-pop .acts').count()) === 0, 'there is no row of action buttons at the bottom any more');
-ok((await p.locator('.poi-pop .maplinks a.maplink').allTextContents()).join() === 'Open in Amap,Navigate in Amap', 'one Open and one Navigate button, named after the app');
+ok((await p.locator('.poi-pop .coords-row a.maplink').allTextContents()).join() === 'Open in Amap,Navigate in Amap', 'one Open and one Navigate icon, named after the app, on the coordinates line');
+ok(((await p.locator('.poi-pop .coords-row a.maplink').first().getAttribute('title')) || '').includes('shares this location') && (await p.locator('.poi-pop .coords-row a.maplink').first().evaluate((e) => e.getBoundingClientRect().width)) < 40, 'they are small icons, and the tooltip says the location is shared');
+ok((await p.locator('.poi-pop .maplinks-note').count()) === 0, 'the long sentence under the old buttons is gone');
 ok((await p.textContent('.poi-pop .disclaimer')) === 'Planning aid, not flight advice.', 'the disclaimer is one short line');
 ok(/Open-Meteo/.test(await p.getAttribute('.poi-pop .wx-btn', 'title')) && (await p.locator('.poi-pop .wx-opt small').evaluate((e) => e.getBoundingClientRect().width)) <= 1, 'the weather privacy sentence is a tooltip, not a line of text');
 await p.click('.poi-pop .btn.danger'); await p.waitForTimeout(200);

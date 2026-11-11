@@ -129,14 +129,14 @@ ok(S.fc.length >= 1 && decimals([...params(S.fc[0]).lat]).every((d) => d === 2),
 await openMarker(S.page, 'Seed B');
 const order = await S.page.evaluate(() => [...document.querySelector('.poi-pop').children].map((c) => c.className.split(' ')[0]));
 console.log('     window order:', order.join(' > '));
-ok(order.indexOf('zone') > order.indexOf('pop-head') && order.indexOf('stats-wrap') > order.indexOf('zone') && order.indexOf('maplinks') > order.indexOf('stats-wrap') && order.indexOf('pop-bar') < order.indexOf('pop-head'), '3: layout order: tool bar, header, zone verdict, number tiles, map buttons');
+ok(order.indexOf('zone') > order.indexOf('pop-head') && order.indexOf('stats-wrap') > order.indexOf('zone') && order.indexOf('disclaimer') > order.indexOf('stats-wrap') && order.indexOf('pop-bar') < order.indexOf('pop-head'), '3: layout order: tool bar, header, zone verdict, number tiles, disclaimer');
 ok((await S.page.locator('.poi-pop .stat').count()) === 4, '3: four tiles: elevation, avg temp, avg wind, peak gust');
 await closePopup(S.page);
 // move invalidates elevation
 await S.page.click('#tab-poi'); await S.page.check('#poi-edit');
 await S.page.click('#poi-list .poi-item:has-text("Seed A")'); await S.page.waitForTimeout(1200);
 // the window grows as tiles arrive and the map pans to keep it in view: wait until the pin holds still before pressing it
-if (await S.page.locator('.poi-pop .pop-toggle[aria-expanded=true]').count()) await S.page.click('.poi-pop .pop-toggle'); // collapsed, so the pin is not under the window
+if (await S.page.locator('.poi-pop .pop-toggle[aria-expanded=true]').count()) await S.page.evaluate(() => document.querySelector('.poi-pop .pop-toggle').click()); // collapsed, so the pin is not under the window
 let pin = null, still = 0;
 for (let i = 0; i < 40 && still < 4; i++) {
   const r = await S.page.evaluate(() => { const q = [...document.querySelectorAll('.poi-pin')].map((e) => e.getBoundingClientRect()).sort((a, b) => Math.abs(a.x - 408) - Math.abs(b.x - 408))[0]; return { x: q.x + q.width / 2, y: q.y + q.height / 2 }; });

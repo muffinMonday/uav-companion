@@ -146,7 +146,7 @@ S = await session({ keys: ['HP', 'H1', 'W1'], extra: { W1: { date: '2026-12-25' 
 p = S.page;
 await open(p, 'Tower');
 rows = await rowsOf(p);
-ok(rows.length === 2 && /No hotel for these dates/.test(rows[1].v) && /overlaps/.test(rows[1].s), '6: a waypoint on a date no hotel covers says "No hotel for these dates"');
+ok(rows.length === 1 && !/No hotel/.test(await p.locator('.poi-pop .dist-wrap').innerText()), '6: a waypoint on a date no hotel covers shows no hotel row at all');
 ok(rows[0].v.startsWith(F(D(P.W1, P.HP))), '6: while the home point (undated) is still measured');
 ln = await lines(p);
 ok(ln.dashed === 1, '6: only one dashed line (to the home point)');
@@ -237,7 +237,7 @@ await open(p, 'Hotel One');
 await p.click('.poi-pop .btn:has-text("Delete")'); await p.click('.poi-pop .btn.danger'); await p.waitForTimeout(500);
 ok((await distLine(p, 'Tower')) === `${F(D(P.W1, hpNow))} to home point`, '7: deleting Hotel One drops it from "Tower" (no other hotel covers 13 Nov)');
 await open(p, 'Tower'); rows = await rowsOf(p);
-ok(rows.length === 2 && /No hotel for these dates/.test(rows[1].v), '7: and the window says no hotel covers those dates');
+ok(rows.length === 1 && !/No hotel/.test(await p.locator('.poi-pop .dist-wrap').innerText()), '7: and the window has no hotel row');
 await closePopup(p);
 // editing a waypoint's date re-targets the hotel
 await open(p, 'Tower'); await p.click('.poi-pop .btn:has-text("Edit")'); await p.waitForSelector('.poi-pop form');

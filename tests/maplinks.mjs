@@ -37,7 +37,7 @@ const hrefs = (p, scope) => p.$$eval(`${scope} a.maplink`, (a) => a.map((x) => (
 // ================= one place
 let { ctx, p } = await session();
 await openMarker(p, 'Yellow Crane Tower');
-let links = await hrefs(p, '.poi-pop .maplinks-row:first-child');
+let links = await hrefs(p, '.poi-pop .maplinks');
 ok(links.map((l) => l.t).join() === 'Open in Amap,Navigate in Amap', 'a marker in China, automatic: one app, Amap, with Open and Navigate: ' + links.map((l) => l.t).join());
 ok(links[0].h === 'https://uri.amap.com/marker?position=114.305500,30.592800&name=Yellow%20Crane%20Tower&coordinate=wgs84&src=uav-companion&callnative=1', 'the Open link: ' + links[0].h);
 ok(/^https:\/\/uri\.amap\.com\/navigation\?to=114\.310945,30\.590391,Yellow%20Crane%20Tower&mode=car/.test(links[1].h) && !/from=/.test(links[1].h), 'the Navigate link has no start, so it uses the device location, and drives by default: ' + links[1].h);
@@ -48,12 +48,12 @@ ok(await p.evaluate(() => !!document.getElementById('map-app') && document.getEl
 await setMaps('google', 'transit');
 await p.keyboard.press('Escape'); await p.mouse.click(130, 700); await p.waitForTimeout(400);
 await openMarker(p, 'Yellow Crane Tower');
-links = await hrefs(p, '.poi-pop .maplinks-row:first-child');
+links = await hrefs(p, '.poi-pop .maplinks');
 ok(links.map((l) => l.t).join() === 'Open in Google Maps,Navigate in Google Maps' && /travelmode=transit/.test(links[1].h) && /query=30\.592800%2C114\.305500/.test(links[0].h), 'choosing Google Maps and Public transport changes both buttons: ' + links.map((l) => l.t).join());
 await setMaps('auto', 'drive');
 await p.keyboard.press('Escape'); await p.mouse.click(130, 700); await p.waitForTimeout(400);
 await openMarker(p, 'Yellow Crane Tower');
-const amap = p.locator('.poi-pop .maplinks-row:first-child a:has-text("Open in Amap")');
+const amap = p.locator('.poi-pop .maplinks a:has-text("Open in Amap")');
 await amap.scrollIntoViewIfNeeded();
 const [opened] = await Promise.all([ctx.waitForEvent('page'), amap.click()]);
 ok(/^https:\/\/uri\.amap\.com\/marker\?position=114\.305500,30\.592800/.test(opened.url()), 'clicking it opens a new tab at that address');
@@ -63,18 +63,18 @@ await p.keyboard.press('Escape');
 await p.mouse.click(130, 700); await p.waitForTimeout(400);
 
 await openMarker(p, 'Marina Bay');
-links = await hrefs(p, '.poi-pop .maplinks-row:first-child');
+links = await hrefs(p, '.poi-pop .maplinks');
 ok(links.map((l) => l.t).join() === 'Open in Google Maps,Navigate in Google Maps', 'a marker outside China: Google Maps, whatever the setting');
 await p.mouse.click(130, 700); await p.waitForTimeout(400);
 
 // the Home marker asks first
 await openMarker(p, 'Flat');
 ok((await p.locator('.poi-pop .maplinks a.maplink').count()) === 0 && (await p.locator('.poi-pop .maplinks button.maplink').count()) === 2, 'the Home marker\'s buttons are buttons, not plain links: each asks first');
-const homeBtn = p.locator('.poi-pop .maplinks-row:first-child button.maplink').first();
+const homeBtn = p.locator('.poi-pop .maplinks button.maplink').first();
 await homeBtn.scrollIntoViewIfNeeded();
 let extra = 0; ctx.on('page', () => { extra++; });
 await homeBtn.click(); await p.waitForTimeout(500);
-ok(/Share Home location/.test(await homeBtn.textContent()) && extra === 0, 'the first tap changes the text to "Share Home location? Tap again" and opens nothing');
+ok(/Tap again to share/.test(await homeBtn.textContent()) && extra === 0, 'the first tap changes the text to "Tap again to share" and opens nothing');
 const [homeTab] = await Promise.all([ctx.waitForEvent('page'), homeBtn.click()]);
 ok(/^https:\/\/uri\.amap\.com\/marker\?position=114\.100000,30\.400000/.test(homeTab.url()), 'the second tap opens it');
 await homeTab.close();
@@ -85,7 +85,7 @@ await ctx.close();
 await p.click('#panel-close');
 await p.evaluate(() => document.getElementById('map').focus());
 await p.keyboard.press('Enter'); await p.waitForSelector('.leaflet-popup .maplinks'); await p.waitForTimeout(500);
-links = await hrefs(p, '.leaflet-popup .maplinks-row:first-child');
+links = await hrefs(p, '.leaflet-popup .maplinks');
 ok(links.map((l) => l.t).join() === 'Open in Amap,Navigate in Amap' && /name=3\d\.\d{5}%20114\.\d{5}/.test(links[0].h), 'a point check in Hubei has the buttons too, in Amap, named by its coordinates: ' + (links[0] && links[0].h));
 await ctx.close();
 

@@ -82,7 +82,7 @@ await p.click('.pop-toggle'); await p.waitForTimeout(300);
 await ctx.close();
 
 // ================= a short screen: the bar stays in view while the window scrolls
-({ ctx, p } = await session({ viewport: { width: 1000, height: 520 } }));
+({ ctx, p } = await session({ viewport: { width: 1000, height: 400 } }));
 await openName(p, 'Alpha');
 const vis = await p.evaluate(() => { const c = document.querySelector('.leaflet-popup-content'); const b = document.querySelector('.pop-seq').getBoundingClientRect(); const w = document.querySelector('.leaflet-popup-content-wrapper').getBoundingClientRect(); return { scrolls: c.scrollHeight > c.clientHeight + 1, inside: b.bottom <= w.bottom + 1 && b.top >= w.top }; });
 ok(vis.scrolls && vis.inside, 'on a short screen the window scrolls and the bar stays inside it, not scrolled away');

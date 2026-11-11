@@ -141,3 +141,7 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision: the trip detail screen shows an Open-Meteo daily forecast for the first non-hotel stop of each day (up to 16 days ahead), only while automatic weather is on; and a button that checks every stop against the local zone tiles. The Distances settings moved into the privacy settings (owner's request).
 - Reasoning: reuses the existing weather opt-in and coordinate rounding, so no new consent step; the zone check needs no network, so it is safe to run on demand.
 - Consequences: one more Open-Meteo request per upcoming trip (at most 6 trips, reused for 3 hours); the forecast cache is cleared when weather is switched off.
+
+### 2026-11-11: Map links as icons beside the coordinates; distance rows only when they exist
+- Decision (owner): Open and Navigate are icons next to the coordinates (marker window) or the title (point check); the Home marker's icons ask on a second tap; hotel and Home point rows with no distance are not shown.
+- Consequences: the sharing sentence is a tooltip plus a line in the Maps card (tooltips do not show on phones).

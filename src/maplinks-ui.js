@@ -35,26 +35,54 @@ export function linkButton({ label, url, confirm = false }) {
   return b;
 }
 
+const ICONS = {
+  open: 'M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10zM12 8.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
+  go: 'M4 12l16-8-8 16-2-6-6-2z',
+};
+/** A round icon for one map link. The label is its name and, with the sentence about sharing, its tooltip. */
+function iconLink({ icon, label, url, confirm }) {
+  const tip = label + '. Opens in a new tab and shares this location with the map app.';
+  const svg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ICONS[icon] + '"/></svg>'; // built from constants only
+  if (!confirm) {
+    const a = el('a', 'btn tool maplink');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.title = tip;
+    a.innerHTML = svg;
+    a.append(el('span', 'tool-label', label));
+    return a;
+  }
+  // the Home marker: the first tap turns the icon into "Tap again to share" for five seconds, the second opens the app
+  const b = el('button', 'btn tool maplink');
+  b.type = 'button'; b.title = label + '. Asks before it shares your Home location.'; b.dataset.url = url;
+  b.innerHTML = svg;
+  const text = el('span', 'tool-label', label);
+  b.append(text);
+  let armed = null;
+  b.addEventListener('click', () => {
+    if (!armed) {
+      text.textContent = 'Tap again to share'; b.classList.add('armed', 'share');
+      armed = setTimeout(() => { text.textContent = label; b.classList.remove('armed', 'share'); armed = null; }, 5000);
+      return;
+    }
+    clearTimeout(armed); armed = null; text.textContent = label; b.classList.remove('armed', 'share');
+    open(url);
+  });
+  return b;
+}
+
 /**
- * The two buttons for one place: Open in <app> and Navigate in <app>. `home`: this is the Home marker (the traveller's residence),
- * so each button asks before opening. The app comes from the Maps settings (automatic: Amap in China, Google Maps elsewhere) and
+ * The two icons for one place, to sit beside its coordinates: Open in <app> and Navigate in <app>. `home`: the Home marker (the traveller's
+ * residence), whose icons ask before sharing. The app comes from the Maps settings (automatic: Amap in China, Google Maps elsewhere) and
  * Navigate uses the usual way of travelling from the same settings.
  */
-export function mapLinksBlock({ lat, lon, name = '', home = false }) {
+export function mapLinkIcons({ lat, lon, name = '', home = false }) {
   const prefs = loadPrefs();
   const app = resolveApp([{ lat, lon }], prefs.mapApp);
   const place = { lat, lon, name };
-  const box = el('div', 'maplinks');
-  const row = el('div', 'maplinks-row');
-  row.append(
-    linkButton({ label: `Open in ${APP_LABEL[app]}`, url: placeUrl(app, place), confirm: home }),
-    linkButton({ label: `Navigate in ${APP_LABEL[app]}`, url: hereUrl(app, place, prefs.mapMode ?? MODES[0].id), confirm: home }),
+  const box = el('span', 'maplinks maplinks-row map-icons');
+  box.append(
+    iconLink({ icon: 'open', label: `Open in ${APP_LABEL[app]}`, url: placeUrl(app, place), confirm: home }),
+    iconLink({ icon: 'go', label: `Navigate in ${APP_LABEL[app]}`, url: hereUrl(app, place, prefs.mapMode ?? MODES[0].id), confirm: home }),
   );
-  box.append(row);
-  const note = home
-    ? 'This is your Home location: each button asks before it shares it.'
-    : 'Opens in a new tab and shares this location with the map app. Navigation starts from where you are.';
-  box.append(el('small', 'maplinks-note', note));
   return box;
 }
 

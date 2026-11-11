@@ -10,7 +10,7 @@ import { initPanel } from './panel.js';
 import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
 import { initWelcome } from './welcome.js';
-import { mapLinksBlock } from './maplinks-ui.js';
+import { mapLinkIcons } from './maplinks-ui.js';
 import { MODES } from './maplinks.js';
 import { toolBar } from './cards.js';
 import { centreOn, popupMaxHeight } from './view.js';
@@ -105,7 +105,11 @@ function decorate(content, latlng, label, onResize, extras = {}) {
     lookupElevation(latlng.lat, latlng.lng).then((m) => set(m === null ? '–' : `${Math.round(m)} m`)).catch(() => set('–'));
   }
   content.append(weatherButton(() => { map.closePopup(); showWeather(latlng.lat, latlng.lng, label); }));
-  content.append(mapLinksBlock({ lat: latlng.lat, lon: latlng.lng, name: label }));
+  // the map-app icons sit right after the title (or, with no title, a line of coordinates)
+  let sub = content.querySelector('.pop-sub');
+  if (!sub) { sub = document.createElement('div'); sub.className = 'pop-sub'; sub.textContent = `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`; content.querySelector('.pop-bar')?.after(sub); }
+  sub.classList.add('has-icons');
+  sub.append(mapLinkIcons({ lat: latlng.lat, lon: latlng.lng, name: label }));
   if (extras.official) { // the region's own authoritative map (Singapore: OneMap), in a new tab
     const a = document.createElement('a');
     a.className = 'btn small maplink official-link'; a.href = extras.official.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = extras.official.label;
