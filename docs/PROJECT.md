@@ -225,9 +225,14 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - A marker in a trip that has a date (or an old stored day) gets a bar pinned to the bottom of its window: **‹ Previous · 3 of 8 · Next ›**. The stops are the trip's dated markers in itinerary order (date, then stop; markers with no stop last in their day; hotels included). Each button's tooltip names its destination with its day and stop. The first stop has no Previous and the last has no Next. Pressing one opens that marker's window and centres the map on it, keeping the expanded or collapsed size.
 - No bar for a marker with no date, in no trip, or alone in its trip, nor in the edit form. The bar stays inside the window while its content scrolls.
 
+**F33. Select markers on the map (built)**
+- In Select mode a tap on a pin ticks or unticks that marker, in one selection shared with the list. Ticked pins get a ring; with two or more they carry their route number, which follows the route block (Reverse, up and down, Use itinerary order).
+- Pins hidden by the list's type or trip filter are dimmed and ignored. Where visits to one place are stacked, a tap picks the top pin.
+- A banner says how many are selected, with **Review** (opens the list with the route and the delete button) and **Done**; Escape also ends selecting. On phones the list closes when selecting starts so the map can be tapped. Selecting is exclusive with placing and Edit mode (starting one ends the other).
+
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.
-- First visit (nothing saved): the map fits all covered regions. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.
+- First visit (nothing saved): the map fits the first covered region (Hubei); other regions are reached with the country menu. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.
 - Saved values are validated on load (known basemap, plausible country code, coordinates and zoom in range). Anything damaged or unknown is ignored and the defaults are used. If storage is blocked, the app works and simply does not remember.
 - Zone opacity: the slider updates the zones live while it is dragged, and the value is saved when it is released (not on every step). It is applied before the first zone layer is drawn, so there is no flash at the default. Accepted range is the slider's own, 0.1 to 0.9; anything else falls back to 0.45.
 - The privacy choices (F13) are kept in the same entry. The wind limit and the saved markers are remembered separately. Not remembered yet: whether zones are shown, the open tab, and whether the panel is shown.

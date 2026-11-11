@@ -109,7 +109,7 @@ await pc.addInitScript(([pois, trips]) => { localStorage.setItem('uavzones.v1.po
 const q = await pc.newPage(); watch(q);
 await q.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await q.waitForTimeout(800);
 await q.tap('#dock button[data-tab=poi]'); await q.waitForTimeout(400);
-await q.tap('#poi-select'); await q.tap('#sel-all'); await q.tap('#sel-delete'); await q.waitForTimeout(300);
+await q.tap('#poi-select'); await q.tap('#banner-review'); await q.waitForTimeout(300); await q.tap('#sel-all'); await q.tap('#sel-delete'); await q.waitForTimeout(300);
 const fit = await q.evaluate(() => {
   const bar = document.getElementById('poi-selbar').getBoundingClientRect();
   const over = [...document.querySelectorAll('#poi-selbar button, #poi-selbar select')].filter((e) => { const r = e.getBoundingClientRect(); return r.right > bar.right + 1 || r.left < bar.left - 1; }).length;

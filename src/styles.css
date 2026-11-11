@@ -520,3 +520,8 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .pop-menu[hidden]{display:none}
 .pop-menu .btn.tool{width:auto;height:30px;padding:0 10px;gap:6px;grid-auto-flow:column;border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--fg);font-size:12.5px}
 .pop-menu .btn.tool .tool-label{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+
+/* ---------- selecting markers by tapping their pins on the map ---------- */
+.poi-pin.sel-pin svg{outline:3px solid var(--accent);outline-offset:3px;border-radius:50%/40%}
+.poi-pin.sel-pin[data-n]::after{content:attr(data-n);position:absolute;left:-8px;top:-8px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:9px;background:var(--accent);color:var(--accent-fg);font:700 11px/18px var(--font);text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.poi-pin.sel-dim{opacity:.35}

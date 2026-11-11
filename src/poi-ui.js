@@ -61,7 +61,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
 
   const typesEl = $('poi-types'), listEl = $('poi-list'), filterEl = $('poi-filter'), countEl = $('poi-count');
   const emptyEl = $('poi-empty'), noteEl = $('poi-note'), editSwitch = $('poi-edit'), showSwitch = $('poi-show');
-  const banner = $('banner'), bannerText = $('banner-text'), bannerAction = $('banner-action');
+  const banner = $('banner'), bannerText = $('banner-text'), bannerAction = $('banner-action'), bannerReview = $('banner-review');
   const tripSel = $('poi-trip'), tripField = $('poi-trip-field'), tripFilterSel = $('poi-trip-filter'), tripFilterField = $('poi-trip-filter-field');
 
   // ---------- trips: selectors in this tab ----------
@@ -231,6 +231,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function renderSelectBar(items) {
     selRow.hidden = selecting || !items.length;
     selBar.hidden = !selecting;
+    paintPins(); updateBanner();
     if (!selecting) return;
     const option = (sel, value, text) => { const o = el('option', '', text); o.value = value; sel.append(o); };
     selTrip.replaceChildren(); option(selTrip, '', 'Choose…');
@@ -249,6 +250,31 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     syncRoute();
     renderRoute();
     paintSelNums();
+    paintPins(); updateBanner();
+  }
+  /**
+   * Pins on the map follow the selection: a ring on the ticked ones, their route number once there are two or more,
+   * and the pins the list filter hides are dimmed and cannot be ticked from the map.
+   */
+  function paintPins() {
+    for (const [id, m] of markers) {
+      const e = m.getElement();
+      if (!e) continue;
+      const on = selecting && selected.has(id);
+      const i = routeOrder.indexOf(id);
+      e.classList.toggle('sel-pin', on);
+      e.classList.toggle('sel-dim', selecting && !visibleIds.has(id));
+      if (on && selected.size >= 2 && i >= 0) e.dataset.n = String(i + 1); else delete e.dataset.n;
+    }
+  }
+  /** A click on a pin while selecting: tick or untick it (the list row follows). Pins the filter hides are ignored. */
+  function pickOnMap(id) {
+    if (!visibleIds.has(id)) return;
+    if (selected.has(id)) selected.delete(id); else selected.add(id);
+    const cb = listEl.querySelector(`li[data-id="${id}"] .sel-box`);
+    if (cb) cb.checked = selected.has(id);
+    selConfirm.hidden = true;
+    updateSelectBar();
   }
   // ----- a route through the ticked places -----
   let routeOrder = [];            // the ticked places in route order (tick order, until the visitor moves them)
@@ -269,6 +295,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const n = li.querySelector('.sel-num');
       if (n) n.textContent = selected.size >= 2 && i >= 0 ? String(i + 1) : '';
     }
+    paintPins(); // the pins carry the same numbers
   }
   function renderRoute() {
     const box = $('route-box'), hint = $('route-hint');
@@ -306,6 +333,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     renderRoute(); paintSelNums();
   });
   function setSelecting(on) {
+    if (on) { setMode(null); map.closePopup(); panel.closeIfPhone(); } // exclusive with placing and editing; the map must be free to tap
     selecting = on; selected.clear(); selConfirm.hidden = true;
     renderList();
   }
@@ -532,9 +560,10 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function addMarker(item) {
     const m = L.marker([item.lat, item.lon], { icon: iconOf(item), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
     m._sig = sigOf(item);
-    m.on('click', () => { if (!suppressClick) openPopup(item.id); });
+    m.on('click', () => { if (suppressClick) return; if (selecting) pickOnMap(item.id); else openPopup(item.id); });
     markers.set(item.id, m);
     layer.addLayer(m);
+    paintPins();
   }
   /** Redraws any pin whose type or trip colour changed (a trip was edited or deleted, a marker was re-tagged). */
   function refreshIcons() {
@@ -543,6 +572,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const m = markers.get(it.id);
       if (m && m._sig !== sigOf(it)) { m.setIcon(iconOf(it)); m._sig = sigOf(it); }
     }
+    paintPins();
   }
   function rebuildMarkers() {
     visitMap = visitGroups(store.items());
@@ -870,10 +900,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function updateBanner() {
     if (mode === 'place') { bannerText.textContent = `Tap the map to place: ${typeOf(selectedType).label}`; bannerAction.textContent = 'Cancel'; }
     else if (mode === 'edit') { bannerText.textContent = 'Edit mode: map locked. Press and hold a pin, then drag it.'; bannerAction.textContent = 'Done'; }
-    banner.hidden = !mode;
+    else if (selecting) { bannerText.textContent = selected.size ? `${plural(selected.size)} selected. Tap pins to add or remove.` : 'Tap pins on the map to select them.'; bannerAction.textContent = 'Done'; }
+    bannerReview.hidden = mode || !selecting;
+    banner.hidden = !mode && !selecting;
   }
   function setMode(next) {
     if (mode === next) return;
+    if (next && selecting) setSelecting(false); // placing or editing ends selecting
     if (mode === 'edit') { map.dragging.enable(); container.classList.remove('is-editing'); }
     if (mode === 'place') container.classList.remove('is-placing');
     mode = next;
@@ -883,8 +916,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     editSwitch.checked = mode === 'edit';
     updateBanner();
   }
-  bannerAction.addEventListener('click', () => setMode(null));
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && mode) setMode(null); });
+  bannerAction.addEventListener('click', () => { if (mode) setMode(null); else setSelecting(false); });
+  bannerReview.addEventListener('click', () => panel.open('poi')); // the list, with the route and the delete button
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (mode) setMode(null); else if (selecting) setSelecting(false); } });
   editSwitch.addEventListener('change', () => setMode(editSwitch.checked ? 'edit' : null));
   showSwitch.addEventListener('change', () => {
     if (showSwitch.checked) map.addLayer(layer); else { map.removeLayer(layer); map.closePopup(); }

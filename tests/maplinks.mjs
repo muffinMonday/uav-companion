@@ -153,7 +153,7 @@ await ctx.close();
 
 // ================= phone
 ({ ctx, p } = await session({ viewport: { width: 360, height: 740 }, mobile: true }));
-await p.tap('#poi-select');
+await p.tap('#poi-select'); await p.tap('#banner-review'); await p.waitForTimeout(300); // on a phone the list closes while selecting; Review brings it back
 for (const n of ['Airport', 'Yellow Crane Tower', 'East Lake']) { await p.tap(`#poi-list .poi-item:has-text("${n}")`); await p.waitForTimeout(150); }
 const fit = await p.evaluate(() => { const box = document.getElementById('route-box').getBoundingClientRect(); const over = [...document.querySelectorAll('#route-box button, #route-box a, #route-box select')].filter((e) => { const r = e.getBoundingClientRect(); return r.right > box.right + 1 || r.left < box.left - 1; }).length; return { over, page: document.documentElement.scrollWidth > innerWidth + 1 }; });
 ok(fit.over === 0 && !fit.page, 'at 360 px the route block fits with no sideways scrolling');
