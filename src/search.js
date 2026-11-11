@@ -12,7 +12,20 @@ const strip = (t) => t.replace(/(土家族自治县|林区|市|区|县)$/, '');
 export function initSearch(map, places, { show }) {
   const qEl = document.getElementById('q');
   const resEl = document.getElementById('results');
+  const box = document.getElementById('search'), toggle = document.getElementById('search-toggle');
   let items = [], sel = -1, marker = null;
+
+  // collapsed to a magnifying glass until it is needed
+  const expand = () => { box.classList.remove('collapsed'); toggle.setAttribute('aria-expanded', 'true'); qEl.focus(); };
+  const collapse = () => { box.classList.add('collapsed'); toggle.setAttribute('aria-expanded', 'false'); resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); if (document.activeElement === qEl) qEl.blur(); };
+  /** Out of use: nothing typed and no list showing. */
+  const idle = () => !qEl.value.trim() && resEl.hidden;
+  toggle.addEventListener('click', () => { if (box.classList.contains('collapsed')) expand(); else if (idle()) collapse(); else qEl.focus(); });
+  document.addEventListener('keydown', (e) => { // / opens it, as in many sites, unless something is being typed into
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || !box.classList.contains('collapsed')) return;
+    if (e.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    e.preventDefault(); expand();
+  });
 
   function offline(q) {
     const n = norm(strip(q.trim()));
@@ -105,6 +118,7 @@ export function initSearch(map, places, { show }) {
     marker.on('click', () => open(undefined)); // the pin reopens the window without moving the zoom
     open(it.zoom);
     resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); qEl.blur();
+    collapse(); // a picked result has its window; the box folds away
   }
 
   const refresh = () => { const r = interpret(qEl.value); render(r.list, qEl.value, r); };
@@ -122,8 +136,8 @@ export function initSearch(map, places, { show }) {
       if (sel >= 0 && items[sel]) go(items[sel]);
       else if (items.length) go(items[0]);
       else if (qEl.value.trim() && parseCoordinates(qEl.value) === null) online(qEl.value.trim()); // coordinates are never sent to a search service
-    } else if (e.key === 'Escape') { resEl.hidden = true; }
+    } else if (e.key === 'Escape') { if (resEl.hidden || !qEl.value.trim()) { qEl.value = ''; collapse(); } else resEl.hidden = true; }
   });
-  qEl.addEventListener('blur', () => setTimeout(() => { resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); }, 150));
+  qEl.addEventListener('blur', () => setTimeout(() => { resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); if (idle() && document.activeElement !== toggle) collapse(); }, 150));
   qEl.addEventListener('focus', () => { if (qEl.value.trim()) refresh(); });
 }

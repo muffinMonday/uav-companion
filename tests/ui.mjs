@@ -134,7 +134,7 @@ const widths = [320, 360, 390, 430, 520, 600, 700, 760, 900, 1200];
 const bad = [];
 for (const w of widths) {
   const s = await session(dated, { width: w, height: 780 }, w <= 520);
-  if (await s.p.evaluate(() => !document.getElementById('panel').hidden)) await s.p.click('#panel-close');
+  if (await s.p.evaluate(() => !document.getElementById('panel').hidden)) await s.p.click('#panel-close'); await s.p.click('#search-toggle'); // open: the open box is the widest it gets
   await s.p.waitForTimeout(300);
   const r = await s.p.evaluate(() => { const a = document.querySelector('.search input').getBoundingClientRect(), d = document.getElementById('dock').getBoundingClientRect(); const z = document.querySelector('.leaflet-control-zoom')?.getBoundingClientRect(); return { sr: a.right, sl: a.left, sw: a.width, dl: d.left, dr: d.right, zr: z ? z.right : 0, w: innerWidth }; });
   if (!(r.sr <= r.dl - 4 && r.dr <= r.w && r.sl >= r.zr && r.sw >= 110)) bad.push(`${w}px: ${JSON.stringify(r)}`);

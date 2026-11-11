@@ -17,6 +17,7 @@ function sanitize(raw) {
   if (typeof raw.currentTrip === 'string' && raw.currentTrip.length > 0 && raw.currentTrip.length <= 64) out.currentTrip = raw.currentTrip; // checked against the saved trips when used
   if (typeof raw.windowExpanded === 'boolean') out.windowExpanded = raw.windowExpanded;
   if (typeof raw.holdHint === 'boolean') out.holdHint = raw.holdHint;
+  if (typeof raw.panelRolled === 'boolean') out.panelRolled = raw.panelRolled; // the side panel is rolled up to its header
   if (typeof raw.autoWeather === 'boolean') out.autoWeather = raw.autoWeather;
   if (raw.weatherPrecision === 'precise' || raw.weatherPrecision === 'estimated') out.weatherPrecision = raw.weatherPrecision;
   if (typeof raw.fetchAltitude === 'boolean') out.fetchAltitude = raw.fetchAltitude;

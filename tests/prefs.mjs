@@ -1,5 +1,6 @@
 import { CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
+const openSearch = (p) => p.evaluate(() => { if (document.getElementById('search').classList.contains('collapsed')) document.getElementById('search-toggle').click(); }); // the search box starts folded into a magnifying glass
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const b = await chromium.launch({ channel: CHANNEL });
 const errs = [];
@@ -27,7 +28,7 @@ const sgScale = await centre(p);
 // ---- basemap
 await p.selectOption('#base', 'sat'); await p.waitForTimeout(1200);
 // pan/zoom somewhere specific
-await p.fill('#q', '武汉'); await p.keyboard.press('Enter'); await p.waitForTimeout(2500);
+await openSearch(p); await p.fill('#q', '武汉'); await p.keyboard.press('Enter'); await p.waitForTimeout(2500);
 await p.click('.leaflet-control-zoom-in'); await p.waitForTimeout(1000);
 await p.mouse.move(300, 400); await p.mouse.down(); await p.mouse.move(250, 330, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(1200);
 const want = await p.evaluate(() => { const m = document.querySelector('#map'); return null; });

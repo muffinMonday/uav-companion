@@ -149,3 +149,7 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 ### 2026-11-11: Trip days as a flip card
 - Decision (owner): the trip detail screen shows one day at a time on a card with ‹ and ›, instead of a long stack of days.
 - Consequences: no stops on the list-level trip cards; the card opens on today's day for a trip under way; no automatic map movement when turning pages (a Fit map button on each page).
+
+### 2026-11-11: Search folds into a magnifying glass; the side panel rolls up
+- Decision (owner): the search box is collapsed when not in use; a ^ button at the bottom of the side panel rolls it up to its header strip because the cross at the top right is awkward to reach.
+- Consequences: tests that type in the search box open it first; the rolled state is remembered; the cross still hides the panel to the dock.

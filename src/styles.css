@@ -592,3 +592,22 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .flip-dot{width:18px;height:18px;padding:0;border:0;background:transparent;cursor:pointer;display:grid;place-items:center}
 .flip-dot::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--line)}
 .flip-dot[aria-current=true]::before{background:var(--accent)}
+
+/* ---------- the search box folds into a magnifying glass ---------- */
+.search{position:absolute}
+.search-btn{position:absolute;left:0;top:0;z-index:1;display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.search-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.search input{padding-left:42px}
+.search.collapsed{width:40px}
+.search.collapsed input,.search.collapsed .results{display:none}
+.search.collapsed .search-btn{background:var(--surface);box-shadow:var(--shadow-sm);color:var(--fg)}
+.search.collapsed .search-btn:hover{color:var(--accent)}
+
+/* ---------- the side panel rolls up to its header ---------- */
+.sp-foot{display:flex;justify-content:center;padding:1px 0;border-top:1px solid var(--line);background:var(--surface)}
+.sp-foot .icon-btn{width:44px;height:26px}
+.sidepanel.rolled{bottom:auto;height:auto}
+.sidepanel.rolled .sp-body,.sidepanel.rolled .subpanel{display:none}
+.sidepanel.rolled #panel-roll svg{transform:rotate(180deg)}
+.sidepanel.rolled .sp-head{border-bottom:0}
+@media (max-width:520px){.sidepanel.rolled{height:auto;top:auto;bottom:8px}}

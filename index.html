@@ -11,7 +11,10 @@
 <body>
 <div id="map"></div>
 
-<div class="search">
+<div class="search collapsed" id="search">
+  <button type="button" class="search-btn" id="search-toggle" aria-label="Search" aria-expanded="false" aria-controls="q" title="Search (press / )">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+  </button>
   <input id="q" type="search" placeholder="Search places or coordinates (e.g. 宜昌, 30.59, 114.30)" autocomplete="off" aria-label="Search places" role="combobox" aria-expanded="false" aria-controls="results">
   <ul class="results" id="results" role="listbox" hidden></ul>
 </div>
@@ -214,6 +217,12 @@
   </div>
 
   <!-- Privacy settings: slides over the panel -->
+  <footer class="sp-foot">
+    <button type="button" class="icon-btn" id="panel-roll" aria-label="Roll the panel up" aria-expanded="true" title="Roll the panel up">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+    </button>
+  </footer>
+
   <div class="subpanel" id="privacy" role="region" aria-label="Privacy settings" hidden>
     <header class="sp-head">
       <button type="button" class="icon-btn" id="privacy-back" aria-label="Back to the panel">

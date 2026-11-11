@@ -3,6 +3,8 @@
 const $ = (id) => document.getElementById(id);
 const isPhone = () => window.matchMedia('(max-width: 520px)').matches;
 
+import { loadPrefs, savePrefs } from './prefs.js';
+
 export function initPanel() {
   const panel = $('panel'), dock = $('dock'), sub = $('privacy');
   const tabs = [...panel.querySelectorAll('[role=tab]')];
@@ -41,7 +43,19 @@ export function initPanel() {
     for (const b of dock.querySelectorAll('button')) b.setAttribute('aria-expanded', String(open));
   }
 
-  function open(tab) { selectTab(tab || current); setOpen(true); }
+  /** Rolls the panel up to its header strip (the tabs stay) or back down. Remembered. */
+  function setRolled(on, { save = true } = {}) {
+    panel.classList.toggle('rolled', on);
+    const roll = $('panel-roll');
+    roll.setAttribute('aria-expanded', String(!on));
+    roll.setAttribute('aria-label', on ? 'Roll the panel down' : 'Roll the panel up');
+    roll.title = roll.getAttribute('aria-label');
+    if (on) closePrivacy({ focus: false });
+    if (save) savePrefs({ panelRolled: on || null });
+  }
+  $('panel-roll').addEventListener('click', () => setRolled(!panel.classList.contains('rolled')));
+
+  function open(tab) { selectTab(tab || current); setOpen(true); setRolled(false, { save: false }); }
   function close() {
     const wasOpen = !panel.hidden;
     setOpen(false);
@@ -49,7 +63,7 @@ export function initPanel() {
   }
 
   for (const t of tabs) {
-    t.addEventListener('click', () => selectTab(t.dataset.tab));
+    t.addEventListener('click', () => { selectTab(t.dataset.tab); if (panel.classList.contains('rolled')) setRolled(false); });
     t.addEventListener('keydown', (e) => {
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
       e.preventDefault();
@@ -65,7 +79,7 @@ export function initPanel() {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sub.hidden) closePrivacy(); });
 
   setOpen(false);
-  if (!isPhone()) open('config'); // phones start with the map unobstructed
+  if (!isPhone()) { open('config'); if (loadPrefs().panelRolled) setRolled(true, { save: false }); } // phones start with the map unobstructed
 
   return {
     open, close, selectTab, openPrivacy, closePrivacy,

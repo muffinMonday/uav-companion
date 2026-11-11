@@ -1,6 +1,7 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
 import fs from 'node:fs';
+const openSearch = (p) => p.evaluate(() => { if (document.getElementById('search').classList.contains('collapsed')) document.getElementById('search-toggle').click(); }); // the search box starts folded into a magnifying glass
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const b = await chromium.launch({ channel: CHANNEL });
 const ctx = await b.newContext({ viewport: { width: 1200, height: 800 }, geolocation: { latitude: 30.5928, longitude: 114.3055 }, permissions: ['geolocation'], acceptDownloads: true });
@@ -22,7 +23,7 @@ await p.click('#dock [data-tab=poi]'); ok(await p.isVisible('#pane-poi'), 'dock 
 await p.screenshot({ path: SP + '/ui-poi-empty.png' });
 
 // ---- go to Wuhan so we have a real view
-await p.fill('#q', '武汉'); await p.keyboard.press('Enter'); await p.waitForTimeout(2500);
+await openSearch(p); await p.fill('#q', '武汉'); await p.keyboard.press('Enter'); await p.waitForTimeout(2500);
 await p.keyboard.press('Escape');
 
 // ---- place a Hotel by tapping the map

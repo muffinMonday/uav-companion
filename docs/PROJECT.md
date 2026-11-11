@@ -239,6 +239,10 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - **Check stops against no-fly zones**: a button in the detail screen reads the map tiles in the browser (nothing is sent) and tags every stop with its verdict; stops inside a restricted area (or outside Hubei's suitable-flight zone) are added to the warnings. Results live until the page closes.
 - **Distances** (units, max range) moved from the Points of Interest tab into the privacy settings, with the other settings that change what is shown or sent.
 
+**F35. Collapsible search and a roll-up side panel (built)**
+- The search box starts as a magnifying-glass button and opens to the full box when tapped (or when / is pressed away from any text field), with the cursor in it. It folds away again when you tap elsewhere with nothing typed, on Escape with nothing typed, when the magnifying glass is pressed on an empty box, and after a result is picked. With text typed or results showing it stays open.
+- A **^** button at the bottom of the side panel rolls the panel up into its header strip (the tabs stay, `^` turns to `v`); `v`, choosing a tab, or opening the panel from the dock rolls it down. The cross still hides the panel entirely. On phones the bottom sheet rolls down to its header at the bottom edge. The rolled state is remembered (`panelRolled` in the saved settings).
+
 **F11. Remembered settings (built)**
 - The last basemap, the country choice, the zone opacity, the distance units, the max range and the map position (centre and zoom) are saved in this browser (`localStorage`, key `uavzones.v1.prefs`) and restored on the next visit. The position is saved shortly after each move and when the page is closed.
 - First visit (nothing saved): the map fits the first covered region (Hubei); other regions are reached with the country menu. Later visits resume exactly where the user left off; the country choice only restores the menu, not the position.

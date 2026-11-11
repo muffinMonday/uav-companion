@@ -1,6 +1,7 @@
 // The search box: coordinates and pasted map links, and a blue pin plus the point-check window for the picked result.
 import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
+const openSearch = (p) => p.evaluate(() => { if (document.getElementById('search').classList.contains('collapsed')) document.getElementById('search-toggle').click(); }); // the search box starts folded into a magnifying glass
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 
@@ -18,7 +19,7 @@ async function session({ viewport = { width: 1200, height: 800 }, mobile = false
   await p.waitForTimeout(300);
   return { ctx, p, online };
 }
-const type = async (p, text) => { await p.fill('#q', ''); await p.fill('#q', text); await p.waitForTimeout(200); };
+const type = async (p, text) => { await openSearch(p); await p.fill('#q', ''); await openSearch(p); await p.fill('#q', text); await p.waitForTimeout(200); };
 const rows = (p) => p.$$eval('#results li[role=option]', (l) => l.map((x) => ({ main: x.querySelector('span').textContent, sub: x.querySelector('small').textContent })));
 const msgText = (p) => p.evaluate(() => document.querySelector('#results li.msg')?.textContent || '');
 const pin = (p) => p.evaluate(() => { const e = document.querySelector('img.leaflet-marker-icon'); if (!e) return null; const r = e.getBoundingClientRect(); const m = document.getElementById('map').getBoundingClientRect(); return { n: document.querySelectorAll('img.leaflet-marker-icon').length, x: r.x + r.width / 2, bottom: r.bottom, top: r.top, mx: m.x + m.width / 2, my: m.y + m.height / 2 }; });
@@ -114,7 +115,7 @@ await ctx.close();
 // ================= phone
 ({ ctx, p } = await session({ viewport: { width: 360, height: 740 }, mobile: true }));
 ok(/coordinates/i.test(await p.getAttribute('#q', 'placeholder')), 'phone: the placeholder mentions coordinates');
-await p.tap('#q'); await type(p, '30.5928, 114.3055');
+await p.tap('#search-toggle'); await type(p, '30.5928, 114.3055');
 const fit = await p.evaluate(() => { const l = document.getElementById('results').getBoundingClientRect(); return { r: l.right, w: innerWidth, l: l.left }; });
 ok(fit.r <= fit.w + 1 && fit.l >= 0, 'phone: the result list fits the screen');
 await p.keyboard.press('Enter'); await waitWin(p);

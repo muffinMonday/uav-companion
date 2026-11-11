@@ -1,6 +1,7 @@
 // Singapore no-fly zones: per-class drawing, point check, UAFA pins, official map button. Skips if the data was never built.
 import fs from 'node:fs';
 import { ROOT, CHANNEL, chromium } from './lib.mjs';
+const openSearch = (p) => p.evaluate(() => { if (document.getElementById('search').classList.contains('collapsed')) document.getElementById('search-toggle').click(); }); // the search box starts folded into a magnifying glass
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 if (!fs.existsSync(`${ROOT}/public/data/sg/manifest.json`)) { console.log('skipped: no public/data/sg (Singapore data not built on this machine: npm run build:data)'); process.exit(0); }
 const errs = [];
@@ -14,7 +15,7 @@ await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.wa
 if (await p.evaluate(() => !document.getElementById('panel').hidden)) await p.click('#panel-close');
 
 const check = async (coords) => {
-  await p.fill('#q', ''); await p.fill('#q', coords); await p.waitForTimeout(200);
+  await openSearch(p); await p.fill('#q', ''); await openSearch(p); await p.fill('#q', coords); await p.waitForTimeout(200);
   await p.keyboard.press('Enter');
   await p.waitForSelector('.leaflet-popup .maplinks', { timeout: 8000 }); await p.waitForTimeout(900);
   return p.evaluate(() => { const w = document.querySelector('.leaflet-popup-content-wrapper'); return { text: w.innerText, official: !!w.querySelector('a.official-link[href*="onemap.gov.sg"]') }; });

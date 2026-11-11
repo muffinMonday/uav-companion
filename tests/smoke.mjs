@@ -1,5 +1,6 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
+const openSearch = (p) => p.evaluate(() => { if (document.getElementById('search').classList.contains('collapsed')) document.getElementById('search-toggle').click(); }); // the search box starts folded into a magnifying glass
 const browser = await chromium.launch({ channel: CHANNEL, headless: true });
 const ctx = await browser.newContext({
   viewport: { width: 1200, height: 800 },
@@ -22,7 +23,7 @@ await page.screenshot({ path: `${SP}/1-initial.png` });
 console.log('scale bar:', await page.locator('.leaflet-control-scale-line').first().textContent());
 
 // zoom to Wuhan and click map for point check
-await page.fill('#q', '武汉');
+await openSearch(page); await page.fill('#q', '武汉');
 await page.waitForSelector('#results li[role=option]');
 await page.keyboard.press('Enter');
 await page.waitForTimeout(3000);
