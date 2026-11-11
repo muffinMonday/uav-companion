@@ -21,7 +21,7 @@ for (const reduced of [true, false]) {
   const { ctx, p } = await open(reduced);
   const tag = reduced ? ' (reduced motion)' : '';
   await p.waitForTimeout(450);
-  const free = (1300 - 372) / 2;
+  const free = (1300 - 392) / 2; // the panel (380 px) and its margin (12 px)
   const d1 = await centre(p, '#dash');
   ok(Math.abs(d1 - free) < 4, 'with the side panel open the dashboard is centred in the map beside it: ' + Math.round(d1) + ' vs ' + Math.round(free) + tag);
   await p.click('#dash-collapse'); await p.waitForTimeout(400);

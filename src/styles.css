@@ -81,14 +81,15 @@ textarea{resize:vertical;min-height:60px}
 .dock button:hover{background:var(--accent-soft);color:var(--accent)}
 
 /* ---------- side panel ---------- */
-.sidepanel{position:absolute;z-index:1000;top:12px;right:12px;bottom:12px;width:360px;display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:slide-in .18s ease-out}
+.sidepanel{position:absolute;z-index:1000;top:12px;right:12px;bottom:12px;width:380px;display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:slide-in .18s ease-out}
 .sidepanel[hidden]{display:none}
 @keyframes slide-in{from{opacity:0;transform:translateX(48px)}to{opacity:1;transform:none}}
 .sp-head{display:flex;align-items:center;gap:8px;padding:10px 10px 8px 12px;border-bottom:1px solid var(--line)}
 .tabs{flex:1;display:flex;gap:2px;padding:3px;background:var(--surface-2);border-radius:999px}
-.tabs button{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 8px;border:0;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap;min-width:0}
+.tabs button{position:relative;flex:0 0 36px;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 0;border:0;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap;min-width:0}
 .tabs button svg{flex:none;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.tabs button[aria-selected=true]{flex:2.6}
+.tabs button[aria-selected=true]{flex:1 1 0;padding:7px 12px} /* the selected tab takes all the room the icon tabs leave, so its name is not cut */
+.tabs .tab-label{overflow:hidden;text-overflow:ellipsis}
 .tabs button[aria-selected=false] .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)} /* only the selected tab shows its name; the others are icons (named for screen readers) */
 .tab-badge{position:absolute;top:1px;right:1px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;font-size:10.5px;font-weight:800;line-height:16px;text-align:center}
 .tab-badge[hidden]{display:none}
@@ -604,7 +605,7 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 /* ---------- the dashboard ---------- */
 .dash{position:absolute;z-index:1004;left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:36px;width:min(780px,calc(100% - 24px - var(--panel-w,0px)));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:dash-up .22s ease-out}
 .dash[hidden],.dash-peek[hidden],.dash-tab[hidden]{display:none}
-body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, strip and tab centre in the map beside it */
+body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, strip and tab centre in the map beside it */
 @keyframes dash-up{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.dash{animation:none}}
 .dash-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 6px 14px;border-bottom:1px solid var(--line)}

@@ -42,6 +42,20 @@ const btn = await box(p, '#panel-close');
 ok(btn.r <= full.r && btn.y < full.y + 60 && (await p.getAttribute('#panel-close', 'aria-label')) === 'Collapse the panel', 'the > button is in the panel\'s header and says it collapses the panel');
 ok((await p.locator('#panel-roll').count()) === 0 && (await p.locator('.sp-foot').count()) === 0, 'there is no roll-up button any more');
 ok(!(await p.isVisible('#dock')), 'with the panel open the rail is not shown');
+/** Click each tab and check that its name is not cut off (the label fits its box). */
+const namesFit = async (pg) => {
+  const cut = [];
+  for (const id of await pg.$$eval('#panel [role=tab]', (t) => t.map((x) => x.id))) {
+    await pg.evaluate((i) => document.getElementById(i).click(), id); await pg.waitForTimeout(120);
+    const fits = await pg.$eval('#' + id + ' .tab-label', (l) => l.scrollWidth <= l.clientWidth);
+    if (!fits) cut.push(id);
+  }
+  await pg.evaluate(() => document.getElementById('tab-config').click());
+  return cut;
+};
+const cutDesk = await namesFit(p);
+ok(cutDesk.length === 0, 'on a computer every tab shows its whole name when selected' + (cutDesk.length ? ' (cut: ' + cutDesk.join(', ') + ')' : ''));
+ok((await box(p, '#panel')).w === 380, 'the panel is 380 px wide');
 await p.click('#tab-trips'); await p.waitForTimeout(150);
 await p.click('#panel-close'); await p.waitForSelector('#panel', { state: 'hidden' });
 const rail = await box(p, '#dock');
@@ -73,6 +87,8 @@ await ctx.close();
 // phone
 ({ ctx, p } = await open({ width: 390, height: 780 }, true));
 await p.tap('#dock button[data-tab=poi]'); await p.waitForSelector('#panel', { state: 'visible' });
+const cutPhone = await namesFit(p);
+ok(cutPhone.length === 0, 'on a 390 px phone every tab shows its whole name when selected' + (cutPhone.length ? ' (cut: ' + cutPhone.join(', ') + ')' : ''));
 const sheet = await box(p, '#panel');
 const pb = await box(p, '#panel-close');
 ok(pb.r <= sheet.r && pb.y >= sheet.y && pb.y < sheet.y + 60, 'on a phone the > button is in the sheet\'s header and not covered: ' + JSON.stringify({ x: Math.round(pb.x), y: Math.round(pb.y) }));
