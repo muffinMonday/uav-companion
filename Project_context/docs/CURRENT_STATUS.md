@@ -10,7 +10,7 @@ The one place to see what is being built, what is queued and what is waiting. St
 
 | ID | Item | Status | Since | Notes |
 |---|---|---|---|---|
-| W1 | Backend phase 1: accounts and cloud persistence | **In progress** | 2026-11-11 | Done: database, access rules, 42 tests, both migrations on the dev project (`e4e0206`). Built and committed: sync rules, engine, Supabase adapter, sign-in card, conflict dialog, dashboard line (79 unit + 17 browser assertions, mocked server); inactive on the live site. Next: live test of the adapter on the dev project, docs, then Done. |
+| W1 | Backend phase 1: accounts and cloud persistence | **In progress** | 2026-11-11 | Done: database, access rules, 42 tests, both migrations on the dev project (`e4e0206`). Built and committed: sync rules, engine, Supabase adapter, sign-in card, conflict dialog, dashboard line (79 unit + 17 browser assertions with a mocked server, and 16 live checks of the adapter and access rules on the dev project); inactive on the live site. Remaining: the owner signs in once with a real email link on `npm run dev` (the one step that cannot be automated), then Done. |
 | W2 | Check-in discoverability (options A to D) | **Waiting on owner** | 2026-11-11 | Needs the owner's choice of A (show the button even when off), B (button in the marker window), C (manual "mark as visited"), D (What's new entry). |
 | W3 | Faster tests: run them in parallel | **Queued** | 2026-11-11 | Plan and the rules for writing parallel-safe tests are in `DEVELOPMENT.md`. |
 | W4 | Optimization backlog (storage readout, orphan cache cleanup, import ceiling) | **Queued** (none urgent) | 2026-11-11 | See "Optimization backlog". |

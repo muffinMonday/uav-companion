@@ -10,6 +10,7 @@ export async function createSupabaseAdapter({ url = import.meta.env?.VITE_SUPABA
   const rpc = async (fn, args) => { const { data, error } = await sb.rpc(fn, args); if (error) throw new Error(error.message); return data; };
 
   return {
+    client: sb, // for tests
     async getSession() { const { data } = await sb.auth.getSession(); const u = data.session?.user; return u ? { email: u.email, id: u.id } : null; },
     async signIn(email) { const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo, shouldCreateUser: true } }); if (error) throw new Error(error.message); },
     async signOut() { await sb.auth.signOut(); },

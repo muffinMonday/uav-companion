@@ -34,6 +34,26 @@ node tests/trips.mjs              # one suite directly; prints PASS/FAIL lines
 ## Backend (`supabase/`)
 See `supabase/README.md`: migrations, how the access rules are tested without Docker (`node tests/db-unit.mjs`, PGlite), how to push to the hosted project (`npx supabase db push --remote --dry-run`, then `--yes`; the password is read from the `SUPABASE_DB_PASSWORD` environment variable), and what must never be committed. The project address and publishable key are in `.env.development.local` (git-ignored, used by `npm run dev` only).
 
+### Cloud copy in the app (, )
+-  holds the rules (what to push, pull or ask),  acts on them through an adapter,  is the real adapter (the library is imported only when  and  are set, so the live site loads none of it).
+- Tests:  and  (rules and several simulated devices on an in-memory cloud, ),  (browser, Supabase HTTP mocked by that same cloud), and PASS  no session before sign-in
+PASS  the test user signs in and the adapter sees the session
+PASS  before the first save there is no cloud copy
+PASS  first save: revision 1
+PASS  second save from revision 1: revision 2
+PASS  a stale save is a conflict that names the device
+PASS  info reads the current revision (a number) and counts, not the document
+PASS  fetch reads the document whole
+PASS  the replaced revision is listed as a version
+PASS  restoring version 1 gives revision 3
+PASS  a second user sees no rows
+PASS  a direct insert is refused: permission denied for table user_data
+PASS  an anonymous visitor reads nothing
+PASS  and cannot save: permission denied for function save_user_data
+PASS  delete_user_data removes the cloud copy
+PASS  the test user and its data are gone (the real adapter on the hosted dev project as a throwaway user it creates and deletes; needs the CLI login; not in the default run).
+- The browser suites run against , which reads , so the sign-in card is present in them.
+
 ## Writing tests that can run in parallel
 The suites will be run side by side (see the "Faster tests" item in `CURRENT_STATUS.md`), so every new or changed suite follows these rules even while the runner is still serial:
 - **Self-contained.** A suite seeds everything it needs itself (an `addInitScript` that writes `localStorage`, guarded by `sessionStorage.__seeded` so a reload keeps the state) and never depends on another suite having run, or on the order.
