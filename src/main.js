@@ -9,7 +9,7 @@ import { initWeather, weatherButton, getWindLimit, setWindLimit } from './weathe
 import { initPanel } from './panel.js';
 import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
-import { initWelcome } from './welcome.js';
+import { initDashboard } from './dashboard.js';
 import { mapLinkIcons } from './maplinks-ui.js';
 import { MODES } from './maplinks.js';
 import { toolBar } from './cards.js';
@@ -158,12 +158,11 @@ const poi = initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWe
   if (mig) toast(`Day numbers now follow the dates: ${mig.corrected} corrected${mig.converted ? `, ${mig.converted} turned into dates` : ''}.`, 9000);
 }
 initPrivacyUI({ mw: poi.mw, elev: poi.elev }); // the privacy settings own the weather and elevation switches
-initTripsUI({ poi, panel, toast, checkPoint, zoneSummary });             // the Trips tab: create and edit trips, tag markers with them
+const trips = initTripsUI({ poi, panel, toast, checkPoint, zoneSummary });             // the Trips tab: create and edit trips, tag markers with them
 const ai = initAI({ map, toast, panel, poi });  // paste an AI's itinerary, or open a share link, then preview and add
 const opensShareLink = /^#import=/.test(location.hash); // read before fromHash() clears it
 ai.fromHash();
-const welcome = initWelcome({ poi, panel });     // the guide and the countdown to the next trip
-welcome.maybeShow({ skip: opensShareLink });      // every visit unless switched off; a share link has the person's attention already
+const dash = initDashboard({ poi, panel, trips, shared: opensShareLink }); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch(() => toast('Point check failed. Check your connection and try again.'));
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.
@@ -229,6 +228,7 @@ try {
     if (!countrySel.value) { toast('Choose a country first.', 3000); return; }
     goToCountry(countrySel.value);
   });
+  dash.setRegions(index.countries.filter((c) => c.regions && c.view).sort((x, y) => x.name.localeCompare(y.name)), goToCountry); // the dashboard's Fly in buttons
   if (prefs.country && index.countries.some((c) => c.id === prefs.country && c.view)) countrySel.value = prefs.country; // position itself comes from the saved view
 
   // Point features (flying areas): a green pin each, which opens the usual check window for that spot with a note

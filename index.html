@@ -113,6 +113,7 @@
       <div class="card">
         <h2>Help</h2>
         <div class="btn-row"><button type="button" class="btn" id="help-open">How it works</button></div>
+        <label class="switch"><span>Show the dashboard when the app starts <small>Off keeps it tucked behind the ^ tab at the bottom of the map.</small></span><input type="checkbox" id="dash-start" checked></label>
       </div>
     </section>
 
@@ -284,25 +285,19 @@
 
 <div class="wx" id="weather" hidden aria-live="polite"></div>
 <div class="banner" id="banner" hidden role="status"><span id="banner-text"></span><button type="button" class="btn small" id="banner-review" hidden>Review</button><button type="button" class="btn small" id="banner-action">Cancel</button></div>
-<dialog class="welcome" id="welcome" aria-labelledby="welcome-title">
-  <div class="w-card">
-    <h1 id="welcome-title">Welcome to UAV Companion!</h1>
-    <p class="w-lead">Check where you can fly a small drone, and plan the places you want to fly on your trip.</p>
-    <section class="w-trip" id="welcome-trip" aria-label="Your next trip" hidden></section>
-    <ol class="w-steps">
-      <li><b>Check a spot.</b> Press and hold on the map for 2 seconds (or right-click) to see whether that spot is in a suitable-flight zone.</li>
-      <li><b>Plan your trip.</b> Create a trip under Trips, then drop markers for hotels, takeoff spots and photo spots. Or paste an AI-made itinerary and add it all at once. Press and hold a saved place to move it to another day.</li>
-      <li><b>See the conditions.</b> Open a marker for its zone verdict, its distance to your hotel and Home, and, if you turn it on, weather and the chance of rain.</li>
-      <li><b>Your data stays yours.</b> Markers and trips are saved only in this browser. Weather, elevation and name lookups are off until you allow them (shield button). Export a backup now and then.</li>
-    </ol>
-    <p class="w-note">A planning aid, not flight advice: check the official platform (UOM in China) before every flight. Zone data currently covers Hubei, China.</p>
-    <div class="btn-row">
-      <button type="button" class="btn" id="welcome-dont">Don't show again</button>
-      <button type="button" class="btn" id="welcome-again" hidden>Show on start again</button>
-      <button type="button" class="btn primary" id="welcome-go">Get started</button>
+<section class="dash" id="dash" role="region" aria-label="Dashboard" hidden>
+  <header class="dash-head">
+    <h2>Dashboard</h2>
+    <div class="dash-tools">
+      <button type="button" class="icon-btn" id="dash-collapse" aria-label="Collapse the dashboard" title="Collapse"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button type="button" class="icon-btn" id="dash-close" aria-label="Close the dashboard" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
-  </div>
-</dialog>
+  </header>
+  <div class="dash-body" id="dash-body"></div>
+  <footer class="dash-foot"><button type="button" class="btn small" id="dash-snooze">Do not show for today</button></footer>
+</section>
+<button type="button" class="dash-peek" id="dash-peek" hidden aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><span id="dash-peek-text">Dashboard</span></button>
+<button type="button" class="icon-btn dash-tab" id="dash-tab" hidden aria-label="Open the dashboard" title="Open the dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>

@@ -365,5 +365,5 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   poi.setNewTripHandler((markerId) => openForm(null, { assign: markerId }));
   store.onChange(render);
   render();
-  return { openForm };
+  return { openForm, openDetail };
 }

@@ -30,7 +30,9 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `controls.js` | Modern number (− / +) and date (clear button) fields; observer enhances fields created later | `initControls` | none |
 | `holdcheck.js` | Press-and-hold (2 s) point check, right-click and Enter; ring feedback; swallows the click after a hold | `initHoldCheck`, `HOLD_MS` | none |
 | `view.js` | Centre the map on a coordinate (aware of the side panel) and the tallest window that fits above it | `centreOn`, `popupMaxHeight`, `expandedMaxHeight`, `defaultExpanded`, `panelInset` | none |
-| `welcome.js` | Welcome dialog, opt-out, countdown card (uses `comingTrips` etc. from `trips.js`) | `initWelcome` (`maybeShow`, `open`) | trips |
+| `dashboard.js` | The dashboard: What's new, next trip with ‹ ›, backup reminder, region buttons, guide; three states | `initDashboard` (`setRegions`, `open`) | dashstate, whatsnew, trips |
+| `dashstate.js` (pure) | What the dashboard remembers; start rules; unseen What's new; backup reminder rule | `startState`, `unseenEntries`, `backupDue`, `load`, `save` | - |
+| `whatsnew.js` | The What's new entries, newest first (add one to announce a change) | `WHATS_NEW` | - |
 | `places.js` | Markers that share a spot (within 15 m): groups, visit order, labels (pure) | `visitGroups`, `visitLabel`, `metres`, `SAME_PLACE_M` | poi |
 | `reorder.js` | What a move does to date, day, stop and hotel end date: `planMove`, `stepSlot`, `groupsOf`, `addDays`, `nextTripDate` (pure) | as listed | poi, trips |
 | `reorder-ui.js` | Hold 1 s then drag a row; ghost, drop line, auto-scroll, Escape, Alt+arrows | `initReorder` | none |

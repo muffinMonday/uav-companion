@@ -153,3 +153,9 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 ### 2026-11-11: Search folds into a magnifying glass; the side panel rolls up
 - Decision (owner): the search box is collapsed when not in use; a ^ button at the bottom of the side panel rolls it up to its header strip because the cross at the top right is awkward to reach.
 - Consequences: tests that type in the search box open it first; the rolled state is remembered; the cross still hides the panel to the dock.
+
+### 2026-11-11: The welcome dialog becomes a dashboard
+- Decision (owner): a drawer along the bottom of the map replaces the modal welcome screen: expanded, one-line strip, or a ^ tab; it carries What's new, the next trip with ‹ ›, a backup reminder, region buttons and a guide. "Do not show for today" drops it to the strip; a new What's new entry overrides that once; a switch in the Help card turns the start display off.
+- Reasoning: it does not block the map, and its content (countdown, warnings, backup) stays useful after the first minute.
+- Alternatives: keep the modal and add the cards to it (rejected: still blocks the map and cannot be glanced at).
+- Consequences: on phones the dashboard and the side panel take turns; the old "Don't show again" choice is not carried over.

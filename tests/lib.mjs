@@ -19,7 +19,7 @@ export const chromium = {
     const newContext = browser.newContext.bind(browser);
     browser.newContext = async (opts) => {
       const ctx = await newContext(opts);
-      await ctx.addInitScript(() => { try { if (localStorage.getItem('uavzones.v1.welcome') === null) localStorage.setItem('uavzones.v1.welcome', JSON.stringify({ v: 1, show: false })); } catch { /* ignore */ } });
+      await ctx.addInitScript(() => { try { if (localStorage.getItem('uavzones.v1.dash') === null) localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: false, welcomed: true, seen: '2026-11-11' })); } catch { /* ignore */ } });
       return ctx;
     };
     return browser;

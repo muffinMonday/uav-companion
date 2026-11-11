@@ -405,23 +405,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .leaflet-container{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .leaflet-popup-content{-webkit-user-select:text;user-select:text}
 
-/* ---------- welcome screen ---------- */
-dialog.welcome{padding:0;border:0;border-radius:22px;background:var(--surface);color:var(--fg);box-shadow:var(--shadow);width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:hidden}
-dialog.welcome::backdrop{background:rgba(10,20,30,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
-.w-card{padding:22px 22px 18px;max-height:calc(100vh - 24px);overflow-y:auto}
-.w-card h1{margin:0 0 4px;font-size:22px;line-height:1.2;letter-spacing:-.01em}
-.w-lead{margin:0 0 14px;color:var(--muted)}
-.w-trip{margin:0 0 14px;padding:14px 16px;border-radius:16px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
-.w-trip[hidden]{display:none}
-.w-count{font-size:26px;line-height:1.1;font-weight:800;letter-spacing:-.02em;color:var(--accent)}
-.w-trip-head{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:15px}
-.w-trip-sub{margin-top:2px;color:var(--muted);font-size:12.5px}
-.w-trip .btn-row{margin:10px 0 0}
+/* ---------- the guide steps (used by the dashboard) ---------- */
 .w-steps{margin:0 0 12px;padding:0;list-style:none;counter-reset:w;display:grid;gap:10px}
 .w-steps li{counter-increment:w;position:relative;padding-left:36px;font-size:13.5px}
 .w-steps li::before{content:counter(w);position:absolute;left:0;top:0;display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-weight:700;font-size:13px}
 .w-note{margin:0 0 4px;padding:9px 12px;border-radius:12px;background:var(--surface-2);color:var(--muted);font-size:12.5px}
-dialog.welcome .btn[hidden]{display:none}
+
 
 /* ---------- marker window: expanded (centred on the coordinate, covering the pin) or collapsed (above it) ---------- */
 .pop{position:relative}
@@ -611,3 +600,46 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .sidepanel.rolled #panel-roll svg{transform:rotate(180deg)}
 .sidepanel.rolled .sp-head{border-bottom:0}
 @media (max-width:520px){.sidepanel.rolled{height:auto;top:auto;bottom:8px}}
+
+/* ---------- the dashboard ---------- */
+.dash{position:absolute;z-index:1004;left:12px;bottom:12px;width:max-content;max-width:min(780px,calc(100% - 24px));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:dash-up .22s ease-out}
+.dash[hidden],.dash-peek[hidden],.dash-tab[hidden]{display:none}
+body[data-panel=open] .dash{max-width:min(780px,calc(100% - 396px))}
+@keyframes dash-up{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.dash{animation:none}}
+.dash-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 6px 14px;border-bottom:1px solid var(--line)}
+.dash-head h2{margin:0;font-size:14px}
+.dash-tools{display:flex;gap:2px}
+.dash-body{flex:1;overflow-y:auto;padding:10px;background:var(--surface-2);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
+.dash-card{flex:1 1 250px;max-width:380px;padding:12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.dash-card h3{margin:0 0 6px;font-size:13px}
+.dash-new{border-color:color-mix(in srgb,var(--accent) 40%,transparent);background:var(--accent-soft)}
+.dash-entry ul{margin:4px 0 0;padding-left:18px;font-size:12.5px;display:grid;gap:3px}
+.dash-trip-head{display:flex;align-items:center;gap:6px;font-size:14.5px}
+.dash-count{margin-left:auto;color:var(--accent);font-weight:800;white-space:nowrap}
+.dash-trip-nav{display:flex;align-items:center;justify-content:space-between;margin:-4px -4px 6px;font-size:12px;color:var(--muted)}
+.dash-sub{margin-top:3px;color:var(--muted);font-size:12.5px}
+.dash-today{display:grid;gap:2px;margin-top:8px}
+.dash-today small{color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:10.5px}
+.dash-stop{display:flex;align-items:center;gap:8px;padding:4px 6px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--fg);text-align:left;cursor:pointer;font:inherit;font-size:13px}
+.dash-stop:hover{background:var(--surface-2)}
+.dash-card .btn-row{margin:10px 0 0}
+.dash-guide{flex:1 1 100%;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.dash-guide summary{cursor:pointer;font-weight:700;font-size:13px}
+.dash-guide .w-steps{margin-top:10px}
+.dash-foot{display:flex;justify-content:flex-end;padding:6px 10px;border-top:1px solid var(--line)}
+.dash-peek,.dash-tab{position:absolute;z-index:1004;left:50%;bottom:12px;transform:translateX(-50%);background:var(--surface);box-shadow:var(--shadow-sm);color:var(--fg);cursor:pointer}
+.dash-peek{display:flex;align-items:center;gap:8px;max-width:calc(100% - 440px);padding:7px 14px 7px 10px;border:0;border-radius:999px;font-weight:600}
+.dash-peek span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-peek svg{flex:none;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.dash-tab{width:46px;height:30px;border-radius:999px}
+/* the map's own controls and the weather card sit above the open dashboard */
+.leaflet-bottom{bottom:var(--dash-lift,0px)}
+.wx{bottom:calc(44px + var(--dash-lift,0px))}
+@media (max-width:520px){
+  .dash{left:8px;right:8px;bottom:8px;width:auto;max-width:none;max-height:58vh}
+  body[data-panel=open] .dash{max-width:none}
+  .dash-card{max-width:none}
+  .dash-peek,.dash-tab{bottom:34px}
+  .dash-peek{max-width:calc(100% - 24px)}
+}
