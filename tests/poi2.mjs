@@ -102,7 +102,7 @@ await ctx3.addInitScript((s) => { if (!localStorage.getItem('uavzones.v1.pois'))
 const p3 = await ctx3.newPage(); watch(p3);
 await p3.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p3.waitForTimeout(1000);
 ok(!(await p3.isVisible('#panel')) && await p3.isVisible('#dock'), 'phone: starts with the panel hidden and the dock showing');
-ok((await p3.locator('#dock span').first().isVisible()) === false, 'phone: dock shows icons only');
+ok((await p3.$eval('#dock', (e) => e.getBoundingClientRect().width)) < 70, 'phone: the rail shows icons only');
 await p3.screenshot({ path: SP + '/ui-phone-dock.png' });
 await p3.tap('#dock [data-tab=poi]'); await p3.waitForTimeout(300);
 await p3.screenshot({ path: SP + '/ui-phone-poi.png' });

@@ -19,7 +19,7 @@ function sanitize(raw) {
   if (typeof raw.holdHint === 'boolean') out.holdHint = raw.holdHint;
   if (raw.crosshair === false) out.crosshair = false; // the crosshair at the map centre is on unless switched off
   if (raw.markerDetails === false) out.markerDetails = false; // a click on a marker only selects it (no details window)
-  if (typeof raw.panelRolled === 'boolean') out.panelRolled = raw.panelRolled; // the side panel is rolled up to its header
+  if (raw.panelCollapsed === true || raw.panelRolled === true) out.panelCollapsed = true; // the side panel is collapsed to its rail (panelRolled is what an older version saved)
   if (typeof raw.autoWeather === 'boolean') out.autoWeather = raw.autoWeather;
   if (raw.weatherPrecision === 'precise' || raw.weatherPrecision === 'estimated') out.weatherPrecision = raw.weatherPrecision;
   if (typeof raw.fetchAltitude === 'boolean') out.fetchAltitude = raw.fetchAltitude;

@@ -33,7 +33,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
 
   // ---------- the list ----------
   let dayShown = null;    // the day the flip card shows, drawn on the map while the trip screen is on show
-  const syncDay = () => poi.showDay?.(dayShown && panel.isOpen() && !panel.isRolled() && panel.getTab() === 'trips' ? dayShown.tripId : null, dayShown?.date);
+  const syncDay = () => poi.showDay?.(dayShown && panel.isOpen() && panel.getTab() === 'trips' ? dayShown.tripId : null, dayShown?.date);
   panel.onChange?.(syncDay);
   let openId = null;      // the trip whose detail screen is showing, or null for the list
   const forecastListeners = new Set();

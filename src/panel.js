@@ -1,10 +1,10 @@
-// Hide-able side panel with tabs, plus a privacy-settings sub-panel that slides over it.
-// While the panel is hidden, a two-button dock opens it on a chosen tab.
+// Collapsible side panel with tabs, plus a privacy-settings sub-panel that slides over it.
+// Collapsing (the > button) slides the panel off to the right and leaves a slim rail (the dock) with a < button and one icon per tab.
 const $ = (id) => document.getElementById(id);
 const isPhone = () => window.matchMedia('(max-width: 520px)').matches;
 
 import { loadPrefs, savePrefs } from './prefs.js';
-import { reduced, animateOut, glide } from './motion.js';
+import { animateOut } from './motion.js';
 
 export function initPanel() {
   const panel = $('panel'), dock = $('dock'), sub = $('privacy');
@@ -13,7 +13,7 @@ export function initPanel() {
   let current = 'config';
   const openers = [], changers = [];
   const changed = () => changers.forEach((fn) => fn());
-  const mark = () => { document.body.dataset.panel = panel.hidden ? 'closed' : panel.classList.contains('rolled') ? 'rolled' : 'open'; };
+  const mark = () => { document.body.dataset.panel = panel.hidden ? 'closed' : 'open'; };
 
   function selectTab(name, focus = false) {
     if (!panes.has(name)) return;
@@ -51,38 +51,16 @@ export function initPanel() {
     changed();
   }
 
-  /** Rolls the panel up to its header strip (the tabs stay) or back down. Remembered. */
-  function setRolled(on, { save = true, animate = true } = {}) {
-    const was = panel.classList.contains('rolled');
-    if (animate && !reduced() && !panel.hidden && was !== on) { // the height glides: shrink first when rolling up, grow after switching when rolling down
-      const h0 = panel.offsetHeight;
-      panel.classList.toggle('rolled', on); const h1 = panel.offsetHeight; panel.classList.toggle('rolled', was);
-      if (on) { glide(panel, h0, h1, () => applyRolled(on, save)); return; }
-      applyRolled(on, save); glide(panel, h0, h1); return;
-    }
-    applyRolled(on, save);
-  }
-  function applyRolled(on, save) {
-    panel.classList.toggle('rolled', on);
-    const roll = $('panel-roll');
-    roll.setAttribute('aria-expanded', String(!on));
-    roll.setAttribute('aria-label', on ? 'Roll the panel down' : 'Roll the panel up');
-    roll.title = roll.getAttribute('aria-label');
-    if (on) closePrivacy({ focus: false });
-    mark();
-    changed();
-    if (save) savePrefs({ panelRolled: on || null });
-  }
-  $('panel-roll').addEventListener('click', () => setRolled(!panel.classList.contains('rolled')));
-
-  function open(tab) { selectTab(tab || current); setOpen(true); setRolled(false, { save: false, animate: false }); }
+  /** Remembers a choice made by the visitor on a computer (a phone always starts with the panel out of the way). */
+  const remember = (collapsed) => { if (!isPhone()) savePrefs({ panelCollapsed: collapsed || null }); };
+  function open(tab, { save = true } = {}) { selectTab(tab || current); setOpen(true); if (save) remember(false); }
   function close() {
     if (panel.hidden) { setOpen(false); return; }
-    animateOut(panel, 'closing', () => { setOpen(false); dock.querySelector(`[data-tab=${current}]`)?.focus(); }); // slides out, then the dock comes back
+    animateOut(panel, 'closing', () => { setOpen(false); remember(true); $('dock-expand')?.focus(); }); // slides out to the right, then the rail comes back
   }
 
   for (const t of tabs) {
-    t.addEventListener('click', () => { selectTab(t.dataset.tab); if (panel.classList.contains('rolled')) setRolled(false); });
+    t.addEventListener('click', () => selectTab(t.dataset.tab));
     t.addEventListener('keydown', (e) => {
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
       e.preventDefault();
@@ -98,16 +76,15 @@ export function initPanel() {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sub.hidden) closePrivacy(); });
 
   setOpen(false);
-  if (!isPhone()) { open('config'); if (loadPrefs().panelRolled) setRolled(true, { save: false, animate: false }); } // phones start with the map unobstructed
+  if (!isPhone() && !loadPrefs().panelCollapsed) open('config', { save: false }); // phones start with the map unobstructed
 
   return {
     open, close, selectTab, openPrivacy, closePrivacy,
     isOpen: () => !panel.hidden,
     /** Calls fn whenever the panel opens (the dashboard steps aside for it on a phone). */
     onOpen(fn) { openers.push(fn); },
-    /** The tab showing, whether the panel is rolled up, and a hook for any change (open, close, tab, roll). */
+    /** The tab showing, and a hook for any change (open, close, tab). */
     getTab: () => current,
-    isRolled: () => panel.classList.contains('rolled'),
     onChange(fn) { changers.push(fn); },
     /** On phones the panel is a bottom sheet that would hide the map, so get it out of the way. */
     closeIfPhone() { if (isPhone() && !panel.hidden) { setOpen(false); } },

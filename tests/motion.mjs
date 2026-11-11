@@ -88,21 +88,13 @@ for (const reduced of [false, true]) {
   ok(reduced ? d.hidden && d.peek : !d.hidden && d.closing && !d.peek, 'the dashboard ' + (reduced ? 'is gone at once' : 'is still sliding down a moment after V') + tag);
   await p.waitForTimeout(450);
   ok(await p.evaluate(() => document.getElementById('dash').hidden && !document.getElementById('dash-peek').hidden), 'and then the strip appears' + tag);
-  // the panel rolls
-  const full = await p.$eval('#panel', (e) => e.getBoundingClientRect().height);
-  await p.click('#panel-roll'); await p.waitForTimeout(90);
-  const mid = await p.$eval('#panel', (e) => e.getBoundingClientRect().height);
-  await p.waitForTimeout(450);
-  const rolled = await p.$eval('#panel', (e) => e.getBoundingClientRect().height);
-  ok(rolled < 130 && (reduced ? Math.abs(mid - rolled) < 2 : mid > rolled + 10 && mid < full - 10), 'the panel ' + (reduced ? 'rolls up at once' : 'rolls up smoothly (' + Math.round(full) + ', then ' + Math.round(mid) + ', then ' + Math.round(rolled) + ' px)') + tag);
-  await p.click('#panel-roll'); await p.waitForTimeout(500);
-  ok(Math.abs((await p.$eval('#panel', (e) => e.getBoundingClientRect().height)) - full) < 4, 'and rolls back to its full height' + tag);
   // the panel slides out when closed
-  await p.click('#panel-close'); await p.waitForTimeout(60);
-  const c = await p.evaluate(() => ({ hidden: document.getElementById('panel').hidden, closing: document.getElementById('panel').classList.contains('closing') }));
-  ok(reduced ? c.hidden : !c.hidden && c.closing, 'the panel ' + (reduced ? 'is gone at once' : 'is still sliding out a moment after the cross') + tag);
-  await p.waitForTimeout(450);
-  ok(await p.evaluate(() => document.getElementById('panel').hidden && !document.getElementById('dock').hidden), 'and then the dock comes back' + tag);
+  const left0 = await p.$eval('#panel', (e) => e.getBoundingClientRect().left);
+  await p.click('#panel-close'); await p.waitForTimeout(80);
+  const c = await p.evaluate(() => ({ hidden: document.getElementById('panel').hidden, closing: document.getElementById('panel').classList.contains('closing'), left: document.getElementById('panel').getBoundingClientRect().left }));
+  ok(reduced ? c.hidden : !c.hidden && c.closing && c.left > left0 + 8, 'the panel ' + (reduced ? 'is gone at once' : 'is still sliding off to the right a moment after > (moved ' + Math.round(c.left - left0) + ' px)') + tag);
+  await p.waitForTimeout(600);
+  ok(await p.evaluate(() => document.getElementById('panel').hidden && !document.getElementById('dock').hidden), 'and then the rail comes back' + tag);
   await ctx.close();
 }
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));

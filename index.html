@@ -19,17 +19,20 @@
   <ul class="results" id="results" role="listbox" hidden></ul>
 </div>
 
-<!-- shown while the panel is hidden: each button opens the panel on its tab -->
+<!-- the rail shown while the panel is collapsed: < brings the panel back, each icon opens it on that tab -->
 <div class="dock" id="dock" role="group" aria-label="Open panel" hidden>
-  <button type="button" data-tab="config" aria-controls="panel" aria-expanded="false" aria-label="Map Configs">
+  <button type="button" id="dock-expand" aria-controls="panel" aria-expanded="false" aria-label="Expand the panel" title="Expand the panel">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+  </button>
+  <button type="button" data-tab="config" aria-controls="panel" aria-expanded="false" aria-label="Map Configs" title="Map Configs">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
     <span>Map Configs</span>
   </button>
-  <button type="button" data-tab="trips" aria-controls="panel" aria-expanded="false" aria-label="Trips">
+  <button type="button" data-tab="trips" aria-controls="panel" aria-expanded="false" aria-label="Trips" title="Trips">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 13h16"/></svg>
     <span>Trips</span>
   </button>
-  <button type="button" data-tab="poi" aria-controls="panel" aria-expanded="false" aria-label="Points of Interest">
+  <button type="button" data-tab="poi" aria-controls="panel" aria-expanded="false" aria-label="Points of Interest" title="Points of Interest">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
     <span>Points of Interest</span>
   </button>
@@ -45,8 +48,8 @@
     <button type="button" class="icon-btn" id="privacy-btn" aria-label="Privacy settings" aria-controls="privacy" aria-expanded="false" title="Privacy settings">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
     </button>
-    <button type="button" class="icon-btn" id="panel-close" aria-label="Hide panel">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    <button type="button" class="icon-btn" id="panel-close" aria-label="Collapse the panel" title="Collapse the panel">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
     </button>
   </header>
 
@@ -192,11 +195,6 @@
   </div>
 
   <!-- Privacy settings: slides over the panel -->
-  <footer class="sp-foot">
-    <button type="button" class="icon-btn" id="panel-roll" aria-label="Roll the panel up" aria-expanded="true" title="Roll the panel up">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
-    </button>
-  </footer>
 
   <div class="subpanel" id="privacy" role="region" aria-label="Privacy settings" hidden>
     <header class="sp-head">
@@ -204,8 +202,8 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
       </button>
       <h2 class="sub-title">Privacy settings</h2>
-      <button type="button" class="icon-btn" id="privacy-close" aria-label="Hide panel">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      <button type="button" class="icon-btn" id="privacy-close" aria-label="Collapse the panel" title="Collapse the panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
     </header>
     <div class="sp-body">

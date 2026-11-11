@@ -15,7 +15,7 @@ export function createCheckin({ store, panel, toast }) {
 
   const enabled = () => !!getPrivacy().checkIn;
   const extra = []; // other screens that show check-in buttons (the dashboard)
-  const panelShows = () => panel.isOpen() && !panel.isRolled() && ['poi', 'trips'].includes(panel.getTab());
+  const panelShows = () => panel.isOpen() && ['poi', 'trips'].includes(panel.getTab());
   const wanted = () => enabled() && status !== 'denied' && status !== 'unavailable' && !document.hidden && (panelShows() || extra.some((fn) => fn()));
 
   function stop() {

@@ -95,11 +95,8 @@ await p.click('#tab-config'); await p.waitForTimeout(400);
 ok(await watches(p) === 0, 'it stops when the panel shows Map Configs');
 await p.click('#tab-poi'); await p.waitForTimeout(400);
 ok(await watches(p) === 1, 'and starts again on the markers');
-await p.click('#panel-roll'); await p.waitForTimeout(400);
-ok(await watches(p) === 0, 'it stops when the panel is rolled up');
-await p.click('#panel-roll'); await p.waitForTimeout(300);
-await p.click('#panel-close'); await p.waitForTimeout(400);
-ok(await watches(p) === 0, 'and when the panel is hidden');
+await p.click('#panel-close'); await p.waitForTimeout(600);
+ok(await watches(p) === 0, 'it stops when the panel is collapsed');
 await ctx.close();
 
 // ================= off by default

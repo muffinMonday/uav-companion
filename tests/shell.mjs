@@ -1,4 +1,4 @@
-// The search box that folds into a magnifying glass, and the side panel that rolls up to its header.
+// The search box that folds into a magnifying glass, and the side panel that collapses sideways to a rail.
 import { chromium, CHANNEL } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
@@ -35,33 +35,53 @@ await p.click('#search-toggle'); await p.fill('#q', '30.5, 114.3'); await p.keyb
 ok(await collapsed(p), 'picking a result opens its window and folds the box away');
 await ctx.close();
 
-// ================= panel
+// ================= panel: collapses sideways to a rail
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false));
 const full = await box(p, '#panel');
-const foot = await box(p, '#panel-roll');
-ok(foot.b > full.b - 40 && foot.b <= full.b, 'the ^ button is at the bottom of the panel: ' + Math.round(foot.b) + ' of ' + Math.round(full.b));
-await p.click('#panel-roll'); await p.waitForTimeout(250);
-let rolled = await box(p, '#panel');
-ok(await p.$eval('#panel', (e) => e.classList.contains('rolled')) && rolled.h < 130 && rolled.y === full.y && await p.isVisible('#tab-trips') && !(await p.isVisible('.sp-body')), 'it rolls up into its header strip, tabs still showing (' + Math.round(rolled.h) + ' px high)');
-ok((await p.getAttribute('#panel-roll', 'aria-label')) === 'Roll the panel down' && (await p.getAttribute('#panel-roll', 'aria-expanded')) === 'false', 'the button now says it rolls down');
+const btn = await box(p, '#panel-close');
+ok(btn.r <= full.r && btn.y < full.y + 60 && (await p.getAttribute('#panel-close', 'aria-label')) === 'Collapse the panel', 'the > button is in the panel\'s header and says it collapses the panel');
+ok((await p.locator('#panel-roll').count()) === 0 && (await p.locator('.sp-foot').count()) === 0, 'there is no roll-up button any more');
+ok(!(await p.isVisible('#dock')), 'with the panel open the rail is not shown');
+await p.click('#tab-trips'); await p.waitForTimeout(150);
+await p.click('#panel-close'); await p.waitForSelector('#panel', { state: 'hidden' });
+const rail = await box(p, '#dock');
+ok(await p.isVisible('#dock') && rail.r > 1300 - 20 && rail.w < 70, 'it slides away and leaves a slim rail on the right edge (' + Math.round(rail.w) + ' px wide)');
+ok((await p.locator('#dock button').count()) === 4 && (await p.getAttribute('#dock-expand', 'aria-label')) === 'Expand the panel', 'the rail has the < button and one icon per tab');
+ok(await p.evaluate(() => document.activeElement.id === 'dock-expand'), 'focus moves to the < button, so the keyboard user can bring the panel back');
+ok(await p.evaluate(() => document.body.dataset.panel) === 'closed', 'the page knows the panel is collapsed');
+await p.click('#dock-expand'); await p.waitForSelector('#panel', { state: 'visible' });
+ok((await p.getAttribute('#tab-trips', 'aria-selected')) === 'true' && !(await p.isVisible('#dock')), '< brings the panel back on the tab it was on');
+await p.click('#panel-close'); await p.waitForSelector('#panel', { state: 'hidden' });
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(800);
-ok(await p.$eval('#panel', (e) => e.classList.contains('rolled')), 'a rolled panel stays rolled after a reload');
-await p.click('#tab-trips'); await p.waitForTimeout(250);
-ok(!(await p.$eval('#panel', (e) => e.classList.contains('rolled'))) && await p.isVisible('.sp-body'), 'choosing a tab rolls it back down');
-await p.click('#panel-roll'); await p.waitForTimeout(200); await p.click('#panel-roll'); await p.waitForTimeout(250);
-ok((await box(p, '#panel')).h > 400, 'the button rolls it down again');
-await p.click('#panel-roll'); await p.click('#panel-close'); await p.waitForTimeout(250);
-await p.click('#dock button[data-tab=poi]'); await p.waitForTimeout(250);
-ok(!(await p.$eval('#panel', (e) => e.classList.contains('rolled'))) && await p.isVisible('.sp-body'), 'hiding the panel and opening it from the dock gives it back unrolled');
+ok(!(await p.isVisible('#panel')) && await p.isVisible('#dock'), 'a collapsed panel stays collapsed after a reload');
+await p.click('#dock-expand'); await p.waitForSelector('#panel', { state: 'visible' });
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(800);
+ok(await p.isVisible('#panel'), 'and an open panel stays open after a reload');
+await p.click('#panel-close'); await p.waitForSelector('#panel', { state: 'hidden' });
+await p.click('#dock button[data-tab=poi]'); await p.waitForSelector('#panel', { state: 'visible' });
+ok((await p.getAttribute('#tab-poi', 'aria-selected')) === 'true', 'an icon on the rail opens the panel on that tab');
+await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])');
+await p.click('#privacy-close'); await p.waitForSelector('#panel', { state: 'hidden' });
+ok(await p.isVisible('#dock'), 'the privacy settings have the same > button, and it collapses the whole panel');
+await ctx.close();
+
+// a choice saved by the older roll-up version means collapsed
+({ ctx, p } = await open({ width: 1300, height: 850 }, false, { panelRolled: true }));
+ok(!(await p.isVisible('#panel')) && await p.isVisible('#dock'), 'a panel that an older version had rolled up starts collapsed');
 await ctx.close();
 
 // phone
 ({ ctx, p } = await open({ width: 390, height: 780 }, true));
-await p.tap('#dock button[data-tab=poi]'); await p.waitForTimeout(300);
+await p.tap('#dock button[data-tab=poi]'); await p.waitForSelector('#panel', { state: 'visible' });
 const sheet = await box(p, '#panel');
-await p.tap('#panel-roll'); await p.waitForTimeout(250);
-rolled = await box(p, '#panel');
-ok(rolled.h < 130 && Math.abs(rolled.b - sheet.b) < 2, 'on a phone the sheet rolls down to its header strip at the bottom edge (' + Math.round(rolled.h) + ' px)');
+const pb = await box(p, '#panel-close');
+ok(pb.r <= sheet.r && pb.y >= sheet.y && pb.y < sheet.y + 60, 'on a phone the > button is in the sheet\'s header and not covered: ' + JSON.stringify({ x: Math.round(pb.x), y: Math.round(pb.y) }));
+ok(await p.evaluate(() => { const r = document.getElementById('panel-close').getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return t && document.getElementById('panel-close').contains(t); }), 'nothing sits on top of it');
+await p.tap('#panel-close'); await p.waitForSelector('#panel', { state: 'hidden' });
+const prail = await box(p, '#dock');
+ok(await p.isVisible('#dock') && prail.r > 390 - 20, 'the sheet slides off to the right and leaves the rail on the right edge');
+await p.tap('#dock-expand'); await p.waitForSelector('#panel', { state: 'visible' });
+ok(true, 'and < brings the sheet back');
 await ctx.close();
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();
