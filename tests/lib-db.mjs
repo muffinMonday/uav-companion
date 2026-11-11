@@ -25,14 +25,16 @@ const PRELUDE = `
 
 export const A = '11111111-1111-1111-1111-111111111111';
 export const B = '22222222-2222-2222-2222-222222222222';
+export const C = '33333333-3333-3333-3333-333333333333';
+export const D = '44444444-4444-4444-4444-444444444444';
 
-/** A new database with the prelude and every migration in supabase/migrations applied in order, and two users, A and B. */
+/** A new database with the prelude and every migration in supabase/migrations applied in order, and four users, A to D. */
 export async function makeDb() {
   const db = new PGlite();
   await db.exec(PRELUDE);
   const dir = path.join(ROOT, 'supabase/migrations');
   for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.sql')).sort()) await db.exec(fs.readFileSync(path.join(dir, f), 'utf8'));
-  await db.exec(`insert into auth.users (id, email) values ('${A}', 'a@example.test'), ('${B}', 'b@example.test')`);
+  await db.exec(`insert into auth.users (id, email) values ('${A}', 'a@example.test'), ('${B}', 'b@example.test'), ('${C}', 'c@example.test'), ('${D}', 'd@example.test')`);
   return db;
 }
 
