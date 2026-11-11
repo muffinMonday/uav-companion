@@ -121,7 +121,17 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Alternatives: keep Day as an editable fallback (rejected: that is how they drifted apart); count from the earliest dated marker when a trip has no start (day 1 would shift).
 - Consequences: AI days become dates on import; trip dates are needed to create a trip from an AI reply.
 
-### 2026-11-11: Singapore no-fly zones are built locally and never deployed
+### 2026-11-11: One Open and one Navigate button; tools in a bar at the top of the window
+- Decision: a single app per place (Automatic: Amap in China, Google Maps elsewhere; changeable in the Maps card with a default travel mode) and two buttons; Edit, Add visit and Delete become icons in a top bar (⋯ menu on phones), Delete confirms on a second press; shorter disclaimer; weather privacy sentence as a tooltip.
+- Reasoning: the bottom of the window held three rows of buttons; most visitors use one map app.
+- Consequences: routes follow the same app choice; the earlier two-app rows are gone.
+
+### 2026-11-11: Policy: sourced geo data is published on the public site (supersedes the local-only rule below)
+- Decision (owner): any geo data we source is published on the public site, like the Hubei data, even before its licence is confirmed; to be removed if the data's owner objects. Singapore's OneMap layers are published on that basis. `publish: false` stays available for a region the owner wants kept local, and `npm run deploy` still strips those.
+- Reasoning: the owner prefers openness and one behaviour for every region; the data is shown with its source, date and a link to the official map, and is labelled approximate.
+- Consequences: OneMap's terms are still unread; each region's licence status is kept in its `source.json` and in `docs/ATTRIBUTIONS.md`. Raw source files stay out of git; only the built tiles are published.
+
+### 2026-11-11: Singapore no-fly zones are built locally and never deployed (superseded by the policy above: now published)
 - Context: the owner saved OneMap's theme responses (aerodrome 5 km, danger, prohibited, restricted, MHA protected areas, NParks, UAFA pins) for a small FPV group; OneMap's terms are unread and the group does not approach CAAS.
 - Decision: a region may have `layers[]` (one zone class each, with label, colour, severity, summary) and `publish: false`; it is built into `public/data-local` (gitignored), merged by the app only on localhost/private addresses, and removed from `dist` by `scripts/strip-local.js` inside `npm run deploy` (which fails if a local region remains). Temporary restricted areas are ignored. Point check returns every zone containing the point; coverage uses a 1.5 km margin around the Natural Earth outline.
 - Alternatives: publish publicly (rejected until the terms are read); rebuild from AIP tables (not needed once OneMap data was available).

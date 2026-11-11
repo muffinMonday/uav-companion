@@ -16,7 +16,7 @@ import { MODES, MAX_STOPS } from './maplinks.js';
 import { planMove, stepSlot, groupKey, addDays } from './reorder.js';
 import { initReorder } from './reorder-ui.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
-import { el, statusEl, tile, statsGrid, rainBlock, disclaimer } from './cards.js';
+import { el, statusEl, tile, statsGrid, rainBlock, disclaimer, toolBar } from './cards.js';
 
 const $ = (id) => document.getElementById(id);
 const HOLD_MS = 380; // press and hold this long before a pin can be moved
@@ -252,9 +252,10 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
   // ----- a route through the ticked places -----
   let routeOrder = [];            // the ticked places in route order (tick order, until the visitor moves them)
-  let routeMode = MODES[0].id;
+  let routeMode = loadPrefs().mapMode ?? MODES[0].id;
   const routeMode$ = $('route-mode');
   for (const m of MODES) { const o = el('option', '', m.label); o.value = m.id; routeMode$.append(o); }
+  routeMode$.value = routeMode;
   routeMode$.addEventListener('change', () => { routeMode = routeMode$.value; renderRoute(); });
   /** Keeps routeOrder to the ticked places: new ticks go to the end, unticked ones drop out. */
   function syncRoute() {
@@ -603,13 +604,24 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       paintToggle();
       toggle.addEventListener('click', () => { setWindowMode(!expanded); paintToggle(); });
       root.append(toggle);
+      const trip0 = tripLabel(it, store.getTrip(it.tripId));
+      const phone = window.matchMedia('(max-width: 520px)').matches;
+      const tEdit = { icon: 'edit', label: 'Edit', onClick: () => setTimeout(editForm, 0) };
+      // swap the contents after the click has finished: removing the clicked button mid-click would make Leaflet close the window
+      const tVisit = { icon: 'visit', label: 'Add visit', onClick: () => setTimeout(() => addVisit(id), 0) };
+      const tDelete = { icon: 'trash', label: 'Delete', danger: true, onClick: () => remove(id) };
+      const isHome = it.type === 'residence';
+      root.append(toolBar({
+        caption: trip0 ? `${typeOf(it.type).label} · ${trip0}` : typeOf(it.type).label,
+        tools: phone ? [tEdit] : isHome ? [tEdit, tDelete] : [tEdit, tVisit, tDelete],
+        menu: phone ? (isHome ? [tDelete] : [tVisit, tDelete]) : [],
+      }));
       const head = el('div', 'pop-head');
       const badge = el('span', 'pop-badge');
       badge.innerHTML = pinSvg(it.type); // built from constants only
       badge.firstChild.setAttribute('width', '26'); badge.firstChild.setAttribute('height', '35');
       const titles = el('div', 'pop-titles');
-      const trip = tripLabel(it, store.getTrip(it.tripId));
-      titles.append(el('div', 'pop-type', trip ? `${typeOf(it.type).label} · ${trip}` : typeOf(it.type).label), el('h3', '', it.name));
+      titles.append(el('h3', '', it.name));
       const tripRec = it.tripId ? store.getTrip(it.tripId) : null;
       if (tripRec) {
         const line = el('div', 'pop-trip');
@@ -673,30 +685,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
 
       if (it.note) root.append(el('p', 'note', it.note));
 
-      const acts = el('div', 'acts');
-      const edit = el('button', 'btn small', 'Edit'); edit.type = 'button';
-      // Swap the popup contents after the click has finished. Removing the clicked button mid-click makes Leaflet
-      // treat the click as a map click (it can no longer see the button was inside a popup), which closes the popup.
-      edit.addEventListener('click', () => setTimeout(editForm, 0));
-      const del = el('button', 'btn small danger', 'Delete'); del.type = 'button';
-      let armed = null;
-      del.addEventListener('click', () => {
-        if (!armed) {
-          del.textContent = 'Confirm delete';
-          armed = setTimeout(() => { del.textContent = 'Delete'; armed = null; }, 4000);
-          return;
-        }
-        clearTimeout(armed);
-        remove(id);
-      });
-      if (it.type === 'residence') acts.append(edit, del);
-      else {
-        const again = el('button', 'btn small', 'Add visit'); again.type = 'button';
-        again.title = 'Save this place again for another date';
-        again.addEventListener('click', () => setTimeout(() => addVisit(id), 0));
-        acts.append(edit, again, del);
-      }
-      root.append(weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), mapLinksBlock({ lat: it.lat, lon: it.lon, name: it.name, home: it.type === 'residence' }), acts, disclaimer());
+      root.append(weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), mapLinksBlock({ lat: it.lat, lon: it.lon, name: it.name, home: it.type === 'residence' }), disclaimer());
 
       // previous / next stop of the trip, in itinerary order, pinned to the bottom of the window
       const seq = it.tripId ? tripSequence(store.items(), it.tripId) : [];

@@ -129,7 +129,7 @@ ok(S.fc.length >= 1 && decimals([...params(S.fc[0]).lat]).every((d) => d === 2),
 await openMarker(S.page, 'Seed B');
 const order = await S.page.evaluate(() => [...document.querySelector('.poi-pop').children].map((c) => c.className.split(' ')[0]));
 console.log('     window order:', order.join(' > '));
-ok(order.indexOf('zone') > order.indexOf('pop-head') && order.indexOf('stats-wrap') > order.indexOf('zone') && order.indexOf('acts') > order.indexOf('stats-wrap'), '3: layout order: header, zone verdict, number tiles, actions');
+ok(order.indexOf('zone') > order.indexOf('pop-head') && order.indexOf('stats-wrap') > order.indexOf('zone') && order.indexOf('maplinks') > order.indexOf('stats-wrap') && order.indexOf('pop-bar') < order.indexOf('pop-head'), '3: layout order: tool bar, header, zone verdict, number tiles, map buttons');
 ok((await S.page.locator('.poi-pop .stat').count()) === 4, '3: four tiles: elevation, avg temp, avg wind, peak gust');
 await closePopup(S.page);
 // move invalidates elevation

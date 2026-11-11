@@ -30,6 +30,15 @@ export function appsFor(points) {
   return points.length && points.every((p) => inChina(p.lat, p.lon)) ? ['amap', 'google'] : ['google'];
 }
 
+/**
+ * The one app the buttons use. 'auto' (the default): Amap when every place is in China, Google Maps otherwise. A chosen app wins,
+ * except that Amap only covers China: anywhere else Google Maps is used whatever was chosen.
+ */
+export function resolveApp(points, pref = 'auto') {
+  if (pref === 'google') return 'google';
+  return appsFor(points)[0];
+}
+
 /** A link that shows one place. */
 export function placeUrl(app, p) {
   if (app === 'amap') {

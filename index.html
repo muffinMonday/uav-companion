@@ -77,6 +77,21 @@
       </div>
 
       <div class="card">
+        <h2>Maps</h2>
+        <label class="field"><span>Map app for Open and Navigate</span>
+          <select id="map-app">
+            <option value="auto">Automatic (Amap in China, Google Maps elsewhere)</option>
+            <option value="amap">Amap in China (Google Maps elsewhere)</option>
+            <option value="google">Google Maps</option>
+          </select>
+        </label>
+        <label class="field"><span>Usual way of travelling</span>
+          <select id="map-mode"></select>
+        </label>
+        <p class="hint">Amap only covers China, so Google Maps is used anywhere else. Saved in this browser only.</p>
+      </div>
+
+      <div class="card">
         <h2>Weather</h2>
         <p class="hint" id="mw-status"></p>
         <label class="field"><span>Wind limit <small>(m/s, optional)</small></span>

@@ -37,7 +37,7 @@ src/                                           map, search, point check, locatio
 
 Saved places (the Points of Interest tab) are stored only in the visitor's browser (`localStorage`) and can be exported and imported as GeoJSON. They are not part of the generated data and never touch the server.
 
-The search box takes place names, coordinates (decimal or degrees-minutes-seconds, also from a pasted Google Maps or Amap link) and shows the zone verdict for the picked spot, with buttons to open it in Amap or Google Maps.
+The search box takes place names, coordinates (decimal or degrees-minutes-seconds, also from a pasted Google Maps or Amap link) and shows the zone verdict for the picked spot, with buttons to open it in, or navigate to it with, Amap (in China) or Google Maps (set under Maps in Map Configs).
 
 Weather and ground elevation come from Open-Meteo and are off until the visitor opts in under the shield button (privacy settings), where they can also choose whether weather uses an estimated (about 1 km) or precise location. Elevation always uses the exact location.
 
@@ -49,7 +49,7 @@ Every region declares what its zones mean in `semantics`:
 - `allow`: zones are where flying is permitted (China's 适飞 grid). Outside the zones is controlled.
 - `restrict`: zones are restricted areas (the usual form elsewhere, e.g. Singapore). Outside the zones means no restriction in this data, which is not permission to fly.
 
-**Singapore (local only).** A region can have several zone classes (`layers[]` in `source.json`, format `onemap-themes`) and `"publish": false`. Such a region is built into `public/data-local/`, which the app only reads on localhost or a private network address, and `npm run deploy` removes it from the site. Singapore's no-fly zones (CAAS, MHA, NParks, as published on OneMap) are used this way for the owner's own group: the OneMap terms have not been read, so the data is not published. The point check lists every zone containing the point and links to the official OneMap Drone Query.
+**Singapore.** Its no-fly zones (CAAS, MHA and NParks, as published on OneMap) come in several classes (`layers[]` in `source.json`, format `onemap-themes`); the point check lists every zone containing the point and links to the official OneMap Drone Query. The data is approximate and was published before OneMap's terms were read. Sourced geo data is published by default; a region with `"publish": false` is built into `public/data-local/` (read only on localhost or a private network address) and stripped by `npm run deploy`.
 
 ## Licence
 

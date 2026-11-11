@@ -34,7 +34,7 @@ Paths are from the project root. `main.js` is the entry point (`index.html` load
 | `reorder.js` | What a move does to date, day, stop and hotel end date: `planMove`, `stepSlot`, `groupsOf`, `addDays`, `nextTripDate` (pure) | as listed | poi, trips |
 | `reorder-ui.js` | Hold 1 s then drag a row; ghost, drop line, auto-scroll, Escape, Alt+arrows | `initReorder` | none |
 | `coords.js` | WGS-84 <-> GCJ-02 conversion and `inChina` (coarse outline) (pure) | `wgs84ToGcj02`, `gcj02ToWgs84`, `inChina` | data/china-outline.js |
-| `maplinks.js` | Google Maps / Amap links for a place, directions-here and routes (limits, parts) (pure) | `appsFor`, `placeUrl`, `hereUrl`, `routeUrls`, `chunk`, `MODES` | coords |
+| `maplinks.js` | Google Maps / Amap links for a place, directions-here and routes (limits, parts) (pure) | `appsFor`, `resolveApp`, `placeUrl`, `hereUrl`, `routeUrls`, `chunk`, `MODES` | coords |
 | `maplinks-ui.js` | The buttons: `mapLinksBlock` (marker and check windows), `routeLinks` (Route block); Home asks first | as listed | maplinks |
 | `coordparse.js` | Reads coordinates and pasted map links from text: formats, hemispheres, DMS, longitude-first, China two-reading rows (pure) | `parseCoordinates` | coords |
 | `dates.js` | `addDays`, `daysBetween` on ISO dates (pure) | as listed | none |

@@ -38,16 +38,22 @@ const hrefs = (p, scope) => p.$$eval(`${scope} a.maplink`, (a) => a.map((x) => (
 let { ctx, p } = await session();
 await openMarker(p, 'Yellow Crane Tower');
 let links = await hrefs(p, '.poi-pop .maplinks-row:first-child');
-ok(links.map((l) => l.t).join() === 'Amap,Google Maps', 'a marker in China: Amap first, then Google Maps');
-ok(links[0].h === 'https://uri.amap.com/marker?position=114.305500,30.592800&name=Yellow%20Crane%20Tower&coordinate=wgs84&src=uav-companion&callnative=1', 'the Amap link: ' + links[0].h);
-ok(links[1].h === 'https://www.google.com/maps/search/?api=1&query=30.592800%2C114.305500', 'the Google link: ' + links[1].h);
+ok(links.map((l) => l.t).join() === 'Open in Amap,Navigate in Amap', 'a marker in China, automatic: one app, Amap, with Open and Navigate: ' + links.map((l) => l.t).join());
+ok(links[0].h === 'https://uri.amap.com/marker?position=114.305500,30.592800&name=Yellow%20Crane%20Tower&coordinate=wgs84&src=uav-companion&callnative=1', 'the Open link: ' + links[0].h);
+ok(/^https:\/\/uri\.amap\.com\/navigation\?to=114\.310945,30\.590391,Yellow%20Crane%20Tower&mode=car/.test(links[1].h) && !/from=/.test(links[1].h), 'the Navigate link has no start, so it uses the device location, and drives by default: ' + links[1].h);
 ok(links.every((l) => l.target === '_blank' && /noopener/.test(l.rel)), 'links open in a new tab without handing over the page (noopener)');
-const dir = await hrefs(p, '.poi-pop .maplinks-row:nth-child(2)');
-ok(dir.length === 2 && /travelmode=driving/.test(dir[1].h) && !/origin=/.test(dir[1].h) && /uri\.amap\.com\/navigation\?to=/.test(dir[0].h) && !/from=/.test(dir[0].h), 'Directions here: no start in either link, so both use the device location');
-await p.selectOption('.poi-pop .maplinks-mode', 'transit');
-const dir2 = await hrefs(p, '.poi-pop .maplinks-row:nth-child(2)');
-ok(/travelmode=transit/.test(dir2[1].h) && /mode=bus/.test(dir2[0].h), 'choosing Public transport changes both links (transit, bus)');
-const amap = p.locator('.poi-pop .maplinks-row:first-child a:has-text("Amap")');
+// the Maps settings: another app, another way of travelling (set the way the Maps card does, then open the window again)
+const setMaps = (app, mode) => p.evaluate(([a, m]) => { const x = document.getElementById('map-app'), y = document.getElementById('map-mode'); x.value = a; x.dispatchEvent(new Event('change')); y.value = m; y.dispatchEvent(new Event('change')); }, [app, mode]);
+ok(await p.evaluate(() => !!document.getElementById('map-app') && document.getElementById('map-mode').options.length === 4), 'the Maps card has the app and the way of travelling');
+await setMaps('google', 'transit');
+await p.keyboard.press('Escape'); await p.mouse.click(130, 700); await p.waitForTimeout(400);
+await openMarker(p, 'Yellow Crane Tower');
+links = await hrefs(p, '.poi-pop .maplinks-row:first-child');
+ok(links.map((l) => l.t).join() === 'Open in Google Maps,Navigate in Google Maps' && /travelmode=transit/.test(links[1].h) && /query=30\.592800%2C114\.305500/.test(links[0].h), 'choosing Google Maps and Public transport changes both buttons: ' + links.map((l) => l.t).join());
+await setMaps('auto', 'drive');
+await p.keyboard.press('Escape'); await p.mouse.click(130, 700); await p.waitForTimeout(400);
+await openMarker(p, 'Yellow Crane Tower');
+const amap = p.locator('.poi-pop .maplinks-row:first-child a:has-text("Open in Amap")');
 await amap.scrollIntoViewIfNeeded();
 const [opened] = await Promise.all([ctx.waitForEvent('page'), amap.click()]);
 ok(/^https:\/\/uri\.amap\.com\/marker\?position=114\.305500,30\.592800/.test(opened.url()), 'clicking it opens a new tab at that address');
@@ -58,13 +64,12 @@ await p.mouse.click(130, 700); await p.waitForTimeout(400);
 
 await openMarker(p, 'Marina Bay');
 links = await hrefs(p, '.poi-pop .maplinks-row:first-child');
-ok(links.length === 1 && links[0].t === 'Google Maps', 'a marker outside China: Google Maps only');
-ok((await hrefs(p, '.poi-pop .maplinks-row:nth-child(2)')).length === 1, 'Directions here: Google Maps only too');
+ok(links.map((l) => l.t).join() === 'Open in Google Maps,Navigate in Google Maps', 'a marker outside China: Google Maps, whatever the setting');
 await p.mouse.click(130, 700); await p.waitForTimeout(400);
 
 // the Home marker asks first
 await openMarker(p, 'Flat');
-ok((await p.locator('.poi-pop .maplinks a.maplink').count()) === 0 && (await p.locator('.poi-pop .maplinks button.maplink').count()) === 4, 'the Home marker\'s buttons are buttons, not plain links: each asks first');
+ok((await p.locator('.poi-pop .maplinks a.maplink').count()) === 0 && (await p.locator('.poi-pop .maplinks button.maplink').count()) === 2, 'the Home marker\'s buttons are buttons, not plain links: each asks first');
 const homeBtn = p.locator('.poi-pop .maplinks-row:first-child button.maplink').first();
 await homeBtn.scrollIntoViewIfNeeded();
 let extra = 0; ctx.on('page', () => { extra++; });
@@ -81,7 +86,7 @@ await p.click('#panel-close');
 await p.evaluate(() => document.getElementById('map').focus());
 await p.keyboard.press('Enter'); await p.waitForSelector('.leaflet-popup .maplinks'); await p.waitForTimeout(500);
 links = await hrefs(p, '.leaflet-popup .maplinks-row:first-child');
-ok(links.map((l) => l.t).join() === 'Amap,Google Maps' && /name=3\d\.\d{5}%20114\.\d{5}/.test(links[0].h), 'a point check in Hubei has the buttons too, Amap first, named by its coordinates: ' + (links[0] && links[0].h));
+ok(links.map((l) => l.t).join() === 'Open in Amap,Navigate in Amap' && /name=3\d\.\d{5}%20114\.\d{5}/.test(links[0].h), 'a point check in Hubei has the buttons too, in Amap, named by its coordinates: ' + (links[0] && links[0].h));
 await ctx.close();
 
 // ================= a route
@@ -98,9 +103,15 @@ ok((await names()).join() === 'Airport,Yellow Crane Tower,East Lake', 'the stops
 const nums = await p.$$eval('#poi-list li.selecting', (li) => li.map((x) => `${x.dataset.id}:${x.querySelector('.sel-num').textContent}`).filter((s) => !/:$/.test(s)).sort());
 ok(nums.join() === 'ap:1,el:3,yc:2', 'the ticked rows are numbered 1, 2, 3: ' + nums.join(' '));
 let rl = await hrefs(p, '#route-links');
-ok(rl.length === 2 && rl[0].t === 'Open in Amap' && rl[1].t === 'Open in Google Maps', 'all stops in China: Amap first, then Google Maps, one link each');
+ok(rl.length === 1 && rl[0].t === 'Open in Amap', 'all stops in China: one link, in Amap');
 ok(/from=[\d.]+,[\d.]+,Airport/.test(rl[0].h) && /via=[\d.]+,[\d.]+,Yellow%20Crane%20Tower/.test(rl[0].h) && /to=[\d.]+,[\d.]+,East%20Lake/.test(rl[0].h) && /mode=car/.test(rl[0].h), 'the Amap route has the first stop as from, the middle one as via, the last as to');
-ok(/waypoints=30\.592800%2C114\.305500&?/.test(rl[1].h) && /origin=30\.783800%2C114\.209800/.test(rl[1].h) && /destination=30\.550000%2C114\.370000/.test(rl[1].h), 'the Google route has origin, waypoint and destination in the same order');
+await p.evaluate(() => { const x = document.getElementById('map-app'); x.value = 'google'; x.dispatchEvent(new Event('change')); });
+await p.selectOption('#route-mode', 'walk'); await p.selectOption('#route-mode', 'drive'); // redraws the links
+rl = await hrefs(p, '#route-links');
+ok(rl.length === 1 && rl[0].t === 'Open in Google Maps' && /waypoints=30\.592800%2C114\.305500&?/.test(rl[0].h) && /origin=30\.783800%2C114\.209800/.test(rl[0].h) && /destination=30\.550000%2C114\.370000/.test(rl[0].h), 'with Google Maps chosen, the route has origin, waypoint and destination in the same order');
+await p.evaluate(() => { const x = document.getElementById('map-app'); x.value = 'auto'; x.dispatchEvent(new Event('change')); });
+await p.selectOption('#route-mode', 'walk'); await p.selectOption('#route-mode', 'drive');
+rl = await hrefs(p, '#route-links');
 await p.click('#route-reverse');
 ok((await names()).join() === 'East Lake,Yellow Crane Tower,Airport', 'Reverse turns the route round');
 await p.locator('#route-stops li:nth-child(3) button[aria-label^="Move"]:first-of-type').click();
@@ -110,19 +121,19 @@ await p.click('#route-sort');
 ok((await names()).join() === 'Airport,Yellow Crane Tower,East Lake', 'Use itinerary order sorts by date, day and stop');
 await p.selectOption('#route-mode', 'transit');
 rl = await hrefs(p, '#route-links');
-ok(rl.length === 3 && /part 1/.test(rl[0].t) && /part 2/.test(rl[1].t) && /travelmode=transit/.test(rl[2].h) && /each leg/.test(await p.textContent('#route-links')), 'by public transport Amap opens each leg separately (2 parts, with a note), Google Maps still one link');
+ok(rl.length === 2 && /part 1/.test(rl[0].t) && /part 2/.test(rl[1].t) && /each leg/.test(await p.textContent('#route-links')), 'by public transport Amap opens each leg separately (2 parts, with a note)');
 await p.selectOption('#route-mode', 'drive');
 await tick('Marina Bay');
 rl = await hrefs(p, '#route-links');
-ok(rl.length === 1 && rl[0].t === 'Open in Google Maps' && /every stop is in China/.test(await p.textContent('#route-links')), 'a stop outside China: only Google Maps, with a note saying why');
+ok(rl.length === 1 && rl[0].t === 'Open in Google Maps' && /every stop is in China/.test(await p.textContent('#route-links')), 'a stop outside China: Google Maps, with a note saying why');
 await p.locator('#route-stops li:last-child button[aria-label^="Remove"]').click(); await p.waitForTimeout(200);
-ok((await names()).length === 3 && (await hrefs(p, '#route-links')).length === 2, 'the cross removes a stop and untick its row; Amap is back');
+ok((await names()).length === 3 && (await hrefs(p, '#route-links'))[0].t === 'Open in Amap', 'the cross removes a stop and untick its row; Amap is back');
 await p.click('#sel-none'); await p.waitForTimeout(200);
 ok(!(await p.isVisible('#route-box')), 'None clears the route');
 
 // the Home marker in a route
 await tick('Airport'); await tick('Flat');
-ok((await p.locator('#route-links a.maplink').count()) === 0 && (await p.locator('#route-links button.maplink').count()) === 2, 'a route that includes the Home marker asks before opening: buttons, not links');
+ok((await p.locator('#route-links a.maplink').count()) === 0 && (await p.locator('#route-links button.maplink').count()) === 1, 'a route that includes the Home marker asks before opening: buttons, not links');
 await p.screenshot({ path: `${SP}/maplinks-route.png` });
 await ctx.close();
 
@@ -131,9 +142,13 @@ const many = Array.from({ length: 12 }, (_, i) => mk('m' + String.fromCharCode(9
 ({ ctx, p } = await session({ items: many }));
 await p.click('#poi-select'); await p.click('#sel-all'); await p.waitForTimeout(300);
 rl = await hrefs(p, '#route-links');
-const gParts = rl.filter((x) => /Google Maps, part/.test(x.t)), aParts = rl.filter((x) => /Amap, part/.test(x.t));
-ok(gParts.length === 2 && aParts.length === 6, '12 stops: Google Maps in 2 parts (9 stops between at most), Amap in 6 (one stop between): ' + gParts.length + ' / ' + aParts.length);
-ok(/9 stops/.test(await p.textContent('#route-links')) && /one stop/.test(await p.textContent('#route-links')), 'each app explains its limit');
+const aParts = rl.filter((x) => /Amap, part/.test(x.t));
+ok(aParts.length === 6 && rl.length === 6 && /one stop/.test(await p.textContent('#route-links')), '12 stops in China: Amap in 6 parts (one stop between), and it says so: ' + aParts.length);
+await p.evaluate(() => { const x = document.getElementById('map-app'); x.value = 'google'; x.dispatchEvent(new Event('change')); });
+await p.selectOption('#route-mode', 'walk'); await p.selectOption('#route-mode', 'drive');
+rl = await hrefs(p, '#route-links');
+const gParts = rl.filter((x) => /Google Maps, part/.test(x.t));
+ok(gParts.length === 2 && rl.length === 2 && /9 stops/.test(await p.textContent('#route-links')), 'with Google Maps chosen: 2 parts (9 stops between at most), and it says so: ' + gParts.length);
 await ctx.close();
 
 // ================= phone

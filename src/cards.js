@@ -68,4 +68,55 @@ export function rainBlock(outlook) {
   return box;
 }
 
-export const disclaimer = () => el('p', 'disclaimer', 'Planning aid only, not flight advice. Check the official platform before every flight.');
+export const disclaimer = () => el('p', 'disclaimer', 'Planning aid, not flight advice.');
+
+// ---------- the small icon toolbar at the top of a window ----------
+const PATHS = {
+  edit: 'M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4',
+  visit: 'M12 5v14M5 12h14',
+  trash: 'M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6',
+  pin: 'M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10zM12 8v6M9 11h6',
+  unpin: 'M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10zM9.5 8.5l5 5M14.5 8.5l-5 5',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+};
+/**
+ * An icon button (the label is the tooltip and the accessible name). The icon is built from constants only.
+ * `danger`: the first press turns it into "Confirm <label>" for four seconds, the second one acts.
+ */
+export function toolButton({ icon, label, onClick, danger = false }) {
+  const b = el('button', danger ? 'btn tool danger' : 'btn tool');
+  b.type = 'button'; b.title = label;
+  b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${PATHS[icon]}"/></svg>`;
+  const text = el('span', 'tool-label', label);
+  b.append(text);
+  let armed = null;
+  b.addEventListener('click', (e) => {
+    if (danger && !armed) {
+      text.textContent = `Confirm ${label.toLowerCase()}`; b.classList.add('armed');
+      armed = setTimeout(() => { text.textContent = label; b.classList.remove('armed'); armed = null; }, 4000);
+      return;
+    }
+    clearTimeout(armed); armed = null;
+    onClick(e);
+  });
+  return b;
+}
+/**
+ * The bar at the top of a window: a caption on the left, the tools on the right. `menu` is a list of the same kind of options
+ * ({ icon, label, onClick, danger }) that goes behind a ⋯ button; the rest stay as icons.
+ */
+export function toolBar({ caption, tools = [], menu = [] }) {
+  const bar = el('div', 'pop-bar');
+  bar.append(el('div', 'pop-type', caption));
+  const right = el('div', 'pop-tools');
+  for (const t of tools) right.append(toolButton(t));
+  if (menu.length) {
+    const more = toolButton({ icon: 'more', label: 'More', onClick: () => {} });
+    const list = el('div', 'pop-menu'); list.hidden = true;
+    for (const m of menu) list.append(toolButton(m));
+    more.addEventListener('click', () => { list.hidden = !list.hidden; });
+    right.append(more);
+    bar.append(right, list);
+  } else bar.append(right);
+  return bar;
+}

@@ -9,7 +9,7 @@
   "semantics": "restrict",
   "boundary": "boundary.geojson",
   "coverageMarginM": 1500,
-  "publish": false,
+  "publish": true,
   "officialMap": {
     "label": "OneMap Drone Query (official)",
     "url": "https://www.onemap.gov.sg/droneQuery"
@@ -86,5 +86,5 @@
     "attachment": "OneMap theme responses (boundary_5km, danger_areas, prohibited_areas, restricted_areaspoly, mha_uav_2015, drone_no_fly, caas_uafa_*)"
   },
   "license": "unknown",
-  "licenseNote": "Taken from OneMap by the owner for the owner's own group. OneMap's terms have not been read. Do not publish: this region is built locally only (publish: false)."
+  "licenseNote": "Taken from OneMap (Singapore Land Authority) by the owner and published on the owner's decision of 2026-11-11, before OneMap's terms were read. Approximate: always check the official OneMap Drone Query. Remove this region (or set publish to false) if the owner of the data asks."
 }

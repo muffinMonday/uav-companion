@@ -94,7 +94,8 @@ const sc = await p.evaluate(() => { const c = document.querySelector('.leaflet-p
 ok(sc.scrolls && sc.top >= 0 && sc.bottom <= sc.pinTop + 2, 'a window too tall for the space above the pin scrolls inside and stays on screen (top ' + Math.round(sc.top) + ', bottom ' + Math.round(sc.bottom) + ', pin top ' + Math.round(sc.pinTop) + ')');
 const zoomBefore = await p.evaluate(() => document.querySelector('.leaflet-control-scale-line').textContent);
 await p.evaluate(() => document.querySelector('.leaflet-popup-content').scrollTo(0, 9999)); await p.waitForTimeout(200);
-ok((await p.locator('.poi-pop .acts').isVisible()), 'scrolling the window reaches its Edit and Delete buttons');
+await p.evaluate(() => document.querySelector('.leaflet-popup-content').scrollTo(0, 0)); await p.waitForTimeout(200);
+ok((await p.locator('.poi-pop .pop-tools').isVisible()), 'scrolling back up reaches the Edit and Delete icons');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(400);
 const pinB = await pinRect(p, 'Short').catch(() => null);
 if (pinB && pinB.x > 0 && pinB.x < 1200 && pinB.y > 0 && pinB.y < 800) {

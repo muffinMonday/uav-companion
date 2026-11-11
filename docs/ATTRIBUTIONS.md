@@ -3,6 +3,8 @@
 | Component | Use | Licence / terms |
 |---|---|---|
 | Hubei suitable-flight grid | Zone geometry | Hubei Development and Reform Commission announcement of 2026-05-12. **Licence not stated; confirm before public redistribution.** |
+| Singapore no-fly zones (aerodrome 5 km, danger, prohibited, restricted, protected areas, NParks parks, UA flying areas) | Zone geometry (`data/regions/sg/sg-nofly/`) | Published by CAAS, MHA and NParks on OneMap (Singapore Land Authority). **Terms not yet read; published on the owner's decision. Approximate: check OneMap Drone Query.** |
+| Natural Earth 1:10m Admin 0 | Singapore coverage boundary (`data/regions/sg/sg-nofly/boundary.geojson`) | Public domain |
 | Natural Earth 1:10m Admin 1 | Hubei coverage boundary (`data/regions/cn/hubei/boundary.geojson`) | Public domain |
 | Natural Earth 1:50m Admin 0 | China outline for "is this place in China" (`src/data/china-outline.js`, by `scripts/make-china-outline.js`) | Public domain |
 | Google Maps URLs, Amap URI API | Links that open a place or route in those apps (no keys, no data sent until a link is tapped) | Documented public link formats |

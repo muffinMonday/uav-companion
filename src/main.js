@@ -11,6 +11,8 @@ import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
 import { initWelcome } from './welcome.js';
 import { mapLinksBlock } from './maplinks-ui.js';
+import { MODES } from './maplinks.js';
+import { toolBar } from './cards.js';
 import { centreOn, popupMaxHeight } from './view.js';
 import { initPOI } from './poi-ui.js';
 import { initPrivacyUI } from './privacy-ui.js';
@@ -74,6 +76,15 @@ window.addEventListener('pagehide', saveView); // a reload straight after pannin
 
 // Weather (opt-in): a button in each result popup loads a forecast card for that point
 const weather = initWeather();
+// Maps card: which app the Open / Navigate buttons use, and the usual way of travelling
+{
+  const app = $('map-app'), mode = $('map-mode');
+  for (const m of MODES) { const o = document.createElement('option'); o.value = m.id; o.textContent = m.label; mode.append(o); }
+  const p = loadPrefs();
+  app.value = p.mapApp ?? 'auto'; mode.value = p.mapMode ?? MODES[0].id;
+  app.addEventListener('change', () => savePrefs({ mapApp: app.value === 'auto' ? null : app.value }));
+  mode.addEventListener('change', () => savePrefs({ mapMode: mode.value === MODES[0].id ? null : mode.value }));
+}
 const windInput = $('wlimit');
 windInput.value = getWindLimit() ?? '';
 windInput.addEventListener('change', () => { setWindLimit(parseFloat(windInput.value)); weather.refresh(); });
@@ -100,20 +111,10 @@ function decorate(content, latlng, label, onResize, extras = {}) {
     a.className = 'btn small maplink official-link'; a.href = extras.official.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = extras.official.label;
     content.append(a);
   }
-  // save the spot as a marker; a searched spot also has a pin that can be removed
-  const acts = document.createElement('div');
-  acts.className = 'acts check-acts';
-  const addBtn = document.createElement('button');
-  addBtn.type = 'button'; addBtn.className = 'btn small'; addBtn.textContent = 'Add as marker';
-  addBtn.addEventListener('click', () => setTimeout(() => { map.closePopup(); extras.onAdded?.(); poi.addAt(latlng, label); }, 0));
-  acts.append(addBtn);
-  if (extras.onRemovePin) {
-    const rm = document.createElement('button');
-    rm.type = 'button'; rm.className = 'btn small'; rm.textContent = 'Remove pin';
-    rm.addEventListener('click', () => setTimeout(() => { map.closePopup(); extras.onRemovePin(); }, 0));
-    acts.append(rm);
-  }
-  content.append(acts);
+  // save the spot as a marker (a searched spot also has a pin that can be removed): icons in the bar at the top
+  const tools = [{ icon: 'pin', label: 'Add as marker', onClick: () => setTimeout(() => { map.closePopup(); extras.onAdded?.(); poi.addAt(latlng, label); }, 0) }];
+  if (extras.onRemovePin) tools.push({ icon: 'unpin', label: 'Remove pin', onClick: () => setTimeout(() => { map.closePopup(); extras.onRemovePin(); }, 0) });
+  content.prepend(toolBar({ caption: 'Point check', tools }));
   return content;
 }
 

@@ -25,6 +25,7 @@ Read only what the task needs.
 - Privacy defaults matter: nothing user-specific leaves the browser unless the user opted in. The Home marker is never sent automatically and never in share links.
 - Storage keys keep the `uavzones.` prefix (kept on purpose after the rename); change a stored shape only with a version bump and a migration note in `docs/DATABASE.md`.
 - Keep changes minimal and root-caused; no speculative features. Match the user's language and register; keep replies and docs concise.
+- Data policy (owner, 2026-11-11): geo data we source is published on the public site by default (`"publish": true` in `source.json`; a missing value means local only); mention an unconfirmed licence when adding a region.
 - Git: do not run `npm run deploy` (publishes data to the public `gh-pages` branch) without asking. `public/data/`, raw shapefiles, `dist/`, `tests/out/` stay out of git.
 
 ## Testing requirements

@@ -179,6 +179,8 @@ export function weatherButton(onPress) {
   b.type = 'button';
   b.addEventListener('click', onPress);
   const exact = getPrivacy().weatherPrecision === 'precise';
-  wrap.append(b, el('small', '', exact ? 'Sends the exact location to Open-Meteo.com' : 'Sends this location, rounded to about 1 km, to Open-Meteo.com'));
+  const sent = exact ? 'Sends the exact location to Open-Meteo.com' : 'Sends this location, rounded to about 1 km, to Open-Meteo.com';
+  b.title = sent; // a tooltip; the sentence stays in the page for screen readers
+  wrap.append(b, el('small', 'sr-only', sent));
   return wrap;
 }

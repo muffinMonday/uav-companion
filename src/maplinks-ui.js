@@ -1,7 +1,8 @@
 // The "open in Google Maps / Amap" buttons: for one place (marker windows, point-check windows) and for a route through several markers.
 // Links come from maplinks.js. Opening one shares those coordinates with the map app, but only when the visitor taps it.
-import { APP_LABEL, MODES, appsFor, placeUrl, hereUrl, routeUrls } from './maplinks.js';
+import { APP_LABEL, MODES, appsFor, resolveApp, placeUrl, hereUrl, routeUrls } from './maplinks.js';
 import { inChina } from './coords.js';
+import { loadPrefs } from './prefs.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 const open = (url) => window.open(url, '_blank', 'noopener,noreferrer');
@@ -35,56 +36,44 @@ export function linkButton({ label, url, confirm = false }) {
 }
 
 /**
- * The block of buttons for one place. `home`: this is the Home marker (the traveller's residence), so each button asks before opening.
- * Inside China Amap comes first, then Google Maps; elsewhere Google Maps only.
+ * The two buttons for one place: Open in <app> and Navigate in <app>. `home`: this is the Home marker (the traveller's residence),
+ * so each button asks before opening. The app comes from the Maps settings (automatic: Amap in China, Google Maps elsewhere) and
+ * Navigate uses the usual way of travelling from the same settings.
  */
 export function mapLinksBlock({ lat, lon, name = '', home = false }) {
-  const apps = appsFor([{ lat, lon }]);
-  const box = el('div', 'maplinks');
+  const prefs = loadPrefs();
+  const app = resolveApp([{ lat, lon }], prefs.mapApp);
   const place = { lat, lon, name };
-
-  const show = el('div', 'maplinks-row');
-  show.append(el('span', 'maplinks-label', 'Open in'));
-  for (const app of apps) show.append(linkButton({ label: APP_LABEL[app], url: placeUrl(app, place), confirm: home }));
-  box.append(show);
-
-  const dir = el('div', 'maplinks-row');
-  dir.append(el('span', 'maplinks-label', 'Directions here'));
-  const sel = el('select', 'maplinks-mode'); sel.setAttribute('aria-label', 'Travel mode');
-  for (const m of MODES) { const o = el('option', '', m.label); o.value = m.id; sel.append(o); }
-  dir.append(sel);
-  const dirButtons = el('span', 'maplinks-btns');
-  const paint = () => {
-    dirButtons.replaceChildren(...apps.map((app) => linkButton({ label: APP_LABEL[app], url: hereUrl(app, place, sel.value), confirm: home })));
-  };
-  sel.addEventListener('change', paint);
-  paint();
-  dir.append(dirButtons);
-  box.append(dir);
-
-  box.append(el('small', 'maplinks-note', home
-    ? 'This is your Home location: each button asks before it shares it. Directions start from where you are.'
-    : 'Opens in a new tab and shares this location with the map app. Directions start from where you are.'));
+  const box = el('div', 'maplinks');
+  const row = el('div', 'maplinks-row');
+  row.append(
+    linkButton({ label: `Open in ${APP_LABEL[app]}`, url: placeUrl(app, place), confirm: home }),
+    linkButton({ label: `Navigate in ${APP_LABEL[app]}`, url: hereUrl(app, place, prefs.mapMode ?? MODES[0].id), confirm: home }),
+  );
+  box.append(row);
+  const note = home
+    ? 'This is your Home location: each button asks before it shares it.'
+    : 'Opens in a new tab and shares this location with the map app. Navigation starts from where you are.';
+  box.append(el('small', 'maplinks-note', note));
   return box;
 }
 
 /**
  * The route buttons for the markers ticked in the list, in order: { stops: [{ lat, lon, name }], mode, home }.
- * Returns the elements to show: one group per app (Amap only when every stop is in China), each with its links and a note.
+ * Returns the elements to show: the links for the chosen app (see the Maps settings) and a note when it has to split the route.
  */
 export function routeLinks({ stops, mode, home = false }) {
   const out = [];
-  for (const app of appsFor(stops)) {
-    const { parts, note } = routeUrls(app, stops, mode, { mobile: isMobileBrowser() });
-    const group = el('div', 'route-group');
-    const row = el('div', 'btn-row');
-    for (const p of parts) row.append(linkButton({ label: p.label, url: p.url, confirm: home }));
-    group.append(row);
-    if (note) group.append(el('small', 'route-note', note));
-    out.push(group);
-  }
+  const app = resolveApp(stops, loadPrefs().mapApp);
+  const { parts, note } = routeUrls(app, stops, mode, { mobile: isMobileBrowser() });
+  const group = el('div', 'route-group');
+  const row = el('div', 'btn-row');
+  for (const p of parts) row.append(linkButton({ label: p.label, url: p.url, confirm: home }));
+  group.append(row);
+  if (note) group.append(el('small', 'route-note', note));
+  out.push(group);
   if (appsFor(stops).length === 1 && stops.some((s) => inChina(s.lat, s.lon)) && stops.some((s) => !inChina(s.lat, s.lon))) {
-    out.push(el('small', 'route-note', 'Amap is offered when every stop is in China; this route has stops elsewhere, so only Google Maps is shown.'));
+    out.push(el('small', 'route-note', 'Amap is used when every stop is in China; this route has stops elsewhere, so Google Maps is used.'));
   }
   return out;
 }
