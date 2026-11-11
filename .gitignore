@@ -15,3 +15,6 @@ data/regions/*/*/*
 
 # Test output (screenshots, downloads)
 tests/out/
+
+# Planning material (screenshots of third-party maps and the like): never committed
+planning/
