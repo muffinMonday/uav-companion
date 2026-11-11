@@ -174,3 +174,7 @@ Where the transcript gave no exact date, entries carry the session's month (2026
 - Decision (owner): add basic animations to the app's interactions; centre the dashboard like its strip.
 - Rules: 0.12 to 0.3 s, ease-out, transform/scale/opacity only; every new rule sits under `prefers-reduced-motion: no-preference`; individual `translate`/`scale` properties are used so they never clash with the transforms that centre the banner, toast and Leaflet's own positioning.
 - Consequences: the browser tests emulate reduced motion (lib.mjs) so nothing is mid-move when clicked; `motion.mjs` turns motion on and checks the key animations and the glide.
+
+### 2026-11-11: Marker click can skip the details window; a selected marker shows its day
+- Decision (owner): a switch (map button plus Points of Interest tab, remembered) makes a marker click select instead of open the window, so the displacement lines stay visible; a selected marker also shows its day's route with bold arrows into and out of it.
+- Consequences: a name tag with an ⓘ keeps the window one tap away; the chain ignores hotels (they keep their dashed displacement lines).

@@ -32,6 +32,9 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   for (const [, name] of COUNTRIES) { const o = document.createElement('option'); o.value = name; $('country-list').append(o); }
 
   // ---------- the list ----------
+  let dayShown = null;    // the day the flip card shows, drawn on the map while the trip screen is on show
+  const syncDay = () => poi.showDay?.(dayShown && panel.isOpen() && !panel.isRolled() && panel.getTab() === 'trips' ? dayShown.tripId : null, dayShown?.date);
+  panel.onChange?.(syncDay);
   let openId = null;      // the trip whose detail screen is showing, or null for the list
   const tw = createTripWeather({ onChange: () => render() }); // per-day forecasts, only while automatic weather is on
   const pageOf = new Map();       // tripId -> the page (day) of its flip card, kept while the page is open
@@ -128,7 +131,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
 
   // ---------- one trip: warnings, the days, notes and the checklist ----------
   function openDetail(id) { openId = id; render(); panel.open('trips'); $('pane-trips').scrollTop = 0; detail.scrollIntoView({ block: 'start' }); }
-  function closeDetail() { openId = null; render(); }
+  function closeDetail() { openId = null; dayShown = null; syncDay(); render(); }
 
   async function runZoneCheck(t, stops, btn) {
     btn.disabled = true;
@@ -255,6 +258,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
           body.append(nav);
         }
         prev.disabled = at === 0; next.disabled = at === pages.length - 1;
+        dayShown = pg.day ? { tripId: t.id, date: pg.day.date } : null; syncDay();
         pages.forEach((p, i) => {
           const dot = el('button', 'flip-dot'); dot.type = 'button'; dot.setAttribute('aria-label', p.day ? 'Day ' + p.day.day : p.label);
           if (i === at) dot.setAttribute('aria-current', 'true');

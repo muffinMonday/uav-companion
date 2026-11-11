@@ -8,7 +8,7 @@ import { createCheckin, checkinCell } from './checkin-ui.js';
 import { checkinLabel } from './checkin.js';
 import { getWindLimit } from './weather.js';
 import { getDistanceSettings, setDistanceSettings, onDistanceSettings } from './units.js';
-import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, compass, toDisplay, fromDisplay } from './distance.js';
+import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, compass, toDisplay, fromDisplay, haversineM } from './distance.js';
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { visitGroups, visitLabel } from './places.js';
@@ -471,11 +471,102 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (approx) box.append(el('small', 'stats-note', '≈ means a location involved is unverified, so the distance is approximate.'));
   }
 
+  // ---------- the day's route, and selecting a marker without its window ----------
+  let detailsOn = loadPrefs().markerDetails !== false; // a click opens the details window (off: it only selects the marker)
+  let shownDay = null;                                   // a day shown from the trip screen: { tripId, date }
+  const routes = L.layerGroup().addTo(map);              // the selected marker's day, bold around it
+  const dayLayer = L.layerGroup().addTo(map);            // a day shown from the trip screen, all thin
+  const tagLayer = L.layerGroup().addTo(map);            // the name tag of a selected marker
+  const tripColour = (tripId) => store.getTrip(tripId)?.color ?? '#1a73e8';
+  /** The stops of one trip on one date, joined in stop order. Hotels and the Home marker are not part of the chain. */
+  function chainOf(tripId, date) {
+    return store.items().filter((i) => i.tripId === tripId && i.date === date && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence')
+      .sort((a, b) => a.order - b.order || String(a.created).localeCompare(String(b.created)));
+  }
+  /** Arrows between consecutive stops; those into and out of the selected stop are bold and say how far. */
+  function drawChain(layer, chain, selId, color) {
+    const { units } = getDistanceSettings();
+    for (let i = 1; i < chain.length; i++) {
+      const a = chain[i - 1], b = chain[i];
+      const bold = !!selId && (a.id === selId || b.id === selId);
+      L.polyline([[a.lat, a.lon], [b.lat, b.lon]], { color, weight: bold ? 6 : 2.5, opacity: bold ? 0.95 : 0.4, className: bold ? 'route-seg bold' : 'route-seg', interactive: false, lineCap: 'round' }).addTo(layer);
+      const pa = map.latLngToLayerPoint([a.lat, a.lon]), pb = map.latLngToLayerPoint([b.lat, b.lon]);
+      const deg = (Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180) / Math.PI;
+      const px = Math.hypot(pb.x - pa.x, pb.y - pa.y); // how long it is on screen: short ones get no arrow or label (they would sit on the pins)
+      const at = (f) => [a.lat + (b.lat - a.lat) * f, a.lon + (b.lon - a.lon) * f];
+      const arrow = el('span', bold ? 'route-arrow bold' : 'route-arrow');
+      arrow.style.setProperty('--rot', deg.toFixed(1) + 'deg'); arrow.style.color = color;
+      arrow.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 1l10 5-10 5 3-5z"/></svg>'; // built from constants only
+      if (px >= 36) L.marker(at(0.62), { icon: L.divIcon({ className: 'route-arrow-box', html: arrow, iconSize: [0, 0] }), interactive: false, keyboard: false }).addTo(layer);
+      if (bold && px >= 80) {
+        const lab = el('span', 'dist-label-text seg-label', fmtDistance(haversineM(a.lat, a.lon, b.lat, b.lon), units));
+        lab.style.borderColor = color;
+        L.marker(at(0.36), { icon: L.divIcon({ className: 'dist-label', html: lab, iconSize: null }), interactive: false, keyboard: false }).addTo(layer);
+      }
+    }
+  }
+  function redrawRoutes() {
+    routes.clearLayers(); dayLayer.clearLayers();
+    if (shownDay) { const chain = chainOf(shownDay.tripId, shownDay.date); if (chain.length >= 2) drawChain(dayLayer, chain, null, tripColour(shownDay.tripId)); }
+    const it = viewId && store.get(viewId);
+    if (it?.tripId && it.date) { const chain = chainOf(it.tripId, it.date); if (chain.length >= 2) drawChain(routes, chain, it.id, tripColour(it.tripId)); }
+  }
+  /** The selected marker's pin stands out. */
+  function paintFocus() { for (const [id, m] of markers) m.getElement()?.classList.toggle('focused', id === viewId); }
+  /** A click with details off: select the marker, show its links and a name tag (with an ⓘ that opens the window). */
+  function selectMarker(id) {
+    const it = store.get(id), m = markers.get(id);
+    if (!it || !m) return;
+    map.closePopup();
+    tagLayer.clearLayers();
+    viewId = id; relink();
+    const box = el('div', 'name-tag');
+    box.append(el('b', '', it.name));
+    const info = el('button', 'name-tag-info', 'ⓘ'); info.type = 'button';
+    info.setAttribute('aria-label', 'Open details for ' + it.name); info.title = 'Open details';
+    info.addEventListener('click', (e) => { L.DomEvent.stop(e); openPopup(id); });
+    box.append(info);
+    L.marker(m.getLatLng(), { icon: L.divIcon({ className: 'name-tag-box', html: box, iconSize: [0, 0] }), keyboard: false, zIndexOffset: 900 }).addTo(tagLayer);
+  }
+  /** Clears a selection made without a window (a click on blank map, or Escape). */
+  function clearSelection() {
+    if (!tagLayer.getLayers().length) return;
+    tagLayer.clearLayers(); viewId = null; relink();
+  }
+  map.on('click', clearSelection);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') clearSelection(); });
+  // the switch: a button on the map and a switch in the Points of Interest tab share one setting
+  let detailsBtn = null;
+  function setDetails(on) {
+    detailsOn = on;
+    savePrefs({ markerDetails: on ? null : false });
+    $('poi-details').checked = on;
+    if (detailsBtn) { detailsBtn.classList.toggle('off', !on); detailsBtn.setAttribute('aria-pressed', String(on)); detailsBtn.title = 'Marker details: ' + (on ? 'on' : 'off') + ' (click to switch)'; }
+    if (on) clearSelection();
+  }
+  const DetailsControl = L.Control.extend({
+    options: { position: 'topleft' },
+    onAdd() {
+      const bar = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+      const a = L.DomUtil.create('a', 'details-btn', bar);
+      a.href = '#'; a.role = 'button'; a.setAttribute('aria-label', 'Open marker details when a marker is clicked');
+      a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-4 3v-3H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path class="slash" d="M4 3l16 18"/></svg>';
+      L.DomEvent.disableClickPropagation(bar);
+      L.DomEvent.on(a, 'click', (e) => { L.DomEvent.preventDefault(e); setDetails(!detailsOn); });
+      detailsBtn = a;
+      return bar;
+    },
+  });
+  new DetailsControl().addTo(map);
+  $('poi-details').addEventListener('change', (e) => setDetails(e.target.checked));
+  setDetails(detailsOn);
+
   /** Dashed lines on the map from the open marker to its nearest home point and hotel, labelled with the distance. */
   const links = L.layerGroup().addTo(map);
   let viewId = null; // the marker whose window is open
   function relink() {
     links.clearLayers();
+    redrawRoutes(); paintFocus();
     const it = viewId && store.get(viewId);
     if (!it || !needsDistance(it)) return;
     const b = nearestBases(it, store.items()), { units } = getDistanceSettings();
@@ -489,8 +580,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       L.marker([(it.lat + f.item.lat) / 2, (it.lon + f.item.lon) / 2], { icon: L.divIcon({ className: 'dist-label', html: label, iconSize: null }), interactive: false, keyboard: false }).addTo(links);
     }
   }
-  map.on('popupopen', (e) => { viewId = e.popup._poiId ?? null; relink(); });
-  map.on('popupclose', (e) => { if (e.popup._poiId === viewId) { viewId = null; links.clearLayers(); } });
+  map.on('popupopen', (e) => { tagLayer.clearLayers(); viewId = e.popup._poiId ?? null; relink(); });
+  map.on('popupclose', (e) => { if (e.popup._poiId === viewId) { viewId = null; relink(); } });
+  map.on('zoomend', () => { if (viewId || shownDay) redrawRoutes(); }); // the arrows turn with the map's scale
 
   /** Fills the tiles under the zone verdict in a marker window: elevation and the 5-hour weather, as enabled. */
   function renderStats(box, id) {
@@ -541,7 +633,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function addMarker(item) {
     const m = L.marker([item.lat, item.lon], { icon: iconOf(item), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
     m._sig = sigOf(item);
-    m.on('click', () => { if (suppressClick) return; if (selecting) pickOnMap(item.id); else openPopup(item.id); });
+    m.on('click', () => { if (suppressClick) return; if (selecting) pickOnMap(item.id); else if (detailsOn) openPopup(item.id); else selectMarker(item.id); });
     markers.set(item.id, m);
     layer.addLayer(m);
     paintPins();
@@ -895,7 +987,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (mode === 'edit') { map.dragging.enable(); container.classList.remove('is-editing'); }
     if (mode === 'place') container.classList.remove('is-placing');
     mode = next;
-    if (mode) { map.closePopup(); panel.closeIfPhone(); ensureVisible(); }
+    if (mode) { map.closePopup(); clearSelection(); panel.closeIfPhone(); ensureVisible(); }
     if (mode === 'edit') { map.dragging.disable(); container.classList.add('is-editing'); }
     if (mode === 'place') container.classList.add('is-placing');
     editSwitch.checked = mode === 'edit';
@@ -986,7 +1078,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     map.fitBounds(L.latLngBounds([it.lat, it.lon], [it.lat, it.lon]), { maxZoom: Math.max(map.getZoom(), 15), paddingBottomRight: [sideways, 0], animate: true });
     // Listen only after starting the move: stopping an earlier pan fires its own moveend, which must not open the popup early.
     let opened = false;
-    const open = () => { if (!opened) { opened = true; map.off('moveend', open); openPopup(id); } };
+    const open = () => { if (!opened) { opened = true; map.off('moveend', open); if (detailsOn) openPopup(id); else selectMarker(id); } };
     map.on('moveend', open);
     setTimeout(open, 700); // the map may already be there, in which case no move happens
   }
@@ -1089,6 +1181,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     showTrip, fitTrip,
     /** Flies to a marker and opens its window (the Trips tab's day list uses it). */
     openMarker: (id) => flyToItem(id),
+    /** Draws the route of one day of a trip (thin) while the trip screen shows it; showDay(null) clears it. */
+    showDay(tripId, date) { shownDay = tripId ? { tripId, date } : null; redrawRoutes(); },
     /** Zooms the map to these markers (a day of a trip). */
     fitItems(ids) { const list = ids.map((id) => store.get(id)).filter(Boolean); if (!list.length) { toast('Nothing to show on the map for this page.'); return false; } fitToItems(list); return true; },
     getCurrentTrip: () => currentTripId,

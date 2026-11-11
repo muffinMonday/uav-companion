@@ -689,3 +689,21 @@ body[data-panel=open]{--panel-w:372px} /* the open side panel: the dashboard, st
   .checkin-done.pop{animation:pop-in var(--dur-slow) var(--ease)}
   .tool.armed{animation:pop-in var(--dur) var(--ease)}
 }
+
+/* ---------- the day's route, the name tag and the details switch ---------- */
+.route-arrow-box{background:none;border:0;pointer-events:none}
+.route-arrow{position:absolute;display:block;width:14px;height:14px;transform:translate(-50%,-50%) rotate(var(--rot,0deg));filter:drop-shadow(0 0 2px #fff)}
+.route-arrow svg{display:block;width:100%;height:100%;fill:currentColor;opacity:.7}
+.route-arrow.bold{width:22px;height:22px}
+.route-arrow.bold svg{opacity:1}
+.seg-label{border-width:2px}
+.name-tag-box{background:none;border:0}
+.name-tag{position:absolute;transform:translate(-50%,-62px);display:flex;align-items:center;gap:2px;padding:3px 4px 3px 11px;border-radius:999px;background:var(--surface);color:var(--fg);box-shadow:var(--shadow-sm);font-size:12.5px;white-space:nowrap}
+.name-tag-info{width:22px;height:22px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--accent);cursor:pointer;font-size:15px;line-height:1}
+.name-tag-info:hover{background:var(--accent-soft)}
+.poi-pin.focused svg{scale:1.18;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+.leaflet-bar a.details-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
+.leaflet-bar a.details-btn svg{width:18px;height:18px}
+.details-btn .slash{display:none}
+.details-btn.off{color:var(--muted)!important}
+.details-btn.off .slash{display:inline}
