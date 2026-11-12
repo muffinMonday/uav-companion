@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { createMap, createZones } from './map.js';
 import { initSearch } from './search.js';
 import { initPointCheck, checkPoint, describeCheck, zoneSummary } from './pointcheck.js';
-import { addLocateControl, addCompassControl } from './locate.js';
+import { addLocateControl, addCompassControl, launchFix } from './locate.js';
 import { createRotation } from './maprotate.js';
 import { initWeather, weatherButton, getWindLimit, setWindLimit } from './weather.js';
 import { initPanel } from './panel.js';
@@ -154,6 +154,17 @@ const locate = addLocateControl(map, {
   onError: (m) => toast(m, 7000),
 });
 
+// On launch: ask for the position and, if the browser allows it, open the map on the visitor. Otherwise the map stays where it was left (prefs.view).
+let launchCentred = false, userMoved = false;
+if (getPrivacy().locateOnLaunch) {
+  for (const ev of ['mousedown', 'touchstart', 'wheel']) map.getContainer().addEventListener(ev, () => { userMoved = true; }, { once: true, passive: true });
+  launchFix().then((f) => {
+    if (!f || userMoved) return; // no position, or the visitor already took the map somewhere
+    launchCentred = true;
+    map.setView([f.lat, f.lon], Math.max(map.getZoom(), 15), { animate: false });
+  });
+}
+
 // Points of interest (markers saved in this browser)
 const poi = initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWeather, panel,
   locateOnce: () => locate.request(),
@@ -264,7 +275,7 @@ try {
 
   const zones = createZones(map, regions);
   zones.setOpacity(+$('op').value); // the remembered opacity, before any zone layer is created
-  if (!prefs.view) zones.fit(clearOfPanel()); // first visit: show all covered regions; later visits resume where the user left off
+  if (!prefs.view && !launchCentred) zones.fit(clearOfPanel()); // first visit: show all covered regions; later visits resume where the user left off
   zones.sync();
   $('show').addEventListener('change', (e) => zones.setVisible(e.target.checked));
   $('op').addEventListener('input', (e) => zones.setOpacity(+e.target.value));        // live while dragging

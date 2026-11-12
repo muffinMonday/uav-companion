@@ -8,7 +8,7 @@ const DOT = '<div class="you-wrap"><svg class="you-arrow" viewBox="0 0 44 44" ar
 
 /**
  * "My location" control, in three steps:
- *   1. press: ask for permission, show where you are and which way you face, centre on it (nothing is requested until the button is pressed);
+ *   1. press: ask for permission, show where you are and which way you face, centre on it (nothing is requested until the button is pressed, except the one launch fix below);
  *   2. press: follow you as you move, and, where the phone has a compass, turn the map so the way it points is up;
  *   3. press: back to a normal north-up map (your position stays on it).
  * A small compass button (see addCompassControl) turns the map north again. Pulling the map with one finger, or anything else that moves it away, ends following.
@@ -185,6 +185,25 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
     isManual: () => manual,
     heading: shown,
   };
+}
+
+/**
+ * One position fix for the moment the app opens: asks the browser (this is what shows the permission question) and resolves { lat, lon } or null
+ * (denied, dismissed, not supported, no secure page, timed out). Nothing is tracked and nothing is drawn; the caller decides what to do with it.
+ * A page cannot tell "always allow" from "allow this time": a permission kept by the browser answers at once on later launches, a one-time one asks again.
+ */
+export async function launchFix({ geo = globalThis.navigator?.geolocation, perms = globalThis.navigator?.permissions, secure = globalThis.isSecureContext || globalThis.location?.hostname === 'localhost' } = {}) {
+  if (!geo || !secure) return null;
+  try { const st = await perms?.query?.({ name: 'geolocation' }); if (st?.state === 'denied') return null; } catch { /* no Permissions API: just ask */ }
+  return new Promise((resolve) => {
+    try {
+      geo.getCurrentPosition(
+        (p) => resolve(Number.isFinite(p?.coords?.latitude) && Number.isFinite(p?.coords?.longitude) ? { lat: p.coords.latitude, lon: p.coords.longitude } : null),
+        () => resolve(null),
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 },
+      );
+    } catch { resolve(null); }
+  });
 }
 
 /**

@@ -24,7 +24,7 @@ Current, constraining decisions only; superseded ones are removed (history: git,
 **Name UAV Companion; storage prefix `uavzones.` and export flag `uavzones: 1` kept.** Reason: existing saved data and files must load.
 
 ## Privacy and data handling
-**Privacy by default.** Weather, elevation, name lookup, check-in are opt-in; weather location rounded (~1 km) unless "precise"; elevation precise. The Home (residence) marker is never sent automatically and never in share links or shared trips. Consequences: export files and the personal cloud copy contain Home; treat exports as private.
+**Privacy by default.** Weather, elevation, name lookup, check-in are opt-in (the one exception: the launch location fix, on by default with a Privacy switch, never sent anywhere, 2026-11-13); weather location rounded (~1 km) unless "precise"; elevation precise. The Home (residence) marker is never sent automatically and never in share links or shared trips. Consequences: export files and the personal cloud copy contain Home; treat exports as private.
 
 **Validate everything on load and import; AI import is generic, lenient to parse, strict to accept.** Published prompt, schema, example; everything sanitized, previewed, flagged `unverified` when looked up; `(0,0)` is missing; swapped lat/lon corrected; dates must be real ISO dates. Reason: models invent coordinates.
 

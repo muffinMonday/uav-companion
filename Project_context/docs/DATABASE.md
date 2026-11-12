@@ -9,7 +9,7 @@ Three layers: (1) static files built at build time, (2) per-browser `localStorag
 |---|---|---|
 | `user_data` | PK `user_id` to `auth.users` (cascade); `doc jsonb`, `rev bigint`, `updated_at`, `device` (<= 80), `markers`, `trips` | `rev >= 1`; doc is an object, <= 2 MB. One personal cloud copy per user |
 | `user_data_versions` | PK `(user_id, rev)`; doc, counts, device | No policy (functions only). Kept 30 days, at most 20 |
-| `profiles` | PK `user_id`; `display_name` (1 to 40), `friend_code` unique (10 hex), `accepts_requests`, `last_seen`, `show_online`, `avatar` (key of `profile_avatars()`), `bio` (1 to 160), `location` (1 to 60, typed text), `interests` (up to 5 keys of `profile_interests()`), `share_profile` | Functions only |
+| `profiles` | PK `user_id`; `display_name` (1 to 40), `friend_code` unique (10 hex), `accepts_requests`, `last_seen`, `show_online`, `avatar` (key of `profile_avatars()`), `bio` (1 to 160), `location` (1 to 60, typed text), `interests` (up to 5 keys of `profile_interests()`), `share_profile`, `named` (false until a name is chosen; set by `choose_name`, a name given or a rename) | Functions only |
 | `friendships` | `id`; `requester`, `addressee` to `auth.users`; `status` pending or accepted; `responded_at` | `requester <> addressee`; unique index on the unordered pair; indexes on both sides |
 | `blocks` | `id`; `blocker`, `blocked`; unique pair | Blocking ends the friendship; the blocked person is not told |
 | `shared_trips` | PK `id` (the client's trip id); `owner`; `doc` (`{v, trip, items}`), `rev`, `members_rev`, `name` (1 to 80), `markers`, `updated_by` | Doc <= 1 MB, <= 500 markers; index on `owner` |

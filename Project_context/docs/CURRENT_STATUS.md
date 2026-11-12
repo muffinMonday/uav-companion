@@ -1,7 +1,15 @@
 # Session Checkpoint
 
-Updated: 2026-11-12
+Updated: 2026-11-13
 Task: Side Quest feature (sub-markers). All five phases (5, 1, 2, 3, 4) built; phase 4 committed, pushed and deployed with this checkpoint. Standing rule: commit, push and deploy after every phase (memory `commit-deploy-each-phase`).
+
+## 2026-11-13 round (owner request: profile and location UX)
+- [x] Tab pill glides between tabs (`panel.js` single `.tab-pill`, class `glide`; `tests/tabpill.mjs`). Deployed.
+- [x] Edit profile is a dialog (`profile-dialog.js`), not in the Friends tab; includes a preview of how others see the profile. Deployed.
+- [x] Friend and party rows open a small profile popover (`profile-popover.js`). Deployed.
+- [x] First sign-in asks a new profile for a display name (`account-ui.js` `askName`, `social.chooseName`, migration `20261113110000_profile_named.sql`). Front end deployed; **migration NOT yet pushed to the hosted project** (needs `npx supabase db push --remote --yes`, owner approval). Until it is pushed no one is asked (the app prompts only when `profile.named === false`).
+- [x] Locate on launch (`launchFix`, pref `locateOnLaunch`, Privacy switch; `tests/launchloc.mjs`). Built and tested; not yet committed or deployed at the time of writing.
+- Note: `prefs` suite crashed once with a timeout in a 5-job full run, then passed alone and under load three times (load flake).
 
 ## Next feature
 Account and profile milestone: backlog in `docs/ACCOUNT_BACKLOG.md` (phases A to E). Phase A (data safety: AC-1 sign-out wipe, AC-2 identical-data adoption after a lost upload answer, AC-3b one device shares live location) is built and tested; migration `20261112100000_live_device.sql` pushed to the hosted project on 2026-11-12; AC-3 test-only items covered in `tests/sync-engine-unit.mjs`. Phase B (AC-4 account button and popover in the panel header and on the rail, AC-5 every Sign in button opens it; `src/account-ui.js`, PROJECT F46) is built, tested (`test:unit`, `npm test` all pass), committed, pushed and deployed. Phone header: tab strip shrinks and icon buttons are 30 px under 520 px so the close button stays on screen. Phase C (AC-6 splash account row: `src/splash.js`, `dashstate.account`, PROJECT F44) is built and tested (unit and `npm test` pass); Phase D (profile: AC-7 migration `20261112110000_profile.sql`, AC-8 editor, AC-9 display; `src/avatars.js`, `src/profile-ui.js`, PROJECT F47) is built and unit and browser tested, pushed to the hosted project and deployed with `deploy:live` on 2026-11-13; Phase E (AC-10 migration `20261113100000_delete_account.sql`, edge function `supabase/functions/delete-account`, delete dialog in the account popover; AC-11 DECISIONS; AC-12 release checklist in DEVELOPMENT.md; PROJECT F48) is built, tested, applied (migration), deployed (edge function `delete-account`, version 1, ACTIVE, verify_jwt on) and published with `deploy:live` on 2026-11-13. Smoke-tested without a real account: no token 401, GET 405, publishable key as token 401, preflight 204; the full delete path was not run against the hosted project. The milestone's code is complete; remaining before real users is the release checklist; after each phase: test, commit, push, deploy, then ask the owner.

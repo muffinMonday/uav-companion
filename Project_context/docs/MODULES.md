@@ -45,7 +45,9 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `account-ui.js` (also the delete-account dialog) | Account button (panel header and rail) and its popover: guest note and sign-in, or name, friend code, sync state, Edit profile, Friends, Sign out | handle |
 | `avatars.js` (pure lists, `avatarEl`), `profile-ui.js` | Preset avatars and interest tags; the Profile card and the bio/location lines | `avatarEl`, `profileBits` |
 | `social.js` | Friends and profile RPC wrappers | `createSocial` |
-| `friends-ui.js` | Friends tab, invitations, badge | handle |
+| `friends-ui.js` | Friends tab (you, add a friend, lists), invitations, badge; rows open the profile popover | handle |
+| `profile-dialog.js` | The Edit profile dialog (name, avatar, bio, location, interests, share switch, preview); opened only by Edit profile buttons | `createProfileDialog` |
+| `profile-popover.js` | Small read-only profile popover for friend and party rows | `profileTrigger`, `showProfile` |
 | `presence.js` | 30 s heartbeat | `initPresence` |
 | `sharedtrip/api.js`, `core.js` (pure merge), `engine.js` | Shared-trip RPCs, three-way merge, polling | `createTripsApi`, `createSharedTrips` |
 | `party-ui.js` | Party Members, invitations, live-location switch | handle, store |

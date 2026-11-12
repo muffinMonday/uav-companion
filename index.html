@@ -243,6 +243,11 @@
       </div>
 
       <div class="card">
+        <h2>Location at launch</h2>
+        <label class="switch"><span>Centre the map on me when the app opens <small>The browser asks for your location when the app opens. If you allow it for this site, the map opens on where you are; if you do not, it opens where you left off. Your position is only used on this device and is never sent anywhere.</small></span><input type="checkbox" id="pv-locate"></label>
+      </div>
+
+      <div class="card">
         <h2>Check-in</h2>
         <label class="switch"><span>Check in at markers <small>Uses your position to enable a Check in button on a marker when you are within 300 m of it. Your position is read only while the panel shows markers and is never sent anywhere. A check-in saves your coordinates and the time with the marker, in this browser.</small></span><input type="checkbox" id="pv-checkin"></label>
       </div>
@@ -265,7 +270,7 @@
           <li><b>Place search and lookup:</b> online search sends your query to Photon or Nominatim, only when you search. Name lookup on import does the same with the names in the import, only if you turn it on above.</li>
           <li><b>Check-in:</b> your position is read by the browser only while check-in is on and the panel shows markers. It is saved with the marker in this browser, included in an export, and left out of share links.</li>
           <li><b>Weather and elevation:</b> Open-Meteo.com, only as set above.</li>
-          <li><b>Never sent:</b> marker names and notes, your saved markers, the wind limit, and these settings. Your location is read by the browser only when you press the location button.</li>
+          <li><b>Never sent:</b> marker names and notes, your saved markers, the wind limit, and these settings. Your location is read by the browser when you press the location button and, unless you turn it off above, once when the app opens; it stays on this device.</li>
         </ul>
       </div>
     </div>
