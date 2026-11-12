@@ -27,6 +27,22 @@ export function createProgression(client, now = () => Date.now()) {
       const k = kind + ':' + id; const hit = fresh(k); if (hit) return hit;
       return keep(k, cleanProgression(await rpc('get_progression', { p_kind: kind, p_id: id })));
     },
+    /**
+     * Brief progression (rank, XP, progress, featured) for many people at once, one database call for those not held yet. Returns a Map id -> cleaned payload;
+     * anyone the database does not return, or hides, is { visible: false }. Kept apart from get(), whose payloads carry the whole collection.
+     */
+    async many(kind, ids) {
+      const uniq = [...new Set(ids)];
+      const want = uniq.filter((id) => fresh('brief:' + kind + ':' + id) === undefined);
+      for (let i = 0; i < want.length; i += 100) {
+        const chunk = want.slice(i, i + 100);
+        const rows = await rpc('list_progression', { p_kind: kind, p_ids: chunk });
+        const got = new Set();
+        for (const r of Array.isArray(rows) ? rows : []) if (r && typeof r.id === 'string' && chunk.includes(r.id)) { got.add(r.id); keep('brief:' + kind + ':' + r.id, cleanProgression(r)); }
+        for (const id of chunk) if (!got.has(id)) keep('brief:' + kind + ':' + id, { visible: false });
+      }
+      return new Map(uniq.map((id) => [id, fresh('brief:' + kind + ':' + id) ?? { visible: false }]));
+    },
     /** The caller's own, with unlock times. */
     async mine({ force = false } = {}) {
       if (!force) { const hit = fresh('me'); if (hit) return hit; }

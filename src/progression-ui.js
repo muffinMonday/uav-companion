@@ -28,21 +28,9 @@ export function achievementTile(a, { self = false } = {}) {
   return t;
 }
 
-/**
- * The progression card. `status` is 'loading', 'error' or 'ready'; `p` is a cleaned payload (progression.js). `handlers`: onCollection(), onHistory() (self only), onRetry().
- * Draws: rank and tier, exact XP, progress to the next rank (or the maximum-rank state at Ace), featured achievements, and the buttons to the collection and history.
- */
-export function progressionCard({ status = 'ready', p = null, mode = 'other', handlers = {} } = {}) {
-  const c = el('div', 'prog-card'); c.dataset.status = status; c.dataset.mode = mode;
-  if (status === 'loading') { c.append(el('p', 'hint', 'Loading progression…')); return c; }
-  if (status === 'error') {
-    c.append(el('p', 'hint', 'Progression is unavailable right now.'));
-    if (handlers.onRetry) { const r = btn('Try again'); r.addEventListener('click', handlers.onRetry); c.append(r); }
-    return c;
-  }
-  if (!p?.visible) { c.dataset.status = 'hidden'; c.append(el('p', 'hint', mode === 'self' ? 'Your progression is not available.' : 'Progression is not shown for this person.')); return c; }
-
-  c.dataset.tier = String(p.tier);
+/** The part every screen shares: rank badge, rank name, tier, exact XP and progress to the next rank (or the maximum-rank line at Ace, with no bar). */
+export function progressionSummary(p) {
+  const c = el('div', 'prog-summary');
   const head = el('div', 'prog-head');
   head.append(rankBadge(p, 40));
   const who = el('div', 'prog-who');
@@ -61,6 +49,32 @@ export function progressionCard({ status = 'ready', p = null, mode = 'other', ha
     const fill = el('i', 'prog-fill'); fill.style.width = prog.pct + '%'; bar.append(fill);
     c.append(bar, el('small', 'prog-next', xpText(prog.remaining) + ' XP to ' + prog.nextName + ' (' + xpText(p.nextMinXp) + ' XP)'));
   }
+  return c;
+}
+
+/** The small card shown when a rank-ringed map pin is selected: the person's name and the summary, nothing else (no achievements, no buttons). */
+export function progressionMini(p, name) {
+  const c = el('div', 'prog-mini'); c.dataset.tier = String(p.tier);
+  c.append(el('b', 'prog-mini-name', name), progressionSummary(p));
+  return c;
+}
+
+/**
+ * The progression card. `status` is 'loading', 'error' or 'ready'; `p` is a cleaned payload (progression.js). `handlers`: onCollection(), onHistory() (self only), onRetry().
+ * Draws: rank and tier, exact XP, progress to the next rank (or the maximum-rank state at Ace), featured achievements, and the buttons to the collection and history.
+ */
+export function progressionCard({ status = 'ready', p = null, mode = 'other', handlers = {} } = {}) {
+  const c = el('div', 'prog-card'); c.dataset.status = status; c.dataset.mode = mode;
+  if (status === 'loading') { c.append(el('p', 'hint', 'Loading progression…')); return c; }
+  if (status === 'error') {
+    c.append(el('p', 'hint', 'Progression is unavailable right now.'));
+    if (handlers.onRetry) { const r = btn('Try again'); r.addEventListener('click', handlers.onRetry); c.append(r); }
+    return c;
+  }
+  if (!p?.visible) { c.dataset.status = 'hidden'; c.append(el('p', 'hint', mode === 'self' ? 'Your progression is not available.' : 'Progression is not shown for this person.')); return c; }
+
+  c.dataset.tier = String(p.tier);
+  c.append(progressionSummary(p));
   if (p.xp === 0) c.append(el('p', 'hint', mode === 'self' ? 'No XP yet. Fly in an approved simulator or attend a flight session to earn some.' : 'No XP yet.'));
 
   const feat = featuredOf(p);

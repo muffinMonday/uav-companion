@@ -18,7 +18,8 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 /** `handle` is what initSyncUI returns ({ sync, adapter, onChange, open }); `cloud` is the holder the dashboard reads. Returns the hooks the trips screen uses. */
 export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
   const api = createTripsApi(handle.adapter.client);
-  setProgressionSource(getProgression(handle.adapter.client)); // party members' profile popovers show rank and achievements
+  const progression = getProgression(handle.adapter.client);
+  setProgressionSource(progression); // party members' profile popovers show rank and achievements
   const eng = createSharedTrips({ store, api });
   // Live locations: sending this device's position (only when the person turns it on, for one trip) and drawing the party's on the map
   const live = createLive({ api, getTrip: (id) => store.getTrip(id) });
@@ -97,6 +98,8 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
   let liveSig = '';
   live.onChange((s) => {
     layer?.update(s.others, hiddenTrips);
+    // rank rings: only for people already on the map; one call for those not held yet, answered from the cache otherwise. A failure leaves the pins as they are.
+    if (layer && s.others.length) progression.many('member', s.others.map((o) => o.member_id)).then((m) => layer.setRanks(m)).catch(() => {});
     for (const m of live.takeNotices()) toast(m, 9000);
     updateChip();
     // redraw the trip screen only when who is sharing changes, not on every new position (that would reset anything being typed)

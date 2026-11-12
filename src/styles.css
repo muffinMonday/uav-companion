@@ -1028,3 +1028,13 @@ input[type=email]:focus{border-color:var(--accent)}
 .prog-hist-row{display:flex;flex-direction:column;padding:6px 0;border-bottom:1px solid var(--line)}
 .prog-hist-row b.pos{color:var(--ok)}.prog-hist-row b.neg{color:var(--no)}.prog-hist-row small{color:var(--muted);overflow-wrap:anywhere}
 .prog-dialog .btn[hidden]{display:none}
+/* rank ring and badge on a live pin (livemap.js): the ring is a shadow and the badge sits on the corner, so the pin keeps its size */
+.live-av{position:relative;display:flex}
+.live-pin.ranked .live-av{pointer-events:auto;cursor:pointer}
+.live-pin.ranked b{box-shadow:0 0 0 3px var(--rank,var(--rank-1)),0 1px 4px rgba(0,0,0,.4)}
+.live-rank{position:absolute;right:-9px;top:-9px;display:flex;align-items:center;justify-content:center;width:16px;height:16px;box-sizing:border-box;border-radius:50%;background:var(--surface);color:var(--fg);border:2px solid var(--rank,var(--rank-1));font:700 9px/1 var(--font);font-style:normal}
+.live-pop .leaflet-popup-content{margin:10px 12px;min-width:200px}
+.live-pop .prog-mini{display:flex;flex-direction:column;gap:6px}
+.live-pop .prog-mini-name{font-size:14px}
+.live-pop .prog-summary{display:flex;flex-direction:column;gap:6px}
+.prog-summary{display:flex;flex-direction:column;gap:6px}

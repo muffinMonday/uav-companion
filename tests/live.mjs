@@ -51,6 +51,7 @@ const day = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10
 const trip = { id: TRIP, name: 'Hubei spring', startDate: day(1), endDate: day(10), color: '#e91e63', created: '2026-01-01T00:00:00.000Z' };
 await one(A, 'public.share_trip($1::jsonb)', [JSON.stringify({ v: 1, trip, items: [] })]);
 await one(A, 'public.invite_to_trip($1, $2)', [TRIP, (await as(db, A, 'select * from public.list_friends()'))[0].id]); await one(B, 'public.respond_trip_invite($1, true)', [TRIP]);
+await db.query(`select public.award_xp($1, 350, 'attendance', 'session:s1')`, [A]); // Alex is a Cadet (350 XP) for the rank ring checks
 const rowOf = async (uid) => (await db.query(`select * from public.live_locations where user_id = '${uid}'`)).rows[0];
 
 const b = await chromium.launch({ channel: CHANNEL });
@@ -132,6 +133,30 @@ await bea.p.uncheck('#party-map'); await bea.p.waitForTimeout(300);
 ok(await pins(bea.p).count() === 0, 'Bea can choose not to see the party on the map');
 await bea.p.check('#party-map'); await bea.p.waitForTimeout(300);
 ok(await pins(bea.p).count() === 1, 'and bring them back');
+
+// ---------- the rank ring: Alex has 350 XP (Cadet, tier 3); bring his pin on screen first (it moved far away above)
+await bea.p.click('#trip-detail .party-row button:has-text("Show on map")'); await bea.p.waitForTimeout(1200);
+await bea.p.evaluate(() => document.getElementById('panel-close').click()).catch(() => {}); await bea.p.waitForTimeout(700);
+await bea.p.waitForSelector('.live-pin.ranked', { timeout: 8000 });
+const ring = await bea.p.$eval('.live-pin b', (e) => { const r = e.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), shadow: getComputedStyle(e).boxShadow }; });
+ok(await bea.p.getAttribute('.live-pin', 'data-tier') === '3' && (await bea.p.textContent('.live-rank')) === '3', 'the pin for Alex carries a tier badge (3) and is marked as ranked');
+ok(ring.w === 28 && ring.h === 28, 'the pin keeps its size: the ring does not change it (' + ring.w + ' x ' + ring.h + ' px)');
+ok(ring.shadow.includes('rgb(47, 154, 120)'), 'and a ring in the Cadet colour: ' + ring.shadow.slice(0, 40));
+ok(!/350/.test(await bea.p.textContent('.live-pin')) && !/Cadet/.test(await bea.p.textContent('.live-pin')), 'the XP number and rank name are not written on the pin itself');
+await bea.p.click('.live-pin b'); await bea.p.waitForSelector('.live-pop .prog-mini', { timeout: 4000 });
+const pop = await bea.p.textContent('.live-pop');
+ok(/Alex/.test(pop) && /Cadet/.test(pop) && /Tier 3/.test(pop) && /350/.test(pop) && /100 XP to Novice/.test(pop), 'selecting the pin shows name, rank, exact XP and progress: ' + pop.replace(/s+/g, ' ').slice(0, 80));
+ok(await bea.p.locator('.live-pop .prog-bar').count() === 1 && await bea.p.locator('.live-pop [data-act]').count() === 0, 'with a progress bar, and no achievements or buttons');
+await bea.p.keyboard.press('Escape'); await bea.p.waitForTimeout(200);
+
+// ---------- someone who hides their profile: the pin stays, without a ring (a fresh page has no cached rank)
+await db.exec(`update public.profiles set share_profile = false where user_id = '${A}'`);
+const bea2 = await open('b'); await openTripScreen(bea2.p); await wake(bea2.p); await bea2.p.waitForSelector('.live-pin', { timeout: 8000 }); await bea2.p.waitForTimeout(800);
+ok(await bea2.p.locator('.live-pin').count() === 1 && await bea2.p.locator('.live-pin.ranked').count() === 0 && await bea2.p.locator('.live-rank').count() === 0, 'with the profile switch off, the pin is still there but has no ring or badge');
+await bea2.p.click('.live-pin b', { force: true }).catch(() => {}); await bea2.p.waitForTimeout(400);
+ok(await bea2.p.locator('.live-pop').count() === 0, 'and selecting it shows no rank');
+await bea2.ctx.close();
+await db.exec(`update public.profiles set share_profile = true where user_id = '${A}'`);
 
 // ---------- stopping
 await alex.p.click('#live-chip button'); await alex.p.waitForTimeout(1200);

@@ -82,3 +82,24 @@ const bad = createProgression({ rpc: async () => ({ data: { visible: true, xp: '
 ok((await bad.get('friend', 'x')).visible === false, 'a payload that cannot be trusted is shown as hidden');
 for (let i = 0; i < 205; i++) await api.get('friend', 'id' + i);
 ok(api.peek('friend', 'id204')?.visible === true && api.peek('friend', 'id0') === null, 'the cache is bounded (oldest dropped past 200)');
+
+// ---------- many(): brief progression for the people on the map
+{
+  const log = []; let clock2 = 0;
+  const brief = (id, o = {}) => ({ id, visible: true, xp: 350, tier: 3, rank_key: 'cadet', rank_name: 'Cadet', tier_min_xp: 250, next_min_xp: 450, next_name: 'Novice', max: false, unlocked_count: 1, featured: [], ...o });
+  const cl = { rpc: async (fn, args) => { log.push([fn, args]); if (fn !== 'list_progression') return { data: null, error: null }; return { data: args.p_ids.filter((i) => i !== 'gone').map((i) => (i === 'hid' ? { id: i, visible: false } : brief(i))), error: null }; } };
+  const a2 = createProgression(cl, () => clock2);
+  let m = await a2.many('member', ['m1', 'm2', 'hid', 'gone', 'm1']);
+  ok(log.length === 1 && log[0][1].p_kind === 'member' && log[0][1].p_ids.join() === 'm1,m2,hid,gone', 'many asks once for the distinct ids');
+  ok(m.size === 4 && m.get('m1').visible && m.get('m1').tier === 3 && m.get('m1').achievements === null && m.get('hid').visible === false && m.get('gone').visible === false, 'each id gets a brief payload; a hidden one or one the database does not return is hidden');
+  await a2.many('member', ['m1', 'm2']); ok(log.length === 1, 'people already held are not asked for again');
+  await a2.many('member', ['m1', 'm3']); ok(log.length === 2 && log[1][1].p_ids.join() === 'm3', 'only the missing ones are asked for');
+  await a2.get('member', 'm1'); ok(log.length === 3 && log[2][0] === 'get_progression', 'the brief cache is separate from the full one (get still fetches the collection)');
+  clock2 += 31_000; await a2.many('member', ['m1']); ok(log.length === 4, 'after 30 seconds they are asked for again');
+  const big = Array.from({ length: 230 }, (_, i) => 'b' + i);
+  const before = log.length; await createProgression(cl, () => 0).many('friend', big);
+  ok(log.slice(before).length === 3 && log.slice(before).every((l) => l[1].p_ids.length <= 100), 'more than 100 are asked for in groups of at most 100');
+  let thrown = null; try { await createProgression({ rpc: async () => ({ data: null, error: { message: 'boom' } }) }).many('member', ['x']); } catch (e) { thrown = e.message; }
+  ok(thrown === 'boom', 'a database error is thrown for the caller to ignore');
+  ok((await createProgression({ rpc: async () => ({ data: 'junk', error: null }) }).many('member', ['x'])).get('x').visible === false, 'an answer that is not a list leaves everyone hidden');
+}
