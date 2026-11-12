@@ -48,6 +48,24 @@ await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(700);
 ok(!(await splashOpen(p)), 'a reload does not show it again');
 await ctx.close();
 
+// ---- the account row (needs the cloud code, which the development build has)
+({ ctx, p } = await open());
+ok(await p.locator('#splash-account #splash-guest').isVisible() && await p.locator('#splash-account #splash-profile').isVisible(), 'the first screen has an account row: Continue as guest and Create a profile');
+ok(/unless you sign in/.test(await p.locator('#splash .hint').first().textContent()), 'and the intro no longer says everything stays here without qualification');
+ok(await p.locator('#splash-trip').isVisible() && await p.locator('#splash-flight').isVisible(), 'the two choices are still there above it');
+await p.click('#splash-guest'); await p.waitForTimeout(200);
+ok(await splashOpen(p) && await p.getAttribute('#splash-guest', 'aria-pressed') === 'true' && (await stored(p, 'uavzones.v1.dash')).account === 'guest', 'Continue as guest records the choice and does not close or block the splash');
+await p.click('#splash-flight'); await p.waitForTimeout(200);
+ok(await p.locator('#splash-locate').isVisible(), 'a path can still be chosen after it');
+await ctx.close();
+({ ctx, p } = await open());
+await p.click('#splash-profile'); await p.waitForTimeout(400);
+ok(!(await splashOpen(p)) && (await stored(p, 'uavzones.v1.dash')).account === 'profile' && (await stored(p, 'uavzones.v1.dash')).welcomed === true, 'Create a profile records the choice and closes the splash');
+ok(await p.locator('#account-pop:not([hidden]) input[type=email]').isVisible(), 'and opens the account popover with the sign-in form');
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(700);
+ok(!(await splashOpen(p)), 'the splash is not repeated');
+await ctx.close();
+
 ({ ctx, p } = await open());
 await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 ok(!(await splashOpen(p)) && await dashState(p) === 'expanded' && (await stored(p, 'uavzones.v1.dash')).welcomed === true, 'Escape skips it the same way');

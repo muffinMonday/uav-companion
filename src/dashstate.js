@@ -4,6 +4,7 @@
 //   hideUntil    "Do not show for today": the day (YYYY-MM-DD, the visitor's own) up to which it starts as the peek strip
 //   seen         the id of the newest What's new entry the visitor has seen
 //   welcomed     the first-run guide has been shown (a first visit starts open with the guide)
+//   account      the answer on the quick setup's account row: 'guest' (stay without an account) or 'profile' (went to create one); null when not asked
 export const KEY = 'uavzones.v1.dash';
 export const MAX_NEW = 3;           // What's new entries shown at once
 export const BACKUP_DAYS = 30;      // a backup older than this is worth a reminder
@@ -17,6 +18,7 @@ export function sanitize(raw) {
     hideUntil: day(r.hideUntil),
     seen: typeof r.seen === 'string' && r.seen.length <= 40 ? r.seen : null,
     welcomed: r.welcomed === true,
+    account: r.account === 'guest' || r.account === 'profile' ? r.account : null,
   };
 }
 export function load() { try { return sanitize(JSON.parse(localStorage.getItem(KEY) || 'null')); } catch { return sanitize(null); } }

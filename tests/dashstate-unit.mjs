@@ -39,10 +39,11 @@ ok(S.backupDue('2026-09-27T12:00:00Z', 3, now)?.days === 45, 'a backup 45 days o
 ok(S.backupDue('garbage', 3, now)?.never === true, 'an unreadable date counts as never');
 
 // ---------- stored choices
-ok(JSON.stringify(S.sanitize(null)) === JSON.stringify({ showOnStart: true, hideUntil: null, seen: null, welcomed: false }), 'defaults: shown on start, nothing hidden, nothing seen');
+ok(JSON.stringify(S.sanitize(null)) === JSON.stringify({ showOnStart: true, hideUntil: null, seen: null, welcomed: false, account: null }), 'defaults: shown on start, nothing hidden, nothing seen');
 const s = S.sanitize({ showOnStart: false, hideUntil: '2026-11-11', seen: 'x', welcomed: true });
 ok(s.showOnStart === false && s.hideUntil === '2026-11-11' && s.seen === 'x' && s.welcomed === true, 'valid values are kept');
 const bad = S.sanitize({ showOnStart: 'no', hideUntil: 'tomorrow', seen: 5, welcomed: 'yes' });
+ok(S.sanitize({ account: 'guest' }).account === 'guest' && S.sanitize({ account: 'profile' }).account === 'profile' && S.sanitize({ account: 'admin' }).account === null && S.sanitize({ account: 7 }).account === null, 'the account answer keeps only guest or profile');
 ok(bad.showOnStart === true && bad.hideUntil === null && bad.seen === null && bad.welcomed === false, 'damaged values fall back to the defaults');
 
 // ---------- storage readout

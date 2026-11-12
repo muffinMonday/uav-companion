@@ -33,7 +33,7 @@ Audit findings that shaped this list: the Supabase backend, friends, shared trip
 - A guest opening Friends or shared-trip features gets a sign-in prompt.
 
 ## Phase C: onboarding
-### AC-6 Splash account row
+### AC-6 Splash account row (built)
 - Add "Continue as guest" and "Create a profile" below Plan a trip / Plan a flight; neither blocks. Remember the choice in `dashstate.js`. Reword `src/splash.js:105`. Check: extend `tests/splash.mjs`.
 
 ## Phase D: profile (additive migration)

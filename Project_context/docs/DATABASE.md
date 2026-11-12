@@ -36,7 +36,7 @@ All reads are validated; damaged entries fall back to defaults. If storage is bl
 | `uavzones.v1.trips` | `poi.js` | `{ v: 1, trips: [Trip] }`. Trip: `id`, `name` (<= 80), `created`, `color`, optional `country`, `startDate`, `endDate`, `description` (<= 500), notes/checklist, and for shared trips `shared {owner, ownerName}`, `updated`. Max 200 |
 | `uavzones.v1.prefs` | `prefs.js` | Flat object: `basemap`, `country`, `opacity`, `popupOpacity`, `mode` (trip/flight), UI flags (`keyOpen`, `railFolded`, `panelTall`, `dashTall`, `panelCollapsed`, `windowExpanded`, `holdHint`, `markerDetails`, `crosshair`, `showSide`), privacy (`checkIn`, `autoWeather`, `weatherPrecision`, `fetchAltitude`, `lookupNames`), `units`, `maxRangeM`, `currentTrip`, `view {lat, lon, zoom}`. Authoritative list: `prefs.js` |
 | `uavzones.v1.wxcache`, `.elevcache`, `.tripwx` | `markerweather.js`, `elevation.js`, `tripweather.js` | Caches; weather refresh 30 min, outdated after 3 h; orphans pruned at start; never synced |
-| `uavzones.v1.dash` | `dashstate.js` | `{ v: 1, showOnStart, hideUntil, seen, welcomed }` |
+| `uavzones.v1.dash` | `dashstate.js` | `{ v: 1, showOnStart, hideUntil, seen, welcomed, account }` (`account`: `'guest'`, `'profile'` or absent; optional, added with the quick setup's account row, so no version bump) |
 | `uavzones.v1.lastBackup` | `poi.js` | ISO time of last export |
 | `uavzones.v1.sync` | `sync/engine.js` | `{ baseRev, dirty, lastSyncedAt }` for the personal cloud copy |
 | `uavzones.v1.shared` | `sharedtrip/engine.js` | `{ v: 1, bases: { [tripId]: { rev, doc } } }`: last synced version per shared trip (merge base); not exported or shared |

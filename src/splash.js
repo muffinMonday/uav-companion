@@ -5,10 +5,10 @@
 // The link is never fetched: it is only put in the prompt text. The choice is saved as prefs.mode for the flight planner that will open itself.
 import { el } from './cards.js';
 import { buildTripPrompt, buildLinkPrompt, checkUrl, LIMITS } from './aiprompt.js';
-import { save as saveDash } from './dashstate.js';
+import { save as saveDash, load as loadDash } from './dashstate.js';
 import { savePrefs } from './prefs.js';
 
-export function initSplash({ dash, panel, ai, locate, loadPrompt, toast }) {
+export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud = {} }) {
   const dlg = document.createElement('dialog');
   dlg.className = 'splash'; dlg.id = 'splash';
   dlg.setAttribute('aria-labelledby', 'splash-title');
@@ -26,6 +26,22 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast }) {
   const back = (to) => btn('Back', to, 'btn small');
   const heading = (text) => { const h = el('h2', '', text); h.id = 'splash-title'; return h; };
 
+  // The account row appears only when this build has accounts (the cloud code has loaded) and the visitor is not signed in. Neither button blocks the choices above it.
+  let acctBox = null, introEl = null;
+  const accountsOn = () => !!cloud.handle && !cloud.handle.sync.status().session;
+  function paintAccount() {
+    if (!acctBox) return;
+    if (introEl) introEl.textContent = cloud.handle ? 'Everything stays in this browser unless you sign in. You can change your mind at any time.' : 'Everything stays in this browser. You can change your mind at any time.';
+    acctBox.replaceChildren();
+    acctBox.hidden = !accountsOn();
+    if (acctBox.hidden) return;
+    const chosen = loadDash().account === 'guest';
+    const guest = btn('Continue as guest', () => { saveDash({ account: 'guest' }); paintAccount(); }, 'btn small'); guest.id = 'splash-guest'; guest.setAttribute('aria-pressed', String(chosen));
+    const make = btn('Create a profile', () => { saveDash({ account: 'profile' }); finish(); dash.fold(); cloud.handle.open(); }, 'btn small'); make.id = 'splash-profile';
+    const row = el('div', 'btn-row'); row.append(guest, make);
+    acctBox.append(row, el('p', 'hint', chosen ? 'You are a guest: everything stays in this browser. Sign in any time from the account button.' : 'A profile keeps your markers and trips on other devices and lets you add friends. It is optional.'));
+  }
+
   function show(...nodes) { dlg.replaceChildren(...nodes); if (!dlg.open) dlg.showModal(); }
 
   // ---------- the first question ----------
@@ -36,7 +52,8 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast }) {
       card('splash-trip', 'Plan a trip', 'Get a plan from an AI assistant, or turn an itinerary you already have into markers.', tripMenu),
       card('splash-flight', 'Plan a flight', 'Centre the map on where you are and check whether you can fly there.', flightIntro),
     );
-    show(heading('Where do you want to start?'), el('p', 'hint', 'Everything stays in this browser. You can change your mind at any time.'), choices,
+    introEl = el('p', 'hint'); acctBox = el('div', 'splash-account'); acctBox.id = 'splash-account'; paintAccount();
+    show(heading('Where do you want to start?'), introEl, choices, acctBox,
       Object.assign(btn('Skip, just show me the map', skip, 'dash-link'), { id: 'splash-skip' }));
   }
 
@@ -135,5 +152,5 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast }) {
     show(heading('No location yet'), el('p', 'hint', 'The browser did not give a position. You can allow location in its settings and press the locate button on the map, or start from a region:'), row, close);
   }
 
-  return { open: choose };
+  return { open: choose, /** The cloud code loads after the page: show the account row if the first screen is already up. */ refresh() { if (dlg.open) paintAccount(); } };
 }
