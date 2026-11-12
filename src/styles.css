@@ -96,7 +96,13 @@ textarea{resize:vertical;min-height:60px}
 .tab-badge{position:absolute;top:1px;right:1px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;font-size:10.5px;font-weight:800;line-height:16px;text-align:center}
 .tab-badge[hidden]{display:none}
 .dock button .tab-badge{top:2px;right:2px}
-.tabs button[aria-selected=true]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(15,30,45,.2)}
+.tabs button[aria-selected=true]{color:var(--fg)}
+/* the highlight is one element (.tab-pill, moved by panel.js) so it glides between tabs; the buttons draw above it */
+.tabs{position:relative}
+.tab-pill{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:999px;background:var(--surface);box-shadow:0 1px 3px rgba(15,30,45,.2);pointer-events:none}
+.tab-pill.glide{transition:transform .3s cubic-bezier(.4,0,.2,1),width .3s cubic-bezier(.4,0,.2,1)}
+.tabs button{transition:color .2s}
+@media (prefers-reduced-motion:reduce){.tab-pill.glide,.tabs button{transition:none}}
 .sp-body{flex:1;overflow-y:auto;padding:12px;background:var(--surface-2)}
 .sp-body [role=tabpanel][hidden]{display:none}
 .card{background:var(--surface);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,30,45,.08)}

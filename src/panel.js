@@ -16,8 +16,23 @@ export function initPanel() {
   const changed = () => changers.forEach((fn) => fn());
   const mark = () => { document.body.dataset.panel = panel.hidden ? 'closed' : 'open'; };
 
+  // The highlight behind the selected tab is one element (.tab-pill). The tabs themselves change size at once (the chosen one shows its name); the pill is moved
+  // to the new tab's box and slides there by a CSS transition, which is only switched on (class "glide") for a change of tab, never for opening or resizing.
+  const tabBar = panel.querySelector('.tabs');
+  const pill = document.createElement('span'); pill.className = 'tab-pill'; pill.setAttribute('aria-hidden', 'true');
+  tabBar.prepend(pill);
+  function movePill(glide) {
+    const t = tabs.find((x) => x.getAttribute('aria-selected') === 'true');
+    if (!t || !t.offsetWidth) return; // panel closed: nothing to measure yet
+    pill.classList.toggle('glide', glide);
+    pill.style.width = t.offsetWidth + 'px';
+    pill.style.transform = `translateX(${t.offsetLeft}px)`;
+  }
+  new ResizeObserver(() => movePill(false)).observe(tabBar);
+
   function selectTab(name, focus = false) {
     if (!panes.has(name)) return;
+    const was = current;
     current = name;
     for (const t of tabs) {
       const on = t.dataset.tab === name;
@@ -26,6 +41,7 @@ export function initPanel() {
       if (on && focus) t.focus();
     }
     for (const [k, el] of panes) el.hidden = k !== name;
+    movePill(was !== name && !panel.hidden);
     changed();
   }
 
@@ -48,6 +64,7 @@ export function initPanel() {
     if (!open) closePrivacy({ focus: false });
     for (const b of dock.querySelectorAll('#dock-expand, button[data-tab]')) b.setAttribute('aria-expanded', String(open));
     mark();
+    if (open) movePill(false);
     if (open) openers.forEach((fn) => fn());
     changed();
   }
@@ -119,11 +136,12 @@ export function initPanel() {
     t.setAttribute('aria-controls', pane.id); t.setAttribute('aria-selected', 'false'); t.tabIndex = -1;
     t.innerHTML = svg + '<span class="tab-label"></span><span class="tab-badge" hidden></span>'; // icon markup comes from constants in the calling module
     t.querySelector('.tab-label').textContent = label;
-    panel.querySelector('.tabs').append(t);
+    tabBar.append(t);
     tabs.push(t); panes.set(key, pane); pane.hidden = true; pane.setAttribute('role', 'tabpanel'); pane.setAttribute('aria-labelledby', t.id);
     panel.querySelector('.sp-body').append(pane);
     wireTab(t);
-    const d = document.createElement('button');
+    movePill(false);
+    const d =document.createElement('button');
     d.type = 'button'; d.dataset.tab = key; d.setAttribute('aria-controls', 'panel'); d.setAttribute('aria-expanded', String(!panel.hidden)); d.setAttribute('aria-label', label); d.title = label;
     d.innerHTML = svg + '<span></span><span class="tab-badge" hidden></span>';
     d.querySelector('span').textContent = label;
