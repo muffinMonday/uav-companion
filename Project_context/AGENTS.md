@@ -1,7 +1,7 @@
 # AGENTS.md: UAV Companion
 Vite + Leaflet JS app; static hosting plus optional Supabase (accounts, friends, shared trips).
 
-**Start:** read only `CLAUDE.md`, this file, `docs/CURRENT_STATUS.md`; run `git status`, `git log -3`; reconcile the checkpoint with them before editing. Never discard uncommitted work.
+**Start:** read only `CLAUDE.md`, this file, `docs/CURRENT_STATUS.md`, `docs/SMALL_FIXES.md`; run `git status`, `git log -3`; reconcile the checkpoint with them before editing. Never discard uncommitted work.
 
 **Load on demand (`docs/`):** ARCHITECTURE (design, auth, flows), MODULES (code map), DATABASE (storage, Supabase, RLS), DEVELOPMENT (setup, tests, deploy), DECISIONS (why), PROJECT (features; large: grep the section). CHANGELOG: never at start.
 
