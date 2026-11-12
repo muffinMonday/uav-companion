@@ -7,6 +7,7 @@
 //   enabled()         is the gesture switched on right now? (default: yes)
 //   follow            the element that moves with the finger (default: el); or a function returning it, or a list of elements (resolved when used)
 //   css               the CSS property that carries the movement: 'transform' (default) or 'translate' (for an element that already has a transform)
+//   fade              the followed elements also fade with the drag (opacity 1 to 0 over the distance they travel), and fade out on a dismissal
 //   distance          pixels that make a dismissal (default 64); flick: pixels per millisecond that also does (default 0.45, and at least 24 px)
 //   ignore            a selector for places a swipe never starts: form controls, the trip card flip, sideways scrollers
 // A gesture is only taken over once it is clearly along the chosen direction; anything else (a scroll, a swipe the other way, a tap) is left alone.
@@ -25,24 +26,27 @@ export function atTop(target, root) {
   return true;
 }
 
-export function onSwipe(el, { direction, onDismiss, canStart = () => true, enabled = () => true, follow = el, css = 'transform', distance = 64, flick = 0.45, ignore = IGNORE }) {
+export function onSwipe(el, { direction, onDismiss, canStart = () => true, enabled = () => true, follow = el, css = 'transform', fade = false, distance = 64, flick = 0.45, ignore = IGNORE }) {
   const [axis, sign] = AXES[direction];
   const along = (t, g) => sign * ((axis === 'y' ? t.clientY - g.y0 : t.clientX - g.x0));
   const across = (t, g) => Math.abs(axis === 'y' ? t.clientX - g.x0 : t.clientY - g.y0);
   const targets = () => { const f = typeof follow === 'function' ? follow() : follow; return Array.isArray(f) ? f : [f]; };
-  const offset = (px) => { // px is signed along the axis: every target moves together
+  const gone = () => { const first = targets()[0]; return (axis === 'y' ? first.offsetHeight : first.offsetWidth) + 40; }; // how far it has to travel to be off screen
+  const offset = (px, opacity = 1) => { // px is signed along the axis: every target moves together
     for (const t of targets()) {
       if (css === 'translate') t.style.translate = axis === 'y' ? `0 ${px}px` : `${px}px 0`;
       else t.style.transform = axis === 'y' ? `translateY(${px}px)` : `translateX(${px}px)`;
+      if (fade) t.style.opacity = String(opacity);
     }
   };
-  const move = (px) => offset(sign * px);
+  const move = (px) => offset(sign * px, fade ? Math.max(0, 1 - px / Math.max(1, gone())) : 1); // with fade, it gets fainter as it goes
   const setTransition = (v) => { for (const t of targets()) t.style.transition = v; };
+  const ease = (dur, timing) => [css, ...(fade ? ['opacity'] : [])].map((p) => `${p} ${dur} ${timing}`).join(', ');
   let g = null;
 
-  const clear = () => { for (const t of targets()) { t.style.transition = ''; t.style[css] = ''; } };
+  const clear = () => { for (const t of targets()) { t.style.transition = ''; t.style[css] = ''; if (fade) t.style.opacity = ''; } };
   const snapBack = () => {
-    if (g?.taken) { setTransition(`${css} .16s ease-out`); for (const t of targets()) t.style[css] = ''; setTimeout(() => setTransition(''), 200); }
+    if (g?.taken) { setTransition(ease('.16s', 'ease-out')); for (const t of targets()) { t.style[css] = ''; if (fade) t.style.opacity = ''; } setTimeout(() => setTransition(''), 200); }
     g = null;
   };
 
@@ -78,12 +82,12 @@ export function onSwipe(el, { direction, onDismiss, canStart = () => true, enabl
     const dt = Math.max(1, performance.now() - g.t0);
     const a = g.last, fast = a / dt >= flick && a > 24;
     if (a >= distance || fast) {
-      const first = targets()[0];
-      const gone = (axis === 'y' ? first.offsetHeight : first.offsetWidth) + 40;
-      const finish = () => { clear(); g = null; onDismiss(); };
+      // A faded pane is not cleared: its popup is removed with it, and Leaflet keeps the popup's container for a moment while it fades out,
+      // so clearing here would bring the pane back to the middle while it is still on screen.
+      const finish = () => { g = null; if (fade) onDismiss(); else { clear(); onDismiss(); } };
       if (reduced()) { finish(); return; }
-      setTransition(`${css} .14s ease-in`);
-      offset(sign * gone);
+      setTransition(ease('.14s', 'ease-in'));
+      offset(sign * gone(), 0);
       g.state = 'done';
       setTimeout(finish, 150);
     } else snapBack();
@@ -101,7 +105,7 @@ export function onSwipe(el, { direction, onDismiss, canStart = () => true, enabl
  */
 export function onPopupSwipe(root, { close, enabled = () => true, borders }) {
   const pane = () => { const pop = root.closest('.leaflet-popup'); return pop ? [...pop.children] : [root]; };
-  const opts = { enabled, follow: pane, css: 'translate', onDismiss: close };
+  const opts = { enabled, follow: pane, css: 'translate', fade: true, onDismiss: close };
   for (const direction of ['left', 'right']) onSwipe(root, { ...opts, direction });
   for (const direction of ['up', 'down']) onSwipe(root, { ...opts, direction, canStart: (t) => borders(t, root) });
 }

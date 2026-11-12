@@ -12,8 +12,8 @@ const items = [
 ];
 const trips = { v: 1, trips: [{ id: 't1', name: 'Wuhan', color: '#e91e63', description: '', created: '2026-11-01T00:00:00.000Z', startDate: '2026-11-12', endDate: '2026-11-14' }] };
 
-async function open(vp = { width: 390, height: 780 }, mobile = true) {
-  const ctx = await b.newContext({ viewport: vp, hasTouch: true, isMobile: mobile, reducedMotion: 'reduce' });
+async function open(vp = { width: 390, height: 780 }, mobile = true, motion = 'reduce') {
+  const ctx = await b.newContext({ viewport: vp, hasTouch: true, isMobile: mobile, reducedMotion: motion });
   await ctx.addInitScript(([po, tr, seen]) => {
     if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
     localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po }));
@@ -63,6 +63,8 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
   await touch('touchEnd'); await p.waitForTimeout(300);
   ok(await winOpen(p), 'a swipe too short to dismiss leaves the window open');
   ok(Math.abs((await at('.leaflet-popup-content-wrapper')) - bubble0) < 3, 'and the pane snaps back into place');
+  const opacity = () => p.$eval('.leaflet-popup-content-wrapper', (e) => parseFloat(getComputedStyle(e).opacity));
+  ok((await opacity()) > 0.99, 'and it is fully opaque again');
 
   // the body: the name line, under the top bar
   const body = await box(p, '.poi-pop h3');
@@ -108,6 +110,41 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
   await openWindow(p, 'Alpha'); // back in view mode, where the top bar (and its close button) is
   await p.evaluate(() => document.querySelector('.poi-pop .pop-close')?.click()); await p.waitForTimeout(300);
   ok(!(await winOpen(p)), 'the window still closes with its own close button (in the top border)');
+  ok(!errs.length, 'no page errors: ' + errs.join(' | '));
+  await ctx.close();
+}
+
+// ================= the fade on a dismissal. Motion is allowed here: with reduced motion the window is dismissed at once, with nothing to watch.
+{
+  const { ctx, p, touch } = await open(undefined, true, 'no-preference');
+  await openWindow(p, 'Alpha');
+  const hh = await box(p, '.poi-pop h3');
+  const opacity = () => p.$eval('.leaflet-popup-content-wrapper', (e) => parseFloat(getComputedStyle(e).opacity));
+  // it gets fainter as the finger moves; once let go it keeps sliding and fading, and is removed, never jumping back towards the middle
+  await touch('touchStart', hh.cx, hh.cy);
+  for (let i = 1; i <= 10; i++) { await touch('touchMove', hh.cx - 15 * i, hh.cy + 1); await p.waitForTimeout(12); }
+  const opMid = await opacity();
+  ok(opMid < 0.9 && opMid > 0.05, 'mid-swipe, the pane is partly faded (opacity ' + opMid.toFixed(2) + ')');
+  await p.evaluate(() => {
+    window.__run = [];
+    const w = document.querySelector('.leaflet-popup-content-wrapper');
+    const frame = () => {
+      if (!w.isConnected) { window.__run.push('removed'); return; }
+      const r = w.getBoundingClientRect();
+      window.__run.push([r.x, parseFloat(getComputedStyle(w).opacity)]);
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  });
+  await touch('touchEnd'); await p.waitForTimeout(400);
+  const run = await p.evaluate(() => window.__run);
+  const seen = run.filter(Array.isArray);
+  const xOk = seen.every((s, i) => i === 0 || s[0] <= seen[i - 1][0] + 0.5);
+  const opOk = seen.every((s, i) => i === 0 || s[1] <= seen[i - 1][1] + 0.01);
+  ok(seen.length > 0 && xOk, 'after release, the pane carries on in the swipe direction and never jumps back (' + seen.length + ' frames)');
+  ok(seen.length > 0 && opOk, 'and it fades monotonically while it goes');
+  ok(seen.length > 0 && seen[seen.length - 1][1] < 0.3 && run.includes('removed'), 'it is faded out and then removed');
+  ok(!(await winOpen(p)), 'the window is closed after the fade');
   ok(!errs.length, 'no page errors: ' + errs.join(' | '));
   await ctx.close();
 }

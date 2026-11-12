@@ -24,6 +24,7 @@ Side Quests are optional nearby stops attached to a main stop: hidden by default
 - [x] Phase 4: reorder. `reorder.js` (`planSideMove`, `stepSideIndex`, `planMove` `sides` cascade), `reorder-ui.js` (Side Quest slots, fold on lift, `flat` mode, any `[data-drag]` element), `poi-ui.js` (`applySideMove`, `dropRow`, `stepRow`, exported `moveStop`/`stepStop`), `trips-ui.js` (day pages draggable within the day), `styles.css`, `whatsnew.js` entry; tests: `reorder-unit` (48), new browser suite `sidedrag` (30), `sidelist` adjusted
 - [x] Small fixes (`docs/SMALL_FIXES.md`): SF-1 name tag clears the seq badge (`styles.css` `.name-tag`); SF-2 POI cards keep one width, chip inside the card (`poi-ui.js` `.poi-card`, `styles.css`, `tests/sidelist.mjs` width check). Trips-tab day cards not changed.
 - [x] Small fix SF-3 (2026-11-12): swipe to close the marker window and the point-check window (`onPopupSwipe` in `swipe.js`; `poi-ui.js`, `main.js`); not in edit mode; test `tests/popswipe.mjs`. The whole pane moves with the finger (`translate`, `onSwipe` `css` option); committed and deployed with the follow-up.
+- [x] Small fix SF-5 (popup swipe): fades with the drag and dismisses without snapping back (`swipe.js` `fade` option and `finish`; `tests/popswipe.mjs` fade block). Not committed.
 - [x] Docs: F45 in `PROJECT.md`, `MODULES.md`, `DECISIONS.md` (`DATABASE.md` item shape already covered; stored shape unchanged)
 
 ## Findings

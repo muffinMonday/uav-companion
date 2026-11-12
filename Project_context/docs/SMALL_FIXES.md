@@ -26,6 +26,13 @@ Working through the list: plan with the owner first, wait for confirmation, then
 - Check: `tests/popswipe.mjs` (new, in the browser list in `tests/run.mjs`): both windows, both borders, the body not closing downward, the map not moving, edit mode, the window's own close button.
 - Status: done in code; `test:unit` and the browser suites run (see CURRENT_STATUS). Not tested on a real phone.
 
+### SF-5 Popup swipe snaps back to the middle before it closes
+- Symptom: a swipe that dismisses a map popup moved the pane in the swipe direction, then flashed back to the centre before it was dismissed.
+- Cause: `finish()` in `src/swipe.js` cleared the pane's inline transform before the popup closed. Leaflet keeps the popup container for about 200 ms while it fades out, so the pane was visible again at the centre.
+- Change (owner, 2026-11-12): the pane fades with the drag (opacity falls with the distance travelled); on release it keeps moving and fades to 0, then the popup is removed. A faded pane is not cleared, since the popup goes with it. Non-fading callers (dashboard, dock) keep the old order. `onPopupSwipe` passes `fade: true`.
+- Check: `tests/popswipe.mjs` has a block with motion allowed (partly faded mid-drag, position and opacity never go back after release, the window is removed). It fails with the old order. `npm run test:unit` and `npm test` pass.
+- Status: done in code. Not committed. Not tested on a real phone.
+
 ## Done
 
 - SF-1 (name tag over the seq badge), SF-2 (above). Implemented on Haiku 5.5.
