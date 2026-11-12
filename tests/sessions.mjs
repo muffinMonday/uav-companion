@@ -64,6 +64,7 @@ async function open(who, { vp = { width: 1300, height: 850 }, mobile = false } =
   return { ctx, p };
 }
 const goFriends = async (p) => { await p.evaluate(() => { const t = document.getElementById('tab-friends'); if (document.getElementById('panel').hidden) document.querySelector('#dock button[data-tab=friends]').click(); else t.click(); }); await p.waitForTimeout(900); };
+const goProfile = async (p) => { await p.evaluate(() => { const pop = document.getElementById('account-pop'); const b = [document.getElementById('account-btn'), document.getElementById('dock-account')].find((x) => x && x.offsetParent !== null); if (!pop.hidden) b.click(); b.click(); }); await p.waitForTimeout(900); };
 const one = async (uid, sql, params = []) => (await as(db, uid, `select ${sql} as r`, params))[0].r;
 const sql = async (q, params = []) => (await db.query(q, params)).rows;
 const hr = (h) => new Date(Date.now() + h * 3600_000).toISOString();
@@ -147,8 +148,9 @@ await ctx.close();
 ({ ctx, p } = await open('c'));
 await goFriends(p);
 await p.waitForSelector(card + ' .ses-row:has-text("Field day") .ses-attended', { timeout: 5000 });
-ok(await p.locator('#fr-progression .prog-xp b').textContent() === '50' && /Moving|Rookie/.test(await txt(p, '#fr-progression')), 'Cam sees "You were there" and 50 XP in the progression card');
-ok(await p.locator('#fr-progression [data-act=collection]').textContent().then((t) => /Achievements 1\/16/.test(t)), 'and First Meetup unlocked');
+await goProfile(p);
+ok(await p.locator('#account-pop #pane-progression .prog-xp b').textContent() === '50' && /Moving|Rookie/.test(await txt(p, '#account-pop #pane-progression')), 'Cam sees "You were there" and 50 XP in the progression card');
+ok(await p.locator('#account-pop #pane-progression [data-act=collection]').textContent().then((t) => /Achievements 1\/16/.test(t)), 'and First Meetup unlocked');
 await ctx.close();
 
 // ---------- the administrator revokes a mistaken mark
@@ -170,7 +172,7 @@ await ctx.close();
 fault.list = true;
 await goFriends(p);
 await p.waitForSelector(card + '[data-status=error]', { timeout: 6000 });
-ok(/unavailable right now/.test(await txt(p, card)) && await p.locator(card + ' button', { hasText: 'Try again' }).count() === 1 && await p.locator('#fr-progression .prog-card').count() === 1, 'if sessions cannot be loaded the card says so with Try again, and the rest of the tab still works');
+ok(/unavailable right now/.test(await txt(p, card)) && await p.locator(card + ' button', { hasText: 'Try again' }).count() === 1 && await p.locator('#pane-friends #fr-friends').count() === 1, 'if sessions cannot be loaded the card says so with Try again, and the rest of the tab still works');
 fault.list = false;
 await p.click(card + ' button');
 await p.waitForSelector(card + '[data-status=ready]', { timeout: 6000 });

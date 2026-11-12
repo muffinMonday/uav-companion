@@ -5,6 +5,10 @@
 import { createSocial, formatCode } from './social.js';
 import { statusLine } from './sync-ui.js';
 import { avatarEl } from './avatars.js';
+import { profileBits } from './profile-ui.js';
+import { getProgression } from './progression-api.js';
+import { mountProgression } from './progression-ui.js';
+import { createSteamCard, announceSteamReturn } from './steam-ui.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const PERSON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5"/></svg>';
@@ -16,6 +20,11 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   const social = createSocial(handle.adapter.client);
   const session = () => handle.sync.status().session;
   let profile = null, profileFor = null, loading = false, trigger = null;
+  const openState = {}; // which sections the person left open, kept between redraws
+  const progression = getProgression(handle.adapter.client); // the one shared instance (also feeds other people's cards, see friends-ui.js)
+  const steam = createSteamCard({ client: handle.adapter.client, onChange: () => { progression.forget(); if (!pop.hidden) render(); } });
+  const steamSlot = el('div'); steam.mount(steamSlot); // kept between redraws so an open form is not lost
+  announceSteamReturn(toast); // Steam's sign-in sends the person back here with ?steam=...
 
   const name = () => (profile?.display_name || session()?.email || '').trim();
 
@@ -55,10 +64,12 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
       pop.append(link);
       return;
     }
+    // ---- overview: who you are (the email is never shown here)
+    const sec = (key, title, open) => { const d = el('details', 'pane-sec'); d.id = 'pane-' + key; d.open = openState[key] ?? open; d.addEventListener('toggle', () => { openState[key] = d.open; }); d.append(el('summary', '', title)); const body = el('div', 'pane-body'); d.append(body); return { d, body }; };
     const head = el('div', 'account-who');
-    head.append(avatarEl(profile?.avatar, name(), 44));
+    head.append(avatarEl(profile?.avatar, name(), 56));
     const who = el('div'); who.append(el('b', 'account-name', name() || '…'));
-    who.append(el('small', 'account-email', s.session.email));
+    if (profile) who.append(...profileBits(profile));
     head.append(who);
     pop.append(close, head);
     if (profile?.friend_code) {
@@ -73,9 +84,15 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     const n = (cloud.friends?.incoming ?? 0) + (cloud.friends?.invites ?? 0);
     const row = el('div', 'btn-row');
     const btn = (label, fn, cls = '') => { const b = el('button', 'btn small ' + cls, label); b.type = 'button'; b.addEventListener('click', fn); row.append(b); return b; };
-    btn('Edit profile', () => { hide(false); cloud.friends?.editProfile(); });
+    btn('Edit profile', () => { hide(false); cloud.friends?.editProfile(); }).id = 'account-edit';
     btn('Friends' + (n ? ` (${n})` : ''), () => { hide(false); cloud.friends?.open(); });
     pop.append(row);
+    // ---- progression and Steam: yours to see and manage; others only ever see the read-only card
+    const ps = sec('progression', 'Progression', true);
+    const slot = el('div'); ps.body.append(slot); pop.append(ps.d);
+    mountProgression(slot, { load: () => progression.mine(), peek: () => progression.peek('me'), mode: 'self', api: progression, toast });
+    const ss = sec('steam', 'Steam', false);
+    ss.body.append(steamSlot); pop.append(ss.d);
     const out = el('button', 'btn small', 'Sign out'); out.type = 'button';
     out.addEventListener('click', async () => { if (await handle.signOut()) hide(false); });
     const del = el('button', 'btn small danger', 'Delete my account…'); del.type = 'button'; del.id = 'account-delete';
@@ -163,6 +180,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   }
   function show(from) {
     trigger = from && !from.hidden && from.offsetParent !== null ? from : (panel.isOpen() ? headBtn : dockBtn);
+    if (session()) steam.reload();
     render(); pop.hidden = false; place();
     for (const b of [headBtn, dockBtn]) b.setAttribute('aria-expanded', String(b === trigger));
     (pop.querySelector('input, button:not(.account-close)') || pop).focus?.();
@@ -176,12 +194,12 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   }
   for (const b of [headBtn, dockBtn]) b.addEventListener('click', () => (pop.hidden ? show(b) : hide()));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) hide(); });
-  document.addEventListener('pointerdown', (e) => { if (!pop.hidden && !pop.contains(e.target) && !headBtn.contains(e.target) && !dockBtn.contains(e.target)) hide(false); });
+  document.addEventListener('pointerdown', (e) => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest?.('dialog') && !headBtn.contains(e.target) && !dockBtn.contains(e.target)) hide(false); });
   window.addEventListener('resize', () => { if (!pop.hidden) place(); });
   panel.onChange(() => { if (!pop.hidden && trigger && trigger.offsetParent === null) { hide(false); } });
 
   handle.onChange(() => {
-    if (!session()) { profile = null; profileFor = null; }
+    if (!session()) { profile = null; profileFor = null; steam.reset(); }
     paintButtons();
     if (session()) loadProfile();
     if (!pop.hidden) render();

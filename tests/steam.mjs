@@ -90,17 +90,17 @@ async function open(who, { vp = { width: 1300, height: 850 }, mobile = false } =
   await p.locator('#name-dlg-skip').click({ timeout: 2500 }).catch(() => {});
   return { ctx, p };
 }
-const goFriends = async (p) => { await p.evaluate(() => { const t = document.getElementById('tab-friends'); if (document.getElementById('panel').hidden) document.querySelector('#dock button[data-tab=friends]').click(); else t.click(); }); await p.waitForTimeout(900); };
+const goProfile = async (p) => { await p.evaluate(() => { const pop = document.getElementById('account-pop'); const b = [document.getElementById('account-btn'), document.getElementById('dock-account')].find((x) => x && x.offsetParent !== null); if (!pop.hidden) b.click(); b.click(); const s = document.getElementById('pane-steam'); if (s && !s.open) s.open = true; }); await p.waitForTimeout(900); };
 const one = async (uid, sql, params = []) => (await as(db, uid, `select ${sql} as r`, params))[0].r;
 const sql = async (q, params = []) => (await db.query(q, params)).rows;
-const card = '#fr-steam .steam-card';
+const card = '#account-pop #pane-steam .steam-card';
 const txt = async (p, sel) => (await p.textContent(sel).catch(() => '')) ?? '';
 
 for (const [u, n] of [[A, 'Alex'], [B, 'Bea'], [C, 'Cam'], [D, 'Dee']]) await one(u, 'public.ensure_profile($1)', [n]);
 
 // ---------- the feature is off until the owner switches it on
 let { ctx, p } = await open('a');
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-status=ready]', { timeout: 5000 });
 ok(await p.locator(card).getAttribute('data-state') === 'disabled' && /not available yet/.test(await txt(p, card)) && await p.locator(card + ' [data-act=link]').count() === 0, 'before the feature is switched on the card says so and offers no link');
 await ctx.close();
@@ -108,7 +108,7 @@ await db.exec(`update public.progression_settings set value = 1 where key = 'ste
 
 // ---------- not linked: what counts, and the way in
 ({ ctx, p } = await open('a'));
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-state=unlinked]', { timeout: 5000 });
 ok(/10 XP for every completed hour/.test(await txt(p, card)) && /Game details/.test(await txt(p, card)) && /Only playtime after you link counts/.test(await txt(p, card)) && /never shown to anyone/.test(await txt(p, card)), 'the card explains the rate, the public Game details requirement, no retroactive XP and privacy');
 await p.click(card + ' .steam-apps summary');
@@ -121,12 +121,12 @@ await p.waitForURL((u) => /steam=linked/.test(u.toString()), { timeout: 8000 }).
 await p.waitForTimeout(1500);
 await p.waitForSelector('#toast', { state: 'attached', timeout: 3000 }).catch(() => {});
 ok(!/steam=/.test(p.url()), 'back in the app the result is removed from the address');
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-state=linked]', { timeout: 6000 });
 ok(/Steam account linked/.test(await txt(p, card)) && /0 hours credited/.test(await txt(p, card)) && /0 min towards the next hour/.test(await txt(p, card)), 'the card shows the account linked, with nothing credited yet');
 const link = (await sql('select * from public.steam_links where user_id = $1', [A]))[0];
 ok(link && link.steam_id === ID[A] && (await sql('select last_total_minutes as m from public.steam_app_state where user_id = $1', [A]))[0].m === 1000 && (await sql('select count(*)::int as n from public.xp_ledger where user_id = $1', [A]))[0].n === 0, 'a baseline was recorded and no XP was given for the 1,000 minutes played before');
-ok(await p.locator('#fr-progression [data-act=collection]').textContent().then((t) => /Achievements 1\/16/.test(t)), 'First Connection unlocked');
+ok(await p.locator('#account-pop #pane-progression [data-act=collection]').textContent().then((t) => /Achievements 1\/16/.test(t)), 'First Connection unlocked');
 const pageText = await p.evaluate(() => document.body.innerText + document.documentElement.innerHTML + JSON.stringify({ ...localStorage }));
 ok(!pageText.includes('76561198'), 'the Steam id appears nowhere on the page');
 
@@ -135,8 +135,8 @@ fake.totals = { 410340: 1090 };
 await p.click(card + ' [data-act=sync]');
 await p.waitForSelector(card + ' .steam-message', { timeout: 6000 });
 ok(/1 new hour credited/.test(await txt(p, card + ' .steam-message')) && /1 hour credited/.test(await txt(p, card)) && /30 min towards the next hour/.test(await txt(p, card)), 'Sync now credits the completed hour and keeps the 30 minutes: ' + (await txt(p, card + ' .steam-message')));
-await p.waitForSelector('#fr-progression .prog-xp b', { timeout: 4000 });
-ok((await txt(p, '#fr-progression .prog-xp b')) === '10', 'and the progression card shows the 10 XP');
+await p.waitForSelector('#account-pop #pane-progression .prog-xp b', { timeout: 4000 });
+ok((await txt(p, '#account-pop #pane-progression .prog-xp b')) === '10', 'and the progression card shows the 10 XP');
 const syncBtn = p.locator(card + ' [data-act=sync]');
 ok(await syncBtn.isDisabled() && /Sync now \(in (59|60) minutes\)/.test(await syncBtn.textContent()), 'the button then shows the cooldown: ' + (await syncBtn.textContent()));
 ok((await sql('select count(*)::int as n from public.xp_ledger where user_id = $1 and source = \'sim\'', [A]))[0].n === 1, 'one ledger row (hour:1)');
@@ -145,14 +145,14 @@ await ctx.close();
 // ---------- a private profile
 outcome = 'private';
 ({ ctx, p } = await open('c'));
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-state=unlinked]', { timeout: 5000 });
 await p.click(card + ' [data-act=link]');
 await p.waitForTimeout(2500);
 await p.waitForSelector('#toast', { state: 'attached', timeout: 3000 }).catch(() => {});
 const toastText = await p.evaluate(() => document.getElementById('toast')?.textContent ?? '');
 ok(/private/.test(toastText) && /Game details/.test(toastText), 'when Steam shows nothing the person is told to make Game details public: ' + toastText.slice(0, 60));
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-state=unlinked]', { timeout: 5000 });
 ok((await sql('select count(*)::int as n from public.steam_links where user_id = $1', [C]))[0].n === 0, 'and nothing was linked');
 await ctx.close();
@@ -160,7 +160,7 @@ await ctx.close();
 // ---------- a Steam account that belongs to someone else
 outcome = 'linked';
 ({ ctx, p } = await open('b'));
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-state=unlinked]', { timeout: 5000 });
 await p.click(card + ' [data-act=link]');
 await p.waitForTimeout(2500);
@@ -170,11 +170,11 @@ await ctx.close();
 
 // ---------- a Steam outage does not cost the cooldown
 ({ ctx, p } = await open('d'));
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-state=unlinked]', { timeout: 5000 });
 await p.click(card + ' [data-act=link]');
 await p.waitForTimeout(2500);
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-state=linked]', { timeout: 6000 });
 fake.down = true; fake.totals = { 410340: 1120 };
 await p.click(card + ' [data-act=sync]');
@@ -188,7 +188,7 @@ await p.waitForTimeout(300);
 ok(await p.locator(card + ' [data-act=sync]').isDisabled(), 'which starts the cooldown');
 fake.privateProfile = true;
 await db.exec(`update public.steam_links set last_manual_sync_at = null where user_id = '${D}'`);
-await goFriends(p); await p.waitForTimeout(600);
+await goProfile(p); await p.waitForTimeout(600);
 await p.click(card + ' [data-act=sync]');
 await p.waitForSelector(card + ' .steam-message:has-text("private")', { timeout: 6000 });
 ok(await p.locator(card + ' [data-act=sync]').isEnabled() && /Set Game details to Public/.test(await txt(p, card)), 'a private profile found by Sync now is explained, and the cooldown is given back');
@@ -197,21 +197,21 @@ await ctx.close();
 
 // ---------- unlinking keeps what was earned
 ({ ctx, p } = await open('a'));
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-state=linked]', { timeout: 6000 });
 await p.click(card + ' [data-act=unlink]');
 await p.waitForSelector(card + '[data-state=unlinked]', { timeout: 6000 });
 ok((await sql('select hours_awarded as h, steam_id from public.steam_links where user_id = $1', [A]))[0].h === 1 && (await sql('select steam_id from public.steam_links where user_id = $1', [A]))[0].steam_id === null, 'unlinking removes the link and keeps the credited hour');
-await p.waitForSelector('#fr-progression .prog-xp b', { timeout: 4000 });
-ok((await txt(p, '#fr-progression .prog-xp b')) === '10', 'the XP stays');
+await p.waitForSelector('#account-pop #pane-progression .prog-xp b', { timeout: 4000 });
+ok((await txt(p, '#account-pop #pane-progression .prog-xp b')) === '10', 'the XP stays');
 await ctx.close();
 
 // ---------- a phone
 ({ ctx, p } = await open('a', { vp: { width: 360, height: 740 }, mobile: true }));
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-state=unlinked]', { timeout: 5000 });
 await p.click(card + ' .steam-apps summary');
-const fit = await p.evaluate(() => { const c = document.getElementById('fr-steam').getBoundingClientRect(); return { l: c.left, r: c.right, w: innerWidth, sw: document.documentElement.scrollWidth }; });
+const fit = await p.evaluate(() => { const c = document.getElementById('pane-steam').getBoundingClientRect(); return { l: c.left, r: c.right, w: innerWidth, sw: document.documentElement.scrollWidth }; });
 ok(fit.l >= 0 && fit.r <= fit.w + 1 && fit.sw <= fit.w + 1, 'on a 360 px phone the card fits the screen (' + Math.round(fit.l) + ' to ' + Math.round(fit.r) + ' of ' + fit.w + ')');
 await ctx.close();
 

@@ -65,6 +65,7 @@ async function open(who, { vp = { width: 1300, height: 850 }, mobile = false } =
   return { ctx, p };
 }
 const goFriends = async (p) => { await p.evaluate(() => { const t = document.getElementById('tab-friends'); if (document.getElementById('panel').hidden) document.querySelector('#dock button[data-tab=friends]').click(); else t.click(); }); await p.waitForTimeout(900); };
+const goProfile = async (p) => { await p.evaluate(() => { const pop = document.getElementById('account-pop'); const b = [document.getElementById('account-btn'), document.getElementById('dock-account')].find((x) => x && x.offsetParent !== null); if (!pop.hidden) b.click(); b.click(); }); await p.waitForTimeout(900); };
 const one = async (uid, sql, params = []) => (await as(db, uid, `select ${sql} as r`, params))[0].r;
 
 // ---------- the data: A looks at B (Cadet), C (Ace) and D (hides progression); A has 175 XP and two achievements
@@ -79,11 +80,11 @@ await db.query(`select public.award_xp($1, 75, 'admin', 'seed2', 'A welcome bonu
 
 // ---------- your own card
 let { ctx, p } = await open('a');
-await goFriends(p);
-const card = '#fr-progression .prog-card';
+await goProfile(p);
+const card = '#account-pop #pane-progression .prog-card';
 await p.waitForSelector(card + '[data-status=ready]', { timeout: 5000 });
 const txt = async (sel) => (await p.textContent(sel).catch(() => '')) ?? '';
-ok(await p.locator('#fr-progression').count() === 1 && (await txt(card + ' .prog-rank')) === 'Trainee' && (await txt(card + ' .prog-tier')) === 'Tier 2' && (await txt(card + ' .prog-xp b')) === '175', 'your card sits in the Friends tab with your rank, tier and exact XP');
+ok(await p.locator('#account-pop #pane-progression').count() === 1 && await p.locator('#pane-friends #fr-progression, #pane-friends #fr-steam').count() === 0 && (await txt(card + ' .prog-rank')) === 'Trainee' && (await txt(card + ' .prog-tier')) === 'Tier 2' && (await txt(card + ' .prog-xp b')) === '175', 'your card sits in the account pane, not the Friends tab with your rank, tier and exact XP');
 ok(await p.getAttribute(card + ' .prog-bar', 'aria-valuenow') === '50' && /75 XP to Cadet \(250 XP\)/.test(await txt(card + ' .prog-next')), 'with progress to the next rank (50 percent, 75 XP to Cadet)');
 ok(await p.locator(card + ' .rank-badge[data-tier="2"]').count() === 1, 'and the rank badge');
 ok(/Open your achievements to feature/.test(await txt(card)) && /Achievements 2\/16/.test(await txt(card + ' [data-act=collection]')) && await p.locator(card + ' [data-act=history]').count() === 1, 'two achievements unlocked, with the collection and history buttons');
@@ -116,6 +117,7 @@ await p.click('#prog-dialog .btn-row button:last-child'); await p.waitForTimeout
 
 // ---------- other people, in the profile popover
 const popFor = async (name) => {
+  await goFriends(p);
   await p.click(`#pane-friends .fr-row .pv-trigger[aria-label="View profile of ${name}"] >> nth=0`);
   await p.waitForSelector('#profile-pop:not([hidden]) .pv-prog .prog-card', { timeout: 4000 });
   await p.waitForSelector('#profile-pop .prog-card:not([data-status=loading])', { timeout: 4000 });
@@ -158,18 +160,22 @@ await p.click('#profile-pop .prog-card button');
 await p.waitForSelector('#profile-pop .prog-card[data-status=ready]', { timeout: 5000 });
 ok((await txt('#profile-pop .prog-xp b')) === '3,650', 'Try again loads it');
 await p.keyboard.press('Escape');
-ok(await p.locator('#fr-progression .prog-card').count() === 1, 'your own card is still on the tab');
+await goProfile(p);
+ok(await p.locator('#account-pop #pane-progression .prog-card').count() === 1, 'your own card is still in the account pane');
 await ctx.close();
 
 // ---------- a phone
 ({ ctx, p } = await open('a', { vp: { width: 360, height: 740 }, mobile: true }));
-await goFriends(p);
+await goProfile(p);
 await p.waitForSelector(card + '[data-status=ready]', { timeout: 5000 });
+const pf = await p.evaluate(() => { const r = document.getElementById('account-pop').getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth, sw: document.documentElement.scrollWidth }; });
+ok(pf.l >= 0 && pf.r <= pf.w + 1 && pf.sw <= pf.w + 1, 'on a 360 px phone your profile pane fits the screen');
+await goFriends(p);
 await p.evaluate(() => document.querySelector('#pane-friends .fr-row .pv-trigger[aria-label="View profile of Cam"]').click());
 await p.waitForSelector('#profile-pop .prog-card[data-status=ready]', { timeout: 5000 });
 let fit = await p.evaluate(() => { const r = document.getElementById('profile-pop').getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth, sw: document.documentElement.scrollWidth }; });
 ok(fit.l >= 0 && fit.r <= fit.w + 1 && fit.sw <= fit.w + 1, 'on a 360 px phone the profile popover with progression fits the screen (' + Math.round(fit.l) + ' to ' + Math.round(fit.r) + ' of ' + fit.w + ')');
-await p.keyboard.press('Escape');
+await p.keyboard.press('Escape'); await goProfile(p);
 await p.click(card + ' [data-act=collection]');
 await p.waitForSelector('#prog-dialog[open] .ach-tile', { timeout: 3000 });
 fit = await p.evaluate(() => { const r = document.getElementById('prog-dialog').getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth, sw: document.documentElement.scrollWidth }; });

@@ -934,7 +934,7 @@ input[type=email]:focus{border-color:var(--accent)}
 .avatar{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font:700 13px/1 var(--font)}
 .avatar.big{width:44px;height:44px;font-size:20px;flex:none}
 .dock button.account-btn .avatar{position:static;width:28px;height:28px;overflow:visible;clip:auto;white-space:normal}
-.account-pop{position:fixed;z-index:1080;top:56px;right:12px;width:min(320px,calc(100vw - 16px));max-height:calc(100vh - 24px);overflow-y:auto;padding:14px;background:var(--surface);color:var(--fg);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--line)}
+.account-pop{position:fixed;z-index:1080;top:56px;right:12px;width:min(380px,calc(100vw - 16px));max-height:calc(100vh - 24px);overflow-y:auto;padding:14px;background:var(--surface);color:var(--fg);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--line)}
 .account-pop[hidden]{display:none}
 .account-pop h2{margin:0 28px 6px 0;font-size:15px}
 .account-pop .account-close{position:absolute;top:6px;right:6px}
@@ -943,9 +943,12 @@ input[type=email]:focus{border-color:var(--accent)}
 .account-who small{display:block;color:var(--muted);overflow-wrap:anywhere}
 .account-pop .btn-row{margin:8px 0}
 .account-pop .btn.danger{margin-top:2px}
+.pane-sec{margin:8px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
+.pane-sec>summary{cursor:pointer;padding:8px 10px;font-weight:600;font-size:14px}
+.pane-sec .pane-body{padding:0 10px 10px}
 .link-btn{display:block;margin-top:10px;padding:0;border:0;background:none;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer}
 @media (max-width:520px){
-  .account-pop{left:0!important;right:0!important;top:auto!important;bottom:0;width:auto;max-height:70vh;border-radius:18px 18px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .account-pop{left:0!important;right:0!important;top:auto!important;bottom:0;width:auto;max-height:85vh;border-radius:18px 18px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 }
 @media (max-width:520px){
   .sp-head{gap:4px;padding-right:6px}
