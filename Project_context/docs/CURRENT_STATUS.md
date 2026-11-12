@@ -17,6 +17,7 @@ Account and profile milestone: backlog in `docs/ACCOUNT_BACKLOG.md` (phases A to
 ## 2026-11-13 round (owner request: project skills)
 - [x] Project skills in `.claude/skills/`: `change-workflow`, `test-impact` (with `impact.mjs`), `supabase-change`, `region-data`. Rejected `phase-release` (duplicates AGENTS.md approval rules). Committed `e40eaef` and pushed to origin/main.
 - [x] Checked: `impact.mjs --dry` fallbacks (shared file, unmapped file, docs-only); `src/reorder.js` maps to `reorder-unit` (passes); `npm run test:unit` 30 suites all pass in 9 s.
+- [x] Follow-ups: `impact.mjs` verdict line now says "unit suites FAILED" on failure (`73fdd6e`, checked with a forced failure, exit 1); `AGENTS.md` lists the skills (`6ac4203`); `--browser` path run once (all pass; one earlier run reported 2 failed suites whose names I did not capture, not reproduced in the re-run or in full `npm test`, 81 suites).
 - Known limit: browser suites are not mapped; full `npm test` still required before commit when `src/`, `index.html` or `public/ai/` change.
 
 ## Objective
