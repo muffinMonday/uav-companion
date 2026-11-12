@@ -1,39 +1,51 @@
 # Architecture
 
-A static site. No server code, no database, no accounts. Everything the user creates stays in their browser.
+A static front end (GitHub Pages) that works fully without a server, plus an **optional** Supabase backend used only when the build has a project address. No server code of our own: the browser talks to Supabase directly.
 
 ## Components
 | Component | Responsibility |
 |---|---|
-| Build pipeline (`scripts/`, Node, run locally) | Reads official shapefiles/GeoJSON per region, reprojects, cuts vector tiles, writes one content-hashed PMTiles file per region plus manifests and a places index into `public/data/` |
+| Build pipeline (`scripts/`, Node, local) | Region shapefiles/GeoJSON/OneMap themes to one content-hashed PMTiles per region, manifests, places index in `public/data/` |
 | Static data (`public/data/`, generated, not in git) | `index.json`, `<country>/manifest.json`, `<region>.<hash>.pmtiles`, `places/` |
-| Web app (`src/`, `index.html`) | Leaflet map, zone layer from PMTiles, point check, search, weather/elevation, markers, trips, AI import, privacy controls, side panel |
-| Static AI assets (`public/ai/`, `public/llms.txt`) | Prompt, JSON Schema and example any AI assistant can use to produce importable itineraries |
-| Hosting | GitHub Pages from the `gh-pages` branch (built `dist/`), published manually with `npm run deploy`; no CI |
+| Web app (`src/`, `index.html`) | Leaflet map, zones from PMTiles, point check, search, opt-in weather/elevation, markers, trips, AI import, dashboard, privacy; side panel tabs Map Configs, Trips, Points of Interest, and Friends (only in a build with accounts) |
+| Static AI assets (`public/ai/`, `public/llms.txt`) | Prompt, schema, example for any AI assistant |
+| Supabase (`supabase/migrations/`) | Auth (email link), Postgres with RLS, SQL functions as the only write path. See `DATABASE.md` |
+| Hosting | GitHub Pages `gh-pages` branch, manual `npm run deploy`, no CI |
 
-## Data flow
-1. `npm run build:data`: `data/regions/<country>/<region>/{source.json, raw files, boundary.geojson}` to `public/data/`.
-2. App start (`main.js`): read prefs, create map, load `index.json` then each country manifest, add the PMTiles zone layer (`map.js`), restore the saved view/basemap/country.
-3. Point check (`pointcheck.js`): at max zoom, reads the tile under the point; result is inside / outside within the region boundary / no data; wording depends on region `semantics` (`allow` or `restrict`).
-4. Markers and trips: UI (`poi-ui.js`, `trips-ui.js`) call the store in `poi.js`, which validates, persists to `localStorage` and notifies listeners; lists, pins and distance lines re-render on change (also on the `storage` event from other tabs).
-5. Distances (`distance.js`): pure function over the saved items; waypoint to nearest Home point and Hotel in its own trip (date-overlap rule), every non-Home marker to nearest Home.
-6. AI import (`aiimport.js`, `ai-ui.js`): paste text or open `#import=z.<deflate-raw base64url>` link, parse leniently, sanitize strictly, preview, geocode name-only rows (opt-in), add to store flagged `unverified` where the location came from lookup.
+## Front end
+- Local-first: `poi.js` store (markers, trips) persists to `localStorage` and notifies listeners; the UI re-renders from it. Signed-out users never touch the network except basemaps and opted-in services.
+- Pure logic modules (no DOM) are unit-tested in Node; `*-ui.js` modules hold DOM. Module map: `MODULES.md`.
+- Startup (`main.js`): map, panel, POI/trips/AI/dashboard, then data manifests and zones; `initSyncUI` runs last and, only if configured and signed in, starts presence, party (shared trips, live locations) and friends.
 
-## External integrations (all browser-side, all optional except basemaps)
-| Service | Used for | Sent | Gate |
+## Backend integration
+- **Gating:** `sync/supabase.js` `configured()` requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` at build time. `.env.development.local` supplies them to `npm run dev` only; `npm run build`/`deploy` omit them unless set in the shell, so the live site shows no sign-in by default. `@supabase/supabase-js` is a dynamic import, never downloaded when unconfigured.
+- **Auth:** email magic link (`signInWithOtp`, implicit flow, session persisted by supabase-js). The redirect URL must be in Supabase's allow-list (`supabase/config.toml` lists localhost and the Pages address). The browser holds only the project address and publishable key; the service-role key and DB password never enter the repo.
+- **Client to server:** one read, `select` on `user_data` (RLS: own row). Everything else is an RPC to a `security definer` SQL function that reads `auth.uid()` and validates role, size and shape. No table is writable directly; no function returns another user's id.
+
+## Data flows
+| Flow | Modules | Cadence and rule |
+|---|---|---|
+| Cloud copy (markers + trips as one document) | `sync/core.js` rules, `sync/engine.js`, `sync/supabase.js`, `sync-ui.js` | Push about 2.5 s after a change; revision per device (`baseRev`, `dirty`); true conflict asks the user (backup of the losing side offered); 20 versions or 30 days kept. Check-ins excluded unless the user opts in |
+| Friends | `social.js`, `friends-ui.js` | Friend code, no search; tab refreshes every 30 s while shown, badge every 2 min |
+| Shared trips | `sharedtrip/{api,core,engine}.js`, `party-ui.js` | One document per trip with revision; poll every 10 s, save about 2 s after a change; three-way field-level merge in the client (edit beats delete); owner-only delete and membership; Home markers and check-ins refused by the database |
+| Online status | `presence.js` | Heartbeat every 30 s while signed in and visible; online within 75 s; hideable (symmetric) |
+| Live locations | `live.js`, `livemap.js`, `party-ui.js` | Per-trip switch, off on every app start; send at most every 5 s; others polled every 5 s; server keeps latest row only (stale 2 min, deleted after 10 min; ends a day after the trip) |
+| Zones and point check | `map.js`, `zones.js`, `pointcheck.js` | PMTiles range requests; check reads the max-zoom tile |
+| AI import | `aiimport.js`, `ai-ui.js` | Lenient parse, strict sanitize, preview; optional name geocoding |
+
+## External services (browser side)
+| Service | Use | Sent | Gate |
 |---|---|---|---|
-| Basemap tile hosts (OpenStreetMap, OpenStreetMap France for Humanitarian and CyclOSM, OpenTopoMap) | Map imagery | Tile coordinates, IP | Always |
-| Open-Meteo forecast | Weather | Coordinates, rounded to ~1 km unless "precise" | Opt-in |
-| Open-Meteo elevation | Ground elevation | Coordinates to 4 decimals | Opt-in |
-| Photon, then Nominatim | Online place search and name lookup for AI rows | Query text | Search on use; AI lookup opt-in |
-| `gh-pages` host | The app and tiles | n/a | n/a |
+| OpenStreetMap, OSM France (Humanitarian, CyclOSM), OpenTopoMap | Tiles | Tile coordinates, IP | Always |
+| Open-Meteo forecast / elevation | Weather / ground height | Coordinates (about 1 km rounded unless precise; elevation 4 decimals) | Opt-in |
+| Photon, then Nominatim | Place search, AI name lookup | Query text | On use; lookup opt-in |
+| Supabase | Accounts, cloud copy, friends, shared trips | Signed-in user's data as described above | Build config plus sign-in |
+| Google Maps, Amap | Links only (opened by the user) | Coordinates in the URL | User click |
 
-The Home (residence) marker is never sent to any of them automatically and is excluded from share links; it is included in the user's own export file.
-
-## Constraints
-- Static hosting only; tiles are read with HTTP range requests, so the host must support them.
-- Browser storage is per browser and can be blocked or cleared; the store falls back to memory and says so. Export is the only backup.
-- Hubei data: CRS declared WGS84 but unverified (could be GCJ-02); licence unconfirmed (published by the owner's decision).
-- Zone data is a planning aid; official platforms are authoritative.
-- Offline support (service worker) is not built.
-- Tests run in Microsoft Edge via Playwright against `localhost:5173` with the three external APIs mocked.
+## Boundaries and constraints
+- The Home (residence) marker is never sent automatically, never in share links or shared trips; it is in the user's own export and, if they sign in, in the personal cloud copy.
+- Client checks are convenience; the database functions enforce permissions and limits.
+- Hosting must support HTTP range requests; GitHub Pages is limited (about 1 GB per site).
+- `localStorage` can be blocked or cleared (falls back to memory); export or cloud copy is the backup.
+- Not built: offline mode (service worker), realtime push (polling is used), flight sessions/lobby (W6), diagnostics (W7 to W10).
+- Tests run in Edge via Playwright against `localhost:5173`; Open-Meteo, Photon, Nominatim and Supabase HTTP are mocked (Supabase calls run the real SQL on in-memory Postgres, PGlite).

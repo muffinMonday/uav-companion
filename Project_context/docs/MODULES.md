@@ -1,69 +1,69 @@
 # Modules
 
-Paths are from the project root. `main.js` is the entry point (`index.html` loads it). Pure = no DOM, importable from Node tests.
+Navigation index; read the file for exports and details. Paths under `src/` unless stated. **pure** = no DOM, importable from Node tests. Entry: `index.html` loads `main.js` (wires everything in start-up order).
 
-## Application (`src/`)
-| Module | Purpose | Key interface | Depends on |
-|---|---|---|---|
-| `main.js` | Wiring and start-up order: createMap, initPanel, weather, locate, initPOI, initPrivacyUI, initTripsUI, initAI, then data load, zones, country menu | none | everything below |
-| `map.js` | Leaflet map, the four OpenStreetMap-based basemaps, scale control, zone layer | `createMap` (map, switchBase, setScaleUnits), `createZones` | config, prefs |
-| `config.js` | Data base URL (`VITE_DATA_BASE_URL`, default `./data/`) | `dataUrl` | none |
-| `zones.js` | Reads every zone containing a point from a PMTiles archive (pure, testable in Node) | `zonesInArchive` | vector-tile, pbf |
-| `pointcheck.js` | Zone verdict for a point from tiles at max zoom | check function | pmtiles, vector-tile |
-| `search.js` | Offline place index plus online Photon/Nominatim search | search UI | config |
-| `locate.js` | Location pin with a direction arrow; the locate button's three steps (locate, follow and turn, back to normal); the compass button; screen wake lock | `addLocateControl` (`request()`, `northUp()`), `addCompassControl` | `heading.js`, `maprotate.js` (passed in) |
-| `heading.js` | The compass: heading from device orientation (maths and sensor wrapper, iOS permission) | `compassHeading`, `chooseHeading`, `arrowAngle`, `createHeading` | none |
-| `maprotate.js` | Turning the map: pane rotation, point conversion, drag, tile coverage, upright markers and popups, two-finger turn | `createRotation` (`bearing`, `set`, `animateTo`, `enableTouchTurn`) | Leaflet |
-| `weather.js`, `markerweather.js` | Open-Meteo forecast for a point / cached per marker (30 min refresh, incl. rain chance) | `fetchForecast`, `fetchSummaries`, `rainOutlook` | privacy |
-| `elevation.js` | Open-Meteo elevation, per-marker cache | `fetchElevations`, `lookupElevation` | none |
-| `privacy.js`, `privacy-ui.js` | Opt-in switches and coordinate rounding; the privacy sub-panel | settings API | prefs |
-| `prefs.js` | Validated remembered settings | load/save | none |
-| `units.js` | km/mi formatting (pure) | format helpers | none |
-| `panel.js` | Side panel, dock, tabs (generic over `[role=tab]`), phone bottom sheet | `initPanel` (`open`, `closeIfPhone`) | none |
-| `poi.js` (pure) | Marker and trip model: types, sanitize, store, list sorting, GeoJSON export/import | `createStore` (incl. `removeMany`/`restore` for bulk delete and Undo, `setMany` for reorder and Undo), `TYPES`, `sanitize`, `sanitizeTrip`, `tripFields`, `toGeoJSON`, `parseGeoJSON`, `sortForList` | countries |
-| `poi-ui.js` | Marker UI: place/edit/drag, list with trip groups and filter, select-and-delete mode, marker window, import/export | `initPOI` returns store, showTrip, fitTrip, get/setCurrentTrip, setNewTripHandler, tagMarker, handleMapClick, items, addMany, fitToItems | poi, distance, trips, cards, weather, elevation |
-| `distance.js` (pure) | Nearest Home point/Hotel (own trip, date overlap) and nearest Home | `nearestBases`, `needsDistance`, `lineApplies`, `inSameTrip`, `beyondRange`, `BASE_TYPES` | none |
-| `trips.js` (pure) | Trip length, labels, "outside trip dates" check, sort | `tripLength`, `tripSummary`, `outsideTrip`, `sortTrips`, `isPastTrip`, `planDays`, `tripWarnings`, `warningsLine`, `todayISO`, `tripStatus`, `comingTrips`, `countdownLabel`, `dayInfo`, `dayText`, `tripSequence` | poi, countries |
-| `tripweather.js` | Daily forecast per trip (opt-in, cached, 16 days) | `createTripWeather`, `fetchDaily`, `forecastSpots`, `weatherInfo` | weather, privacy |
-| `trips-ui.js` | Trips tab: cards (countdown, warnings, Past trips), detail screen (days, notes, checklist), form, delete, current trip | `initTripsUI` | poi, trips, countries, cards |
-| `countries.js` (pure) | ISO country list, code/name/alias resolution | `COUNTRIES`, `countryCode`, `countryName` | none |
-| `aiimport.js` (pure apart from geocode) | Lenient parse of AI text, sanitize, geocode, share-link encode/decode | `parseItinerary`, `isDuplicate`, `isRevisit`, `geocode`, `encodeShare`, `decodeShare` | poi |
-| `ai-ui.js` | "Plan with an AI" (in the Trips tab): paste/preview/import, trip select, share link | `initAI` | aiimport, poi-ui |
-| `controls.js` | Modern number (− / +) and date (clear button) fields; observer enhances fields created later | `initControls` | none |
-| `holdcheck.js` | Press-and-hold (2 s) point check, right-click and Enter; ring feedback; swallows the click after a hold | `initHoldCheck`, `HOLD_MS` | none |
-| `view.js` | Centre the map on a coordinate (aware of the side panel) and the tallest window that fits above it | `centreOn`, `popupMaxHeight`, `expandedMaxHeight`, `defaultExpanded`, `panelInset` | none |
-| `checkin.js` (pure) | Check-in rules (300 m, 150 m accuracy), the stored record, label, tooltip wording, visited count | `checkinState`, `checkinTitle`, `sanitizeCheckin`, `checkinLabel`, `visitedCount` | distance |
-| `checkin-ui.js` | The opt-in position watcher and the Check in control at the right of a row | `createCheckin`, `checkinCell` | privacy, checkin |
-| `splash.js` | The first-visit quick setup dialog (trip form or link prompt, paste step, flight: use my location) | `initSplash({ dash, panel, ai, locate, loadPrompt, toast })` returns `{ open }` |
-| `aiprompt.js` | Pure prompt builders for the quick setup; `checkUrl` allows only http and https | `buildTripPrompt`, `buildLinkPrompt`, `checkUrl` |
-| `dashboard.js` | The dashboard: What's new, next trip with ‹ ›, backup reminder, region buttons, guide; three states | `initDashboard` (`setRegions`, `open`) | dashstate, whatsnew, trips |
-| `dashstate.js` (pure) | What the dashboard remembers; start rules; unseen What's new; backup reminder rule | `startState`, `unseenEntries`, `backupDue`, `load`, `save` | - |
-| `whatsnew.js` | The What's new entries, newest first (add one to announce a change) | `WHATS_NEW` | - |
-| `places.js` | Markers that share a spot (within 15 m): groups, visit order, labels (pure) | `visitGroups`, `visitLabel`, `metres`, `SAME_PLACE_M` | poi |
-| `reorder.js` | What a move does to date, day, stop and hotel end date: `planMove`, `stepSlot`, `groupsOf`, `addDays`, `nextTripDate` (pure) | as listed | poi, trips |
-| `reorder-ui.js` | Hold 1 s then drag a row; ghost, drop line, auto-scroll, Escape, Alt+arrows | `initReorder` | none |
-| `coords.js` | WGS-84 <-> GCJ-02 conversion and `inChina` (coarse outline) (pure) | `wgs84ToGcj02`, `gcj02ToWgs84`, `inChina` | data/china-outline.js |
-| `maplinks.js` | Google Maps / Amap links for a place, directions-here and routes (limits, parts) (pure) | `appsFor`, `resolveApp`, `placeUrl`, `hereUrl`, `routeUrls`, `chunk`, `MODES` | coords |
-| `maplinks-ui.js` | The buttons: `mapLinksBlock` (marker and check windows), `routeLinks` (Route block); Home asks first | as listed | maplinks |
-| `coordparse.js` | Reads coordinates and pasted map links from text: formats, hemispheres, DMS, longitude-first, China two-reading rows (pure) | `parseCoordinates` | coords |
-| `dates.js` | `addDays`, `daysBetween` on ISO dates (pure) | as listed | none |
-| `cards.js` | Small DOM helper `el()` and card pieces | `el` | none |
-| `styles.css` | All styling, light and dark themes via CSS variables | n/a | n/a |
+## Map and zones
+| File | Responsibility | Depends on |
+|---|---|---|
+| `map.js` | Leaflet map, four OSM-family basemaps, scale, zone layer | `config.js`, `prefs.js` |
+| `config.js` | Data base URL (`VITE_DATA_BASE_URL`) | - |
+| `zones.js` (pure), `pointcheck.js` | Zones at a point from PMTiles; verdict wording by region semantics | pmtiles, vector-tile |
+| `holdcheck.js` | 2 s hold, right-click, Enter to check a spot | - |
+| `crosshair.js` | Centre crosshair and coordinates | `prefs.js` |
+| `view.js` | Centre map aware of the panel; popup heights | - |
+| `locate.js`, `heading.js` (pure maths), `maprotate.js` | Locate button steps, compass, own map rotation (not `leaflet-rotate`: GPL) | Leaflet |
+| `search.js`, `coordparse.js` (pure), `coords.js` (pure, WGS-84/GCJ-02, `inChina`) | Offline and online search, coordinate/map-link parsing | `config.js` |
+| `maplinks.js` (pure), `maplinks-ui.js` | Google Maps / Amap links and routes | `coords.js` |
 
-## Build and data
-| Path | Purpose |
+## Markers and trips (local model)
+| File | Responsibility | Depends on |
+|---|---|---|
+| `poi.js` (pure) | Types, sanitize, store, GeoJSON export/import, limits | `countries.js` |
+| `poi-ui.js` | Marker list, window, edit, select/delete, import/export | `poi`, `distance`, `trips`, `cards` |
+| `trips.js` (pure), `trips-ui.js` | Trip rules (days, warnings, status); Trips tab and plan screen | `poi` |
+| `tripweather.js` | Daily forecast per trip | `weather`, `privacy` |
+| `distance.js` (pure) | Nearest Home point/Hotel, nearest Home | - |
+| `places.js`, `reorder.js` (pure), `reorder-ui.js` | Same-spot visits; reorder by hold and drag | `poi`, `trips` |
+| `checkin.js` (pure), `checkin-ui.js` | Check-in rules (300 m, 150 m accuracy), watcher | `privacy` |
+| `countries.js`, `dates.js`, `units.js` (pure) | Helpers | - |
+
+## AI import and sharing
+| File | Responsibility |
 |---|---|
-| `scripts/build-data.js` | Region data to `public/data/` (entry for `npm run build:data`) |
-| `scripts/make-china-outline.js` | Builds `src/data/china-outline.js` (China outline from Natural Earth) | `node scripts/make-china-outline.js [ne50.json]` |
-| `scripts/verify-data.js` | Compares shapefile cells with tiles (`npm run verify:data`); 0 mismatches for Hubei |
-| `scripts/lib/onemap.js`, `scripts/strip-local.js` | OneMap theme parser; removes local-only regions from `dist` before deploy |
-| `scripts/lib/{crs,readers,tiles,pmtiles-writer}.js` | CRS conversion, shapefile/GeoJSON readers, tile cutting, own PMTiles v3 writer |
-| `data/regions/<country>/country.json`, `<region>/source.json` + `boundary.geojson` | Region definitions committed to git; raw data stays local |
-| `data/places/<country>.txt` | Offline search index source |
+| `aiimport.js` (pure apart from geocode), `ai-ui.js` | Parse, sanitize, preview, add; share links `z.`/`z2.` |
+| `aiprompt.js` (pure), `splash.js` | Quick-setup prompts and first-visit dialog |
+| `sharecompact.js` | Compact `z2.` share-link format |
+| `public/ai/` | Published prompt, schema, example (`trip-unit` checks them against `TYPES`) |
 
-## Other
-| Path | Purpose |
+## Accounts, social, shared trips (need `VITE_SUPABASE_*`)
+| File | Responsibility | Interface |
+|---|---|---|
+| `sync/core.js` (pure) | Cloud-copy rules: `decide`, `buildDoc`, `diffDocs` | - |
+| `sync/engine.js` | Acts on the rules through an adapter; state in `uavzones.v1.sync` | adapter |
+| `sync/supabase.js` | Real adapter; dynamic-imports supabase-js; `configured()` | `client` |
+| `sync-ui.js` | Sign-in card, conflict prompt, versions; returns the handle used below | `initSyncUI` |
+| `social.js` | Friends and profile RPC wrappers | `createSocial` |
+| `friends-ui.js` | Friends tab, invitations, badge | handle |
+| `presence.js` | 30 s heartbeat | `initPresence` |
+| `sharedtrip/api.js`, `core.js` (pure merge), `engine.js` | Shared-trip RPCs, three-way merge, polling | `createTripsApi`, `createSharedTrips` |
+| `party-ui.js` | Party Members, invitations, live-location switch | handle, store |
+| `live.js` (pure rules), `livemap.js` | Sending positions; pins on the map | `createLive`, `createLiveLayer` |
+
+## Shell and settings
+| File | Responsibility |
 |---|---|
-| `public/ai/{prompt.md,schema.json,example.geojson}`, `public/llms.txt` | Published AI assets; `tests/trip-unit.mjs` checks them against `TYPES` |
-| `tests/` | Test suites and runner; see `DEVELOPMENT.md` |
-| `docs/` | Product docs: `PROJECT.md`, `AI.md`, `ATTRIBUTIONS.md`, `regions/` |
+| `panel.js`, `swipe.js` | Side panel, rail, tabs (generic over `[role=tab]`), phone sheet; swipe gestures |
+| `dashboard.js`, `dashstate.js` (pure), `whatsnew.js` | Bottom dashboard and its start rules; What's new entries (add one to announce a change) |
+| `prefs.js`, `privacy.js`, `privacy-ui.js` | Validated settings; opt-in switches and rounding |
+| `weather.js`, `markerweather.js`, `elevation.js` | Open-Meteo forecast, per-marker caches, elevation |
+| `controls.js`, `motion.js`, `cards.js`, `styles.css` | Number/date fields; animation helpers; `el()` DOM helper; all styling |
+
+## Build, data, tests
+| Path | Responsibility |
+|---|---|
+| `scripts/build-data.js` (+ `lib/{crs,readers,tiles,pmtiles-writer,onemap}.js`) | Regions to `public/data/` |
+| `scripts/verify-data.js`, `strip-local.js`, `make-china-outline.js` | Tile check; remove local-only regions before deploy; China outline for `src/data/` |
+| `data/regions/<country>/<region>/{source.json,boundary.geojson}`, `data/places/` | Committed region definitions; raw data local |
+| `supabase/migrations/`, `supabase/README.md` | Database; see `DATABASE.md` |
+| `tests/` (`run.mjs`, `lib*.mjs`) | Suites; see `DEVELOPMENT.md` |
+| `docs/` | `AI.md`, `ATTRIBUTIONS.md`, `regions/` |

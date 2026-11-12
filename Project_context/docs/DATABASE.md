@@ -1,35 +1,58 @@
 # Data storage
 
-There is no database or server-side storage. Data is (1) static files generated at build time and (2) per-user browser `localStorage`. Key names were verified against `src/`.
+Three layers: (1) static files built at build time, (2) per-browser `localStorage`, (3) optional Supabase Postgres for signed-in users. Verified against `src/` and `supabase/migrations/` on 2026-11-12. Migrations are the source of truth for layer 3.
 
-## Browser storage (`localStorage`)
-All reads are validated; damaged entries fall back to defaults. If storage is blocked the app works from memory (`poi.js` probes it first).
+## 1. Supabase (Postgres, `public` schema; `supabase/migrations/`, applied in order)
+**Access model:** RLS on every table. The only policy is `user_data_select_own` (select, `authenticated`, `user_id = auth.uid()`). `anon` and `authenticated` have all table privileges revoked (select on `user_data` granted back). All writes and all other reads are `security definer` functions (`set search_path = ''`) that read `auth.uid()`, reject anonymous callers, and never return another user's id (people are named by friendship, member or trip ids). Execute is revoked from `anon` on every function. No triggers of our own; no cron (cleanup happens inside functions). `20261111121000_harden_api_exposure.sql` revokes API access to the platform's `rls_auto_enable()`.
 
-| Key | Owner | Shape | Notes |
-|---|---|---|---|
-| `uavzones.v1.pois` | `poi.js` | `{ v: 1, items: [Item] }` | Item (a marker may also carry `checkin: { at (ISO time), lat, lon, acc (m, optional) }`, never on the Home marker; exported, not shared): `id`, `type` (home, hotel, takeoff, landing, photo, train, airport, hazard, residence, other), `name` (<= 80), `note` (<= 500), `lat`, `lon`, `created`, optional `day`, `order`, `date`, `endDate` (ISO), `unverified`, `tripId`. `tripId` is dropped for `residence` and when it names no saved trip |
-| `uavzones.v1.trips` | `poi.js` | `{ v: 1, trips: [Trip] }` | Trip: `id`, `name` (<= 80), `created`, `color` (from `TRIP_COLORS`), optional `country` (ISO code), `startDate`, `endDate`, `description` (<= 500). Max 200 trips |
-| `uavzones.v1.prefs` | `prefs.js` | flat object | `basemap`, `country`, `opacity` (0.1 to 0.9), `popupOpacity` (0.5 to 1), `mode` ('trip' or 'flight': the answer to the quick setup), `keyOpen` (true: the dashboard's Map key shows all of itself, not half), `railFolded` (true: the rail of tab icons is folded into one circle), `panelTall` (true: the phone side panel is expanded), `dashTall` (true: the phone dashboard is expanded), `panelCollapsed` (bool: the side panel is collapsed to its rail; an older `panelRolled: true` is read as this), `checkIn` (bool: check-in enabled, privacy setting), `markerDetails` (false: a marker click only selects it), `windowExpanded` (boolean), `holdHint` (boolean), `units`, `maxRangeM` (100 to 200000), `currentTrip`, `autoWeather`, `weatherPrecision`, `fetchAltitude`, `lookupNames`, `view {lat, lon, zoom}` |
-| `uavzones.v1.wxcache` | `markerweather.js` | `{ v: 1, lastBulk, items: { [markerId]: { t, temp, wind, gust, n, start, tz, pp, pr } } }` | Weather cache; 30 min refresh interval, outdated after 3 h. `pp` = hourly rain chance (%), `pr` = expected rain (mm), up to 6 numbers or nulls each; absent in entries saved before the rain block |
-| `uavzones.v1.elevcache` | `elevation.js` | `{ v: 1, items }` | Per-marker ground elevation |
-| `uavzones.v1.dash` | `dashstate.js` | `{ v: 1, showOnStart, hideUntil, seen, welcomed }` | dashboard start choices: start open (default on), snoozed until a day (YYYY-MM-DD), the newest What's new id seen, first-run guide shown. The earlier `uavzones.v1.welcome` key is ignored. |
-| `uavzones.v1.lastBackup` | `poi.js` | ISO timestamp string | Set when the user exports |
-| `uavzones.v1.shared` | `sharedtrip/engine.js` | `{ v: 1, bases: { [tripId]: { rev, doc } } }` | Per shared trip, the revision and document this device last synced (the common version for the three-way merge). A trip in `uavzones.v1.trips` may carry `shared: { owner, ownerName }` (the shared trip has the same id) and `updated`; a marker of a shared trip carries `updated` (ISO time of its last change). None of these are exported or put in share links. |
-| `uavzones.v1.livehide` | `party-ui.js` | `[tripId, ...]` | Shared trips whose party this person chose not to see on the map (Show the party on the map is off). Sharing the person's own location is never stored on the device: it is off every time the app opens. |
-| `uavzones.v1.sharedwho` | `party-ui.js` | email string | Who was signed in when shared trips were last synced on this device; a different person signing in resets the links (the trips and markers stay). |
-| `uavzones.windLimit` | `weather.js` | number as string | Wind limit; older key without `v1`, kept as is |
+| Table | Key and columns | Constraints and notes |
+|---|---|---|
+| `user_data` | PK `user_id` to `auth.users` (cascade); `doc jsonb`, `rev bigint`, `updated_at`, `device` (<= 80), `markers`, `trips` | `rev >= 1`; doc is an object, <= 2 MB. One personal cloud copy per user |
+| `user_data_versions` | PK `(user_id, rev)`; doc, counts, device | No policy (functions only). Kept 30 days, at most 20 |
+| `profiles` | PK `user_id`; `display_name` (1 to 40), `friend_code` unique (10 hex), `accepts_requests`, `last_seen`, `show_online` | Functions only |
+| `friendships` | `id`; `requester`, `addressee` to `auth.users`; `status` pending or accepted; `responded_at` | `requester <> addressee`; unique index on the unordered pair; indexes on both sides |
+| `blocks` | `id`; `blocker`, `blocked`; unique pair | Blocking ends the friendship; the blocked person is not told |
+| `shared_trips` | PK `id` (the client's trip id); `owner`; `doc` (`{v, trip, items}`), `rev`, `members_rev`, `name` (1 to 80), `markers`, `updated_by` | Doc <= 1 MB, <= 500 markers; index on `owner` |
+| `shared_trip_versions` | PK `(trip_id, rev)` | Cascade from trip; 30 days, at most 20 |
+| `trip_members` | `id`; `trip_id`, `user_id`; `role` owner or editor; `status` invited or joined; `invited_by` | Unique `(trip_id, user_id)`; index on `user_id` |
+| `live_locations` | PK `(trip_id, user_id)`; `lat`, `lon`, `accuracy`, `updated_at` | Range checks; latest position only |
 
-Limits: import file 2 MB, 5000 items per import.
+**Functions (callable by `authenticated` only; the helpers `clean_display_name`, `check_trip_doc` and `is_party_member` by nobody)**
+- Cloud copy: `save_user_data(p_doc, p_base_rev, p_device, p_force)` returns `ok` or `conflict` with the server's revision; `list_user_data_versions`, `restore_user_data_version`, `delete_user_data`.
+- Friends: `ensure_profile`, `set_accepts_requests`, `regenerate_friend_code`, `request_friend(code)` (one answer for every failure reason; limits 50 pending, 200 friends), `respond_friend`, `remove_friendship`, `list_friends`, `block_user`, `list_blocked`, `unblock`, `delete_profile`.
+- Shared trips: `share_trip` (owner, at most 20 per owner), `invite_to_trip` (accepted friends only; at most 10 people), `list_invitable_friends`, `respond_trip_invite`, `leave_trip`, `remove_member`, `delete_shared_trip` (owner-only), `list_my_trips`, `list_trip_members`, `get_shared_trip`, `save_shared_trip(p_trip, p_doc, p_base_rev)` (members; conflict on stale revision), `list_shared_trip_versions`, `restore_shared_trip_version`. `check_trip_doc` refuses Home markers, check-ins and over-limit docs.
+- Presence: `touch_presence` (writes `last_seen` at most every 15 s), `set_show_online`; status columns in `list_friends` and `list_trip_members` are null unless the viewer is an accepted friend or joined co-member and both show status.
+- Live: `share_location` (joined members; at most one per 2 s; `ended` a day after the trip's `endDate`; deletes rows older than 10 min), `stop_sharing_location`, `stop_all_sharing`, `list_live_locations` (rows under 2 min old, joined members only). `leave_trip` and `remove_member` delete the person's position.
 
-## Export / import file (GeoJSON, `uavzones: 1`)
-`FeatureCollection` of Points (`[lon, lat]`) with `properties` id, type, name, note, created, optional day, order, date, endDate, unverified, tripId; optional top-level `trips` array (id, name, country, startDate, endDate, description, color). Import merges by id: existing ids are skipped, markers whose trip is not in the file arrive untagged. Home markers are included in export (private file) and excluded from share links.
+**Ownership:** a user owns their `user_data`, `profiles`, `blocks`; a friendship belongs to both sides; a shared trip belongs to its owner and is editable by joined members, deletable only by the owner. Deleting an `auth.users` row cascades.
+**Hosted project:** link in `supabase/.temp/` (git-ignored); the one project doubles as dev. See `supabase/README.md` for tests, pushing and advisor warnings (the "signed-in can execute SECURITY DEFINER" warnings are accepted).
 
-## Static data (generated, `public/data/`, not in git)
-- `index.json`: list of countries. `<country>/manifest.json`: regions with content-hashed PMTiles file names, bounds, semantics, licence info. `places/`: offline search index.
-- Region PMTiles: vector tiles of rectangular grid cells (Hubei: 84,863 cells). Verified identical to the source shapefile by `npm run verify:data`.
-- Sources of truth in git: `data/regions/<country>/country.json`, `<region>/source.json`, `boundary.geojson` (Natural Earth), `data/places/<country>.txt`.
+## 2. Browser storage (`localStorage`)
+All reads are validated; damaged entries fall back to defaults. If storage is blocked the app runs from memory (`poi.js` probes first).
+
+| Key | Owner | Shape and notes |
+|---|---|---|
+| `uavzones.v1.pois` | `poi.js` | `{ v: 1, items: [Item] }`. Item: `id`, `type` (home, hotel, takeoff, landing, photo, train, airport, hazard, residence, other), `name` (<= 80), `note` (<= 500), `lat`, `lon`, `created`; optional `day`, `order`, `date`, `endDate`, `unverified`, `tripId`, `checkin {at, lat, lon, acc}` (never on Home; exported, not shared), `updated` (shared-trip markers). `tripId` dropped for `residence` or an unknown trip. Import ceiling 2,000 items (`MAX_ITEMS`) |
+| `uavzones.v1.trips` | `poi.js` | `{ v: 1, trips: [Trip] }`. Trip: `id`, `name` (<= 80), `created`, `color`, optional `country`, `startDate`, `endDate`, `description` (<= 500), notes/checklist, and for shared trips `shared {owner, ownerName}`, `updated`. Max 200 |
+| `uavzones.v1.prefs` | `prefs.js` | Flat object: `basemap`, `country`, `opacity`, `popupOpacity`, `mode` (trip/flight), UI flags (`keyOpen`, `railFolded`, `panelTall`, `dashTall`, `panelCollapsed`, `windowExpanded`, `holdHint`, `markerDetails`, `crosshair`), privacy (`checkIn`, `autoWeather`, `weatherPrecision`, `fetchAltitude`, `lookupNames`), `units`, `maxRangeM`, `currentTrip`, `view {lat, lon, zoom}`. Authoritative list: `prefs.js` |
+| `uavzones.v1.wxcache`, `.elevcache`, `.tripwx` | `markerweather.js`, `elevation.js`, `tripweather.js` | Caches; weather refresh 30 min, outdated after 3 h; orphans pruned at start; never synced |
+| `uavzones.v1.dash` | `dashstate.js` | `{ v: 1, showOnStart, hideUntil, seen, welcomed }` |
+| `uavzones.v1.lastBackup` | `poi.js` | ISO time of last export |
+| `uavzones.v1.sync` | `sync/engine.js` | `{ baseRev, dirty, lastSyncedAt }` for the personal cloud copy |
+| `uavzones.v1.shared` | `sharedtrip/engine.js` | `{ v: 1, bases: { [tripId]: { rev, doc } } }`: last synced version per shared trip (merge base); not exported or shared |
+| `uavzones.v1.sharedwho` | `party-ui.js` | Email of whoever was signed in at last shared sync; a different person resets the links (trips stay) |
+| `uavzones.v1.livehide` | `party-ui.js` | Trip ids whose party is hidden on the map. Sharing one's own location is never stored |
+| `uavzones.windLimit` | `weather.js` | Older key without `v1`, kept |
+| supabase-js session | supabase-js | Stored by the library under its own `sb-…` key |
+
+Limits: import file 2 MB; 2,000 items.
+
+## 3. Files
+- **Export/import (GeoJSON, `uavzones: 1`):** Points `[lon, lat]` with `properties` (id, type, name, note, created, optional day/order/date/endDate/unverified/tripId/checkin), optional top-level `trips`. Import merges by id; existing ids skipped; markers of unknown trips arrive untagged. Home markers are exported, never put in share links.
+- **Share links:** `#import=z.<deflate-raw base64url>` and compact `z2.` (`sharecompact.js`); no Home, check-ins, notes, checklists.
+- **Static data (`public/data/`, not in git):** `index.json`, `<country>/manifest.json`, hashed PMTiles per region, `places/`. Sources in git: `data/regions/<country>/country.json`, `<region>/source.json` + `boundary.geojson`, `data/places/<country>.txt`. Hubei: 84,863 cells, verified against the shapefile by `npm run verify:data`.
 
 ## Migration notes
-- The `uavzones.` prefix and `uavzones: 1` export flag predate the rename to UAV Companion and are kept so existing users' data still loads.
-- Trips (added with `uavzones.v1.trips` and `tripId`) needed no migration: old files without them load unchanged.
-- If a stored shape changes incompatibly, bump `v`, write a loader that reads the old version, and add a line here.
+- The `uavzones.` prefix and `uavzones: 1` flag predate the rename and stay so old data loads.
+- Stored days are converted to dates at start-up (see `DECISIONS.md`, day from date).
+- A changed stored shape: bump `v`, add a loader for the old one, add a line here. A new SQL change: a new migration file, never edit an applied one; add a `tests/db-*-unit.mjs` check.

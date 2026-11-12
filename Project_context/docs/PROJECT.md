@@ -12,11 +12,11 @@ This is a planning aid. It does not replace the UOM app (China) or any local off
 
 | Item | Status |
 |---|---|
-| Data | Hubei (`data/regions/cn/hubei/`, 84,863 cells, `allow` semantics). Built locally into one PMTiles file per region. |
-| App | Vite + Leaflet in `src/`. Zones, basemaps, search, point check (F4), location pin and re-centre, scale bar, markers, trips (F19), AI import, privacy controls. Browser-tested in Edge on desktop and phone widths. |
+| Data | Hubei (84,863 cells, `allow` semantics) and Singapore no-fly layers (OneMap, `restrict`, several zone classes), both published. One PMTiles file per region built locally. |
+| App | Vite + Leaflet in `src/`: zones, basemaps, search, point check, location and compass, markers, trips, AI import, privacy controls, dashboard, and (optional, needs a configured build) accounts, cloud copy, friends, shared trips, online status and live locations. Browser-tested in Edge at desktop and phone widths. |
 | Hosting | Source in the public GitHub repo `muffinMonday/uav-companion`. Published to the `gh-pages` branch with `npm run deploy` (no CI); GitHub Pages must be enabled in the repo settings (Source: `gh-pages`). |
 
-**Work in progress and queue:** see the Work board in `Project_context/docs/CURRENT_STATUS.md` (what is being built, queued, waiting on a decision or planned, with dates), and section 9 below for the roadmap beyond the current app.
+**Current work and queue:** `CURRENT_STATUS.md`; shipped history: `CHANGELOG.md`; roadmap: section 9.
 
 Earlier layers (the Wuhan screenshot extraction and the province extraction from the provincial map image) are superseded by the official data and should not be used.
 
@@ -88,7 +88,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - The tab lists all markers; clicking one recentres the map on it (zoom 15 or closer, kept clear of the docked panel) and opens its popup. Order: newest first; or, once any marker has a `day`, grouped under "Day N" headings (by stop, then newest; no day last under "No day set"); or, once any marker has a `date`, grouped under date headings (by date, then day, then stop; no date last under "No date set"). Dates take precedence over days. Filter chips narrow by type. Unverified markers carry an "Unverified" badge. Each waypoint also shows its distances (F18).
 - The popup edits the name, type, note, the optional start and end date, and the optional Day and Stop (empty means none; the browser refuses out-of-range values), and deletes (second press to confirm). An unverified marker's window shows a notice with a "Mark as checked" button.
 - **Edit mode** locks the map. Press and hold a pin for about 0.4 s until it lifts, then drag it; release to save. Moving before the hold finishes does nothing, and a quick click still opens the popup. Works with mouse and touch. Pin moving is pointer-only: keyboard users can edit a marker's details but cannot drag it.
-- Storage: `localStorage` in this browser (key `uavzones.v1.pois`), never uploaded. Persistent storage is requested on the first save. If storage is blocked (private window), markers work for the session and the panel says so. Other tabs stay in sync.
+- Storage: `localStorage` in this browser (key `uavzones.v1.pois`), not uploaded unless the user signs in and the cloud copy is on (section 9.1). Persistent storage is requested on the first save. If storage is blocked (private window), markers work for the session and the panel says so. Other tabs stay in sync.
 - Backup: **Export GeoJSON** (FeatureCollection of Points) and **Import** (this app's files or any GeoJSON with Point features; validated, 2 MB limit, ids already present are skipped, text is always shown as text). The panel shows the last backup date, because clearing site data (or Safari's storage clean-up) erases markers.
 - Stored data is browser-and-device specific: moving markers to another device means export, then import.
 
@@ -165,14 +165,6 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 
 **F22. Frosted marker window (built)**
 - Marker windows (and the point-check window) are frosted glass: about 80% opaque with a background blur, tiles inside see-through too, text and buttons opaque. A **Marker window opacity** slider in Map Configs (0.5 to 1, default 0.8; 1 is solid) changes open windows live and is remembered (`popupOpacity` in the settings). Browsers without background blur get a nearly solid window instead.
-
-**F23. Rain chance in the marker window (built)**
-- With automatic weather on, the marker window shows a rain block under the weather tiles: "Rain chance up to 70% around 16:00" and one bar per hour for the next 5 hours (percentage above each bar, hour below). The data is Open-Meteo's hourly precipitation probability, fetched in the same request as the other weather values (no extra coordinates, same opt-in).
-- Not every forecast model gives a chance for every place. Then the block shows expected rain in millimetres ("Rain expected: 1.2 mm", bars in mm) or "No rain forecast", and if the model has neither, "Rain chance unavailable". Entries cached before this feature show no rain block until their next refresh. The Home marker still gets no automatic weather.
-
-**F23. Rain chance in the marker window (built)**
-- With automatic weather on, the marker window shows a rain block under the weather tiles: "Rain chance up to 70% around 16:00" and one bar per hour for the next 5 hours (percentage above each bar, hour below). The data is Open-Meteo's hourly precipitation probability, fetched in the same request as the other weather values (no extra coordinates, same opt-in).
-- Not every forecast model gives a chance for every place. Then the block shows expected rain in millimetres ("Rain expected: 1.2 mm", bars in mm) or "No rain forecast", and if the model has neither, "Rain chance unavailable". Entries cached before this feature show no rain block until their next refresh. The Home marker still gets no automatic weather.
 
 **F23. Rain chance in the marker window (built)**
 - With automatic weather on, the marker window shows a rain block under the weather tiles: "Rain chance up to 70% around 16:00" and one bar per hour for the next 5 hours (percentage above each bar, hour below). The data is Open-Meteo's hourly precipitation probability, fetched in the same request as the other weather values (no extra coordinates, same opt-in).
@@ -322,24 +314,21 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 
 ## 5. Non-functional requirements
 
-- **Static delivery:** the app must run from static files with no server. Hosting on GitHub Pages or a similar static host must work.
+- **Static delivery:** the app must run from static files with no server of our own; GitHub Pages or a similar static host must work. Accounts are optional (Supabase, section 9) and absent from a build without a project address.
 - **Offline behaviour:** the target is that zones and offline search work without internet, with only basemap tiles and online search needing it. Not met yet: it needs a service worker caching the tiles.
 - **Responsive:** usable on a phone and a desktop browser. Checked at 390 px and 1200 px wide in Edge; not on real devices.
 - **Performance:** zones are served as vector tiles (PMTiles, range requests), so only the tiles in view are fetched. Not yet measured on mid-range phones.
 - **Accessibility:** controls are keyboard-operable, have labels, and respect light and dark system themes.
-- **Privacy:** the app sends no user data to any service other than the basemap provider, the geocoder for online search, and Open-Meteo, only when the user presses "Show weather here" (that point) or turns on automatic weather for markers (every marker's location on placement, move and refresh, rounded to about 1 km unless the user chooses precise), or turns on ground elevation (the exact location of a marker or point when its window or popup opens). or turns on name lookup for AI imports (the names or addresses of places that came without coordinates, to Photon and then Nominatim, when Add is pressed). All of these are off by default and controlled in the privacy settings. The wind limit and the saved markers never leave the browser (they are only written to local storage, or to a file when the user exports). If a future module ingests user files (for example flight logs), those files stay in the browser unless the user explicitly uploads them.
+- **Privacy:** without signing in, the app sends no user data to any service other than the basemap provider, the geocoder for online search, and Open-Meteo, only when the user presses "Show weather here" (that point) or turns on automatic weather for markers (every marker's location on placement, move and refresh, rounded to about 1 km unless the user chooses precise), or turns on ground elevation (the exact location of a marker or point when its window or popup opens). or turns on name lookup for AI imports (the names or addresses of places that came without coordinates, to Photon and then Nominatim, when Add is pressed). All of these are off by default and controlled in the privacy settings. The wind limit and the saved markers never leave the browser (they are only written to local storage, or to a file when the user exports). If a future module ingests user files (for example flight logs), those files stay in the browser unless the user explicitly uploads them. Signed-in users additionally send their markers and trips (cloud copy), and what they choose to share (friends, shared trips, live location, online status) to Supabase; check-ins, weather caches and privacy choices are never uploaded, and Home markers are never shared with others.
 - **Licensing and attribution:** respect OpenStreetMap (and OpenStreetMap France's Humanitarian and CyclOSM hosting), OpenTopoMap, Leaflet (BSD-2 Clause), and echarts/china-map-geojson licences where their data is used. Record each in `docs/ATTRIBUTIONS.md` when the project is set up.
 
 ## 6. Architecture
 
-Vite + Leaflet in plain JavaScript, with a Node build script. Full layout and the data model are in `README.md`; how to add a region is in `CONTRIBUTING.md`.
+System design: `ARCHITECTURE.md`; build and deploy: `DEVELOPMENT.md`; adding a region: `CONTRIBUTING.md`. Data-model requirements:
 
 - **One region = one folder** (`data/regions/<country>/<region>/`) with a committed `source.json` and `boundary.geojson`, and local-only raw data. Adding coverage never needs a code change.
 - **Semantics.** Each region is `allow` or `restrict`. This drives the fill colour, the legend and the point-check wording, because China publishes where flying is permitted while most other jurisdictions publish where it is restricted.
 - **Coverage boundary.** A WGS84 polygon per region separates "outside the zones" from "no data here". Without one the dataset's bounding box is used.
-- **Build.** `scripts/build-data.js` reads each region (readers in `scripts/lib/readers.js`: shapefile, GeoJSON), converts to WGS84 (`crs.js`: WGS84, GCJ-02), tiles it (`tiles.js`) and writes a PMTiles file with a content hash in the name (`pmtiles-writer.js`), plus a manifest per country and a root `index.json`. Stale files are pruned. Rebuilding is deterministic.
-- **Data not in `main`.** `public/data/` is generated locally and published only to the `gh-pages` branch with `npm run deploy` (single commit, no history), so large tile files never bloat the repository. No CI: the maintainer builds and deploys.
-- **Configurable data location.** The app reads everything under one base URL (`VITE_DATA_BASE_URL`, default `./data/`), so tiles can later move to object storage (for example Cloudflare R2) without code changes, and contributors can run the app against the published data.
 - **Scale.** One PMTiles per region with per-country manifests works to a few hundred regions. GitHub Pages is limited to about 1 GB, so plan the move to object storage before nationwide coverage.
 
 ## 7. Known issues and limits
@@ -354,7 +343,7 @@ Vite + Leaflet in plain JavaScript, with a Node build script. Full layout and th
 8. The Hubei licence is unconfirmed, and the data is published on that basis.
 9. No offline support yet (see section 5).
 10. (Withdrawn: the earlier prototype was removed from the repo.)
-11. Markers live in one browser on one device. Safari can clear site data after a period without use, so the app asks for persistent storage and prompts for backups, but only an export is a guarantee. On GitHub Pages the storage origin is shared by every site under the same `<user>.github.io`, so keys are prefixed `uavzones.`.
+11. Without an account, markers live in one browser on one device (an account adds a cloud copy). Safari can clear site data after a period without use, so the app asks for persistent storage and prompts for backups, but only an export is a guarantee. On GitHub Pages the storage origin is shared by every site under the same `<user>.github.io`, so keys are prefixed `uavzones.`.
 12. Marker popups keep light colours in the dark theme.
 13. Edit mode and the hold-and-drag were tested with a mouse and with emulated touch events in Edge, not on physical phones.
 14. AI-supplied coordinates are unreliable. The app cannot tell a correct coordinate from a plausible wrong one, so everything from an AI is marked unverified, and name lookups can also match the wrong place (Photon and Nominatim return their best guess). Check each one on the map.
@@ -382,16 +371,16 @@ Open:
 
 ## 9. Roadmap: accounts, social features and flight-controller diagnostics
 
-Status of each item is kept on the Work board in `Project_context/docs/CURRENT_STATUS.md` (IDs W1 to W10); this section holds the requirements. The static, cache-driven app stays complete on its own: everything below is optional and loaded only when used.
+Built items are recorded in `CHANGELOG.md`; planned ones (W6 to W10) are tracked in `CURRENT_STATUS.md` when started. This section holds the requirements. The static, cache-driven app stays complete on its own: everything below is optional and loaded only when used.
 
-### 9.1 Accounts and cloud persistence (W1, in progress)
+### 9.1 Accounts and cloud persistence (W1, built)
 - **Optional.** A visitor who does not sign in uses the app exactly as today; no backend code is loaded and nothing is sent.
 - **One cloud document per user:** markers, trips (notes, checklists, and check-ins only if the user turns that on) and a few settings (not weather caches, not privacy choices, which are per device). Weather and elevation caches are never synced.
 - **Conflicts:** each device remembers the revision it last synced from. If both the device and the cloud copy changed, the app asks which to keep (use the cloud copy, use this device, or back up the other side first, which is the safe default). Nothing is overwritten silently. The cloud keeps earlier versions for 30 days (at most 20) so an overwrite can be undone.
 - **Service:** Supabase (hosted Postgres, sign-in by email, row-level security). Development uses a hosted dev project; access rules are tested on an in-memory Postgres. See `supabase/README.md`.
 - **Security:** the browser holds only the project address and the publishable key; row-level security and functions as the only write path protect the data (tested in `tests/db-unit.mjs`); secrets never enter the repository.
 
-### 9.2 Friends, shared trips and flight sessions (W5 and W15 built 2026-11-11; W16 online status and W17 live locations planned; W6 planned)
+### 9.2 Friends, shared trips and flight sessions (W5, W15, W16, W17 built; W6 flight sessions planned)
 - Profiles with a display name; friends (request, accept, block); invitations. **Built (database):** people find each other only by a **friend code** the owner shares (10 characters, can be regenerated, requests can be switched off); there is no search and no list of people. A code that does not work gives one answer whatever the reason, so codes cannot be probed. Friendships and blocks are named by their own ids and no function returns another person's user id. Limits: 50 requests waiting, 200 friends. **Interface (built):** a fourth side-panel tab, **Friends** (present only in a build that has accounts; before sign-in it points to the privacy settings). It holds your display name, your friend code (with Copy and New code, and a switch for letting people send requests), an Add a friend box, Requests (accept, decline, block; cancel your own), Friends (remove, block), Blocked (unblock) and Delete my profile. A badge on the tab and its rail icon, and a dashboard card, show how many requests are waiting; the tab looks for new ones when it is opened and every two minutes while the page is visible. The tabs in the panel header show an icon each (36 px wide), with the name only on the selected one, which takes all the room left, so each name shows in full: the desktop panel is 380 px wide, and the names also fit on a 360 px phone. A test (`tests/shell.mjs`) checks that no tab name is cut.
 - **Shared trips (W15, built 2026-11-11):** a trip can be shared with friends. The owner presses **Share this trip** in the **Party Members** section of the trip's screen, then invites friends from a picker of friends who are not in the trip yet; an invited friend sees the invitation under **Trip invitations** in the Friends tab (with a badge and a dashboard card) and joins or declines. A party member sees the trip in their Trips, marked "Shared · by <owner>", and can **edit the trip and add, change, reorder and remove its markers**; only the owner can **delete the trip or manage who is in it** (a party member has **Leave trip** instead of Delete). The shared document is the trip and the markers tagged with it, stored on the server with a revision; **Home markers and check-ins are never shared** (the database refuses them). A trip holds at most 10 people (pending invitations count) and 500 markers; an owner shares at most 20 trips.
 - **Online status (W16, built 2026-11-12):** while signed in and the page is visible the app tells the server it is open every 30 s (and at once when the page comes back into view). A friend, or a joined member of the same shared trip, sees a green dot and **Online** when that was within the last 75 s, otherwise **Seen 5 minutes ago**; both appear in the Friends tab and in a trip's Party Members. The Friends tab refreshes every 30 s while it is showing, and a trip's Party Members while it is open. **Show when I am online** (a switch in the Friends tab, on by default) hides it: nothing is recorded or shown, and the person cannot see anyone else's status either, so hiding is never one-way. Someone with only a pending request or an invitation shows nothing; nobody's user id is ever returned.

@@ -1,6 +1,6 @@
 # Planning with an AI
 
-Any AI assistant can turn a travel itinerary into UAV Companion markers. There is no API and no account: the app is static and your markers live in your browser, so the hand-off is a file format that you copy and paste.
+Any AI assistant can turn a travel itinerary into UAV Companion markers. There is no API: the app is static and your markers live in your browser (and, only if you sign in, in your cloud copy), so the hand-off is a file format that you copy and paste.
 
 ## For the person using it
 

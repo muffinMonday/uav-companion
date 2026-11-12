@@ -2,7 +2,7 @@
 
 Open-source, static web map of the suitable-flight (适飞) zones where small drones may fly, for travellers who cannot use the official UOM app. Currently covers Hubei, China. It is built to grow region by region, across China and then to Singapore and beyond.
 
-Requirements and decisions: `docs/PROJECT.md`. Adding a region: `CONTRIBUTING.md`. Attributions: `docs/ATTRIBUTIONS.md`.
+Requirements and decisions: `Project_context/docs/PROJECT.md`. Adding a region: `CONTRIBUTING.md`. Attributions: `docs/ATTRIBUTIONS.md`.
 
 **This is not flight advice.** Check UOM (China) or the local official platform before every flight.
 
@@ -35,7 +35,7 @@ src/                                           map, search, point check, locatio
 
 `public/data/` is rebuilt locally and published only to the `gh-pages` branch, so large tile files never enter the history of `main`. Each region is one PMTiles file; the app loads a region's tiles only when it is in view.
 
-Saved places (the Points of Interest tab) are stored only in the visitor's browser (`localStorage`) and can be exported and imported as GeoJSON. They are not part of the generated data and never touch the server.
+Saved places (the Points of Interest tab) are stored in the visitor's browser (`localStorage`) and can be exported and imported as GeoJSON. They are not part of the generated data. A visitor who signs in (only in a build configured with a Supabase project, see `supabase/README.md`) also gets a cloud copy, friends and shared trips; without signing in nothing is uploaded.
 
 The search box takes place names, coordinates (decimal or degrees-minutes-seconds, also from a pasted Google Maps or Amap link) and shows the zone verdict for the picked spot, with buttons to open it in, or navigate to it with, Amap (in China) or Google Maps (set under Maps in Map Configs).
 

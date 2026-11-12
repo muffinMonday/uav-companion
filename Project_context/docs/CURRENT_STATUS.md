@@ -1,107 +1,36 @@
-# Current status (handover)
+# Session Checkpoint
 
-Last updated: 2026-11-11.
+Updated: 2026-11-12
+Task: none in development. Last session: documentation restructure (docs only, uncommitted).
 
-## Objectives
-Open-source, static map of drone suitable-flight zones (Hubei live data; Singapore and wider China planned) with a traveller's toolkit: point check, search, opt-in weather/elevation, markers, trips, AI-itinerary import. Requirements: `../../docs/PROJECT.md`.
+## Objective
+Next product work is the owner's choice. Candidates, in the order planned: W6 flight sessions and public lobby (needs moderation and privacy policy first), W7 to W10 flight-controller diagnostics (`PROJECT.md` section 9.3), W3 steps b to f (test speed, optional). Shipped work: `CHANGELOG.md`.
 
-## Work board
-The one place to see what is being built, what is queued and what is waiting. Statuses: **In progress** (being built now; the date it started), **Queued** (agreed, not started), **Waiting on owner** (needs a decision before work can start), **Planned** (discussed, later phase), **Parked** (ideas not chosen), **Done** (shipped, with the commit). Details of each item are in "Feature backlog and queue" below. Updated whenever work starts, stops or finishes.
+## Progress
+- [x] Documentation audit and restructure; every doc checked against `src/` and `supabase/migrations/`
+- [x] `npm run test:unit` all passing (2026-11-12, 8 s)
+- [ ] Owner review of the new docs, then commit
+- [ ] Browser suites not rerun this session (no code changed)
 
-| ID | Item | Status | Since | Notes |
-|---|---|---|---|---|
-| W1 | Backend phase 1: accounts and cloud persistence | **Done** | 2026-11-11 | Owner confirmed on the live site: email-link sign-in works across devices and the data persists and transfers. Live on the site (deployed with the project address; a plain `npm run deploy` switches it off). Before real users: a second Supabase project, closed sign-ups, email confirmation on, an outside email sender. |
-| W2 | Check-in discoverability | **Done** (D, `cded9ee`) | 2026-11-11 | Owner chose D only: a What's new entry. A (show the button when off), B (button in the marker window) and C (manual "mark as visited") were offered and not chosen; they can be revisited. |
-| W3 | Faster tests: run them in parallel | **In progress** | 2026-11-11 | Step (a) done: `node tests/run.mjs` now runs 4 suites at once (`--jobs N`, `--jobs 1` for serial): full set 262 s instead of about 960 s, all 48 suites passing, no flakiness seen. Remaining steps (b) to (f) below; they matter less now (the slowest suite, `trip` at 135 s, and the total work divided by 4 are close to the same figure). |
-| W4 | Optimization backlog (storage readout, orphan cache cleanup, import ceiling) | **Done** (`e29cbf4`) | 2026-11-11 | Storage readout on the dashboard (warns at 80%), orphan weather and elevation entries dropped at start-up, import ceiling 2,000. Zone-file hosting item stays a note for when more regions arrive. |
-| W5 | Backend phase 2: profiles and friends | **Done** (the owner tried friend and trip invitations) | 2026-11-11 | Database applied to the dev project; Friends tab, badge and dashboard card built (`src/social.js`, `src/friends-ui.js`); 67 database checks, 24 browser checks (real SQL behind mocked HTTP), 11 live checks. No What's new entry yet (the owner is still testing accounts). Friend codes, not search. |
-| W6 | Backend phase 3: flight sessions, invitations, public lobby | **Planned** | after W5 | Approximate area for public sessions; moderation and privacy policy first. |
-| W7 | Diagnostics 4a: USB connection to a flight controller (MSP), read-only | **Planned** | after W1 or in parallel | Browser only (Web Serial, desktop Chrome and Edge); `PROJECT.md` section 9. |
-| W8 | Diagnostics 4b: blackbox log parsing and analysis | **Planned** | after W7 | Needs sample logs from real flights. |
-| W9 | Diagnostics 4c: tuning writes (rates, PID) with snapshot and revert | **Planned** | after W8 | Explicit confirmation on every write. |
-| W10 | Diagnostics 4d: motor test and pre-flight rules | **Planned** (last) | after W9 | Props-off safeguards and a safety review before it ships. |
-| W11 | Ideas not chosen: duplicate trip, trip colours, whole-trip route button, GPX/KML export, printable summary, move markers between trips, search inside a trip, undo for share-link imports | **Parked** | 2026-11-11 | |
-| W12 | Side panel collapses sideways to an icon rail (replaces roll-up, the X and the dock pill; also on phones) | **Done** (`b353af4`) | 2026-11-11 | > in the panel header collapses it to a rail on the right edge; < and the icons bring it back; remembered on computers. |
-| W13 | Phone dashboard: expand toggle beside close (usual height <-> 90% of the screen) | **Done** (`dd7eb46`) | 2026-11-11 | Header pinned, buttons never covered (tested with a banner showing and on a short screen); resets when collapsed or closed. |
-| W14 | Expand (double-arrow) for the phone side panel, and both expand states remembered | **Done** (`ec1dce5`) | 2026-11-11 | Handle on the sheet's top edge; saved as panelTall and dashTall; an expanded dashboard covers the rail by design, so it is collapsed before the panel is opened. |
-| W15 | Shared trips: invite friends as party members who can edit but not delete the trip | **Done** (`b983275`) | 2026-11-11 | Party Members section in the trip card, invitations in the Friends tab, merge of simultaneous edits, earlier versions (30 days), leaving keeps a private copy. Database applied to the dev project; 75 database, 24 merge, 25 store, 37 engine, 27 browser and 20 live checks. Next: W16 online status, W17 live locations. |
-| W16 | Online status in Friends and in a trip's party members (online now, last seen) | **Done** (`b29d23c`) | 2026-11-12 | Heartbeat every 30 s while signed in and the page is visible; online = seen within 75 s; Friends tab refreshes every 30 s while showing; the switch Show when I am online hides yours and theirs from you. 31 database, 6 browser and 2 live checks. |
-| W17 | Live locations of party members on the map while their page is open | **Done** (`18bca99`) | 2026-11-12 | Switch per trip, off every time the app opens; position at most every 5 s; others see named pins within about 5 s (dimmed after 45 s, gone after 2 min); an indicator with Stop; stops on close, sign-out, leaving, removal, refused permission and a day after the trip ends. 40 database, 29 engine, 24 browser and 5 live checks. |
-| W18 | Swipe to dismiss: phone sheet and dashboard swipe down, computer panel swipes toward the right edge | **Done** (`073813e`) | 2026-11-11 | Touch events in `src/swipe.js`; starts in the header or handle or at the top of the body, never on sliders, selects, the trip flip or a drag in progress; the dashboard goes straight to its tab. 42 checks with real touch events. |
-| W19 | The rail folds upward into a single circle (fold button, swipe up, badge kept) | **Done** (`073813e`) | 2026-11-11 | Remembered as `railFolded`; the circle keeps the summed badge. |
-| W20 | Heading-up compass mode on the locate button (press 2 follows and turns with the phone), two-finger map turning, a direction arrow on the location marker | **Done** (`8b70a8e`) | 2026-11-12 | Rotation written in-house (`src/maprotate.js`) because `leaflet-rotate` is GPL-3.0 and this project is MIT; compass in `src/heading.js`. 29 compass, 17 rotation and 46 locate-mode checks with real touch and orientation events. A real phone compass is for the owner to try outdoors (Android Chrome, iOS Safari). |
-| W21 | Map layers limited to the OpenStreetMap family: OpenStreetMap, Humanitarian, CyclOSM, OpenTopoMap (Esri Streets and Satellite removed) | **Done** (`8b70a8e`) | 2026-11-12 | A saved Esri or satellite choice falls back to OpenStreetMap; 25 checks (each layer from its own host, remembered). There is no satellite view any more. |
-| W22 | More swipes: right closes the phone sheet too; left on the unfolded rail opens the panel; up on the collapsed dashboard (strip or chevron) opens it | **Done** (`e23788d`) | 2026-11-12 | Release A. |
-| W23 | A ? button in the dashboard header for How it works (out of the Fly in card); the Map key at half height with See more / See less | **Done** (`e23788d`) | 2026-11-12 | Release A. |
-| W24 | First-visit splash: Plan a trip (AI prompt form, or itinerary link to prompt, then paste and add) or Plan a flight (use my location); the dashboard folds to its strip afterwards | **Done** (`5f6679f`) | 2026-11-12 | Plan agreed with the owner; saves `mode` for the future flight planner panels. |
+## Findings
+- The app is no longer purely static: optional Supabase accounts, cloud copy, friends, shared trips, online status and live locations exist (`ARCHITECTURE.md`, `DATABASE.md`). The live site has sign-in only when `VITE_SUPABASE_*` are set for the build; a plain `npm run deploy` switches it off.
+- Before real users: a second Supabase project, closed public sign-ups, email confirmation on, an outside email sender (the current project is tagged production but used as dev).
+- Hubei CRS declared WGS84 and unverified (GCJ-02 would shift zones by hundreds of metres); Hubei and Singapore licences unconfirmed, published by owner decision.
+- Not tested on real phones (touch, compass, map apps) or against live AI assistants. No offline support.
+- Typing in Max range then clicking a list row can swallow the click (blur re-render). `tests/trips.mjs` has one weak assertion (Home marker form has no Trip field).
+- Singapore data: `data/regions/sg/` OneMap layers built; OneMap terms unread.
 
-**Done 2026-11-11 and 2026-11-12** (newest first; commit in brackets): first-visit quick setup (`5f6679f`); swipes, ? button and half-height Map key (`e23788d`); no automatic point check or popup on the first locate (`bfe2262`); heading-up compass mode, two-finger turning, the direction arrow and OpenStreetMap-only layers (`8b70a8e`); live locations (`18bca99`); online status (`b29d23c`); swipe to dismiss and the rail circle (`073813e`); shared trips with Party Members (`b983275`); panel expand on phones and remembered expand states (`ec1dce5`); Friends tab; phone dashboard expand toggle (`dd7eb46`); side panel collapses sideways (`b353af4`); What's new entry for check-in (`cded9ee`); storage readout, cache cleanup and the 2,000-marker ceiling (`e29cbf4`); parallel test runner; OpenStreetMap as the default basemap (with the W1 code); backend database and rules (`e4e0206`); crosshair and tight dashboard grid (`5c5e963`); fuller dashboard (`33f91f1`); overnight arrows through the hotel and the second animations (`b3f1025`); snow and compact share links (`6bc09bf`); cross-day arrows and conditions-before-distances (`156a7c3`); eye in the window, scale bar fixed, larger greeting (`f2eee70`); marker details switch and the day's route (`24505ef`); centred dashboard and basic animations (`91c2d30`); check-in (`aea6d31`); route builder on the dashboard (`d692323`); dashboard (`2e1f701`); collapsible search and roll-up panel (`209ae6f`); trip days as a flip card (`95e09e2`); map links as icons (`2be5931`); trip forecast and no-fly check (`da0b00e`); trip plan screen (`ade7810`); map selection (`03e3b7d`); window tidy-up and Singapore published (`f8ffc85`); Singapore zones (`498eff8`). The map legend above the scale bar (asked earlier) is superseded by the dashboard's Map key.
+## Working State
+- Branch: main
+- Last commit: `3371df7` (Work board: W24 done)
+- Uncommitted changes: Yes, Markdown only: new `Project_context/docs/CHANGELOG.md`, rewritten `Project_context/AGENTS.md`, `CLAUDE.md`, `Project_context/docs/*`, `docs/PROJECT.md` moved to `Project_context/docs/PROJECT.md`, link fixes in `README.md`, `docs/AI.md`, `supabase/README.md`
+- Tests/build: `npm run test:unit` pass; last full browser run 2026-11-11 (48 suites, 262 s, before shared trips and live locations); `npm run build` not run
 
-## Recent work
-- Trips feature complete (F19): Trips tab, `tripId` on markers, trip-scoped distances, every non-Home marker shows distance to nearest Home, AI `trip` object, export/import of trips. Details in `DECISIONS.md`.
-- Tests moved into `tests/`; trips unit and browser suites written; stale expectations updated.
-- "Plan with an AI" moved to the Trips tab; new marker types Train station and Airport; bulk delete (F20: select mode, shortcuts, export reminder, 10 s Undo). Tests: new `tests/bulk.mjs`, store checks added to `trips-unit`, `ai`/`trip` suites updated for the moved card.
-- UI pass (F21): fixed my markup error from the AI-card move (weather/backup leaked under every tab; phone panel squeezed); weather/backup back in Points of Interest in a dashed settings block; modern number/date fields and scroll bars (`controls.js`); phone search/dock overlap fixed; phone marker window capped at 45% height; day/stop on pins and list rows. New `tests/ui.mjs`.
-- Weather and elevation card removed from Points of Interest; its status line moved into the privacy sub-panel (`#mw-status`); Backup block renamed. Tests `mw`, `priv`, `ui` updated.
-- Frosted marker window + opacity slider (F22, `popupOpacity` pref); `ui` suite extended.
-- Rain block in the marker window (F23): peak chance + 5-hour strip, mm fallback; new `rain-unit` and `rain` suites. Marker windows are now height-capped on desktop too (a tall window pushed its own pin off screen).
-- Hold-to-check (2 s) + right-click + Enter; blank click only closes windows; markers/checks centre the map and tall windows scroll (F24). New `hold` suite; `smoke`/`priv` use a hold for point checks. Popups use `closeOnClick:false` (Leaflet closes on the release that ends a hold otherwise); `main.js` closes them on a real map click.
-- Welcome screen with trip countdown, "Don't show again", How it works in Map Configs (F25). New `welcome` suite; all suites import `chromium` from `tests/lib.mjs` (welcome off by default).
-- Expanded/collapsed marker window (F26): tall centred window over the pin by default on desktop, collapsed on phones, chevron toggle remembered. New `window` suite. Gotcha: never replace the clicked element's children mid-click inside a popup (Leaflet closes the popup); the chevron uses two always-present SVGs.
-- Same place on several dates (F27): ×N pin badge, visit chips, Add visit, AI import treats a different date as another visit, shared weather/elevation per spot. New `places-unit` and `visits` suites.
-- Reorder saved places by holding 2 s and dragging (F28), with date/day/stop/hotel-end recalculation, Undo and Alt+arrows. New `reorder-unit` and `reorder` suites. Gotcha: a touch drag must not re-render the touched row (the touch loses its target and the browser scrolls); drop-only dates are inserted in place.
-- Open in Google Maps/Amap + routes (F29): buttons in marker and check windows, Route block in Select mode, Amap first inside China, Home asks first. New `maplinks-unit` and `maplinks` suites; `coords.js`, China outline. The apps themselves are untested on a real phone.
-- Search by coordinates (F30): coordinate and map-link parsing, two rows inside China, blue pin + point-check window for every result, Add as marker and Remove pin in check windows. New `coordparse-unit` and `search` suites.
-- The day follows from the date and trips need dates (F31): `dayInfo`, one-time fix of stored days, no Day box, AI days become dates, required trip dates. New `days` suite; `trips-unit` extended.
-- Previous / next stop bar in the marker window (F32): `tripSequence`, sticky bar, tooltips naming the destination. New `stops` suite.
-- Docs updated for trips (`PROJECT.md` F19, `AI.md`, `README.md`); this `Project_context/` set created; root `CLAUDE.md` points to `AGENTS.md`.
-- Initial commit `11aa7ce` pushed to `https://github.com/muffinMonday/uav-companion` (`main`, identity muffinMonday, repo-local git config).
+## Blockers
+None.
 
-## Tests (2026-11-11, dev server on :5173)
-All 16 suites pass: ai-unit 60, trip-unit 81, trips-unit 56, ui 30, bulk 31, poi1 29, poi2 29, edit 10, prefs 20, opacity 18, mw 43, priv 46, ai 73, trip 105, trips 29, smoke (no PASS lines, no errors). Production build (`npm run build`) succeeds; browser suites were not rerun against the preview build.
+## Next Action
+Owner reads the restructured docs and asks for a commit (do not commit unasked). Then pick the next product task and replace this checkpoint.
 
-## In progress
-Nothing.
-
-## Outstanding
-- Deployed with the UI pass (owner asked). `npm run deploy` publishes the app and Hubei tiles; enable GitHub Pages (Source: `gh-pages`) afterwards. Ask the owner first.
-- Run the browser suites against `vite preview` (production build) for the trips work.
-- Typing in Max range then clicking a list row can swallow the click: the field's `change` fires on blur and re-renders the list mid-click (existing behaviour).
-- Weak assertion in `tests/trips.mjs` ("Home marker's form has no Trip field" passes on either of two conditions); tighten it.
-
-## Feature backlog and queue
-Done and published 2026-11-11: window tidy-up, map selection, Singapore no-fly zones (open: OneMap terms unread; coarse 10 m boundary with a 1.5 km margin; temporary restricted areas ignored by choice).
-Agreed, to be done:
-1. **Backend for data persistence** (phase 1 started 2026-11-11: the cloud database is built and pushed, see the progress note below; the app side is next). Staged: level 1 cloud backup (upload and restore of the export; 3 to 5 days), level 2 live sync across devices (local-first, newest edit wins, deletions synced; about 10 to 15 working days, or 2.5 to 3.5 weeks with Django), level 3 groups and shared datasets (1 to 2 more weeks). Options discussed: a managed service (Supabase: hosted Postgres, sign-in and row-level security; browser talks to it directly with the public key) or Django REST on PythonAnywhere (the GitHub Pages site can call it with HTTPS, CORS for https://muffinmonday.github.io and http://localhost:5173, and token sign-in because cookies would be third-party). Security notes: the project address and the public (anon) key are public by design; protection is row-level security on every table with tests (signed-out sees nothing, user A cannot read user B), never commit the service-role key or database password (VITE_ values are in the browser bundle), public sign-up off and invite-only, size limits in the database, no reliance on CORS, token storage hygiene (no third-party scripts, textContent, CSP), redirect allow-list for sign-in links, keep check-in positions on the device unless decided otherwise, free-tier quotas stop rather than bill, secret-scan check, rule tests in the suite. Decisions pending from the owner: who it is for (one person or the FPV group, and whether the Singapore layer is shared), sign-in method, whether check-ins sync, service (managed or Django), level to start with.
-   Progress 2026-11-11: decisions made by the owner (all yes): optional accounts with the static, cache-driven app untouched; a prompt to choose which copy to keep on a true conflict, with a backup of the other side first; Supabase as the service, developed against a hosted dev project (no Docker) plus PGlite for the access-rule tests; email sign-in; approximate area for public sessions later; desktop Chrome and Edge only for diagnostics; motor test last, with props-off safeguards. Done: `supabase/` folder (two migrations: `user_data` with revisions, 20 versions or 30 days of history, row-level security and the four write functions; hardening of the platform's `rls_auto_enable`), 42 checks in `tests/db-unit.mjs` on PGlite, both migrations pushed to the linked project `tgptrtcuaryyyfzhrffm` (tagged production by the platform; used as the dev project), advisor clean apart from the four accepted write-function warnings, live API verified to refuse an anonymous visitor everywhere. Next: the sync logic (pure, tested against a fake server), the sync adapter, the sign-in and conflict-prompt interface (hidden unless a project address is configured), then end-to-end tests against the dev project. Later phases (friends, sessions and lobby, flight-controller diagnostics) as planned in the conversation of 2026-11-11.
-2. **Check-in discoverability** (asked 2026-11-11, awaiting the owner's choices): A show the Check in button even when check-in is off (disabled, tooltip, opens the privacy card); B a Check in button in the marker window's bar; C an optional manual "Mark as visited" without a position; D a What's new entry. Recommended A, B, D.
-3. **Map legend** (superseded 2026-11-11 by the dashboard's Map key, which shows the zone legend and samples of the four line types): a card above the scale bar explaining the line types drawn (thin day chain, bold into/out of the selected stop, bold dashed overnight, dashed links to hotel and Home), shown only for the kinds on the map, foldable to an info button, lifting above the open dashboard only when they overlap.
-4. **More on the dashboard** (done 2026-11-11, `33f91f1` and `5c5e963`): the dashboard looks empty; candidates are a Today card with check-in, a Map key (zone legend and line legend), quick layer controls, a Data card (export, import, share link, last backup), quick actions (place a marker at the centre or here, select markers, check my spot) and the next trip's checklist.
-5. **Faster tests: run them in parallel** (started 2026-11-11; step (a), the parallel runner, done: 262 s for all 48 suites at 4 jobs). Measured 2026-11-11: 45 suites run one after another take about 960 s; the slowest are `trip` 131 s, `mw` 63 s, `ai` 63 s, `priv` 56 s, `hold` 44 s, `ui` 43 s; there are 556 fixed `waitForTimeout` pauses. Plan, in order: (a) a parallel runner (`node tests/run.mjs --jobs N`, a worker pool over the browser suites; unit suites first and quickly; output kept per suite and printed in order; a suite marked `serial` if it ever needs to run alone), aiming for about 4 to 5 minutes for the full set and roughly flat as suites are added; (b) serve a built copy (`vite preview`) for the tests so edits to `src/` do not reload the page under a running suite and the tests see what visitors get; (c) a map from source file to the suites that cover it, so a change is checked by the relevant suites in seconds while the full set stays the gate before every deploy; (d) replace fixed waits with waits on a condition, starting with the slowest suites; (e) split `trip.mjs` (105 checks, 131 s) into several suites; (f) reuse one browser per worker. Risks: timing-sensitive tests may fail under load (expect a short shake-out), and four to six browsers need a few GB of memory. Rules for writing tests that can run this way are in `DEVELOPMENT.md` ("Writing tests that can run in parallel") and apply to every new suite from now on.
-Nothing agreed and waiting. Ideas not chosen: duplicate trip, trip colours, whole-trip route button, GPX/KML export, printable summary, move markers between trips, search inside a trip, undo for share-link imports.
-Trips tab upgrades (day-by-day plan, forecast per day, no-fly check of stops, notes, checklist, Past trips, countdown) built and deployed 2026-11-11.
-
-## Optimization backlog (later, none urgent)
-Measured 2026-11-11: a marker is about 360 bytes (810 at its limits), a weather cache entry about 170, an elevation entry about 70; 100 markers with caches are about 60 KB of the browser's roughly 5 MB. The app bundle is 417 KB (about 130 KB compressed); the Hubei zone file is 6.7 MB, read in small pieces.
-- **Done 2026-11-11:** storage use shown in the dashboard's Your data card ("Using 62 KB of about 5 MB of this browser's storage") with a warning past 80% (`storageUse` in `dashstate.js`, test suite `storage`).
-- **Done 2026-11-11:** at start-up, weather and elevation cache entries whose marker no longer exists are dropped (`prune` in `markerweather.js` and `elevation.js`; trip forecasts already pruned).
-- **Done 2026-11-11:** the ceiling is 2,000 markers (`MAX_ITEMS` in `poi.js`): 5,000 at their maximum size with caches would exceed the quota.
-- When more regions arrive (Singapore, a second Chinese province): keep one zone file per region; revisit moving tiles to object storage if bandwidth grows (GitHub Pages: 1 GB per site, 100 MB per file).
-
-## Known issues and risks
-- Hubei CRS declared WGS84, not verified (GCJ-02 would shift zones by up to a few hundred metres).
-- Hubei licence unconfirmed, yet published by the owner's decision.
-- Distances are straight-line; dates are calendar dates without time zones.
-- No offline support (service worker); not tested on real phones; live AI assistants (Gemini, ChatGPT) not tested against the prompt.
-- Full list: `../../docs/PROJECT.md` section 7.
-
-## Open questions
-- Update cadence and versioning of the official zones; online search provider choice; Singapore source and restricted vs prohibited classes; when to move tiles off GitHub Pages (`PROJECT.md` section 8).
-
-## Relevant files
-`src/poi.js`, `src/distance.js`, `src/trips.js`, `src/trips-ui.js`, `src/poi-ui.js`, `src/aiimport.js`, `src/ai-ui.js`, `index.html`, `public/ai/`, `tests/trips*.mjs`, `tests/trip*.mjs`.
-
-## Next steps
-1. Enable GitHub Pages (Source: `gh-pages`) if not yet on, and redeploy once the owner approves.
-2. Real-device check (touch long-press drag, phone tabs), live AI-assistant test.
-3. Verify the Hubei CRS; confirm the licence; start Singapore data (`data/regions/sg/` has only `country.json`).
+## Relevant Files
+`Project_context/AGENTS.md`, `Project_context/docs/*.md`, `CLAUDE.md`
