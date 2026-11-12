@@ -3,6 +3,13 @@
 Updated: 2026-11-13
 Task: Side Quest feature (sub-markers). All five phases (5, 1, 2, 3, 4) built; phase 4 committed, pushed and deployed with this checkpoint. Standing rule: commit, push and deploy after every phase (memory `commit-deploy-each-phase`).
 
+## 2026-11-14 round (owner request: progression system)
+Plan (approved rev. 2): `C:\Users\cy071\.claude\plans\pasted-content-id-6540-uav-luminous-beaver.md` (outside the repo). Decisions D1 to D8 and the follow-ups are in it; owner approved the Steam allow-list (410340, 1432320, 2398030, 1682970, 641780, 1881200), the rarity table and the Q1 to Q8 defaults on 2026-11-14.
+- [x] Phase 1 built, uncommitted, not pushed: migration `20261114100000_progression_core.sql` (ledger, `user_xp`, ranks and settings as data, roles, `admin_adjust_xp`), suite `tests/db-progression-unit.mjs` (90 checks, registered in `tests/run.mjs`), `supabase/README.md`. `node .claude/skills/test-impact/impact.mjs`: 31 unit suites pass. Browser suites not run (no `src/` change).
+- [ ] Phase 2 achievements + engine + `set_featured`; 3 visibility + read API + shared UI; 4 map rank ring; 5 sessions/RSVP/attendance; 6 Steam; 7 real-world flying deferred.
+- Not done: hosted `db push` (ask owner first); first admin row must be inserted by the owner (see `supabase/README.md`). `DEVELOPMENT.md` suite counts still stale.
+- Note: `delete_profile` leaves XP alone by design (README says so); revisit if the owner wants XP wiped with the profile.
+
 ## 2026-11-13 round (owner request: profile and location UX)
 - [x] Tab pill glides between tabs (`panel.js` single `.tab-pill`, class `glide`; `tests/tabpill.mjs`). Deployed.
 - [x] Edit profile is a dialog (`profile-dialog.js`), not in the Friends tab; includes a preview of how others see the profile. Deployed.
