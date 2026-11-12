@@ -20,7 +20,7 @@ const tools = (p) => p.$$eval('.poi-pop .pop-tools .btn.tool:not(.pop-eye)', (b)
 
 // desktop
 let { ctx, p } = await open({ width: 1200, height: 800 }, false, 'Yellow Crane');
-ok((await tools(p)).join() === 'Edit,Add visit,Delete', 'desktop: Edit, Add visit and Delete are icons in the bar at the top: ' + (await tools(p)).join());
+ok((await tools(p)).join() === 'Edit,Add visit,Make Side Quest,Delete', 'desktop: Edit, Add visit, Make Side Quest and Delete are icons in the bar at the top: ' + (await tools(p)).join());
 ok((await p.locator('.poi-pop .acts').count()) === 0, 'there is no row of action buttons at the bottom any more');
 ok((await p.locator('.poi-pop .coords-row a.maplink').allTextContents()).join() === 'Open in Amap,Navigate in Amap', 'one Open and one Navigate icon, named after the app, on the coordinates line');
 ok(((await p.locator('.poi-pop .coords-row a.maplink').first().getAttribute('title')) || '').includes('shares this location') && (await p.locator('.poi-pop .coords-row a.maplink').first().evaluate((e) => e.getBoundingClientRect().width)) < 40, 'they are small icons, and the tooltip says the location is shared');
@@ -48,7 +48,7 @@ await ctx.close();
 ok((await tools(p)).join() === 'Edit,More', 'phone: Edit and a ⋯ button: ' + (await tools(p)).join());
 ok(!(await p.locator('.poi-pop .pop-menu').isVisible()), 'the menu is closed at first');
 await p.tap('.poi-pop .pop-tools .btn.tool:last-child'); await p.waitForTimeout(250);
-ok(await p.locator('.poi-pop .pop-menu').isVisible() && (await p.locator('.poi-pop .pop-menu .btn.tool').allTextContents()).join() === 'Add visit,Delete', 'tapping ⋯ shows Add visit and Delete with their names');
+ok(await p.locator('.poi-pop .pop-menu').isVisible() && (await p.locator('.poi-pop .pop-menu .btn.tool').allTextContents()).join() === 'Add visit,Make Side Quest,Delete', 'tapping ⋯ shows Add visit, Make Side Quest and Delete with their names');
 await p.tap('.poi-pop .pop-menu .btn.danger'); await p.waitForTimeout(200);
 ok((await p.textContent('.poi-pop .pop-menu .btn.danger')) === 'Confirm delete', 'Delete in the menu also asks to confirm');
 await ctx.close();

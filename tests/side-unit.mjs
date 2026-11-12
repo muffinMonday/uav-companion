@@ -140,3 +140,22 @@ ok(/sideQuest/.test(prompt) && /near/.test(prompt) && /never a side quest/i.test
 const props = schema.$defs.feature.properties.properties.properties;
 ok(props.sideQuest.type === 'boolean' && props.near.type === 'string', 'schema.json lists sideQuest and near');
 ok(example.rows.some((r) => r.isSub && r.near === 'Yellow Crane Tower'), 'example.geojson has a Side Quest that names its main stop');
+
+// ---------- creating and converting (phase 2)
+const dp = trips.defaultParent({ lat: 30.5901, lon: 114.3002, tripId: 't', date: '2026-11-13' }, all);
+ok(dp && dp.id === 'a', 'defaultParent: a new Side Quest at a spot hangs from the nearest main stop of its trip');
+ok(trips.defaultParent({ lat: 30.59, lon: 114.3, tripId: null }, all) === null, 'with no main stop in that trip (or no trip) there is none');
+const sp = trips.sideQuestPatch(b, all);
+ok(sp.isSub === true && sp.parentId === 'a' && sp.order === undefined && !('date' in sp), 'sideQuestPatch: isSub, nearest other main stop, no stop number, date kept');
+const undated = M({ id: 'u', name: 'U', lat: 30.5902, lon: 114.3001 });
+ok(trips.sideQuestPatch(undated, [a, undated]).date === '2026-11-13', 'an undated marker takes its parent\'s date');
+ok(trips.sideQuestPatch(a, [a]).parentId === undefined, 'with nothing to hang from it has no parent');
+const picked = [a, b, c];
+ok(trips.sideQuestPatch(a, picked.filter((x) => x.id === 'a' || x.id === 'c')).parentId === 'c', 'markers selected together are not each other\'s parents (the caller leaves the others out)');
+const mp = trips.mainStopPatch({ ...s1, parentId: 'b' }, all);
+ok(mp.isSub === false && mp.parentId === undefined && mp.order === 3, 'mainStopPatch: back to a main stop, last of its day (after stops 1 and 2)');
+ok(trips.mainStopPatch({ ...s3, date: undefined }, all).order === undefined, 'with no date it gets no stop number');
+const round = poi.sanitize({ ...s1, ...mp });
+ok(!('isSub' in round) && !('parentId' in round) && round.order === 3, 'applying it through sanitize leaves no trace of the Side Quest');
+const asSub = poi.sanitize({ ...b, ...sp });
+ok(asSub.isSub === true && asSub.parentId === 'a' && !('order' in asSub), 'and applying sideQuestPatch gives a clean Side Quest');

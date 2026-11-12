@@ -76,6 +76,7 @@ export const disclaimer = () => el('p', 'disclaimer', 'Planning aid, not flight 
 const PATHS = {
   edit: 'M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4',
   visit: 'M12 5v14M5 12h14',
+  flag: 'M7 21V4M7 5h10l-2 3.5 2 3.5H7',
   trash: 'M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6',
   pin: 'M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10zM12 8v6M9 11h6',
   unpin: 'M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10zM9.5 8.5l5 5M14.5 8.5l-5 5',

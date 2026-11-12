@@ -221,3 +221,21 @@ export function sideQuestMap(items) {
 
 /** The trip's Side Quests, flat (a trip with id `tripId`; null for the markers that are in no trip). */
 export const sideQuests = (items, tripId) => items.filter((i) => isSub(i) && (i.tripId ?? null) === (tripId ?? null));
+
+/** Where a new Side Quest at a spot { lat, lon, tripId?, date? } would hang: the nearest main stop of the trip (see parentOf), or null. */
+export const defaultParent = (spot, items) => parentOf({ ...spot, isSub: true, parentId: undefined }, items);
+
+/**
+ * The changes that turn a main stop into a Side Quest (for store.update): it hangs from the nearest other main stop of its trip, loses its stop number
+ * and, when it had no date, takes its parent's. Markers selected together are not each other's parents: pass `items` without the other selected ones.
+ */
+export function sideQuestPatch(item, items) {
+  const parent = parentOf({ ...item, isSub: true, parentId: undefined }, items.filter((i) => i.id !== item.id));
+  return { isSub: true, parentId: parent?.id, order: undefined, ...(!item.date && parent?.date ? { date: parent.date } : {}) };
+}
+
+/** The changes that turn a Side Quest back into a main stop: it leaves its parent and, if it has a date, becomes the last stop of that day. */
+export function mainStopPatch(item, items) {
+  const same = items.filter((i) => i.id !== item.id && isMain(i) && (i.tripId ?? null) === (item.tripId ?? null) && item.date && i.date === item.date && i.order !== undefined);
+  return { isSub: false, parentId: undefined, order: item.date ? Math.max(0, ...same.map((i) => i.order)) + 1 : undefined };
+}

@@ -1,6 +1,6 @@
 // Points of interest on the map: placing, listing, editing, moving, backup. Data and storage live in poi.js.
 import L from 'leaflet';
-import { KEY, TRIPS_KEY, TYPES, typeOf, pinSvg, createStore, toGeoJSON, parseGeoJSON, sortForList, posInt, isoDate, listMode, groupLabel, dateLabel, isMain, stopNo } from './poi.js';
+import { KEY, TRIPS_KEY, TYPES, typeOf, pinSvg, createStore, toGeoJSON, parseGeoJSON, sortForList, posInt, isoDate, listMode, groupLabel, dateLabel, isMain, isSub, stopNo, NOT_SUB } from './poi.js';
 import { createMarkerWeather, formatWhen, rainOutlook } from './markerweather.js';
 import { createMarkerElevation } from './elevation.js';
 import { getPrivacy, onPrivacyChange } from './privacy.js';
@@ -12,7 +12,7 @@ import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, comp
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { visitGroups, visitLabel } from './places.js';
-import { dayInfo, dayText, tripSequence } from './trips.js';
+import { dayInfo, dayText, tripSequence, defaultParent, sideQuestPatch, mainStopPatch } from './trips.js';
 import { mapLinkIcons } from './maplinks-ui.js';
 import { MODES } from './maplinks.js';
 import { planMove, stepSlot, groupKey, addDays } from './reorder.js';
@@ -264,6 +264,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const n = selected.size;
     selDelete.textContent = `Delete selected (${n})`;
     selDelete.disabled = n === 0;
+    $('sel-side').disabled = $('sel-main').disabled = n === 0;
     if (n === 0) selConfirm.hidden = true;
     $('sel-confirm-delete').textContent = `Delete ${plural(n)}`;
     syncRoute();
@@ -771,11 +772,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       // swap the contents after the click has finished: removing the clicked button mid-click would make Leaflet close the window
       const tVisit = { icon: 'visit', label: 'Add visit', onClick: () => setTimeout(() => addVisit(id), 0) };
       const tDelete = { icon: 'trash', label: 'Delete', danger: true, onClick: () => remove(id) };
+      const canSub = !NOT_SUB.has(it.type); // a Home point, Hotel or Home marker is never a Side Quest
+      const tSide = { icon: 'flag', label: isSub(it) ? 'Make main stop' : 'Make Side Quest', onClick: () => setTimeout(() => { if (convert(id, !isSub(it))) openPopup(id); }, 0) };
       const isHome = it.type === 'residence';
       root.append(toolBar({
-        caption: trip0 ? `${typeOf(it.type).label} · ${trip0}` : typeOf(it.type).label,
-        tools: phone ? [tEye, tEdit] : isHome ? [tEye, tEdit, tDelete] : [tEye, tEdit, tVisit, tDelete],
-        menu: phone ? (isHome ? [tDelete] : [tVisit, tDelete]) : [],
+        caption: [typeOf(it.type).label, isSub(it) && 'Side Quest', trip0].filter(Boolean).join(' · '),
+        tools: phone ? [tEye, tEdit] : isHome ? [tEye, tEdit, tDelete] : [tEye, tEdit, tVisit, ...(canSub ? [tSide] : []), tDelete],
+        menu: phone ? (isHome ? [tDelete] : [tVisit, ...(canSub ? [tSide] : []), tDelete]) : [],
       }));
       const head = el('div', 'pop-head');
       const badge = el('span', 'pop-badge');
@@ -910,6 +913,35 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       };
       const syncTripField = () => { tripLab.hidden = type.value === 'residence'; };
       type.addEventListener('change', syncTripField);
+
+      // Side Quest: an optional stop near a main stop. Not for a Home point, Hotel or Home marker. "Near" picks the main stop it hangs from (the nearest one by default).
+      const subBox = el('input'); subBox.type = 'checkbox'; subBox.checked = isSub(it); subBox.id = 'edit-side';
+      const subLab = el('label', 'check-row'); subLab.setAttribute('for', 'edit-side');
+      subLab.append(subBox, el('span', '', 'Side Quest: an optional stop near a main stop'));
+      const nearPick = el('select');
+      const nearLab = lab('Near', nearPick); nearLab.classList.add('near-lab');
+      const fillNear = () => {
+        const keep = nearPick.value || (isSub(it) ? it.parentId ?? '' : '');
+        nearPick.replaceChildren();
+        const auto = el('option', '', 'The nearest main stop (automatic)'); auto.value = ''; nearPick.append(auto);
+        const tid = tripPick.value || null;
+        const mains = store.items().filter((m) => m.id !== id && isMain(m) && m.type !== 'residence' && (m.tripId ?? null) === tid);
+        for (const m of sortForList(mains, listMode(mains))) {
+          const o = el('option', '', [m.name, m.date && dateLabel(m)].filter(Boolean).join(' · ')); o.value = m.id; nearPick.append(o);
+        }
+        nearPick.value = [...nearPick.options].some((o) => o.value === keep) ? keep : '';
+      };
+      const syncSub = () => {
+        subLab.hidden = NOT_SUB.has(type.value);
+        const on = subBox.checked && !subLab.hidden;
+        nearLab.hidden = !on;
+        trip.hidden = on; // a Side Quest has no stop number of its own
+      };
+      subBox.addEventListener('change', () => { if (!subBox.checked && isSub(it)) order.value = ''; syncSub(); });
+      type.addEventListener('change', syncSub);
+      tripPick.addEventListener('change', fillNear);
+      fillNear();
+      syncSub();
       tripPick.addEventListener('change', () => {
         if (tripPick.value === '__new') { // hand over to the Trips tab, which tags this marker once the trip is saved
           tripPick.value = lastTrip;
@@ -941,11 +973,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const cancel = el('button', 'btn small', 'Cancel'); cancel.type = 'button';
       cancel.addEventListener('click', () => setTimeout(view, 0)); // deferred for the same reason as Edit
       acts.append(save, cancel);
-      form.append(lab('Name', name), lab('Type', type), tripLab, when, dayLine, trip, hint, el('small', 'form-hint', 'Trip, dates and stop are all optional. Use an end date for a stay of several days.'), lab('Note', note), acts);
+      form.append(lab('Name', name), lab('Type', type), subLab, tripLab, nearLab, when, dayLine, trip, hint, el('small', 'form-hint', 'Trip, dates and stop are all optional. Use an end date for a stay of several days.'), lab('Note', note), acts);
       form.addEventListener('submit', (e) => {
         e.preventDefault();
+        const sub = subBox.checked && !NOT_SUB.has(type.value);
         const res = store.update(id, {
-          name: name.value, type: type.value, note: note.value, order: posInt(order.value), date: isoDate(date.value), endDate: isoDate(endDate.value),
+          name: name.value, type: type.value, note: note.value, order: sub ? (isSub(it) ? it.order : undefined) : posInt(order.value), date: isoDate(date.value), endDate: isoDate(endDate.value),
+          isSub: sub, parentId: sub ? (nearPick.value || null) : null,
           tripId: type.value === 'residence' ? null : (tripPick.value || null), // a Home marker is never in a trip
         });
         if (!res.item) { toast('Could not save that change.'); return; }
@@ -991,14 +1025,49 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     openPopup(res.item.id, true); // the form, to give it its date
   }
 
+  // ---------- Side Quests: turning a marker into one, and back ----------
+  /** Turns one marker into a Side Quest (toSub) or back into a main stop. A Home point, Hotel or Home marker cannot be one. The message offers Undo. */
+  function convert(id, toSub) {
+    const it = store.get(id);
+    if (!it || NOT_SUB.has(it.type) || isSub(it) === toSub) return false;
+    const res = store.update(id, toSub ? sideQuestPatch(it, store.items()) : mainStopPatch(it, store.items()));
+    if (!res.item) { toast('Could not change that marker.'); return false; }
+    toast(toSub ? `“${it.name}” is now a Side Quest.` : `“${it.name}” is now a main stop.`, 10000, { label: 'Undo', run: () => { store.setMany([it]); toast('Change undone.', 3000); } });
+    return true;
+  }
+  /** The same for every selected marker at once (Select mode). Selected markers are not each other's parents. */
+  function convertMany(toSub) {
+    const all = store.items(), chosen = new Set(selected);
+    let work = all.slice(), skipped = 0;
+    const changed = [];
+    for (const id of selected) {
+      const it = work.find((x) => x.id === id);
+      if (!it || NOT_SUB.has(it.type)) { skipped++; continue; }
+      if (isSub(it) === toSub) continue;
+      const pool = toSub ? work.filter((i) => i.id === id || isSub(i) || !chosen.has(i.id)) : work;
+      const merged = { ...it, ...(toSub ? sideQuestPatch(it, pool) : mainStopPatch(it, pool)) };
+      work = work.map((x) => (x.id === id ? merged : x));
+      changed.push(merged);
+    }
+    if (!changed.length) { toast(skipped ? 'Home points, Hotels and Home markers cannot be Side Quests.' : 'Nothing to change.'); return; }
+    const res = store.setMany(changed);
+    toast(`${plural(changed.length)} ${changed.length === 1 ? 'is' : 'are'} now ${toSub ? (changed.length === 1 ? 'a Side Quest' : 'Side Quests') : (changed.length === 1 ? 'a main stop' : 'main stops')}.${skipped ? ` ${skipped} skipped (Home points, Hotels and Home markers cannot be Side Quests).` : ''}`, 10000, { label: 'Undo', run: () => { store.setMany(res.previous); toast('Change undone.', 3000); } });
+    renderList();
+  }
+  $('sel-side').addEventListener('click', () => convertMany(true));
+  $('sel-main').addEventListener('click', () => convertMany(false));
+
   // ---------- placing ----------
   function place(latlng) { addAt(latlng, ''); }
   /** Saves a marker at a spot, of the chosen type and in the chosen trip, and opens its form. `name` defaults to the type's name. */
-  function addAt(latlng, name) {
+  function addAt(latlng, name, opts = {}) {
     const ll = latlng.wrap ? latlng.wrap() : L.latLng(latlng.lat, latlng.lng).wrap();
-    const t = typeOf(selectedType);
+    const sub = opts.sub === true; // a Side Quest: never a Home point, Hotel or Home marker, so those chosen types become Other
+    const t = typeOf(sub && NOT_SUB.has(selectedType) ? 'other' : selectedType);
     // new markers go into the chosen "current trip"; a Home marker is never in one
-    const res = store.add({ type: t.id, name: (name || t.label).slice(0, 80), note: '', lat: ll.lat, lon: ll.lng, tripId: t.id === 'residence' ? undefined : currentTripId ?? undefined });
+    const tripId = t.id === 'residence' ? undefined : currentTripId ?? undefined;
+    const parent = sub ? defaultParent({ lat: ll.lat, lon: ll.lng, tripId }, store.items()) : null; // the nearest main stop of that trip
+    const res = store.add({ type: t.id, name: (name || t.label).slice(0, 80), note: '', lat: ll.lat, lon: ll.lng, tripId, ...(sub && { isSub: true, parentId: parent?.id, date: parent?.date }) });
     if (!res.item) { toast('Could not add that marker.'); return; }
     if (!res.ok) toast('Added for now, but the browser would not store it. Export your markers to keep them.');
     ensureVisible();

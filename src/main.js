@@ -123,7 +123,8 @@ function decorate(content, latlng, label, onResize, extras = {}) {
     content.append(a);
   }
   // save the spot as a marker (a searched spot also has a pin that can be removed): icons in the bar at the top
-  const tools = [{ icon: 'pin', label: 'Add as marker', onClick: () => setTimeout(() => { map.closePopup(); extras.onAdded?.(); poi.addAt(latlng, label); }, 0) }];
+  const tools = [{ icon: 'pin', label: 'Add as marker', onClick: () => setTimeout(() => { map.closePopup(); extras.onAdded?.(); poi.addAt(latlng, label); }, 0) },
+    { icon: 'flag', label: 'Add as Side Quest', onClick: () => setTimeout(() => { map.closePopup(); extras.onAdded?.(); poi.addAt(latlng, label, { sub: true }); }, 0) }];
   if (extras.onRemovePin) tools.push({ icon: 'unpin', label: 'Remove pin', onClick: () => setTimeout(() => { map.closePopup(); extras.onRemovePin(); }, 0) });
   content.prepend(toolBar({ caption: 'Point check', tools }));
   return content;

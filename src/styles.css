@@ -50,6 +50,8 @@ textarea{resize:vertical;min-height:60px}
 .select-row select{flex:1;min-width:0}
 .select-row .btn{flex:none}
 .field small,.switch small{color:var(--muted);font-weight:400}
+.check-row{display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer}
+.check-row input{margin-top:2px;flex:none}
 .switch{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 0;cursor:pointer}
 .switch>span{flex:1}
 .switch small{display:block;font-size:12px}

@@ -312,6 +312,13 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - While the panel is collapsed, a rail of icons ("Map Configs", "Trips", "Points of Interest", with a **<** button first) opens it on the chosen tab. On phones the panel is a bottom sheet that starts collapsed and collapses itself when the map needs to be seen.
 - Tabs are keyboard-operable (arrow keys); light and dark themes follow the system setting.
 
+**F45. Side Quests (in progress: data, creating and converting built; collapsed display and drag planned)**
+- A **Side Quest** is an optional stop near a main stop. A marker is a Side Quest or a main stop; a Home point, Hotel or Home marker is always a main stop. A Side Quest has no stop number, is not part of Previous/Next, the day's route arrows or the day's length, has no "without a date" warning, and is counted apart in "visited". It keeps its distance to the nearest hotel and home point, and is never one of those bases.
+- It hangs from a **parent**: the main stop chosen in the edit form ("Near"), or by default the nearest main stop of its trip (on the same date when there is one). A parent that is deleted or turned into a Side Quest falls back to the nearest main stop. A hotel may be a parent.
+- **Making one:** "Add as Side Quest" next to "Add as marker" in the point-check window (type Other, the current trip, the nearest main stop as parent and its date); a Side Quest box and a "Near" picker in the edit form; "Make Side Quest" / "Make main stop" in the marker window (with Undo); "Make Side Quests" / "Make main stops" for the ticked markers in Select mode (with Undo; hotels, home points and Home markers are skipped).
+- Exports, share links and shared trips carry `isSub` and `parentId`. In an AI reply, `"sideQuest": true` and `"near": "<name of the main stop>"` (see `docs/AI.md`).
+- **Planned (phases 3 and 4):** hidden by default on the map with a "+N" badge on the parent pin, and in the Points of Interest and Trips lists a "▾ N" chip that expands them under the parent card (a tap also opens the marker); the parent's window lists them; hold-and-drag for Side Quests (between siblings, onto another main card, onto a day) and for main cards within a day on the Trips tab; main cards carry their Side Quests to a new date.
+
 ## 5. Non-functional requirements
 
 - **Static delivery:** the app must run from static files with no server of our own; GitHub Pages or a similar static host must work. Accounts are optional (Supabase, section 9) and absent from a build without a project address.
