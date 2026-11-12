@@ -5,6 +5,7 @@ import { describeWhen } from './sync/core.js';
 import { avatarEl } from './avatars.js';
 import { profileBits } from './profile-ui.js';
 import { createProfileDialog } from './profile-dialog.js';
+import { profileTrigger } from './profile-popover.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 .3 5 2.6 5 5.8"/></svg>';
@@ -104,8 +105,8 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
 
     const person = (name, sub, buttons, online = null, row = null) => {
       const r = el('div', 'fr-row');
-      if (row) r.append(avatarEl(row.avatar, name, 34));
-      const who = el('div', 'fr-who'); const nm = el('b'); if (online !== null) { const dot = el('i', 'presence ' + (online ? 'on' : 'off')); dot.setAttribute('aria-hidden', 'true'); nm.append(dot); } nm.append(name); who.append(nm); if (sub) who.append(el('small', '', sub));
+      if (row) r.append(profileTrigger(avatarEl(row.avatar, name, 34), row, sub));
+      const who = el('div', 'fr-who'); const nm = el('b'); if (online !== null) { const dot = el('i', 'presence ' + (online ? 'on' : 'off')); dot.setAttribute('aria-hidden', 'true'); nm.append(dot); } nm.append(name); who.append(row ? profileTrigger(nm, row, sub) : nm); if (sub) who.append(el('small', '', sub));
       if (row) who.append(...profileBits(row));
       const bs = el('div', 'fr-actions'); for (const [label, fn, cls] of buttons) { const b = el('button', 'btn small' + (cls ? ' ' + cls : ''), label); b.type = 'button'; b.addEventListener('click', fn); bs.append(b); }
       r.append(who, bs); return r;

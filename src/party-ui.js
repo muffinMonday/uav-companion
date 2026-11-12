@@ -6,6 +6,7 @@ import { describeWhen } from './sync/core.js';
 import { presenceText } from './social.js';
 import { avatarEl } from './avatars.js';
 import { profileBits } from './profile-ui.js';
+import { profileTrigger } from './profile-popover.js';
 import { createLive } from './live.js';
 import { createLiveLayer } from './livemap.js';
 
@@ -174,12 +175,12 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
         const li = el('li', 'party-row');
         const who = el('span', 'party-who');
         if (m.online !== null && m.online !== undefined) { const dot = el('i', 'presence ' + (m.online ? 'on' : 'off')); dot.setAttribute('aria-hidden', 'true'); who.append(dot); }
-        if (m.status === 'joined') who.append(avatarEl(m.avatar, m.display_name, 24), ' ');
-        who.append(el('b', '', m.display_name));
+        const pt = m.status === 'joined' ? presenceText(m, describeWhen) : '';
+        if (m.status === 'joined') who.append(profileTrigger(avatarEl(m.avatar, m.display_name, 24), m, pt), ' ');
+        who.append(m.status === 'joined' ? profileTrigger(el('b', '', m.display_name), m, pt) : el('b', '', m.display_name));
         if (m.is_me) who.append(' ', el('span', 'badge', 'You'));
         if (m.role === 'owner') who.append(' ', el('span', 'badge ok', 'Owner'));
         if (m.status === 'invited') who.append(' ', el('span', 'badge', 'Invited'));
-        const pt = m.status === 'joined' ? presenceText(m, describeWhen) : '';
         if (pt) who.append(' ', el('small', 'presence-text', pt));
         if (sharers.has(m.member_id)) who.append(' ', el('small', 'presence-text', '📍 sharing their location'));
         if (m.status === 'joined') who.append(...profileBits(m));

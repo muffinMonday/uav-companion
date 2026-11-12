@@ -981,6 +981,11 @@ input[type=email]:focus{border-color:var(--accent)}
 .profile-dialog .profile-card{border:0;box-shadow:none;padding:0;margin:8px 0 0;background:none}
 .profile-dialog .profile-card>h2{display:none}
 .fr-me{display:flex;align-items:center;gap:10px;margin:4px 0 10px}.fr-me b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-trigger{display:inline-flex;align-items:center;margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:6px;vertical-align:middle}
+.pv-trigger:hover b{text-decoration:underline}
+.pv-trigger:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fr-row>.pv-trigger{flex:none}
+.profile-pop{padding-top:34px}.pv-sub{display:block;margin-top:4px;color:var(--muted)}
 .pv{display:flex;flex-direction:column;gap:6px;margin:8px 0}
 .pv-head{display:flex;align-items:center;gap:12px}.pv-name{font-size:17px}
 .pv-none{color:var(--muted)}
