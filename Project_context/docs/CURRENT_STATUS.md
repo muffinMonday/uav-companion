@@ -1,7 +1,7 @@
 # Session Checkpoint
 
 Updated: 2026-11-12
-Task: Side Quest feature (sub-markers). Phases 5 and 1 committed and deployed (`f96f3be`); phase 2 done, uncommitted. Phases 3 and 4 not started.
+Task: Side Quest feature (sub-markers). Phases 5, 1 and 2 committed, pushed and deployed (latest `a5c0889`). Phases 3 and 4 not started. Standing rule: commit, push and deploy after every phase (memory `commit-deploy-each-phase`).
 
 ## Objective
 Side Quests are optional nearby stops attached to a main stop: hidden by default (a "+N" badge on the parent pin, a "▾ N" chip on the parent card), revealed when the parent is opened or expanded, draggable like main cards.
@@ -32,16 +32,16 @@ Side Quests are optional nearby stops attached to a main stop: hidden by default
 - Before real users: second Supabase project, closed sign-ups, email confirmation, outside email sender.
 
 ## Working State
-- Branch: main (pushed `f96f3be`; live site deployed 2026-11-12 with sign-in on, `gh-pages` `f1a98d5`)
-- Last commit: `f96f3be`
-- Uncommitted changes: Yes, phase 2: `src/trips.js`, `poi-ui.js`, `main.js`, `cards.js`, `styles.css`, `index.html`, `tests/side.mjs` (new), `side-unit.mjs`, `tools.mjs`, `run.mjs`, `PROJECT.md`, `MODULES.md`, this file
-- Tests/build: full `npm test` after phase 2: all passed except `tools`, which was then updated and passes (17); phase 1 full run passed (371 s). `npm run build` not run. A dev server is running on :5173 (started this session)
+- Branch: main (pushed `a5c0889`; live site deployed 2026-11-12 with sign-in on, `gh-pages` `ab6c9d4`)
+- Last commit: `a5c0889`
+- Uncommitted changes: this file only (checkpoint wording)
+- Tests/build: full `npm test` after phase 2: all passed except `tools`, which was then updated and passes (17); phase 1 full run passed (371 s). `npm run build` not run. A dev server may still be running on :5173 (started this session; stop it or reuse it)
 
 ## Blockers
 None.
 
 ## Next Action
-Owner reviews phase 2 and says whether to commit and deploy. Then phase 3: hide Side Quests by default. Map: "+N" badge on the parent pin (bottom-left, `makeIcon` in `poi-ui.js`; the ×N visit badge is bottom-right), small dashed pins with dotted connectors only for the open main stop, pref "Show all side quests" (off). Lists: "▾ N" chip on the parent card in the POI list (`renderGroup`, `renderItem`) and the Trips plan screen (`trips-ui.js` `stopRow`, use `sideQuestMap`), a tap opens the marker and expands (one card at a time), orphans under "Other side quests"; the marker window gets a "Side Quests (N)" section with jump buttons.
+Phase 3: hide Side Quests by default. Map: "+N" badge on the parent pin (bottom-left, `makeIcon` in `poi-ui.js`; the ×N visit badge is bottom-right), small dashed pins with dotted connectors only for the open main stop, pref "Show all side quests" (off). Lists: "▾ N" chip on the parent card in the POI list (`renderGroup`, `renderItem`) and the Trips plan screen (`trips-ui.js` `stopRow`, use `sideQuestMap`), a tap opens the marker and expands (one card at a time), orphans under "Other side quests"; the marker window gets a "Side Quests (N)" section with jump buttons.
 
 ## Relevant Files
 `src/poi.js`, `src/trips.js`, `src/distance.js`, `src/sharecompact.js`, `src/aiimport.js`, `public/ai/`, `src/poi-ui.js` (`makeIcon` l.29, `chainOf`, list `renderGroup`, reorder l.204), `src/reorder.js`, `src/reorder-ui.js`, `src/trips-ui.js` (plan rows l.216), `src/tripweather.js` l.36
