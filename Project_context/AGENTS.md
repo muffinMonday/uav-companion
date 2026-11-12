@@ -5,6 +5,8 @@ Vite + Leaflet JS app; static hosting plus optional Supabase (accounts, friends,
 
 **Load on demand (`docs/`):** ARCHITECTURE (design, auth, flows), MODULES (code map), DATABASE (storage, Supabase, RLS), DEVELOPMENT (setup, tests, deploy), DECISIONS (why), PROJECT (features; large: grep the section). CHANGELOG: never at start.
 
+**Skills (`.claude/skills/`):** `/change-workflow` for code changes, `/test-impact` to pick unit suites, `/supabase-change`, `/region-data`.
+
 **Rules**
 - Source code beats docs; fix a wrong doc in the same change; link, don't copy.
 - Validate all stored/imported/shared data; DOM via `el()`/`textContent`. Nothing user-specific leaves the browser unless opted in; Home marker never shared. Keep `uavzones.` keys; shape change = version bump + `DATABASE.md` note.
