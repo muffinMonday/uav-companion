@@ -195,6 +195,7 @@ textarea{resize:vertical;min-height:60px}
 .leaflet-bar a:hover{background:var(--surface-2)!important}
 .leaflet-bar a.locate-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
 .leaflet-bar a.locate-btn.active{color:var(--accent)!important}
+.leaflet-bar a.locate-btn .locate-icon{display:flex;align-items:center;justify-content:center}
 .leaflet-bar a.locate-btn svg{width:18px;height:18px}
 .leaflet-control-scale-line{background:color-mix(in srgb,var(--surface) 88%,transparent)!important;color:var(--fg);border-color:var(--muted)!important;border-radius:0 0 4px 4px}
 .leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--muted)!important}
@@ -697,6 +698,9 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .poi-pin .sidecount{position:absolute;left:-8px;bottom:-2px;padding:0 5px;border-radius:999px;background:var(--surface);color:var(--fg);border:1.5px dashed var(--fg);font:700 10px/1.5 var(--font);pointer-events:none}
 .plan-group{display:grid;gap:4px}
 .plan-side{margin-left:16px;opacity:.92}
+/* the selected marker's card (and a Side Quest's parent card) in the Points of Interest list and on a trip's day */
+.poi-item.is-sel,.plan-stop.is-sel{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.plan-side.is-sel{opacity:1}
 .pop-side{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}
 .pop-side small{color:var(--muted)}
 .pop-side-btn{border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:999px;padding:2px 9px;font:600 12px/1.4 var(--font);cursor:pointer}

@@ -59,6 +59,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let showAllSide = !!loadPrefs().showSide;
   let hideTrips = !!loadPrefs().hideTrips; // trip markers, their routes and Side Quest links are taken off the map
   const expandListeners = new Set();
+  let pickId = null;          // a card was just tapped: its marker is on its way (the map is moving), so the card is marked at once
+  const revealListeners = new Set(); // the Trips tab hears that a marker was clicked on the map, to bring its row into view
   const visitCount = (id) => visitMap.get(id)?.length ?? 0;
   let selecting = false;      // "Select markers" mode in the list, for deleting several at once
   const selected = new Set(); // ids ticked in that mode (only ever markers that are shown)
@@ -425,6 +427,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     b.type = 'button';
     b.title = 'Centre the map here';
     b.innerHTML = pinSvg(it.type);
+    markCard(b, it.id); // highlighted while this marker (or, for a parent, one of its Side Quests) is selected
     const t = el('span', 't');
     const detail = it.note ? it.note.split('\n')[0] : `${fmt(it.lat)}, ${fmt(it.lon)}`;
     const when = [gmode === 'day' ? (stopNo(it) !== undefined && `Stop ${stopNo(it)}`) : tripLabel(it, tripOf(it)), gmode === 'date' && it.endDate && dateLabel(it)].filter(Boolean).join(' · ');
@@ -621,7 +624,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (!it || !m) return;
     map.closePopup();
     tagLayer.clearLayers();
-    viewId = id; relink();
+    pickId = null; viewId = id; relink();
     const box = el('div', 'name-tag');
     box.append(el('b', '', it.name));
     const info = el('button', 'name-tag-info', 'ⓘ'); info.type = 'button';
@@ -712,10 +715,33 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   /** Dashed lines on the map from the open marker to its nearest home point and hotel, labelled with the distance. */
   const links = L.layerGroup().addTo(map);
   let viewId = null; // the marker whose window is open
+  /** The cards to mark in the lists: the selected stop's (a card just tapped counts at once) and, for a Side Quest, its parent's. */
+  function cardIds() {
+    const id = pickId ?? viewId, ids = new Set();
+    if (id) { ids.add(id); const p = subParent.get(id); if (p) ids.add(p); }
+    return ids;
+  }
+  /** Marks one card (a row of the POI list, or of a trip's day) as selected or not. `data-stop-id` is how paintCards finds the cards again. */
+  function markCard(node, id, ids = cardIds()) {
+    node.dataset.stopId = id;
+    node.classList.toggle('is-sel', ids.has(id));
+    if (id === (pickId ?? viewId)) node.setAttribute('aria-current', 'true'); else node.removeAttribute('aria-current');
+  }
+  function paintCards() { const ids = cardIds(); for (const n of document.querySelectorAll('[data-stop-id]')) markCard(n, n.dataset.stopId, ids); }
+  const scrollToCard = (node) => node?.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' });
+  /** A marker was clicked on the map: bring its card into view in the panel that is open (the POI list, or the trip's day in Trips). A Side Quest unfolds its parent first. */
+  function revealCard(id) {
+    const tab = panel.getTab();
+    if (!panel.isOpen() || selecting || (tab !== 'poi' && tab !== 'trips')) return;
+    const pid = subParent.get(id);
+    if (pid && pid !== expandedParent) setExpanded(pid); // both lists are drawn again
+    if (tab === 'poi') scrollToCard(listEl.querySelector(`li[data-id="${CSS.escape(id)}"]`));
+    else for (const fn of revealListeners) { try { fn(id, tab); } catch (e) { console.error(e); } }
+  }
   function relink() {
     links.clearLayers();
     refreshIcons(); // the open or selected marker decides which Side Quests are on show
-    redrawRoutes(); paintFocus();
+    redrawRoutes(); paintFocus(); paintCards();
     const it = viewId && store.get(viewId);
     if (!it || !needsDistance(it)) return;
     const b = nearestBases(it, store.items()), { units } = getDistanceSettings();
@@ -729,7 +755,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       L.marker([(it.lat + f.item.lat) / 2, (it.lon + f.item.lon) / 2], { icon: L.divIcon({ className: 'dist-label', html: label, iconSize: null }), interactive: false, keyboard: false }).addTo(links);
     }
   }
-  map.on('popupopen', (e) => { tagLayer.clearLayers(); viewId = e.popup._poiId ?? null; relink(); });
+  map.on('popupopen', (e) => { tagLayer.clearLayers(); pickId = null; viewId = e.popup._poiId ?? null; relink(); });
   map.on('popupclose', (e) => { if (e.popup._poiId === viewId) { viewId = null; relink(); } });
   map.on('zoomend', () => { if (viewId || shownDay) redrawRoutes(); }); // the arrows turn with the map's scale
 
@@ -818,7 +844,12 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function addMarker(item) {
     const m = L.marker([item.lat, item.lon], { icon: iconOf(item), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
     m._sig = sigOf(item);
-    m.on('click', () => { if (suppressClick) return; if (selecting) pickOnMap(item.id); else if (detailsOn) openPopup(item.id); else selectMarker(item.id); });
+    m.on('click', () => {
+      if (suppressClick) return;
+      if (selecting) { pickOnMap(item.id); return; }
+      if (detailsOn) openPopup(item.id); else selectMarker(item.id);
+      revealCard(item.id); // the open panel scrolls to this marker's card
+    });
     markers.set(item.id, m);
     if (!(hideTrips && item.tripId)) layer.addLayer(m);
     paintPins();
@@ -1365,6 +1396,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function flyToItem(id) {
     const it = store.get(id);
     if (!it) return;
+    pickId = id; paintCards(); // the card is marked at once; the marker follows when the map has moved
     ensureVisible();
     const wasOpen = panel.isOpen();
     panel.closeIfPhone();
@@ -1372,7 +1404,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     map.fitBounds(L.latLngBounds([it.lat, it.lon], [it.lat, it.lon]), { maxZoom: Math.max(map.getZoom(), 15), paddingBottomRight: [sideways, 0], animate: true });
     // Listen only after starting the move: stopping an earlier pan fires its own moveend, which must not open the popup early.
     let opened = false;
-    const open = () => { if (!opened) { opened = true; map.off('moveend', open); if (detailsOn) openPopup(id); else selectMarker(id); } };
+    const open = () => { if (!opened) { opened = true; map.off('moveend', open); if (detailsOn) openPopup(id); else selectMarker(id); pickId = null; paintCards(); } }; // from here the selected marker decides
     map.on('moveend', open);
     setTimeout(open, 700); // the map may already be there, in which case no move happens
   }
@@ -1503,5 +1535,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     /** For the Trips tab: which main stop has its Side Quests unfolded (one at a time), and a way to hear about changes. */
     moveStop: dropRow, stepStop: stepRow, // for the day pages of the Trips tab, which hold and drag with the same rules
     sideState: { expanded: () => expandedParent, set: setExpanded, onChange: (fn) => expandListeners.add(fn) },
+    /** For the Trips tab: `mark` highlights a stop row it draws while its marker (or one of its Side Quests) is selected, `scrollTo` brings a row into view,
+     *  and `onReveal(fn(id, tab))` hears that a marker was clicked on the map. */
+    cards: { mark: markCard, scrollTo: scrollToCard, onReveal: (fn) => revealListeners.add(fn) },
   };
 }

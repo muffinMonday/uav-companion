@@ -41,6 +41,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   const forecastListeners = new Set();
   const tw = createTripWeather({ onChange: () => { render(); for (const fn of forecastListeners) fn(); } }); // per-day forecasts, only while automatic weather is on
   const pageOf = new Map();       // tripId -> the page (day) of its flip card, kept while the page is open
+  let revealStop = null;          // while a trip's detail is drawn: brings one stop's row into view, turning to its day first
   const zoneChecks = new Map(); // tripId -> Map(markerId -> { sig, s }): what the map data says about each stop, until the page closes
   const sigOf = (it) => `${it.lat},${it.lon}`;
   const dayWeatherText = (w) => [`${weatherInfo(w.code).icon} ${w.max !== null ? Math.round(w.max) : '–'}°/${w.min !== null ? Math.round(w.min) : '–'}°`, w.snow !== null && w.snow >= 0.1 ? `snow ${w.snow.toFixed(1)} cm` : w.rain !== null && `rain ${Math.round(w.rain)}%`, w.wind !== null && `wind ${w.wind.toFixed(0)} m/s`].filter(Boolean).join(' · ');
@@ -142,6 +143,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     const open = openId && store.getTrip(openId);
     if (!open) openId = null;
     listCard.hidden = !!open; aiCard.hidden = !!open; detail.hidden = !open;
+    revealStop = null;
     if (open) renderDetail(open, items, today);
   }
 
@@ -220,6 +222,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     const sm = sideQuestMap(items); // each main stop's Side Quests, folded under it until it is tapped
     const stopRow = (it, day, dragKey, parentId) => { // dragKey: the date of the day page it is on (rows there can be held and dragged)
       const row = el('button', 'plan-stop'); row.type = 'button';
+      poi.cards.mark(row, it.id); // highlighted while this marker (or, for a parent, one of its Side Quests) is selected
       const info = dayInfo(it, t);
       const mark = el('span', 'plan-n', it.isSub ? '↳' : it.order !== undefined ? String(it.order) : '•');
       const text = el('span', 'plan-name');
@@ -301,6 +304,11 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
         if (dir) { body.classList.remove('flip-next', 'flip-prev'); void body.offsetWidth; body.classList.add(dir > 0 ? 'flip-next' : 'flip-prev'); }
       };
       const go = (to) => { if (to < 0 || to >= pages.length || to === at) return; const dir = to > at ? 1 : -1; at = to; pageOf.set(t.id, at); paint(dir); };
+      revealStop = (id) => { // a marker was clicked on the map: turn to its day (a Side Quest is on its parent's) and scroll to its row
+        const day = pages.findIndex((pg) => (pg.day ? pg.day.stops : pg.list).some((s) => s.id === id || (sm.byParent.get(s.id) ?? []).some((k) => k.id === id)));
+        if (day >= 0) go(day);
+        poi.cards.scrollTo(detail.querySelector(`[data-stop-id="${CSS.escape(id)}"]`));
+      };
       prev.addEventListener('click', () => go(at - 1));
       next.addEventListener('click', () => go(at + 1));
       flip.addEventListener('keydown', (e) => { if (e.target.closest('input, textarea, select')) return; if (e.key === 'ArrowLeft') { e.preventDefault(); go(at - 1); } else if (e.key === 'ArrowRight') { e.preventDefault(); go(at + 1); } });
@@ -311,6 +319,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
       paint(0);
       detail.append(flip);
     }
+    revealStop ??= (id) => poi.cards.scrollTo(detail.querySelector(`[data-stop-id="${CSS.escape(id)}"]`)); // no day pages: only the loose rows below
     const lone = sm.orphans.filter((s) => s.tripId === t.id); // Side Quests with no main stop to hang from
     if (lone.length) { detail.append(el('p', 'hint', `Side Quests with no main stop (${lone.length}):`)); for (const s of lone) detail.append(stopRow(s)); }
     if (!dated) detail.append(el('p', 'hint', 'Add start and end dates (Edit) to see the days.'));
@@ -424,6 +433,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   poi.setNewTripHandler((markerId) => openForm(null, { assign: markerId }));
   store.onChange(render);
   poi.sideState.onChange(render); // a card was unfolded or folded in a list
+  poi.cards.onReveal((id, tab) => { if (tab === 'trips') revealStop?.(id); }); // a marker was clicked on the map while this tab is open
   // Hold a stop on a day page for 1 s and drag it to another place the same day (moving between days is done in the Points of Interest tab).
   // The rules are the list's (poi-ui.js moveStop / stepStop); the page redraws from the store.
   const refocus = (id) => setTimeout(() => detail.querySelector(`[data-id="${CSS.escape(id)}"] .plan-stop, .plan-stop[data-id="${CSS.escape(id)}"]`)?.focus(), 60);

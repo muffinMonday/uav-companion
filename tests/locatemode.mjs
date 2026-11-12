@@ -41,6 +41,8 @@ const near = (a, b, t = 6) => Math.abs(((a - b + 540) % 360) - 180) < t;
 let s = await open();
 let st = await btn(s.p);
 ok(!st.active && /Show my location/.test(st.label), 'before anything the button offers to show your location');
+const iconOff = await s.p.$eval('.locate-btn', (a) => { const r = a.getBoundingClientRect(), v = a.querySelector('svg').getBoundingClientRect(); return Math.hypot(v.x + v.width / 2 - (r.x + r.width / 2), v.y + v.height / 2 - (r.y + r.height / 2)); });
+ok(iconOff < 0.5, 'the locate icon sits in the centre of its button (' + iconOff.toFixed(2) + ' px off)');
 ok(!(await s.p.locator('.you-dot').count()) && await bearing(s.p) === 0, 'nothing is shown and the map is north-up');
 
 await s.p.click('.locate-btn'); await s.p.waitForSelector('.you-dot', { timeout: 15000 }); await sleep(800);

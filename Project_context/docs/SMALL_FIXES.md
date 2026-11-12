@@ -26,12 +26,19 @@ Working through the list: plan with the owner first, wait for confirmation, then
 - Check: `tests/popswipe.mjs` (new, in the browser list in `tests/run.mjs`): both windows, both borders, the body not closing downward, the map not moving, edit mode, the window's own close button.
 - Status: done in code; `test:unit` and the browser suites run (see CURRENT_STATUS). Not tested on a real phone.
 
+### SF-4 Locate button icon sits 5 px high
+- Symptom: the "Show my location" icon is not centred in its button.
+- Cause (measured in the browser, at 390 and 1200 px): the icon's wrapper span is 30 px tall, but the SVG sits on the text baseline at its top. The icon centre was 5 px above the button centre.
+- Change: `styles.css` `.leaflet-bar a.locate-btn .locate-icon{display:flex;align-items:center;justify-content:center}`. Nothing else.
+- Check: `tests/locatemode.mjs` measures the icon's centre against the button's centre (under 0.5 px). `npm run test:unit` and `npm test` pass.
+- Status: done in code. Committed in the same commit as the code.
+
 ### SF-5 Popup swipe snaps back to the middle before it closes
 - Symptom: a swipe that dismisses a map popup moved the pane in the swipe direction, then flashed back to the centre before it was dismissed.
 - Cause: `finish()` in `src/swipe.js` cleared the pane's inline transform before the popup closed. Leaflet keeps the popup container for about 200 ms while it fades out, so the pane was visible again at the centre.
 - Change (owner, 2026-11-12): the pane fades with the drag (opacity falls with the distance travelled); on release it keeps moving and fades to 0, then the popup is removed. A faded pane is not cleared, since the popup goes with it. Non-fading callers (dashboard, dock) keep the old order. `onPopupSwipe` passes `fade: true`.
 - Check: `tests/popswipe.mjs` has a block with motion allowed (partly faded mid-drag, position and opacity never go back after release, the window is removed). It fails with the old order. `npm run test:unit` and `npm test` pass.
-- Status: done in code. Not committed. Not tested on a real phone.
+- Status: done. Committed in `b326b14` and deployed. Not tested on a real phone.
 
 ## Done
 
