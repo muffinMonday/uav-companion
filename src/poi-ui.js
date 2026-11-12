@@ -19,6 +19,7 @@ import { planMove, planSideMove, stepSideIndex, stepSlot, groupKey, addDays } fr
 import { initReorder } from './reorder-ui.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer, toolBar } from './cards.js';
+import { onPopupSwipe } from './swipe.js';
 
 const $ = (id) => document.getElementById(id);
 const HOLD_MS = 380; // press and hold this long before a pin can be moved
@@ -859,9 +860,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     popup = L.popup({
       maxWidth: Math.min(340, window.innerWidth - 32), minWidth: Math.min(290, window.innerWidth - 40), offset: [0, OFFSET_Y],
       autoPan: false, closeOnClick: false, closeButton: true, maxHeight: windowMaxHeight(expanded), className: expanded ? 'is-expanded' : '',
-    })
-      .setLatLng(m.getLatLng())
-      .setContent(popupContent(id, edit));
+    }).setLatLng(m.getLatLng());
+    popup.setContent(popupContent(id, edit)); // after `popup` is set: the content reads it to close this window
     popup._poiId = id; // read by the popupopen/popupclose handlers that draw and remove the distance lines
     centreOn(map, m.getLatLng());
     popup.openOn(map);
@@ -882,8 +882,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
 
   function popupContent(id, startEditing) {
     const root = el('div', 'pop poi-pop');
+    const win = popup; // this window's own popup (read now, while it is the one being opened)
+    let editing = false; // the edit form is up: a swipe does not close the window then
+    // swipe left or right anywhere, or up or down from the top bar (with the close and collapse buttons) or the previous / next footer
+    onPopupSwipe(root, { close: () => win.close(), enabled: () => !editing, borders: (t) => !!t.closest('.pop-bar, .pop-seq, .pop-toggle, .pop-close') });
 
     function view() {
+      editing = false;
       const it = store.get(id);
       if (!it) return;
       root.replaceChildren();
@@ -1031,6 +1036,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     function editForm() {
       const it = store.get(id);
       if (!it) return;
+      editing = true;
       wxLine = null; // the form has no weather line
       root.replaceChildren();
       const form = el('form');

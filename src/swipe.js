@@ -82,3 +82,12 @@ export function onSwipe(el, { direction, onDismiss, canStart = () => true, enabl
   el.addEventListener('touchend', end, { passive: true });
   el.addEventListener('touchcancel', () => { if (g && g.state !== 'done') snapBack(); }, { passive: true });
 }
+
+/**
+ * A map popup window (root is its content): a swipe left or right anywhere on it, or up or down from its border, closes it.
+ * borders(target, root) says which places count as the border. The root itself moves, not the Leaflet popup, which Leaflet positions with a transform of its own.
+ */
+export function onPopupSwipe(root, { close, enabled = () => true, borders }) {
+  for (const direction of ['left', 'right']) onSwipe(root, { direction, enabled, onDismiss: close });
+  for (const direction of ['up', 'down']) onSwipe(root, { direction, enabled, canStart: (t) => borders(t, root), onDismiss: close });
+}

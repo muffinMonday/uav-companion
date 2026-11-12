@@ -52,7 +52,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 ## Shell and settings
 | File | Responsibility |
 |---|---|
-| `panel.js`, `swipe.js` | Side panel, rail, tabs (generic over `[role=tab]`), phone sheet; swipe gestures |
+| `panel.js`, `swipe.js` | Side panel, rail, tabs (generic over `[role=tab]`), phone sheet; swipe gestures (sheets, dashboard, and the map popups via `onPopupSwipe`) |
 | `dashboard.js`, `dashstate.js` (pure), `whatsnew.js` | Bottom dashboard and its start rules; What's new entries (add one to announce a change) |
 | `prefs.js`, `privacy.js`, `privacy-ui.js` | Validated settings; opt-in switches and rounding |
 | `weather.js`, `markerweather.js`, `elevation.js` | Open-Meteo forecast, per-marker caches, elevation |

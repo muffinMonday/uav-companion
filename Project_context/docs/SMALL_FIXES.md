@@ -20,6 +20,12 @@ Working through the list: plan with the owner first, wait for confirmation, then
 - Not changed: the trips-tab day cards (`stopRow` in `src/trips-ui.js`) still put the chip beside the row. Same issue may appear there; not part of this fix.
 - Status: done
 
+### SF-3 Swipe to close the map popups
+- Request (owner): the marker window and the point-check window close on a swipe. Left or right anywhere on the window; up or down from its border (the top bar with the edit, close and tool buttons, and the previous / next footer; on the point-check window, the top bar and the bottom row). In edit mode a swipe does not close the window.
+- Change: `onPopupSwipe` in `src/swipe.js` (four `onSwipe` calls, two for the sides, two for the borders); `src/poi-ui.js` `popupContent` (edit flag, `enabled`, borders; `openPopup` now sets `popup` before the content is built, so the window closes itself and not a newer one); `src/main.js` `showCheck`. The moved element is the window's content, not the Leaflet popup, which Leaflet positions with its own transform.
+- Check: `tests/popswipe.mjs` (new, in the browser list in `tests/run.mjs`): both windows, both borders, the body not closing downward, the map not moving, edit mode, the window's own close button.
+- Status: done in code; `test:unit` and the browser suites run (see CURRENT_STATUS). Not tested on a real phone.
+
 ## Done
 
 - SF-1 (name tag over the seq badge), SF-2 (above). Implemented on Haiku 5.5.

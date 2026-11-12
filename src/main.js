@@ -16,6 +16,7 @@ import { initCrosshair } from './crosshair.js';
 import { mapLinkIcons } from './maplinks-ui.js';
 import { MODES } from './maplinks.js';
 import { toolBar } from './cards.js';
+import { onPopupSwipe } from './swipe.js';
 import { centreOn, popupMaxHeight } from './view.js';
 import { initPOI } from './poi-ui.js';
 import { initPrivacyUI } from './privacy-ui.js';
@@ -138,7 +139,10 @@ async function showCheck(latlng, title, opts = {}) {
   const res = await checkPoint(latlng.lat, latlng.lng);
   // a window too tall to fit above the spot scrolls inside instead of pushing the map around
   const popup = L.popup({ maxWidth: Math.min(320, window.innerWidth - 32), minWidth: Math.min(250, window.innerWidth - 40), offset: [0, offsetY], autoPan: false, closeOnClick: false, maxHeight: popupMaxHeight(map, offsetY) }).setLatLng(latlng);
-  popup.setContent(decorate(describeCheck(res, title, opts.note), latlng, title, () => popup.update(), { ...opts, official: res.region?.officialMap })).openOn(map);
+  const content = decorate(describeCheck(res, title, opts.note), latlng, title, () => popup.update(), { ...opts, official: res.region?.officialMap });
+  popup.setContent(content).openOn(map);
+  // swipe left or right anywhere, or up or down from the top bar or the bottom row (the weather button or the official map link)
+  onPopupSwipe(content, { close: () => popup.close(), borders: (t, root) => !!t.closest('.pop-bar') || !!root.lastElementChild?.contains(t) });
 }
 
 const rotation = createRotation(map); // turning the map (the locate button's compass mode, and two fingers by hand)
