@@ -1,6 +1,6 @@
 # Small fixes list
 
-Bugs and changes small enough for a lesser model (Haiku). Admission rule: straightforward, one or two files, an exact fix that can be stated, and a check that can be run. Anything needing a design choice stays in "Needs a decision" until the owner chooses.
+Bugs and changes small enough for a lesser model (Haiku). Admission rule: straightforward, one or two files, an exact fix that can be stated, and a check that can be run. Anything needing a design choice stays in "Needs a decision" until the owner chooses. When discussing changes with the owner, suggest to park changes which can be delegated to Haiku in this document to be tackled in bulk.
 
 Working through the list: plan with the owner first, wait for confirmation, then remind the owner to switch model (`/model`) before editing. Follow `AGENTS.md` (tests before commit; ask before commit, push or deploy).
 
@@ -22,7 +22,7 @@ Working through the list: plan with the owner first, wait for confirmation, then
 
 ### SF-3 Swipe to close the map popups
 - Request (owner): the marker window and the point-check window close on a swipe. Left or right anywhere on the window; up or down from its border (the top bar with the edit, close and tool buttons, and the previous / next footer; on the point-check window, the top bar and the bottom row). In edit mode a swipe does not close the window.
-- Change: `onPopupSwipe` in `src/swipe.js` (four `onSwipe` calls, two for the sides, two for the borders); `src/poi-ui.js` `popupContent` (edit flag, `enabled`, borders; `openPopup` now sets `popup` before the content is built, so the window closes itself and not a newer one); `src/main.js` `showCheck`. The moved element is the window's content, not the Leaflet popup, which Leaflet positions with its own transform.
+- Change: `onPopupSwipe` in `src/swipe.js` (four `onSwipe` calls, two for the sides, two for the borders); `src/poi-ui.js` `popupContent` (edit flag, `enabled`, borders; `openPopup` now sets `popup` before the content is built, so the window closes itself and not a newer one); `src/main.js` `showCheck`. The whole pane moves with the finger (the bubble, the tip and the close button: the children of the Leaflet popup container), using the CSS `translate` property, since Leaflet positions the container with `transform` and `maprotate.js` sets `translate` on it when the map is turned. `onSwipe` takes `css` and a `follow` function or list for this.
 - Check: `tests/popswipe.mjs` (new, in the browser list in `tests/run.mjs`): both windows, both borders, the body not closing downward, the map not moving, edit mode, the window's own close button.
 - Status: done in code; `test:unit` and the browser suites run (see CURRENT_STATUS). Not tested on a real phone.
 

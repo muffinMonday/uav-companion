@@ -32,7 +32,7 @@ async function open(vp = { width: 390, height: 780 }, mobile = true) {
     for (let i = 1; i <= steps; i++) { await touch('touchMove', x0 + ((x1 - x0) * i) / steps, y0 + ((y1 - y0) * i) / steps); await p.waitForTimeout(12); }
     await touch('touchEnd'); await p.waitForTimeout(250);
   };
-  return { ctx, p, swipe };
+  return { ctx, p, swipe, touch };
 }
 const box = (p, sel) => p.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height, cx: r.x + r.width / 2, cy: r.y + r.height / 2, r: r.right }; });
 const view = (p) => p.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}').view));
@@ -47,8 +47,23 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
 
 // ================= the marker window
 {
-  const { ctx, p, swipe } = await open();
+  const { ctx, p, swipe, touch } = await open();
   await openWindow(p, 'Alpha');
+  // the whole pane goes with the finger (the bubble, the tip), and comes back when the swipe is too short to dismiss
+  const at = (sel) => p.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return r.x; });
+  const bubble0 = await at('.leaflet-popup-content-wrapper');
+  const tip0 = (await p.isVisible('.leaflet-popup-tip-container')) ? await at('.leaflet-popup-tip-container') : null;
+  const hh = await box(p, '.poi-pop h3');
+  await touch('touchStart', hh.cx, hh.cy);
+  for (let i = 1; i <= 6; i++) { await touch('touchMove', hh.cx - 10 * i, hh.cy + 1); await p.waitForTimeout(12); }
+  const bubble1 = await at('.leaflet-popup-content-wrapper');
+  const tip1 = tip0 === null ? null : await at('.leaflet-popup-tip-container');
+  ok(Math.abs((bubble0 - bubble1) - 60) < 3 && (tip0 === null || Math.abs((tip0 - tip1) - 60) < 3), 'mid-swipe, the bubble and its tip both move with the finger (' + Math.round(bubble0 - bubble1) + ' px)');
+  for (let i = 5; i >= 0; i--) { await touch('touchMove', hh.cx - 10 * i, hh.cy + 1); await p.waitForTimeout(12); }
+  await touch('touchEnd'); await p.waitForTimeout(300);
+  ok(await winOpen(p), 'a swipe too short to dismiss leaves the window open');
+  ok(Math.abs((await at('.leaflet-popup-content-wrapper')) - bubble0) < 3, 'and the pane snaps back into place');
+
   // the body: the name line, under the top bar
   const body = await box(p, '.poi-pop h3');
   await swipe([body.cx, body.cy], [body.cx - 150, body.cy + 4]);
