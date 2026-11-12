@@ -50,24 +50,45 @@ async function open({ signedIn, items = [], sync = null }) {
   return { ctx, p };
 }
 const openSettings = async (p) => { await p.click('#privacy-btn'); await p.waitForSelector('#cloud-card'); };
+const openAccount = async (p) => { await p.click('#account-btn'); await p.waitForSelector('#account-pop:not([hidden])'); };
 const status = (p) => p.locator('#cloud-card .cloud-status').textContent();
 const stored = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.map((i) => i.name).sort().join());
 
 // ---------- signed out: a form, and nothing is sent
 let { ctx, p } = await open({ signedIn: false, items: [mk('Tower', 30.5)] });
-await openSettings(p);
-ok(await p.locator('#cloud-card input[type=email]').isVisible() && /Email me a sign-in link/.test(await p.locator('#cloud-card button[type=submit]').textContent()), 'signed out: the card offers an email sign-in link');
-ok(/stays in this browser/.test(await p.locator('#cloud-card .hint').first().textContent()), 'and says that without it everything stays in the browser');
+ok(await p.locator('#account-btn').isVisible() && await p.locator('#account-btn').getAttribute('data-state') === 'guest', 'signed out: the panel header carries the account button, in its guest state');
+await openAccount(p);
+ok(await p.locator('#account-pop input[type=email]').isVisible() && /Email me a sign-in link/.test(await p.locator('#account-pop button[type=submit]').textContent()), 'signed out: the popover offers an email sign-in link');
+ok(/only in this browser/.test(await p.locator('#account-pop .hint').first().textContent()), 'and says that without it everything stays in the browser');
+ok(await p.locator('#account-pop >> text=Export or import your data').isVisible(), 'and links to export and import');
 ok(!hits.some((h) => h.includes('/rest/v1/')), 'nothing was sent to the server');
-await p.fill('#cloud-card input[type=email]', 'someone@example.test'); await p.click('#cloud-card button[type=submit]'); await p.waitForTimeout(600);
-ok(/Check your email/.test(await p.locator('#cloud-card [role=status]').textContent()), 'asking for a link says to check the email');
+await p.fill('#account-pop input[type=email]', 'someone@example.test'); await p.click('#account-pop button[type=submit]'); await p.waitForTimeout(600);
+ok(/Check your email/.test(await p.locator('#account-pop [role=status]').textContent()), 'asking for a link says to check the email');
+await p.keyboard.press('Escape');
+ok(await p.locator('#account-pop').isHidden() && await p.evaluate(() => document.activeElement?.id) === 'account-btn', 'Escape closes the popover and returns focus to the button');
+await p.click('#account-btn'); await p.click('#account-pop >> text=Export or import your data');
+ok(await p.locator('#account-pop').isHidden() && await p.locator('#poi-export').isVisible(), 'the export link closes the popover and shows the export button');
+await p.click('#account-btn'); await p.mouse.click(300, 400);
+ok(await p.locator('#account-pop').isHidden(), 'a click on the map closes it');
+await p.setViewportSize({ width: 390, height: 800 }); await p.waitForTimeout(300);
+await p.evaluate(() => { if (!document.getElementById('panel').hidden) document.getElementById('panel-close').click(); }); await p.waitForSelector('#dock:not([hidden])'); await p.waitForTimeout(400);
+await p.evaluate(() => { const c = document.getElementById('dock-circle'); if (c && !c.hidden) c.click(); });
+await p.waitForTimeout(300);
+await p.click('#dock-account'); await p.waitForSelector('#account-pop:not([hidden])');
+const sheet = await p.locator('#account-pop').boundingBox();
+ok(sheet.x === 0 && Math.abs(sheet.width - 390) < 1 && Math.abs(sheet.y + sheet.height - 800) < 1, 'on a phone the rail button opens it as a sheet along the bottom edge');
 await ctx.close();
 
 // ---------- signed in, cloud empty: this device is uploaded
 ({ ctx, p } = await open({ signedIn: true, items: [mk('Tower', 30.5), mk('Lake', 30.6)] }));
+await openAccount(p);
+await p.waitForFunction(() => /up to date/.test(document.querySelector('#account-pop .cloud-status')?.textContent || ''), null, { timeout: 15000 });
+ok(/tester@example\.test/.test(await p.locator('#account-pop').textContent()) && await p.locator('#account-btn .avatar').count() === 1, 'signed in: the popover shows who, and the button shows an avatar');
+ok(await p.locator('#account-pop >> text=Edit profile').isVisible() && await p.locator('#account-pop >> text=Sign out').isVisible() && /Friends/.test(await p.locator('#account-pop .btn-row').textContent()), 'with Edit profile, Friends and Sign out');
+await p.click('#account-pop >> text=Friends'); await p.waitForSelector('#pane-friends:not([hidden])');
+ok(await p.locator('#account-pop').isHidden(), 'the Friends shortcut opens the Friends tab and closes the popover');
 await openSettings(p);
-await p.waitForFunction(() => /up to date/.test(document.querySelector('#cloud-card .cloud-status')?.textContent || ''), null, { timeout: 15000 });
-ok(/tester@example\.test/.test(await p.locator('#cloud-card').textContent()), 'signed in: the card shows who');
+ok(await p.locator('#cloud-card >> text=Sign out').count() === 0, 'the privacy settings no longer carry the sign-out button');
 ok(cloud.rows.get(USER.email)?.rev === 1 && cloud.rows.get(USER.email).doc.items.length === 2, 'the first sign-in uploaded both markers (revision 1)');
 ok(/Cloud copy up to date/.test(await status(p)), 'the status line says so: ' + await status(p));
 await p.click('#privacy-back'); await p.waitForTimeout(300);
@@ -98,7 +119,9 @@ await p.click('#cloud-card >> text=Earlier versions'); await p.waitForTimeout(50
 ok(await p.locator('#cloud-card .cloud-version').count() === 1 && /Chrome on Windows · 1 marker/.test(await p.locator('#cloud-card .cloud-version').textContent()), 'earlier versions are listed with device and counts');
 
 // ---------- sign out
-await p.click('#cloud-card >> text=Sign out'); await p.waitForTimeout(600);
-ok(await p.locator('#cloud-card input[type=email]').isVisible() && await stored(p) === '' && cloud.rows.get(USER.email).doc.items.length === 3, 'sign-out returns to the form, clears this device (it was in step with the cloud) and leaves the cloud copy alone');
+await p.click('#privacy-back'); await openAccount(p);
+await p.click('#account-pop >> text=Sign out'); await p.waitForTimeout(600);
+await openAccount(p);
+ok(await p.locator('#account-pop input[type=email]').isVisible() && await stored(p) === '' && cloud.rows.get(USER.email).doc.items.length === 3, 'sign-out returns to the form, clears this device (it was in step with the cloud) and leaves the cloud copy alone');
 ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
 await b.close();

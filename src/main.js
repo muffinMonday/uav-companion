@@ -22,6 +22,7 @@ import { initPOI } from './poi-ui.js';
 import { initPrivacyUI } from './privacy-ui.js';
 import { initSyncUI } from './sync-ui.js';
 import { initFriendsUI } from './friends-ui.js';
+import { initAccountUI } from './account-ui.js';
 import { initPartyUI } from './party-ui.js';
 import { initPresence } from './presence.js';
 import { initAI, loadPrompt } from './ai-ui.js';
@@ -172,10 +173,11 @@ const checkHere = () => locate.request().then((ll) => showCheck(ll, 'Your locati
 const cloud = { handle: null, refresh: null }; // the optional cloud copy: filled in once its code has loaded (only when this build has a project address)
 addCompassControl(map, { rotation, onPress: () => locate.northUp() }); // after the other left-hand buttons, so their places do not move
 const dash = initDashboard({ poi, panel, trips, cloud, shared: opensShareLink, splash: !opensShareLink, actions: { checkHere, crosshair: cross } });
+cloud.openData = () => dash.open(); // the account popover's export and import link
 const splash = initSplash({ dash, panel, ai, locate, loadPrompt, toast }); // the quick setup: greets a first visit, and "Quick setup" reopens it
 dash.onQuickSetup(splash.open);
 if (dash.splashFirst) splash.open();
-initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); initFriendsUI({ panel, handle: h, toast, cloud }); cloud.refresh?.(); } }).catch((e) => console.warn('cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
+initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); initFriendsUI({ panel, handle: h, toast, cloud }); initAccountUI({ handle: h, panel, toast, cloud }); cloud.refresh?.(); } }).catch((e) => console.warn('cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch(() => toast('Point check failed. Check your connection and try again.'));
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.

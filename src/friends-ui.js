@@ -50,7 +50,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
       const c = el('div', 'card');
       c.append(el('h2', '', 'Friends'), el('p', 'hint', 'Sign in to add friends and, later, plan flights together. People find each other only by a friend code that its owner shares: nobody can search for you or see a list of people.'));
       const b = el('button', 'btn small', 'Sign in…'); b.type = 'button';
-      b.addEventListener('click', () => panel.openPrivacy());
+      b.addEventListener('click', () => handle.open());
       c.append(b); pane.append(c); return;
     }
     if (!profile) { const c = el('div', 'card'); c.append(el('p', 'hint', 'Loading…')); pane.append(c); return; }

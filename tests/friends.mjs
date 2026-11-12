@@ -67,8 +67,8 @@ let { ctx, p } = await open('a', { signedIn: false });
 ok(await p.locator('#tab-friends').count() === 1 && await p.locator('#dock button[data-tab=friends]').count() === 1, 'the Friends tab and its rail icon exist when this build has accounts');
 await goFriends(p);
 ok(/Sign in/.test(await p.textContent('#pane-friends')) && !calls.length, 'signed out, it explains and points to sign-in, and nothing is sent');
-await p.click('#pane-friends >> text=Sign in…'); await p.waitForSelector('#privacy:not([hidden])');
-ok(true, 'its button opens the privacy settings, where sign-in lives');
+await p.click('#pane-friends >> text=Sign in…'); await p.waitForSelector('#account-pop:not([hidden])');
+ok(await p.locator('#account-pop input[type=email]').isVisible(), 'its button opens the account popover, where sign-in lives');
 await ctx.close();
 
 // ---------- Alex: profile

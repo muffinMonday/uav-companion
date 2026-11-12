@@ -27,9 +27,9 @@ Audit findings that shaped this list: the Supabase backend, friends, shared trip
 - Check: `tests/db-live-unit.mjs` (two devices, takeover, stale stop ignored), `tests/trips-live.mjs`.
 
 ## Phase B: account entrypoint
-### AC-4 Persistent account button
+### AC-4 Persistent account button (built)
 - In `.sp-head` and in `#dock`, phone included. Guest: not signed in, local-storage note, Sign in, export/import link. Signed in: avatar, name, friend code, sync status, Edit profile, Friends shortcut, email, sign out. Account content moves out of Privacy (`#cloud-card`).
-### AC-5 Sign-in prompt for guests
+### AC-5 Sign-in prompt for guests (built: all Sign in buttons open the popover)
 - A guest opening Friends or shared-trip features gets a sign-in prompt.
 
 ## Phase C: onboarding

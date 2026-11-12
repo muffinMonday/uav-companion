@@ -41,7 +41,8 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `sync/core.js` (pure) | Cloud-copy rules: `decide`, `buildDoc`, `diffDocs` | - |
 | `sync/engine.js` | Acts on the rules through an adapter; state in `uavzones.v1.sync` | adapter |
 | `sync/supabase.js` | Real adapter; dynamic-imports supabase-js; `configured()` | `client` |
-| `sync-ui.js` | Sign-in card, conflict prompt, versions; returns the handle used below | `initSyncUI` |
+| `sync-ui.js` | Cloud copy card (status, sync, versions), sign-in form and sign-out flow, conflict prompt; returns the handle used below | `initSyncUI` |
+| `account-ui.js` | Account button (panel header and rail) and its popover: guest note and sign-in, or name, friend code, sync state, Edit profile, Friends, Sign out | handle |
 | `social.js` | Friends and profile RPC wrappers | `createSocial` |
 | `friends-ui.js` | Friends tab, invitations, badge | handle |
 | `presence.js` | 30 s heartbeat | `initPresence` |

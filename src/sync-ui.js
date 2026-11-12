@@ -1,5 +1,5 @@
-// The optional cloud copy: a card in the privacy settings to sign in with an email link and see the sync state, and the question that appears
-// when this device and the cloud copy both changed. Does nothing (and loads nothing) unless the build has a project address; see sync/.
+// The optional cloud copy: a card in the privacy settings with the sync state and its tools, the sign-in form and sign-out flow that the
+// account button (account-ui.js) uses, and the question that appears when this device and the cloud copy both changed. Does nothing (and loads nothing) unless the build has a project address; see sync/.
 import { configured } from './sync/supabase.js';
 import { deviceName, describeWhen } from './sync/core.js';
 import { toGeoJSON } from './poi.js';
@@ -43,43 +43,54 @@ export async function initSyncUI({ store, toast }) {
   const dlg = el('dialog', 'cloud-dialog'); dlg.setAttribute('aria-labelledby', 'cloud-q-title');
   document.body.append(dlg);
   const listeners = new Set();
-  let message = '', versions = null;
+  let versions = null;
+  const handle = {};
+
+  /** The email sign-in form with its own status line; the account popover shows it. */
+  function signInForm() {
+    const box = el('div', 'cloud-signin');
+    const f = el('form', 'cloud-form');
+    const input = el('input'); input.type = 'email'; input.required = true; input.placeholder = 'you@example.com'; input.autocomplete = 'email'; input.setAttribute('aria-label', 'Email address');
+    const b = el('button', 'btn small', 'Email me a sign-in link'); b.type = 'submit';
+    const m = el('p', 'hint'); m.setAttribute('role', 'status'); m.hidden = true;
+    f.append(input, b);
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault(); b.disabled = true;
+      const r = await sync.signIn(input.value.trim());
+      m.textContent = r.ok ? 'Check your email for the link, open it on this device, and you will be signed in.' : 'Could not send the link: ' + r.error;
+      m.hidden = false; b.disabled = false;
+    });
+    box.append(f, m);
+    return box;
+  }
+
+  /** Signs out: warns when something exists only here, offers the backup, then clears this device's markers and trips. Resolves true when signed out. */
+  async function signOut() {
+    let r = await sync.signOut({ wipe: true });
+    if (!r.ok) {
+      const why = r.reason === 'checkins' ? 'Your check-ins are not uploaded, so they exist only on this device.' : 'Your latest changes have not reached the cloud copy.';
+      if (!confirm(why + ' Download a backup of this device and sign out? Its markers and trips will be removed from this device.')) return false;
+      r = await sync.signOut({ wipe: true, force: true });
+    }
+    versions = null; render();
+    toast('Signed out. This device\'s markers and trips were removed; they stay in your cloud copy.', 8000);
+    return true;
+  }
 
   function render(s = sync.status()) {
     card.replaceChildren(el('h2', '', 'Cloud copy (optional)'));
     if (!s.session) {
       card.append(el('p', 'hint', 'Sign in to keep a copy of your markers and trips on a server, so they follow you to other devices. Without it everything stays in this browser. Weather caches, privacy choices and check-in positions are never uploaded.'));
-      const f = el('form', 'cloud-form');
-      const input = el('input'); input.type = 'email'; input.required = true; input.placeholder = 'you@example.com'; input.autocomplete = 'email'; input.setAttribute('aria-label', 'Email address');
-      const b = el('button', 'btn small', 'Email me a sign-in link'); b.type = 'submit';
-      f.append(input, b);
-      f.addEventListener('submit', async (e) => {
-        e.preventDefault(); b.disabled = true;
-        const r = await sync.signIn(input.value.trim());
-        message = r.ok ? 'Check your email for the link, open it on this device, and you will be signed in.' : 'Could not send the link: ' + r.error;
-        b.disabled = false; render();
-      });
-      card.append(f);
-      if (message) { const m = el('p', 'hint', message); m.setAttribute('role', 'status'); card.append(m); }
+      const b = el('button', 'btn small', 'Sign in…'); b.type = 'button'; b.addEventListener('click', () => handle.open());
+      card.append(b);
       return;
     }
-    card.append(el('p', '', 'Signed in as ' + s.session.email));
     const line = el('p', 'hint cloud-status', statusLine(s)); line.setAttribute('role', 'status'); card.append(line);
     const row = el('div', 'btn-row');
     const btn = (label, fn) => { const b = el('button', 'btn small', label); b.type = 'button'; b.addEventListener('click', fn); row.append(b); return b; };
     if (s.status === 'ask') btn('Choose…', () => question(s));
     btn('Sync now', () => sync.sync());
     btn('Earlier versions', async () => { try { versions = await adapter.listVersions(); } catch (e) { toast('Could not load versions: ' + e.message); return; } render(); });
-    btn('Sign out', async () => {
-      let r = await sync.signOut({ wipe: true });
-      if (!r.ok) {
-        const why = r.reason === 'checkins' ? 'Your check-ins are not uploaded, so they exist only on this device.' : 'Your latest changes have not reached the cloud copy.';
-        if (!confirm(why + ' Download a backup of this device and sign out? Its markers and trips will be removed from this device.')) return;
-        r = await sync.signOut({ wipe: true, force: true });
-      }
-      message = ''; versions = null; render();
-      toast('Signed out. This device\'s markers and trips were removed; they stay in your cloud copy.', 8000);
-    });
     card.append(row);
     if (versions) {
       const box = el('div', 'cloud-versions');
@@ -139,11 +150,15 @@ export async function initSyncUI({ store, toast }) {
   adapter.onAuthChange?.((ev) => { if (ev === 'SIGNED_IN') sync.sync(); });
   render();
   sync.start();
-  return {
+  Object.assign(handle, {
     line: () => (sync.status().session ? statusLine(sync.status()) : null),
     onChange: (fn) => listeners.add(fn),
-    open: () => $('privacy-btn')?.click(),
+    /** Opens the account popover (account-ui.js sets `account`); the privacy settings until it exists. */
+    open: () => (handle.account ? handle.account.open() : $('privacy-btn')?.click()),
+    signInForm,
+    signOut,
     sync,
     adapter,
-  };
+  });
+  return handle;
 }

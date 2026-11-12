@@ -136,7 +136,7 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
     if (!t.shared) {
       box.append(el('p', 'hint', 'Plan this trip with friends. Party members can edit the trip and its markers; only you can delete it.'));
       if (!signedIn()) {
-        const b = el('button', 'btn small', 'Sign in…'); b.type = 'button'; b.addEventListener('click', () => panel.openPrivacy());
+        const b = el('button', 'btn small', 'Sign in…'); b.type = 'button'; b.addEventListener('click', () => handle.open());
         box.append(b, el('small', 'hint', ' Sign-in is under the shield button.'));
       } else {
         const b = el('button', 'btn small primary', 'Share this trip'); b.type = 'button'; b.addEventListener('click', () => share(t));
