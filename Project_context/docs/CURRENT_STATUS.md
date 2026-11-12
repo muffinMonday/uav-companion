@@ -7,8 +7,8 @@ Task: Side Quest feature (sub-markers). All five phases (5, 1, 2, 3, 4) built; p
 - [x] Tab pill glides between tabs (`panel.js` single `.tab-pill`, class `glide`; `tests/tabpill.mjs`). Deployed.
 - [x] Edit profile is a dialog (`profile-dialog.js`), not in the Friends tab; includes a preview of how others see the profile. Deployed.
 - [x] Friend and party rows open a small profile popover (`profile-popover.js`). Deployed.
-- [x] First sign-in asks a new profile for a display name (`account-ui.js` `askName`, `social.chooseName`, migration `20261113110000_profile_named.sql`). Front end deployed; **migration NOT yet pushed to the hosted project** (needs `npx supabase db push --remote --yes`, owner approval). Until it is pushed no one is asked (the app prompts only when `profile.named === false`).
-- [x] Locate on launch (`launchFix`, pref `locateOnLaunch`, Privacy switch; `tests/launchloc.mjs`). Built and tested; not yet committed or deployed at the time of writing.
+- [x] First sign-in asks a new profile for a display name (`account-ui.js` `askName`, `social.chooseName`, migration `20261113110000_profile_named.sql`). Front end deployed; migration pushed to the hosted project 2026-11-13.
+- [x] Locate on launch (`launchFix`, pref `locateOnLaunch`, Privacy switch; `tests/launchloc.mjs`). Committed and deployed.
 - Note: `prefs` suite crashed once with a timeout in a 5-job full run, then passed alone and under load three times (load flake).
 
 ## Next feature
