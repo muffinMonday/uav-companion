@@ -111,6 +111,38 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     dlg.showModal(); word.focus();
   }
 
+  // ---- the first time someone signs in (profile.named is false) they are asked for a display name; Skip keeps the default and does not ask again
+  const nameDlg = el('dialog', 'account-dialog'); nameDlg.id = 'name-dialog'; nameDlg.setAttribute('aria-labelledby', 'name-dlg-title');
+  document.body.append(nameDlg);
+  let asking = false, skipName = null;
+  nameDlg.addEventListener('cancel', (e) => { e.preventDefault(); skipName?.(); }); // Escape counts as Skip
+  function askName() {
+    if (asking || !profile || profile.named !== false) return;
+    asking = true;
+    let decided = false;
+    const finish = async (name) => {
+      if (decided) return; decided = true;
+      try { profile = await social.chooseName(name); profileFor = session()?.email ?? profileFor; paintButtons(); if (!pop.hidden) render(); cloud.friends?.reload?.(); if (name) toast('Welcome, ' + name + '.'); }
+      catch (e) { decided = false; msg.textContent = e.message; msg.hidden = false; return; }
+      asking = false; nameDlg.close();
+    };
+    nameDlg.replaceChildren();
+    const h = el('h2', '', 'Choose a display name'); h.id = 'name-dlg-title';
+    const p = el('p', 'hint', 'This is the name your friends and trip partners see. You can change it later in Edit profile.');
+    const lab = el('label', 'fr-label', 'Display name'); lab.setAttribute('for', 'name-dlg-input');
+    const input = el('input'); input.type = 'text'; input.id = 'name-dlg-input'; input.maxLength = 40; input.autocomplete = 'off'; input.placeholder = profile.display_name;
+    const msg = el('p', 'hint'); msg.setAttribute('role', 'alert'); msg.hidden = true;
+    const go = el('button', 'btn primary', 'Save name'); go.type = 'button'; go.id = 'name-dlg-save';
+    const skip = el('button', 'btn small', 'Skip for now'); skip.type = 'button'; skip.id = 'name-dlg-skip';
+    const row = el('div', 'btn-row'); row.append(go, skip);
+    go.addEventListener('click', () => { if (!input.value.trim()) { msg.textContent = 'Type a name, or choose Skip for now.'; msg.hidden = false; input.focus(); return; } finish(input.value); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go.click(); } });
+    skip.addEventListener('click', () => finish(null));
+    skipName = () => finish(null);
+    nameDlg.append(h, p, lab, input, msg, row);
+    nameDlg.showModal(); input.focus();
+  }
+
   async function loadProfile({ force = false } = {}) {
     const email = session()?.email;
     if (!email) { profile = null; profileFor = null; paintButtons(); return; }
@@ -119,6 +151,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     try { profile = await social.profile(); profileFor = email; } catch { profile = null; }
     loading = false;
     paintButtons(); if (!pop.hidden) render();
+    askName();
   }
 
   function place() {

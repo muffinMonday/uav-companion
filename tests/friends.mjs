@@ -42,7 +42,7 @@ const mockFor = (uid) => async (route) => {
 };
 
 const b = await chromium.launch({ channel: CHANNEL });
-async function open(who, { vp = { width: 1300, height: 850 }, mobile = false, signedIn = true } = {}) {
+async function open(who, { vp = { width: 1300, height: 850 }, mobile = false, signedIn = true, prompt = 'skip' } = {}) {
   const [uid, email] = who === 'a' ? [A, 'a@example.test'] : [B, 'b@example.test'];
   const ctx = await b.newContext({ viewport: vp, hasTouch: mobile, isMobile: mobile });
   await ctx.route(new RegExp('^' + URL_.replace(/[.]/g, '\\.') + '/'), mockFor(uid));
@@ -57,6 +57,7 @@ async function open(who, { vp = { width: 1300, height: 850 }, mobile = false, si
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::|status of 4/.test(m.text()) && errs.push(m.text()));
   await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  if (prompt === 'skip') await p.locator('#name-dlg-skip').click({ timeout: 2500 }).catch(() => {}); // a new profile is asked for a name on first sign-in
   return { ctx, p };
 }
 const goFriends = async (p) => { await p.evaluate(() => { const t = document.getElementById('tab-friends'); if (document.getElementById('panel').hidden) document.querySelector('#dock button[data-tab=friends]').click(); else t.click(); }); await p.waitForTimeout(700); };
@@ -72,7 +73,15 @@ ok(await p.locator('#account-pop input[type=email]').isVisible(), 'its button op
 await ctx.close();
 
 // ---------- Alex: profile
-({ ctx, p } = await open('a'));
+({ ctx, p } = await open('a', { prompt: 'none' }));
+await p.waitForSelector('#name-dialog[open] #name-dlg-input');
+ok(await p.locator('#name-dlg-input').isVisible() && await p.getAttribute('#name-dlg-input', 'placeholder') === 'Pilot', 'a new profile is asked for a display name on first sign-in');
+await p.click('#name-dlg-save'); await p.waitForTimeout(200);
+ok(await p.locator('#name-dialog[open]').count() === 1, 'an empty name is not accepted');
+await p.click('#name-dlg-skip'); await p.waitForSelector('#name-dialog', { state: 'hidden' }); await p.waitForTimeout(300);
+ok((await db.query(`select display_name, named from public.profiles where user_id = '${A}'`)).rows[0].named === true, 'Skip keeps the default name and marks the profile as named');
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+ok(await p.locator('#name-dialog[open]').count() === 0, 'and it is not asked again');
 const tabs = await p.$$eval('#panel [role=tab]', (t) => t.map((x) => x.textContent.trim()));
 ok(tabs.join('|') === 'Map Configs|Trips|Points of Interest|Friends', 'four tabs in order: ' + tabs.join('|'));
 await goFriends(p);
@@ -86,9 +95,11 @@ const aCode = await code(p);
 ok(await p.locator('#fr-friends').textContent().then((t) => /No friends yet/.test(t)), 'no friends yet, and it says what to do');
 
 // ---------- Bea
-let bea = await open('b');
+let bea = await open('b', { prompt: 'none' });
+await bea.p.waitForSelector('#name-dialog[open] #name-dlg-input');
+await bea.p.fill('#name-dlg-input', 'Bea'); await bea.p.click('#name-dlg-save'); await bea.p.waitForSelector('#name-dialog', { state: 'hidden' }); await bea.p.waitForTimeout(400);
+ok((await db.query(`select display_name, named from public.profiles where user_id = '${B}'`)).rows[0].display_name === 'Bea', 'a name typed in the first-sign-in prompt is applied');
 await goFriends(bea.p);
-await editProfile(bea.p); await bea.p.fill('#pf-name', 'Bea'); await bea.p.click('#pf-save'); await bea.p.waitForSelector('#profile-dialog', { state: 'hidden' }); await bea.p.waitForTimeout(400);
 const bCode = await code(bea.p);
 ok(bCode !== aCode, 'a second person gets a different code');
 

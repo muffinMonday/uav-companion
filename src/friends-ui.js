@@ -148,7 +148,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     dc.append(del); pane.append(dc);
   }
 
-  cloud.friends = { incoming: 0, invites: 0, open: () => panel.open('friends'), editProfile: () => profileDialog.open(), recount: () => { publish(); render(); } };
+  cloud.friends = { incoming: 0, invites: 0, open: () => panel.open('friends'), editProfile: () => profileDialog.open(), reload: () => load({ withProfile: true }), recount: () => { publish(); render(); } };
   handle.onChange(() => { if (signedIn() && loadedFor !== handle.sync.status().session.email) load(); else if (!signedIn() && loadedFor) load(); });
   panel.onChange(() => { if (shown() && signedIn()) load({ withProfile: true }); else if (shown()) render(); });
   setInterval(() => { if (signedIn() && document.visibilityState === 'visible') load(); }, POLL_MS);

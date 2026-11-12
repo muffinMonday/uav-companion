@@ -106,4 +106,22 @@ const vs = await rows(A, 'select * from public.list_shared_trip_versions($1)', [
 ok(vs.some((v) => v.updated_by_name === 'Alex P' && v.updated_by_avatar === 'photo-folding'), 'the version list carries the editor\'s avatar: ' + J(vs.map((v) => [v.updated_by_name, v.updated_by_avatar])));
 ok(/trip not found/.test(await refused(db, C, 'select * from public.list_shared_trip_versions($1)', [TRIP])), 'a stranger cannot list versions');
 
+// ---------- named: the first-sign-in question
+const E = '55555555-5555-5555-5555-555555555555', F = '66666666-6666-6666-6666-666666666666', G = '77777777-7777-7777-7777-777777777777';
+await db.exec(`insert into auth.users (id, email) values ('${E}', 'e@example.test'), ('${F}', 'f@example.test'), ('${G}', 'g@example.test')`);
+let pe = await one(E, 'public.ensure_profile()');
+ok(pe.display_name === 'Pilot' && pe.named === false, 'a new profile is Pilot and not yet named');
+ok((await one(E, 'public.ensure_profile()')).named === false, 'asking again does not change that');
+pe = await one(E, 'public.choose_name(null)');
+ok(pe.display_name === 'Pilot' && pe.named === true, 'choose_name(null) keeps the name and marks the profile as named');
+pe = await one(F, 'public.choose_name($1)', ['  Fay  ']);
+ok(pe.display_name === 'Fay' && pe.named === true, 'choose_name with a name sets it (cleaned) and marks it');
+ok(/1 to 40/.test(await refused(db, G, 'select public.choose_name($1)', ['   '])), 'an empty name is refused');
+await one(G, 'public.ensure_profile()');
+pe = await update(G, { display_name: 'Gus' });
+ok(pe.named === true, 'renaming through update_profile also marks it');
+ok((await one(A, 'public.ensure_profile()')).named === true, 'a profile that was given a name when created is named');
+ok(!JSON.stringify(await friendsOf(A)).includes('named'), "other people's lists do not carry the flag");
+ok(await refused(db, null, 'select public.choose_name($1)', ['x']) !== null, 'a signed-out caller cannot call choose_name');
+
 await db.close();
