@@ -151,7 +151,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     // ---- delete
     const dc = el('div', 'card');
     const del = el('button', 'btn small danger', 'Delete my profile and friends'); del.type = 'button';
-    del.addEventListener('click', () => { if (confirm('Delete your profile, your friends and your blocked list? Your friends are not told. You can set up a new profile later.')) act(async () => { await social.deleteProfile(); profile = null; }, 'Profile deleted.'); });
+    del.addEventListener('click', () => { if (confirm('Delete your profile, your friends and your blocked list, and leave your shared trips? A trip you own that others have joined goes to the person who joined first; a trip nobody else joined is deleted. Your cloud copy is not touched. Your friends are not told. You can set up a new profile later.')) act(async () => { await social.deleteProfile(); profile = null; }, 'Profile deleted.'); });
     dc.append(del); pane.append(dc);
   }
 

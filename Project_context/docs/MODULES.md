@@ -42,7 +42,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `sync/engine.js` | Acts on the rules through an adapter; state in `uavzones.v1.sync` | adapter |
 | `sync/supabase.js` | Real adapter; dynamic-imports supabase-js; `configured()` | `client` |
 | `sync-ui.js` | Cloud copy card (status, sync, versions), sign-in form and sign-out flow, conflict prompt; returns the handle used below | `initSyncUI` |
-| `account-ui.js` | Account button (panel header and rail) and its popover: guest note and sign-in, or name, friend code, sync state, Edit profile, Friends, Sign out | handle |
+| `account-ui.js` (also the delete-account dialog) | Account button (panel header and rail) and its popover: guest note and sign-in, or name, friend code, sync state, Edit profile, Friends, Sign out | handle |
 | `avatars.js` (pure lists, `avatarEl`), `profile-ui.js` | Preset avatars and interest tags; the Profile card and the bio/location lines | `avatarEl`, `profileBits` |
 | `social.js` | Friends and profile RPC wrappers | `createSocial` |
 | `friends-ui.js` | Friends tab, invitations, badge | handle |

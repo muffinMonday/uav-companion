@@ -832,8 +832,8 @@ input[type=email]:focus{border-color:var(--accent)}
 .cloud-versions{margin-top:10px;display:flex;flex-direction:column;gap:6px}
 .cloud-version{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
 #cloud-card .btn.danger{margin-top:10px}
-.cloud-dialog,.splash{max-width:min(440px,calc(100vw - 32px));border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--fg);box-shadow:var(--shadow);padding:18px}
-.cloud-dialog::backdrop,.splash::backdrop{background:rgba(0,0,0,.4)}
+.cloud-dialog,.account-dialog,.splash{max-width:min(440px,calc(100vw - 32px));border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--fg);box-shadow:var(--shadow);padding:18px}
+.cloud-dialog::backdrop,.account-dialog::backdrop,.splash::backdrop{background:rgba(0,0,0,.4)}
 .splash{max-height:calc(100dvh - 32px);overflow-y:auto}
 .splash-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
 .splash-choice{display:grid;gap:4px;align-content:start;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);color:var(--fg);font:inherit;text-align:left;cursor:pointer}
@@ -844,7 +844,7 @@ input[type=email]:focus{border-color:var(--accent)}
 .splash .w-steps{margin-top:12px}
 .splash-msg{min-height:1.2em;color:var(--danger,#b3261e)}
 @media (max-width:420px){.splash-choices{grid-template-columns:1fr}}
-.cloud-dialog h2,.splash h2{margin:0 0 6px;font-size:18px}
+.cloud-dialog h2,.account-dialog h2,.splash h2{margin:0 0 6px;font-size:18px}
 .cloud-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;font-size:14px}
 .cloud-line{margin-top:8px;text-align:left;white-space:normal}
 .storage-use.warn{color:var(--danger);font-weight:600}
@@ -970,3 +970,6 @@ input[type=email]:focus{border-color:var(--accent)}
 .pf-tags{display:flex;flex-wrap:wrap;gap:6px}
 .profile-card .switch{margin-top:10px}
 .profile-card #pf-save{margin-top:10px}
+.account-dialog input[type=text]{width:100%;box-sizing:border-box;margin:4px 0 8px}
+.account-dialog ul{margin:6px 0 10px;padding-left:18px}
+.account-dialog .btn-row{margin-top:8px}

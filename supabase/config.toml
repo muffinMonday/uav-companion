@@ -18,3 +18,7 @@ additional_redirect_urls = ["http://localhost:5173", "https://muffinmonday.githu
 [auth.email]
 enable_signup = true
 enable_confirmations = false
+
+# The edge function that deletes an account (the platform checks the caller token first; the handler checks it again).
+[functions.delete-account]
+verify_jwt = true

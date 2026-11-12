@@ -45,11 +45,11 @@ Audit findings that shaped this list: the Supabase backend, friends, shared trip
 - Avatar and permitted fields in friend rows (`src/friends-ui.js`), party members (`src/party-ui.js`), shared-trip "updated by"; visibility enforced server-side.
 
 ## Phase E: identity, deletion, docs
-### AC-10 Account deletion
+### AC-10 Account deletion (built: edge function, typed word, owned trips go to the first joiner)
 - Extend `delete_profile` to remove `user_data`, trip membership and live locations. Removing the `auth.users` row needs an owner decision (edge function or documented manual step).
-### AC-11 Progression-ready note
+### AC-11 Progression-ready note (built: DECISIONS)
 - `DECISIONS.md`: the auth UUID is the identity; progression gets its own table later; `profiles` stays social-only. No code.
-### AC-12 Docs and release checks
+### AC-12 Docs and release checks (built: DEVELOPMENT.md checklist)
 - `PROJECT.md`, `DATABASE.md`, `ARCHITECTURE.md`, `MODULES.md`, `CURRENT_STATUS.md`. Before real users: second Supabase project, closed sign-ups.
 
 ## Regression list (from the original plan, to keep passing)

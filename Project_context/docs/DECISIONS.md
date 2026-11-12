@@ -3,6 +3,10 @@
 Current, constraining decisions only; superseded ones are removed (history: git, `CHANGELOG.md`). Grouped by area. "Owner" means the project owner chose it. Product-level open questions: `PROJECT.md` section 8.
 
 ## Platform and data
+**Account deletion (owner, 2026-11-13).** The sign-in record is removed by an edge function (service-role key kept as a function secret), after `delete_account` has removed the app data in one transaction. A trip the deleter owns passes to the member who joined first; with nobody else joined it is deleted. Confirmation is typing DELETE; a backup of the device is offered; markers and trips on the device are kept (they are then the only copy). "Delete my profile and friends" stays as the lighter option and keeps the cloud copy.
+
+**Identity and progression (owner, 2026-11-12).** The auth user id (UUID) is the identity. Progression (XP, flight sessions, achievements) gets its own tables keyed by it, later; `profiles` stays social-only, so deleting a profile and deleting progression are separate decisions. No progression code exists yet.
+
 **One profile switch, not one per field (owner, 2026-11-12).** `share_profile` shows or hides bio, location and interests together, to accepted friends and joined party members; the name and avatar are always shown to them. Reason: simple to explain and to enforce in SQL. Avatars are a fixed list of drawn icons (FPV platforms, photography drones, travel), no upload and no Storage; interests a fixed list of tags with FPV flying styles. Replaces the backlog's per-field visibility.
 
 **Static app, PMTiles, one file per region.** Reason: only tiles in view load; adding a region needs no code; static hosting. Consequences: local Node build with own PMTiles writer (`scripts/lib`); host must support range requests.

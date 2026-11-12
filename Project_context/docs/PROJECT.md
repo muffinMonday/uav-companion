@@ -334,6 +334,10 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Others see the avatar next to the name in the Friends list, in a trip's Party Members and as the editor in Earlier versions; bio, location and interests only when the switch is on (default on). A pending request shows a name only. The account button shows the avatar too (the first letter of the name when none is chosen).
 - Rules are in the database (`update_profile`, DATABASE.md); the editor and the lists only draw what they are given. Tests: `tests/db-profile-unit.mjs`, `tests/friends.mjs`, `tests/party.mjs`.
 
+**F48. Delete my account (built, signed-in only)**
+- **Delete my account…** in the account popover opens a dialog that lists what goes (profile, friends, cloud copy and versions, places in shared trips, the sign-in itself) and what stays (markers and trips on this device), offers a GeoJSON backup, and enables the Delete button only when the word DELETE (capitals) is typed. A failure shows the server's message and keeps the dialog open; success signs this browser out and leaves it a guest.
+- A trip you own is handed to the member who joined first; with nobody else joined it is deleted. In other people's trips you just leave. See DATABASE.md and `supabase/README.md`. "Delete my profile and friends" (Friends tab) also leaves trips but keeps the cloud copy.
+
 ## 5. Non-functional requirements
 
 - **Static delivery:** the app must run from static files with no server of our own; GitHub Pages or a similar static host must work. Accounts are optional (Supabase, section 9) and absent from a build without a project address.

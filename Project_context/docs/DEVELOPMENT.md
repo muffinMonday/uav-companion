@@ -41,6 +41,10 @@ node tests/trips.mjs              # one suite directly; prints PASS/FAIL lines
 - The runner counts lines starting with `PASS`/`FAIL`; `smoke` prints none, so it shows 0 pass and passes if it does not crash or log console errors.
 
 ## Backend (`supabase/`)
+**Edge function:** `supabase/functions/delete-account` is deployed separately from the site and the migrations: `npx supabase functions deploy delete-account --project-ref <ref>` (the owner approves each deploy). Its rules are tested without Deno (`node tests/delete-account-unit.mjs`).
+
+**Before real users (release checklist):** a second Supabase project for production (this one is development); closed sign-ups (`enable_signup` off, invite or allow-list); email confirmation on; an outside email sender (the built-in one is rate limited); the Pages address in the redirect allow-list; the delete-account function deployed there.
+
 See `supabase/README.md`: migrations, how the access rules are tested without Docker (`node tests/db-unit.mjs`, PGlite), how to push to the hosted project (`npx supabase db push --remote --dry-run`, then `--yes`; the password is read from the `SUPABASE_DB_PASSWORD` environment variable), and what must never be committed. The project address and publishable key are in `.env.development.local` (git-ignored, used by `npm run dev` only).
 
 ### Cloud copy in the app (`src/sync/`, `src/sync-ui.js`)

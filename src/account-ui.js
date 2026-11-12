@@ -76,12 +76,41 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     btn('Edit profile', () => { hide(false); cloud.friends?.open(); });
     btn('Friends' + (n ? ` (${n})` : ''), () => { hide(false); cloud.friends?.open(); });
     pop.append(row);
-    const out = el('button', 'btn small danger', 'Sign out'); out.type = 'button';
+    const out = el('button', 'btn small', 'Sign out'); out.type = 'button';
     out.addEventListener('click', async () => { if (await handle.signOut()) hide(false); });
-    pop.append(out);
+    const del = el('button', 'btn small danger', 'Delete my account…'); del.type = 'button'; del.id = 'account-delete';
+    del.addEventListener('click', () => { hide(false); confirmDelete(); });
+    const end = el('div', 'btn-row'); end.append(out, del);
+    pop.append(end);
   }
 
   /** Fetches the profile (the name, avatar and friend code). `force` refreshes one already held, as when the popover opens after edits made in the Friends tab. */
+  // ---- deleting the account: says what goes, offers a backup, and asks for the word DELETE before the button works
+  const dlg = el('dialog', 'account-dialog'); dlg.id = 'account-delete-dialog'; dlg.setAttribute('aria-labelledby', 'account-del-title');
+  document.body.append(dlg);
+  function confirmDelete() {
+    dlg.replaceChildren();
+    const h = el('h2', '', 'Delete your account?'); h.id = 'account-del-title';
+    const list = el('ul', 'hint');
+    for (const t of ['Your profile, friends and blocked list are removed.', 'Your cloud copy and all its earlier versions are deleted.', 'You leave every shared trip. A trip you own that others have joined goes to the person who joined first; a trip nobody else joined is deleted.', 'Your sign-in is deleted. Signing in with the same email later starts a new, empty account.', 'Markers and trips on this device stay here.']) list.append(el('li', '', t));
+    const back = el('button', 'btn small', 'Download a backup of this device first'); back.type = 'button';
+    back.addEventListener('click', () => handle.backupThisDevice());
+    const lab = el('label', 'fr-label', 'Type DELETE to confirm'); lab.setAttribute('for', 'account-delete-word');
+    const word = el('input'); word.type = 'text'; word.id = 'account-delete-word'; word.autocomplete = 'off'; word.spellcheck = false;
+    const msg = el('p', 'hint'); msg.setAttribute('role', 'alert'); msg.hidden = true;
+    const go = el('button', 'btn danger', 'Delete my account'); go.type = 'button'; go.id = 'account-delete-go'; go.disabled = true;
+    const no = el('button', 'btn small', 'Cancel'); no.type = 'button'; no.addEventListener('click', () => dlg.close());
+    word.addEventListener('input', () => { go.disabled = word.value !== 'DELETE'; });
+    go.addEventListener('click', async () => {
+      go.disabled = no.disabled = word.disabled = true; msg.hidden = true;
+      try { await handle.deleteAccount(); dlg.close(); toast('Your account was deleted. Markers and trips on this device are still here.', 8000); }
+      catch (e) { msg.textContent = e.message; msg.hidden = false; no.disabled = word.disabled = false; go.disabled = word.value !== 'DELETE'; }
+    });
+    const row = el('div', 'btn-row'); row.append(go, no);
+    dlg.append(h, list, back, lab, word, msg, row);
+    dlg.showModal(); word.focus();
+  }
+
   async function loadProfile({ force = false } = {}) {
     const email = session()?.email;
     if (!email) { profile = null; profileFor = null; paintButtons(); return; }

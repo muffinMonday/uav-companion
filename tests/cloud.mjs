@@ -18,6 +18,7 @@ const cloud = makeCloud();
 const server = cloud.adapter({ email: USER.email });
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
 const hits = [];
+const fnCalls = []; let fnFail = null; // the delete-account edge function: what it was sent, and whether to make it fail
 const mock = async (route) => {
   const req = route.request(), u = new URL(req.url());
   if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
@@ -29,6 +30,8 @@ const mock = async (route) => {
   if (m?.[1] === 'list_user_data_versions') return json(await server.listVersions());
   if (m?.[1] === 'delete_user_data') { await server.remove(); return json(null); }
   if (u.pathname.includes('/auth/v1/otp')) return json({});
+  if (u.pathname.includes('/functions/v1/delete-account')) { fnCalls.push({ auth: req.headers()['authorization'] || '', body: req.postData() }); return fnFail ? json({ error: fnFail }, 500) : json({ status: 'deleted' }); }
+  if (u.pathname.includes('/auth/v1/logout')) return json({}, 204);
   return json({ message: 'not mocked: ' + u.pathname }, 404);
 };
 
@@ -84,7 +87,7 @@ await ctx.close();
 await openAccount(p);
 await p.waitForFunction(() => /up to date/.test(document.querySelector('#account-pop .cloud-status')?.textContent || ''), null, { timeout: 15000 });
 ok(/tester@example\.test/.test(await p.locator('#account-pop').textContent()) && await p.locator('#account-btn .avatar').count() === 1, 'signed in: the popover shows who, and the button shows an avatar');
-ok(await p.locator('#account-pop >> text=Edit profile').isVisible() && await p.locator('#account-pop >> text=Sign out').isVisible() && /Friends/.test(await p.locator('#account-pop .btn-row').textContent()), 'with Edit profile, Friends and Sign out');
+ok(await p.locator('#account-pop >> text=Edit profile').isVisible() && await p.locator('#account-pop >> text=Sign out').isVisible() && /Friends/.test(await p.locator('#account-pop .btn-row').first().textContent()), 'with Edit profile, Friends and Sign out');
 await p.click('#account-pop >> text=Friends'); await p.waitForSelector('#pane-friends:not([hidden])');
 ok(await p.locator('#account-pop').isHidden(), 'the Friends shortcut opens the Friends tab and closes the popover');
 await openSettings(p);
@@ -123,5 +126,31 @@ await p.click('#privacy-back'); await openAccount(p);
 await p.click('#account-pop >> text=Sign out'); await p.waitForTimeout(600);
 await openAccount(p);
 ok(await p.locator('#account-pop input[type=email]').isVisible() && await stored(p) === '' && cloud.rows.get(USER.email).doc.items.length === 3, 'sign-out returns to the form, clears this device (it was in step with the cloud) and leaves the cloud copy alone');
+// ---------- deleting the account
+cloud.rows.delete(USER.email); // an empty cloud, so signing in uploads this device and no question is asked
+({ ctx, p } = await open({ signedIn: true, items: [mk('Tower', 30.5), mk('Lake', 30.6)] }));
+await openAccount(p);
+await p.waitForFunction(() => /up to date/.test(document.querySelector('#account-pop .cloud-status')?.textContent || ''), null, { timeout: 15000 });
+ok(await p.locator('#account-delete').isVisible(), 'the popover has a "Delete my account" button');
+await p.click('#account-delete'); await p.waitForSelector('#account-delete-dialog[open]');
+ok(await p.locator('#account-pop').isHidden() && /Markers and trips on this device stay here/.test(await p.locator('#account-delete-dialog').textContent()) && /joined first/.test(await p.locator('#account-delete-dialog').textContent()), 'it opens a dialog that says what goes (trips handed on, sign-in removed) and what stays');
+ok(await p.locator('#account-delete-go').isDisabled(), 'the Delete button is disabled until the word is typed');
+await p.fill('#account-delete-word', 'delete'); ok(await p.locator('#account-delete-go').isDisabled(), 'the word must be in capitals');
+const [bk] = await Promise.all([p.waitForEvent('download'), p.click('#account-delete-dialog >> text=Download a backup of this device first')]);
+ok(/this-device/.test(bk.suggestedFilename()), 'the dialog offers a backup of this device: ' + bk.suggestedFilename());
+await p.fill('#account-delete-word', 'DELETE'); ok(await p.locator('#account-delete-go').isEnabled(), 'typing DELETE enables it');
+ok(fnCalls.length === 0, 'nothing has been sent yet');
+fnFail = 'Could not delete your data: boom. Nothing was deleted.';
+await p.click('#account-delete-go'); await p.waitForTimeout(800);
+ok(await p.locator('#account-delete-dialog[open]').count() === 1 && /Nothing was deleted/.test(await p.locator('#account-delete-dialog [role=alert]').textContent()) && fnCalls.length === 1, 'a failure shows the message from the server and keeps the dialog open');
+ok(await p.locator('#account-btn').getAttribute('data-state') === 'in', 'and the visitor is still signed in');
+fnFail = null;
+await p.click('#account-delete-go'); await p.waitForTimeout(1200);
+ok(fnCalls.length === 2 && JSON.parse(fnCalls[1].body).confirm === 'DELETE' && /^Bearer /.test(fnCalls[1].auth), 'a retry sends the confirmation word with the signed-in token');
+ok(await p.locator('#account-delete-dialog[open]').count() === 0 && await p.locator('#account-btn').getAttribute('data-state') === 'guest', 'on success the dialog closes and the browser is a guest');
+ok(await stored(p) === 'Lake,Tower', 'markers and trips on this device are kept: ' + await stored(p));
+ok(/account was deleted/.test(await p.locator('#toast').textContent()), 'and a toast says so');
+await ctx.close();
+
 ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
 await b.close();

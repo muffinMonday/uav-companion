@@ -1,7 +1,7 @@
 // The optional cloud copy: a card in the privacy settings with the sync state and its tools, the sign-in form and sign-out flow that the
 // account button (account-ui.js) uses, and the question that appears when this device and the cloud copy both changed. Does nothing (and loads nothing) unless the build has a project address; see sync/.
 import { configured } from './sync/supabase.js';
-import { deviceName, describeWhen } from './sync/core.js';
+import { deviceName, describeWhen, buildDoc } from './sync/core.js';
 import { toGeoJSON } from './poi.js';
 
 const $ = (id) => document.getElementById(id);
@@ -75,6 +75,24 @@ export async function initSyncUI({ store, toast }) {
     versions = null; render();
     toast('Signed out. This device\'s markers and trips were removed; they stay in your cloud copy.', 8000);
     return true;
+  }
+
+  /** Offers this device's markers and trips (check-ins included) as a GeoJSON download. */
+  function backupThisDevice() { download('device', buildDoc({ items: store.items(), trips: store.trips(), includeCheckins: true })); }
+
+  /**
+   * Deletes the account on the server (the delete-account edge function: the app data, then the sign-in record), then signs this browser out. Markers and trips on
+   * this device are kept: they are the only copy left, and the person is now a guest here. Throws an Error with the server's own message.
+   */
+  async function deleteAccount() {
+    const r = await adapter.client.functions.invoke('delete-account', { body: { confirm: 'DELETE' } });
+    if (r.error) {
+      let m = r.error.message;
+      try { const b = await r.error.context?.json(); if (b?.error) m = b.error; } catch { /* keep the generic message */ }
+      throw new Error(m);
+    }
+    try { await sync.signOut(); } catch (e) { console.warn('sign-out after deletion', e); }
+    versions = null; render();
   }
 
   function render(s = sync.status()) {
@@ -157,6 +175,8 @@ export async function initSyncUI({ store, toast }) {
     open: () => (handle.account ? handle.account.open() : $('privacy-btn')?.click()),
     signInForm,
     signOut,
+    backupThisDevice,
+    deleteAccount,
     sync,
     adapter,
   });
