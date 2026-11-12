@@ -56,6 +56,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let subParent = new Map();  // Side Quest id -> its parent's id (a Side Quest with no parent is not in it)
   let expandedParent = null;  // the main stop whose Side Quests are unfolded in the lists (one at a time)
   let showAllSide = !!loadPrefs().showSide;
+  let hideTrips = !!loadPrefs().hideTrips; // trip markers, their routes and Side Quest links are taken off the map
   const expandListeners = new Set();
   const visitCount = (id) => visitMap.get(id)?.length ?? 0;
   let selecting = false;      // "Select markers" mode in the list, for deleting several at once
@@ -577,6 +578,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const stopDates = (tripId) => [...new Set(store.items().filter((i) => i.tripId === tripId && i.date && isMain(i) && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence').map((i) => i.date))].sort();
   function redrawRoutes() {
     routes.clearLayers(); dayLayer.clearLayers();
+    if (hideTrips) return; // trip routes are off with the trip markers
     if (shownDay) { const chain = chainOf(shownDay.tripId, shownDay.date); if (chain.length >= 2) drawChain(dayLayer, chain, null, tripColour(shownDay.tripId)); }
     const it = viewId && store.get(viewId);
     if (!it?.tripId || !it.date) return;
@@ -662,6 +664,49 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   new DetailsControl().addTo(map);
   $('poi-details').addEventListener('change', (e) => setDetails(e.target.checked));
   setDetails(detailsOn);
+
+  // two map toggles on the left, under the other buttons: Side Quests (the same setting as the POI tab switch) and trip markers
+  let sideBtn = null, tripBtn = null;
+  // a button with a slash across it when the thing is off (same look as the ⓘ button)
+  const ToggleControl = (icon, label, onClick, onAdded) => L.Control.extend({
+    options: { position: 'topleft' },
+    onAdd() {
+      const bar = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+      const a = L.DomUtil.create('a', 'map-toggle', bar);
+      a.href = '#'; a.role = 'button'; a.setAttribute('aria-label', label);
+      a.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icon}"/><path class="slash" d="M4 3l16 18"/></svg>`;
+      L.DomEvent.disableClickPropagation(bar);
+      L.DomEvent.on(a, 'click', (e) => { L.DomEvent.preventDefault(e); onClick(); });
+      onAdded(a);
+      return bar;
+    },
+  });
+  function sideBtnPaint() {
+    if (!sideBtn) return;
+    sideBtn.classList.toggle('off', !showAllSide); sideBtn.setAttribute('aria-pressed', String(showAllSide));
+    sideBtn.title = 'Side Quests on the map: ' + (showAllSide ? 'all shown' : 'only the open stop\'s') + ' (click to switch)';
+  }
+  function tripBtnPaint() {
+    if (!tripBtn) return;
+    tripBtn.classList.toggle('off', hideTrips); tripBtn.setAttribute('aria-pressed', String(!hideTrips));
+    tripBtn.title = 'Trip markers on the map: ' + (hideTrips ? 'hidden' : 'shown') + ' (click to switch)';
+  }
+  new (ToggleControl('M7 21V4M7 5h10l-2 3.5 2 3.5H7', 'Show Side Quests on the map', () => setShowAllSide(!showAllSide), (a) => { sideBtn = a; }))().addTo(map);
+  new (ToggleControl('M4 8h16v11H4zM9 8V5h6v3M4 13h16', 'Show trip markers on the map', () => setHideTrips(!hideTrips), (a) => { tripBtn = a; }))().addTo(map);
+  /** Takes the trip markers off the map (and their routes and Side Quest links) or puts them back. Lists and the Trips tab are unchanged. */
+  function setHideTrips(on) {
+    hideTrips = on; savePrefs({ hideTrips: on ? true : null });
+    for (const [id, m] of markers) {
+      const it = store.get(id);
+      const hidden = hideTrips && !!it?.tripId;
+      if (hidden && layer.hasLayer(m)) layer.removeLayer(m);
+      else if (!hidden && !layer.hasLayer(m)) layer.addLayer(m);
+      if (hidden && viewId === id) map.closePopup();
+    }
+    tripBtnPaint();
+    redrawRoutes(); refreshIcons();
+  }
+  sideBtnPaint(); tripBtnPaint();
 
   /** Dashed lines on the map from the open marker to its nearest home point and hotel, labelled with the distance. */
   const links = L.layerGroup().addTo(map);
@@ -756,7 +801,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const parent = pid && store.get(pid);
       if (!parent) continue;
       for (const s of sideMap.byParent.get(pid) ?? []) {
-        if (sideHidden(s)) continue;
+        if (sideHidden(s) || (hideTrips && (parent.tripId || s.tripId))) continue;
         L.polyline([[parent.lat, parent.lon], [s.lat, s.lon]], { color: tripColor(parent) ?? '#546e7a', weight: 2, opacity: 0.8, dashArray: '2 6', interactive: false }).addTo(sideLinks);
       }
     }
@@ -774,7 +819,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     m._sig = sigOf(item);
     m.on('click', () => { if (suppressClick) return; if (selecting) pickOnMap(item.id); else if (detailsOn) openPopup(item.id); else selectMarker(item.id); });
     markers.set(item.id, m);
-    layer.addLayer(m);
+    if (!(hideTrips && item.tripId)) layer.addLayer(m);
     paintPins();
   }
   /** Redraws any pin whose type or trip colour changed (a trip was edited or deleted, a marker was re-tagged). */
@@ -857,7 +902,11 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       paintToggle();
       toggle.addEventListener('detailschange', paintToggle); // the setting changed while this window is open
       toggle.addEventListener('click', () => { if (!detailsOn) { selectMarker(id); return; } setWindowMode(!expanded); paintToggle(); });
-      root.append(toggle);
+      // expanded: Leaflet's close button sits on the popup container, which the expanded layout moves away from this window, so the window has its own
+      const close = el('button', 'pop-close'); close.type = 'button'; close.setAttribute('aria-label', 'Close'); close.title = 'Close';
+      close.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      close.addEventListener('click', () => popup?.close());
+      root.append(toggle, close);
       const trip0 = tripLabel(it, store.getTrip(it.tripId));
       const phone = window.matchMedia('(max-width: 520px)').matches;
       // the eye: the same setting as the map button and the switch in the Points of Interest tab
@@ -1229,8 +1278,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   bannerReview.addEventListener('click', () => panel.open('poi')); // the list, with the route and the delete button
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (mode) setMode(null); else if (selecting) setSelecting(false); } });
   editSwitch.addEventListener('change', () => setMode(editSwitch.checked ? 'edit' : null));
+  function setShowAllSide(on) {
+    showAllSide = on; savePrefs({ showSide: on ? true : null });
+    $('poi-showside').checked = on; sideBtnPaint();
+    refreshIcons();
+  }
   $('poi-showside').checked = showAllSide;
-  $('poi-showside').addEventListener('change', (e) => { showAllSide = e.target.checked; savePrefs({ showSide: showAllSide ? true : null }); refreshIcons(); });
+  $('poi-showside').addEventListener('change', (e) => setShowAllSide(e.target.checked));
   showSwitch.addEventListener('change', () => {
     if (showSwitch.checked) map.addLayer(layer); else { map.removeLayer(layer); map.closePopup(); }
   });

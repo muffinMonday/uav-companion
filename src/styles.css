@@ -431,6 +431,11 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .pop-toggle svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .leaflet-popup.is-expanded .leaflet-popup-tip-container{display:none}
 .leaflet-popup.is-expanded .leaflet-popup-content-wrapper{transform:translateY(calc(50% + 36px))}
+.leaflet-popup.is-expanded > a.leaflet-popup-close-button{display:none} /* the window's own close (.pop-close) takes its place */
+.pop-close{position:absolute;top:10px;right:10px;display:none;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.pop-close:hover{background:var(--surface-2);color:var(--fg)}
+.pop-close svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.leaflet-popup.is-expanded .pop-close{display:grid}
 .pop-toggle[aria-expanded=true] .ic-down,.pop-toggle[aria-expanded=false] .ic-up{display:none}
 
 /* ---------- the same place on several dates ---------- */
@@ -646,8 +651,14 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .sp-grab,.dash-expand{display:none}
 .dash-expand svg{transition:transform var(--dur) var(--ease)}
 .dash.tall .dash-expand svg{transform:rotate(180deg)}
-@media (max-width:520px){
+/* the dashboard's expand button and tall height: phones, and touch screens up to 900px tall (an unfolded foldable is wider than a phone) */
+@media (max-width:520px), (pointer:coarse) and (max-height:900px){
   .dash-expand{display:inline-flex}
+  .dash.tall{z-index:1070;height:min(calc(90vh - 40px),calc(100vh - 48px - env(safe-area-inset-top,0px)));max-height:none}
+  @supports (height:1dvh){.dash.tall{height:min(calc(90dvh - 40px),calc(100dvh - 48px - env(safe-area-inset-top,0px)))}}
+  .dash.tall .dash-head{flex:none}
+}
+@media (max-width:520px){
   .sp-grab{display:flex;justify-content:center;flex:none;padding:2px 0 0;background:var(--surface)}
   .sp-grab .icon-btn{width:48px;height:24px}
   .sp-grab svg{transition:transform var(--dur) var(--ease)}
@@ -655,11 +666,8 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
   /* expanded: the sheet's top edge is at 10% of the screen (never under the status bar); above the banner and the forecast card so its buttons are never covered */
   .sidepanel.tall{z-index:1070;height:min(calc(90vh - 8px),calc(100vh - 16px - env(safe-area-inset-top,0px)))}
   @supports (height:1dvh){.sidepanel.tall{height:min(calc(90dvh - 8px),calc(100dvh - 16px - env(safe-area-inset-top,0px)))}}
+  /* expanded (.dash.tall, see the block above): the header stays put and only the cards scroll, so shrink and close are always reachable */
   .dash{left:8px;right:8px;bottom:40px;width:auto;max-width:none;max-height:54vh}
-  /* expanded: the top edge is at 10% of the screen (and never under the status bar); the header stays put and only the cards scroll, so shrink and close are always reachable. It sits above the banner and the forecast card so nothing can cover those buttons. */
-  .dash.tall{z-index:1070;height:min(calc(90vh - 40px),calc(100vh - 48px - env(safe-area-inset-top,0px)));max-height:none}
-  @supports (height:1dvh){.dash.tall{height:min(calc(90dvh - 40px),calc(100dvh - 48px - env(safe-area-inset-top,0px)))}}
-  .dash.tall .dash-head{flex:none}
   body[data-panel=open]{--panel-w:0px}
   .dash-card{max-width:none}
   .dash-peek,.dash-tab{bottom:40px}
@@ -747,6 +755,11 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .poi-pin.focused svg{scale:1.18;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
 .leaflet-bar a.details-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
 .leaflet-bar a.details-btn svg{width:18px;height:18px}
+.leaflet-bar a.map-toggle{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
+.leaflet-bar a.map-toggle svg{width:18px;height:18px}
+.map-toggle .slash{display:none}
+.map-toggle.off{color:var(--muted)!important}
+.map-toggle.off .slash{display:inline}
 .details-btn .slash{display:none}
 .details-btn.off{color:var(--muted)!important}
 .details-btn.off .slash{display:inline}
