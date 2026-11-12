@@ -20,7 +20,7 @@ Members earn **XP**; XP gives a **rank** (10 tiers, Rookie 0 XP to Ace 3,500; mo
 |---|---|---|
 | Ledger, ranks, roles, admin adjust | `20261114100000_progression_core.sql` | none (admin calls are SQL/RPC only; there is no admin screen) |
 | Achievements, featured | `20261114110000_achievements.sql` | `progression.js` (pure), `progression-api.js`, `progression-ui.js` |
-| Read API | `20261114120000_progression_read.sql` | own card in the Friends tab, others' card in `profile-popover.js`, `livemap.js` ring |
+| Read API | `20261114120000_progression_read.sql` | own card in the account pane (`account-ui.js`), others' card in `profile-popover.js`, `livemap.js` ring |
 | Sessions | `20261114130000_flight_sessions.sql` | `sessions.js`, `sessions-ui.js` (Friends tab) |
 | Steam | `20261114140000_steam.sql`, `supabase/functions/{steam-link,steam-sync,steam-sync-all,_shared}` | `steam.js`, `steam-ui.js` (Friends tab) |
 
@@ -44,4 +44,4 @@ Tests: `db-progression-unit`, `db-progression-read-unit`, `db-sessions-unit`, `d
 - No admin screen: XP adjustments, role grants and attendance revocation of other sessions' marks beyond the Sessions card are RPC/SQL. Walk-in friend-code lookup is not rate limited (organiser/administrator role only).
 - Steam playtime can be idled or inflated and is cumulative only; a very late offline upload is credited in full (no per-sync cap by design, only the 500-hour pace). The Steam OpenID and sync paths are untested against the real service.
 - Blocked members still see each other's pins and party lists (existing behaviour, unchanged); only progression is hidden for them.
-- The Sessions and Steam cards live in the Friends tab, not their own tabs.
+- The Steam card sits in the account pane (avatar popover) with Progression; only the Sessions card is in the Friends tab.

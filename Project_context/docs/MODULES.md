@@ -48,7 +48,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `sessions.js` (pure + API wrapper), `sessions-ui.js` | Flight sessions: validation, which controls to offer, the card with RSVP and the organiser's manage panel | `createSessions`, `sessionState`, `createSessionsCard` |
 | `progression.js` (pure), `progression-api.js`, `progression-ui.js` | Rank progress, validation of what the database returns, a short cache, and the rank badge, progression card, achievement collection and XP history | `cleanProgression`, `rankProgress`, `getProgression`, `mountProgression`, `rankBadge`, `progressionMini` (map pin card; `livemap.js` `setRanks`) |
 | `social.js` | Friends and profile RPC wrappers | `createSocial` |
-| `friends-ui.js` | Friends tab (you, add a friend, lists), invitations, badge; rows open the profile popover | handle |
+| `friends-ui.js` | Friends tab (friend code, add a friend, lists, Sessions card), invitations, badge; rows open the profile popover | handle |
 | `profile-dialog.js` | The Edit profile dialog (name, avatar, bio, location, interests, share switch, preview); opened only by Edit profile buttons | `createProfileDialog` |
 | `profile-popover.js` | Small read-only profile popover for friend and party rows | `profileTrigger`, `showProfile` |
 | `presence.js` | 30 s heartbeat | `initPresence` |

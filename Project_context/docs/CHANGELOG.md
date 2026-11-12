@@ -2,6 +2,9 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-14 (profile pane)
+- Progression and Steam moved from Friends into the account pane; Edit profile gets grouping, validation and an unsaved-changes guard. Tests updated (progression, steam, sessions, friends).
+
 ## 2026-11-14
 - Progression system, phases 1 to 6 (design and owner to-do: `PROGRESSION.md`; features F49 to F51):
   - 1 XP ledger, ranks and settings as data, admin and organiser roles, administrator XP adjustment (`9470fd0`, migration `20261114100000_progression_core.sql`).

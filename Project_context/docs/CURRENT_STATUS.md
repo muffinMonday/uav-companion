@@ -1,7 +1,12 @@
 # Session Checkpoint
 
-Updated: 2026-11-14
+Updated: 2026-11-14 (late)
 Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Phases 1 to 6 are built, tested, committed, pushed and deployed; the work is finished apart from the owner's set-up steps below.** Standing rule from the owner: after each finished, tested phase commit, push and deploy (hosted `db push`, function deploy, `deploy:live`) and move on without asking again (memory `commit-deploy-each-phase`); it does not cover unrelated work, live checks that create real users, or secrets.
+
+## Latest work: profile pane (done, pushed, deployed)
+- Progression and Steam cards moved from the Friends tab into the account pane (avatar popover, `account-ui.js`: collapsible sections, no email shown). Friends keeps friend code, Sessions card, requests, lists. Edit profile dialog: grouped fields, optional labels, empty-name validation, saving state, unsaved-changes confirm on Cancel/Escape. No server change.
+- Commits on `main`: pane move, then editor polish; `deploy:live` run after each. Full `npm test` passed after the first; after the second only `sessions` failed once ("marking an RSVP present" reads `.ses-message` too early under load) and passed alone: a flake, worth a wait-for in that test.
+- Not done: avatar upload (none exists, presets only); a unit-level test for the pane lifecycle.
 
 ## Read first
 `docs/PROGRESSION.md` (design, rules, how to extend, owner to-do, gaps). Per-migration detail: `supabase/README.md`. Feature text: `PROJECT.md` F49 (ranks, achievements, cards, map ring), F50 (sessions), F51 (Steam). Module map: `MODULES.md`.
@@ -22,7 +27,7 @@ Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Ph
 
 ## Not built / ideas
 - Phase 7: the four real-world flying achievements need a flight-logging feature first (nothing records a flight today). Not started.
-- No admin screen (XP adjust, grant/revoke role, revoke attendance outside the Sessions card are RPC/SQL); no rate limit on walk-in friend-code lookups; Sessions and Steam cards sit in the Friends tab (a tab of their own is a small change).
+- No admin screen (XP adjust, grant/revoke role, revoke attendance outside the Sessions card are RPC/SQL); no rate limit on walk-in friend-code lookups; Sessions card sits in the Friends tab.
 - Optional follow-ups carried over: try drag-reorder on a real phone; Trips-tab drop index assumes every stop of a day has an `order`.
 
 ## Findings worth keeping
@@ -41,4 +46,4 @@ None.
 Ask the owner which to-do item to start. If they want more progression work: the flight-logging feature (then phase 7 achievements), an admin screen, or moving the Sessions/Steam cards to their own tabs. After any change: `/change-workflow`, `/supabase-change` for SQL, `/test-impact`, then full `npm test` before committing `src/` changes.
 
 ## Relevant Files
-`Project_context/docs/PROGRESSION.md`, `supabase/migrations/20261114*.sql`, `supabase/functions/steam-*`, `supabase/functions/_shared/steam.js`, `src/progression*.js`, `src/sessions*.js`, `src/steam*.js`, `src/livemap.js` (rank ring), `src/friends-ui.js` (hosts the cards), `src/profile-popover.js`, `tests/db-progression*-unit.mjs`, `tests/db-sessions-unit.mjs`, `tests/db-steam-unit.mjs`, `tests/{progression,sessions,steam}.mjs`
+`Project_context/docs/PROGRESSION.md`, `supabase/migrations/20261114*.sql`, `supabase/functions/steam-*`, `supabase/functions/_shared/steam.js`, `src/progression*.js`, `src/sessions*.js`, `src/steam*.js`, `src/livemap.js` (rank ring), `src/account-ui.js` (account pane: Progression, Steam), `src/friends-ui.js` (Sessions card), `src/profile-popover.js`, `tests/db-progression*-unit.mjs`, `tests/db-sessions-unit.mjs`, `tests/db-steam-unit.mjs`, `tests/{progression,sessions,steam}.mjs`
