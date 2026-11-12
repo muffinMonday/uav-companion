@@ -336,7 +336,7 @@ textarea{resize:vertical;min-height:60px}
 .sel-confirm[hidden]{display:none}
 .sel-confirm p{margin:0 0 8px}
 .poi-list li.selecting{display:flex;align-items:center;gap:8px}
-.poi-list li.selecting .poi-item{flex:1;min-width:0}
+.poi-list li.selecting .poi-card{flex:1;min-width:0}
 .sel-box{flex:none;width:20px;height:20px;margin:0;accent-color:var(--accent)}
 .toast-action{margin-left:8px;padding:2px 10px;border:1px solid currentColor;border-radius:999px;background:transparent;color:inherit;font:inherit;font-weight:650;cursor:pointer}
 .btn-row[hidden],.select-bar[hidden]{display:none}
@@ -679,6 +679,10 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .poi-list li.side-row .poi-item{padding-top:5px;padding-bottom:5px}
 .side-chip{flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:2px 8px;font:650 11.5px/1.4 var(--font);cursor:pointer;white-space:nowrap}
 .side-chip:hover,.side-chip[aria-expanded=true]{border-color:var(--accent);color:var(--accent)}
+/* the POI card wraps the button and its chip: the chip sits inside the card, so cards keep one width */
+.poi-card{position:relative;min-width:0}
+.poi-card>.side-chip{position:absolute;right:8px;top:50%;transform:translateY(-50%)}
+.poi-card.has-side .poi-item{padding-right:66px}
 .poi-pin.side-hidden{display:none}
 .poi-pin.side-pin>svg{transform:scale(.72);transform-origin:50% 100%}
 .poi-pin.side-pin>svg path:first-child{stroke-dasharray:3 2}
@@ -689,7 +693,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .pop-side small{color:var(--muted)}
 .pop-side-btn{border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:999px;padding:2px 9px;font:600 12px/1.4 var(--font);cursor:pointer}
 .pop-side-btn:hover{border-color:var(--accent)}
-.poi-list li.with-checkin .poi-item{flex:1;min-width:0;width:auto}
+.poi-list li.with-checkin .poi-card{flex:1;min-width:0}
 .checkin{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:46%}
 .checkin-btn{position:relative;width:28px;height:28px;color:var(--muted);border:1px solid transparent}
 .checkin-btn svg{width:16px;height:16px}
@@ -737,7 +741,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .route-arrow.bold svg{opacity:1}
 .seg-label{border-width:2px}
 .name-tag-box{background:none;border:0}
-.name-tag{position:absolute;transform:translate(-50%,-62px);display:flex;align-items:center;gap:2px;padding:3px 4px 3px 11px;border-radius:999px;background:var(--surface);color:var(--fg);box-shadow:var(--shadow-sm);font-size:12.5px;white-space:nowrap}
+.name-tag{position:absolute;transform:translate(-50%,-82px);display:flex;align-items:center;gap:2px;padding:3px 4px 3px 11px;border-radius:999px;background:var(--surface);color:var(--fg);box-shadow:var(--shadow-sm);font-size:12.5px;white-space:nowrap}
 .name-tag-info{width:22px;height:22px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--accent);cursor:pointer;font-size:15px;line-height:1}
 .name-tag-info:hover{background:var(--accent-soft)}
 .poi-pin.focused svg{scale:1.18;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}

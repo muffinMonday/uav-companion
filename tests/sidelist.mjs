@@ -44,6 +44,8 @@ ok((await pin(p, 'Lost').evaluate((e) => e.classList.contains('side-pin'))), 'an
 let rows = await rowsText(p);
 ok(!rows.some((r) => /Snack|Old gate|Lookout/.test(r)) && rows.includes('Lost'), 'the list does not show them either, apart from the one with no main stop: ' + rows.join(', '));
 ok((await p.locator('#poi-list li', { has: p.locator('b:text-is("Alpha")') }).locator('.side-chip').textContent()).trim() === '▾ 2', 'Alpha\'s card has a ▾ 2 chip');
+const cardW = (name) => p.locator('#poi-list li', { has: p.locator(`b:text-is("${name}")`) }).locator('.poi-card').evaluate((e) => e.getBoundingClientRect().width);
+{ const a = await cardW('Alpha'), h = await cardW('Hotel'); ok(Math.abs(a - h) < 1, `Alpha's card (with the chip) is as wide as Hotel's (without): ${a.toFixed(1)} vs ${h.toFixed(1)}`); }
 ok((await p.locator('#poi-list li.side-row').count()) === 0 && (await p.locator('#poi-list li[data-drag]').count()) === 3, 'no nested rows yet; the three main stops can be dragged, the Side Quest in the flow cannot');
 
 // ================= unfold with the chip: no map move, the pins appear with dotted links

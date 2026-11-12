@@ -446,14 +446,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     } else {
       b.addEventListener('click', () => { if (isMain(it)) setExpanded(it.id); flyToItem(it.id); }); // a tap opens the marker and unfolds its Side Quests (any other card folds them)
     }
-    li.append(b);
+    // The card wraps the button and the Side Quest chip, so every card has the same width whether or not it has a chip.
+    const card = el('div', 'poi-card');
+    card.append(b);
+    li.append(card);
     const kids = !selecting && isMain(it) ? (sideMap.byParent.get(it.id) ?? []).filter((k) => visibleIds.has(k.id)) : [];
     if (kids.length) {
       const open = expandedParent === it.id;
       const chip = el('button', 'side-chip', `${open ? '▴' : '▾'} ${kids.length}`); chip.type = 'button';
       chip.title = `${kids.length} Side Quest${kids.length === 1 ? '' : 's'}: ${open ? 'fold away' : 'show'}`; chip.setAttribute('aria-expanded', String(open)); chip.setAttribute('aria-label', chip.title);
       chip.addEventListener('click', (e) => { e.stopPropagation(); setExpanded(open ? null : it.id); });
-      li.classList.add('with-checkin'); li.append(chip);
+      card.classList.add('has-side'); card.append(chip);
     }
     const cell = checkinCell({ cin, store, id: it.id, ns: 'poi' }); // Check in, or what was recorded, at the right of the row
     if (cell) { li.classList.add('with-checkin'); li.append(cell); }
