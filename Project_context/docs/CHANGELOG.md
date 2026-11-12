@@ -2,7 +2,23 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-14
+- Progression system, phases 1 to 6 (design and owner to-do: `PROGRESSION.md`; features F49 to F51):
+  - 1 XP ledger, ranks and settings as data, admin and organiser roles, administrator XP adjustment (`9470fd0`, migration `20261114100000_progression_core.sql`).
+  - 2 Achievements: 16 launch definitions, permanent unlocks, featured three, unlock engine, shared-trip counter; fix so deleting an administrator account works (`e2408b6`, `20261114110000_achievements.sql`).
+  - 3 Read API with the one visibility rule, own and others' progression cards, collection and XP history (`de1e8b8`, `20261114120000_progression_read.sql`).
+  - 4 Rank ring and tier badge on live party pins, rank card on selection (`047bdaa`, no migration).
+  - 5 Flight sessions, RSVP, organiser-verified attendance XP, administrator revoke (`d079a94`, `20261114130000_flight_sessions.sql`).
+  - 6 Steam linking and playtime XP, three edge functions, switched off until the owner adds the key (`f16aa66`, `20261114140000_steam.sql`).
+  - Tests added: `db-progression-unit`, `db-progression-read-unit`, `db-sessions-unit`, `db-steam-unit`, `progression-unit`, `sessions-unit`, `steam-unit`, `steamui-unit`, browser `progression`, `sessions`, `steam`; rank checks added to `live`; `dashboard` updated for the new What's new entry.
+
+## 2026-11-13
+- Account and profile milestone finished: delete-account edge function and typed-word dialog (AC-10 to AC-12, `54c5c23`); profile avatar, bio, location, interests and sharing switch (AC-7 to AC-9, `3c23a1e`); account button and popover (AC-4, AC-5), splash account row (AC-6); data safety phase A (AC-1 to AC-3, migration `20261112100000_live_device.sql`); `deploy:live` script (`3b50eef`).
+- Profile and location UX: tab pill glides (`ac19dec`); Edit profile is a dialog with a preview (`9d3adc5`); friend and party rows open a profile popover (`f2ebad5`); first sign-in asks for a display name (`6b3aa02`, `20261113110000_profile_named.sql`); locate on launch (`41fb73b`).
+- Project skills in `.claude/skills/`: change-workflow, test-impact (`impact.mjs`), supabase-change, region-data (`e40eaef`, follow-ups `73fdd6e`, `6ac4203`).
+
 ## 2026-11-12
+- Side Quests (optional nearby stops under a main stop), five phases: check-in restyle; data and plumbing (`isSub`/`parentId`, `isMain`, `z2.` share slots 11 and 12, AI import); create and convert; folded display with "+N" badge and "▾ N" chip; reorder (`planSideMove`). Small fixes SF-1 to SF-5 (name tag, card width, swipe to close the marker window, locate icon, popup fade `b326b14`); selected marker scrolls and highlights its card. Design: `DECISIONS.md`, feature F45 in `PROJECT.md`.
 - First-visit quick setup: plan a trip (AI prompt form or itinerary link) or plan a flight; saves `mode` (W24, `5f6679f`).
 - More swipes; `?` button for How it works; Map key at half height (W22, W23, `e23788d`).
 - Locate: no automatic point check on the first fix (`bfe2262`).

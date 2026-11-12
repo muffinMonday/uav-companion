@@ -30,18 +30,18 @@ Never commit or print the service-role key, DB password or access token.
 
 ## Tests (`tests/`)
 ```
-npm run test:unit                 # the 26 Node-only suites (UNIT in tests/run.mjs), about 10 s
-npm test                          # all suites; needs the app on :5173
+npm run test:unit                 # the 38 Node-only suites (UNIT in tests/run.mjs), about 20 s
+npm test                          # all suites (about 7 minutes at 4 at once); needs the app on :5173
 node tests/run.mjs trips ai       # only suites whose name contains these words
 node tests/run.mjs --jobs 1        # one suite at a time (default is 4 at once; --jobs auto picks from the CPU count)
 node tests/trips.mjs              # one suite directly; prints PASS/FAIL lines
 ```
-- Suites: the lists `UNIT` (26, logic and database rules on in-memory Postgres) and `BROWSER` (44) in `tests/run.mjs` are the authoritative inventory; a suite's subject is in its file header and name (`*-unit`, `db-*-unit`, `*-live` need no browser or the hosted dev project). Last full browser run: see `CURRENT_STATUS.md`.
+- Suites: the lists `UNIT` (38, logic and database rules on in-memory Postgres) and `BROWSER` (54) in `tests/run.mjs` are the authoritative inventory; a suite's subject is in its file header and name (`*-unit`, `db-*-unit`, `*-live` need no browser or the hosted dev project). Last full browser run: see `CURRENT_STATUS.md`.
 - Browser suites mock Open-Meteo, Photon and Nominatim; screenshots go to `tests/out/` (git-ignored). `lib.mjs` supplies paths, the browser channel and a `chromium` wrapper that tucks the dashboard behind its tab in every new context (import `chromium` from `./lib.mjs`). It also emulates reduced motion in every context, so nothing is moving when a test clicks; pass `reducedMotion: 'no-preference'` to a context that needs the animations (see `motion.mjs`).
 - The runner counts lines starting with `PASS`/`FAIL`; `smoke` prints none, so it shows 0 pass and passes if it does not crash or log console errors.
 
 ## Backend (`supabase/`)
-**Edge function:** `supabase/functions/delete-account` is deployed separately from the site and the migrations: `npx supabase functions deploy delete-account --project-ref <ref>` (the owner approves each deploy). Its rules are tested without Deno (`node tests/delete-account-unit.mjs`).
+**Edge functions:** `delete-account`, `steam-link`, `steam-sync` and `steam-sync-all` (shared code in `supabase/functions/_shared/`; per-function `verify_jwt` in `supabase/config.toml`) are deployed separately from the site and the migrations. The Supabase CLI refuses a hosted `db push` or `functions deploy` in an agent run without `--yes` (it treats that as the consent step); the owner's standing choice (memory `commit-deploy-each-phase`) covers it for phase work. Steam set-up (secrets, `steam_enabled`, daily scheduler) is in `supabase/README.md` and `PROGRESSION.md`. Original note: `supabase/functions/delete-account` is deployed separately from the site and the migrations: `npx supabase functions deploy delete-account --project-ref <ref>` (the owner approves each deploy). Its rules are tested without Deno (`node tests/delete-account-unit.mjs`).
 
 **Before real users (release checklist):** a second Supabase project for production (this one is development); closed sign-ups (`enable_signup` off, invite or allow-list); email confirmation on; an outside email sender (the built-in one is rate limited); the Pages address in the redirect allow-list; the delete-account function deployed there.
 
