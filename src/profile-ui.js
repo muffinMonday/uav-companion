@@ -1,4 +1,4 @@
-// The profile editor (a card in the Friends tab) and the small lines that show someone's bio, location and interests next to their name.
+// The profile editor (drawn inside the Edit profile dialog, see profile-dialog.js), the profile view, and the small lines that show someone's bio, location and interests next to their name.
 // What is shown to others, and to whom, is decided by the database (see supabase/migrations/20261112110000_profile.sql); this file only draws what it is given.
 import { AVATARS, INTERESTS, MAX_INTERESTS, MAX_BIO, MAX_LOCATION, avatarEl, interestLabel } from './avatars.js';
 
@@ -14,12 +14,25 @@ export function profileBits(row) {
   return out;
 }
 
+/** A profile as someone else sees it (also the preview in the editor): avatar, name and, when the row carries them, location, interests and bio. Takes a list_friends row, a list_trip_members row or a draft. */
+export function profileView(row) {
+  const v = el('div', 'pv');
+  const head = el('div', 'pv-head');
+  head.append(avatarEl(row.avatar, row.display_name, 56));
+  const who = el('div', 'pv-who'); who.append(el('b', 'pv-name', row.display_name));
+  head.append(who);
+  v.append(head);
+  const bits = profileBits(row);
+  if (bits.length) v.append(...bits); else v.append(el('small', 'pv-none', 'No more details are shared.'));
+  return v;
+}
+
 /**
  * The editor. `save(patch)` sends a patch to update_profile and resolves { ok: true } or { ok: false, error }, after the caller holds the new profile;
- * `rerender()` redraws the tab; `toast` shows a line.
- * The draft lives here, not in the card, so the Friends tab redrawing itself (it does, every half minute) does not lose what is being typed.
+ * `rerender()` redraws the dialog; `toast` shows a line; `saved()` is called after a full save; `getName()` gives a changed display name to send with it (or undefined).
+ * The draft lives here, not in the card, so redrawing the card (after a Clear, or switching to the preview and back) does not lose what is being typed.
  */
-export function createProfileEditor({ save, toast, rerender }) {
+export function createProfileEditor({ save, toast, rerender, saved, getName }) {
   const d = { dirty: false, avatar: null, bio: '', location: '', interests: [], share: true };
   const take = (p) => { if (d.dirty) return; Object.assign(d, { avatar: p.avatar ?? null, bio: p.bio ?? '', location: p.location ?? '', interests: [...(p.interests ?? [])], share: p.share_profile !== false }); };
   let note = '';
@@ -93,9 +106,10 @@ export function createProfileEditor({ save, toast, rerender }) {
     const go = el('button', 'btn primary', 'Save profile'); go.type = 'button'; go.id = 'pf-save';
     go.addEventListener('click', async () => {
       go.disabled = true;
-      const r = await save({ avatar: d.avatar, bio: d.bio, location: d.location, interests: d.interests, share_profile: d.share });
+      const name = getName?.();
+      const r = await save({ ...(name !== undefined ? { display_name: name } : {}), avatar: d.avatar, bio: d.bio, location: d.location, interests: d.interests, share_profile: d.share });
       go.disabled = false;
-      if (r.ok) { d.dirty = false; note = ''; rerender(); toast('Profile saved.'); } else say(r.error);
+      if (r.ok) { d.dirty = false; note = ''; rerender(); toast('Profile saved.'); saved?.(); } else say(r.error);
     });
     c.append(go, msg);
 
@@ -107,5 +121,5 @@ export function createProfileEditor({ save, toast, rerender }) {
     }
     return c;
   }
-  return { card, reset: () => { d.dirty = false; note = ''; } };
+  return { card, draft: () => ({ avatar: d.avatar, bio: d.bio, location: d.location, interests: [...d.interests], share: d.share }), reset: () => { d.dirty = false; note = ''; } };
 }

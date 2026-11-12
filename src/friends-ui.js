@@ -3,7 +3,8 @@
 import { createSocial, formatCode, presenceText } from './social.js';
 import { describeWhen } from './sync/core.js';
 import { avatarEl } from './avatars.js';
-import { createProfileEditor, profileBits } from './profile-ui.js';
+import { profileBits } from './profile-ui.js';
+import { createProfileDialog } from './profile-dialog.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 .3 5 2.6 5 5.8"/></svg>';
@@ -16,14 +17,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
   const pane = el('section'); pane.id = 'pane-friends';
   const tab = panel.addTab({ key: 'friends', label: 'Friends', icon: ICON, pane });
   let profile = null, list = [], blocked = [], message = '', busy = false, loadedFor = null;
-  const editor = createProfileEditor({
-    toast, rerender: () => render(),
-    save: async (patch) => {
-      if (busy) return { ok: false, error: 'Please wait a moment and try again.' };
-      busy = true;
-      try { profile = await social.updateProfile(patch); return { ok: true }; } catch (e) { return { ok: false, error: e.message }; } finally { busy = false; }
-    },
-  });
+  const profileDialog = createProfileDialog({ social, toast, onSaved: (p) => { profile = p; render(); handle.account?.reload?.(); } });
   const signedIn = () => !!handle.sync.status().session;
   const shown = () => panel.isOpen() && panel.getTab() === 'friends';
 
@@ -70,13 +64,12 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     // ---- you
     const me = el('div', 'card');
     me.append(el('h2', '', 'You'));
-    const f = el('form', 'fr-name');
-    const lab = el('label', 'fr-label', 'Display name'); lab.setAttribute('for', 'fr-name');
-    const input = el('input'); input.type = 'text'; input.id = 'fr-name'; input.maxLength = 40; input.value = profile.display_name; input.autocomplete = 'off';
-    const save = el('button', 'btn small', 'Save'); save.type = 'submit';
-    f.append(input, save);
-    f.addEventListener('submit', (e) => { e.preventDefault(); act(() => social.profile(input.value), 'Name saved.'); });
-    me.append(lab, f);
+    const who = el('div', 'fr-me');
+    const nm = el('b', '', profile.display_name); nm.id = 'fr-me-name';
+    const edit = el('button', 'btn small', 'Edit profile'); edit.type = 'button'; edit.id = 'fr-edit-profile';
+    edit.addEventListener('click', () => profileDialog.open());
+    who.append(avatarEl(profile.avatar, profile.display_name, 34), nm, edit);
+    me.append(who);
     me.append(el('div', 'fr-label', 'Your friend code'));
     const row = el('div', 'fr-code-row');
     const code = el('span', 'fr-code', formatCode(profile.friend_code)); code.id = 'fr-code';
@@ -96,7 +89,6 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     sho.append(sp2, cb2); me.append(sho);
     me.append(el('p', 'hint', 'Share your code only with people you know. Someone with it can send you a request, which you can accept, decline or block.'));
     pane.append(me);
-    pane.append(editor.card(profile)); // avatar, bio, location, interests and who sees them
 
     // ---- add a friend
     const add = el('div', 'card');
@@ -155,7 +147,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     dc.append(del); pane.append(dc);
   }
 
-  cloud.friends = { incoming: 0, invites: 0, open: () => panel.open('friends'), recount: () => { publish(); render(); } };
+  cloud.friends = { incoming: 0, invites: 0, open: () => panel.open('friends'), editProfile: () => profileDialog.open(), recount: () => { publish(); render(); } };
   handle.onChange(() => { if (signedIn() && loadedFor !== handle.sync.status().session.email) load(); else if (!signedIn() && loadedFor) load(); });
   panel.onChange(() => { if (shown() && signedIn()) load({ withProfile: true }); else if (shown()) render(); });
   setInterval(() => { if (signedIn() && document.visibilityState === 'visible') load(); }, POLL_MS);

@@ -977,5 +977,13 @@ input[type=email]:focus{border-color:var(--accent)}
 .profile-card .switch{margin-top:10px}
 .profile-card #pf-save{margin-top:10px}
 .account-dialog input[type=text]{width:100%;box-sizing:border-box;margin:4px 0 8px}
+.profile-dialog{max-height:calc(100vh - 32px);overflow-y:auto;width:min(440px,calc(100vw - 32px))}
+.profile-dialog .profile-card{border:0;box-shadow:none;padding:0;margin:8px 0 0;background:none}
+.profile-dialog .profile-card>h2{display:none}
+.fr-me{display:flex;align-items:center;gap:10px;margin:4px 0 10px}.fr-me b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.pv-head{display:flex;align-items:center;gap:12px}.pv-name{font-size:17px}
+.pv-none{color:var(--muted)}
+.pv .profile-bio{white-space:pre-wrap;overflow-wrap:anywhere}
 .account-dialog ul{margin:6px 0 10px;padding-left:18px}
 .account-dialog .btn-row{margin-top:8px}

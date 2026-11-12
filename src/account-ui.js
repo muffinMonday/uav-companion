@@ -73,7 +73,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     const n = (cloud.friends?.incoming ?? 0) + (cloud.friends?.invites ?? 0);
     const row = el('div', 'btn-row');
     const btn = (label, fn, cls = '') => { const b = el('button', 'btn small ' + cls, label); b.type = 'button'; b.addEventListener('click', fn); row.append(b); return b; };
-    btn('Edit profile', () => { hide(false); cloud.friends?.open(); });
+    btn('Edit profile', () => { hide(false); cloud.friends?.editProfile(); });
     btn('Friends' + (n ? ` (${n})` : ''), () => { hide(false); cloud.friends?.open(); });
     pop.append(row);
     const out = el('button', 'btn small', 'Sign out'); out.type = 'button';
@@ -153,7 +153,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     if (session()) loadProfile();
     if (!pop.hidden) render();
   });
-  handle.account = { open: () => show(), close: () => hide(false) };
+  handle.account = { open: () => show(), close: () => hide(false), reload: () => loadProfile({ force: true }) };
   paintButtons();
   if (session()) loadProfile();
   return { reload: () => loadProfile({ force: true }) };
