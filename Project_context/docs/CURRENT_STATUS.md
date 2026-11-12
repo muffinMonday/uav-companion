@@ -6,7 +6,9 @@ Task: Side Quest feature (sub-markers). All five phases (5, 1, 2, 3, 4) built; p
 ## 2026-11-14 round (owner request: progression system)
 Plan (approved rev. 2): `C:\Users\cy071\.claude\plans\pasted-content-id-6540-uav-luminous-beaver.md` (outside the repo). Decisions D1 to D8 and the follow-ups are in it; owner approved the Steam allow-list (410340, 1432320, 2398030, 1682970, 641780, 1881200), the rarity table and the Q1 to Q8 defaults on 2026-11-14.
 - [x] Phase 1 built, uncommitted, not pushed: migration `20261114100000_progression_core.sql` (ledger, `user_xp`, ranks and settings as data, roles, `admin_adjust_xp`), suite `tests/db-progression-unit.mjs` (90 checks, registered in `tests/run.mjs`), `supabase/README.md`. `node .claude/skills/test-impact/impact.mjs`: 31 unit suites pass. Browser suites not run (no `src/` change).
-- [ ] Phase 2 achievements + engine + `set_featured`; 3 visibility + read API + shared UI; 4 map rank ring; 5 sessions/RSVP/attendance; 6 Steam; 7 real-world flying deferred.
+- [x] Phase 1 committed `9470fd0`, pushed, migration applied to the hosted project 2026-11-14 (no admin row yet: the owner adds the first one).
+- [x] Phase 2 built: migration `20261114110000_achievements.sql` (definitions, 16 launch rows, permanent unlocks, featured, counters, engine, `shared_trips` trigger, `set_featured`, ledger guard fix for deleting an admin account); `tests/db-progression-unit.mjs` now 156 checks. Standing rule saved: commit, push and deploy each phase (memory `commit-deploy-each-phase`).
+- [ ] Phase 3 visibility + read API + shared UI; 4 map rank ring; 5 sessions/RSVP/attendance; 6 Steam; 7 real-world flying deferred.
 - Not done: hosted `db push` (ask owner first); first admin row must be inserted by the owner (see `supabase/README.md`). `DEVELOPMENT.md` suite counts still stale.
 - Note: `delete_profile` leaves XP alone by design (README says so); revisit if the owner wants XP wiped with the profile.
 

@@ -132,3 +132,129 @@ ok(/last administrator/.test(await refused(db, A, `select public.revoke_role('${
 await one(A, `public.grant_role($1, 'admin')`, [cD]);
 ok((await roles(D)).admin === true && (await one(A, `public.revoke_role($1, 'admin')`, [cA])).status === 'revoked' && (await roles(A)).admin === false, 'with a second administrator the first can step down');
 ok(/last administrator/.test(await refused(db, D, `select public.revoke_role('${cD}', 'admin')`) ?? ''), 'and the new last one is protected in turn');
+
+// ================= phase 2: achievements (supabase/migrations/20261114110000_achievements.sql)
+const unlocked = async (u) => (await sql('select achievement_key as k from public.user_achievements where user_id = $1 order by achievement_key', [u])).map((r) => r.k);
+const stamps = async (u) => Object.fromEntries((await sql('select achievement_key as k, unlocked_at as t from public.user_achievements where user_id = $1', [u])).map((r) => [r.k, +r.t]));
+const award = (u, n, src, ref) => sql(`select public.award_xp($1, $2, $3, $4) as r`, [u, n, src, ref]);
+const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+
+// ---------- the definitions
+const defs = await sql('select key, category, rarity, metric, threshold, active from public.achievements');
+const countBy = (f) => defs.reduce((m, d) => ((m[d[f]] = (m[d[f]] || 0) + 1), m), {});
+ok(defs.length === 16 && new Set(defs.map((d) => d.key)).size === 16, 'sixteen achievements at launch');
+ok(same(countBy('category'), { simulator: 4, community: 5, progression: 5, platform: 2 }), 'four simulator, five community, five progression and two platform');
+ok(same(countBy('rarity'), { common: 6, rare: 5, epic: 3, legendary: 2 }), 'six common, five rare, three epic and two legendary');
+const rarityOf = Object.fromEntries(defs.map((d) => [d.key, d.rarity]));
+ok(rarityOf['sim-veteran'] === 'epic' && rarityOf['familiar-face'] === 'legendary' && rarityOf['ace-pilot'] === 'legendary' && rarityOf['planner'] === 'common' && rarityOf['community-regular'] === 'rare', 'rarities match the approved table');
+ok(defs.filter((d) => d.category === 'progression').map((d) => d.threshold).sort((a, b) => a - b).join() === '3,5,7,9,10', 'the progression achievements need Cadet, Pilot, Advanced Pilot, Veteran Pilot and Ace (tiers 3, 5, 7, 9, 10)');
+ok(!defs.some((d) => /flight|flying|real/.test(d.category)), 'no real-world flying achievements are defined');
+ok(/violates check/.test(await fails(`insert into public.achievements (key, category, name, description, rarity, icon, metric, threshold) values ('x1', 'simulator', 'X', 'x', 'mythic', 'a', 'sim_hours', 1)`) ?? ''), 'a rarity outside the four is refused');
+for (const t of ['achievements', 'user_achievements', 'featured_achievements', 'user_counters']) ok(/permission denied/.test(await refused(db, A, `select * from public.${t}`)) && /permission denied/.test(await refused(db, null, `select * from public.${t}`)), t + ' cannot be read directly');
+for (const f of [`public.user_metric('${A}', 'sim_hours')`, `public.evaluate_achievements('${A}')`, `public.bump_counter('${A}', 'shared_trips_created')`]) ok(/permission denied/.test(await refused(db, A, `select ${f}`)) && /permission denied/.test(await refused(db, null, `select ${f}`)), f.split('(')[0] + ' is internal');
+ok(/permission denied/.test(await refused(db, A, `insert into public.user_achievements (user_id, achievement_key) values ('${A}', 'ace-pilot')`)), 'a user cannot unlock an achievement directly');
+
+// ---------- a big jump unlocks everything it passes; a later deduction takes nothing back
+const prog = ['ace-pilot', 'elite-aviator', 'experienced-pilot', 'finding-your-wings', 'moving-up'].sort();
+ok(same(await unlocked(D), prog) && await total(D) === 3000, 'D went from 0 to 5000 XP in one step: all five progression achievements unlocked (D is now back at 3000 XP, Veteran Pilot)');
+const dStamps = await stamps(D);
+await db.exec(`insert into public.app_roles (user_id, role) values ('${C}', 'admin')`);
+await adjust(C, cD, -2900, 'Large deduction');
+ok(await total(D) === 100, 'a large deduction takes D to 100 XP (Trainee)');
+ok(same(await unlocked(D), prog) && same(await stamps(D), dStamps), 'all five achievements are still unlocked, with their original unlock times');
+ok(await peak(D) === 10, 'and the peak tier is still Ace');
+
+// ---------- earning through the ledger unlocks, once, with the first time kept
+await award(A, 10, 'sim', 'hour:1');
+ok(same(await unlocked(A), ['first-flight']), 'one simulator hour unlocks First Flight');
+const t1 = (await stamps(A))['first-flight'];
+for (let h = 2; h <= 9; h++) await award(A, 10, 'sim', 'hour:' + h);
+ok(same(await unlocked(A), ['first-flight']), 'nine hours unlock nothing new');
+await award(A, 10, 'sim', 'hour:10');
+ok(same(await unlocked(A), ['first-flight', 'getting-comfortable']), 'the tenth hour unlocks Getting Comfortable');
+await award(A, 10, 'sim', 'hour:10');
+ok((await stamps(A))['first-flight'] === t1 && same(await unlocked(A), ['first-flight', 'getting-comfortable']), 'repeating an award unlocks nothing and moves no unlock time');
+await award(A, 50, 'attendance', 'session:s1');
+ok((await unlocked(A)).includes('first-meetup') && !(await unlocked(A)).includes('regular-flyer'), 'one verified session unlocks First Meetup');
+for (const s of ['s2', 's3', 's4']) await award(A, 50, 'attendance', 'session:' + s);
+ok(!(await unlocked(A)).includes('regular-flyer'), 'four sessions are not enough for Regular Flyer');
+await award(A, 50, 'attendance', 'session:s5');
+ok((await unlocked(A)).includes('regular-flyer') && await total(A) === 350, 'five sessions unlock Regular Flyer; A now has 350 XP');
+ok((await unlocked(A)).includes('moving-up'), 'and that XP reached Cadet, so Moving Up unlocked by reaching the rank');
+const aKeys = await unlocked(A);
+const aStamps = await stamps(A);
+await adjust(D, cA, -300, 'Correction');
+ok(await total(A) === 50, 'a deduction takes A to 50 XP (Rookie)');
+ok(same(await unlocked(A), aKeys) && same(await stamps(A), aStamps), 'every achievement A earned is still there with the same time');
+ok((await sql(`select count(*)::int as n from public.xp_ledger where user_id = $1 and source = 'sim'`, [A]))[0].n === 10, 'and the hours count is unchanged');
+
+// ---------- permanent
+ok(/permanent/.test(await fails(`update public.user_achievements set unlocked_at = now() where user_id = '${A}'`) ?? ''), 'an unlock time cannot be changed, even by the database owner');
+ok(/permanent/.test(await fails(`delete from public.user_achievements where user_id = '${A}'`) ?? ''), 'an unlock cannot be removed');
+ok(/permanent|foreign key/.test(await fails(`truncate public.user_achievements`) ?? ''), 'or truncated');
+ok(/violates foreign key/.test(await fails(`delete from public.achievements where key = 'first-flight'`) ?? ''), 'a definition that has been unlocked cannot be deleted');
+ok(/violates foreign key/.test(await fails(`insert into public.user_achievements (user_id, achievement_key) values ('${A}', 'no-such')`) ?? ''), 'an unknown achievement cannot be unlocked');
+
+// ---------- the engine is data driven and safe to run again
+ok((await sql(`select public.evaluate_achievements($1) as n`, [A]))[0].n === 0, 'running the engine again unlocks nothing new');
+await db.exec(`insert into public.achievements (key, category, name, description, rarity, icon, metric, threshold, season, starts_at, ends_at, active) values
+  ('t-future', 'seasonal', 'Future', 'f', 'rare', 'star', 'sim_hours', 1, 'winter', now() + interval '1 day', now() + interval '9 days', true),
+  ('t-past', 'seasonal', 'Past', 'p', 'rare', 'star', 'sim_hours', 1, 'autumn', now() - interval '9 days', now() - interval '1 day', true),
+  ('t-off', 'seasonal', 'Off', 'o', 'rare', 'star', 'sim_hours', 1, null, null, null, false),
+  ('t-unknown', 'seasonal', 'Unknown', 'u', 'rare', 'star', 'not_a_metric', 1, null, null, null, true),
+  ('t-hard', 'seasonal', 'Hard', 'h', 'epic', 'star', 'sim_hours', 11, null, null, null, true)`);
+ok((await sql(`select public.evaluate_achievements($1) as n`, [A]))[0].n === 0, 'a future season, a past season, an inactive definition, an unknown metric and an unmet threshold unlock nothing');
+await db.exec(`insert into public.achievements (key, category, name, description, rarity, icon, metric, threshold, season, starts_at, ends_at) values ('t-open', 'seasonal', 'Open', 'o', 'rare', 'star', 'sim_hours', 2, 'now', now() - interval '1 day', now() + interval '1 day')`);
+ok((await sql(`select public.evaluate_achievements($1) as n`, [A]))[0].n === 1 && (await unlocked(A)).includes('t-open'), 'a seasonal definition inside its window unlocks on the next run, with no code change');
+await award(A, 10, 'sim', 'hour:11');
+ok((await unlocked(A)).includes('t-hard') && !(await unlocked(A)).includes('t-future'), 'a definition is evaluated as soon as the metric reaches it, and one outside its window still is not');
+
+// ---------- shared trips: counted when created, kept when deleted
+const T1 = '5a1c0000-0000-4000-8000-0000000000b1', T2 = '5a1c0000-0000-4000-8000-0000000000b2';
+const mkDoc = (id) => ({ v: 1, trip: { id, name: 'Trip ' + id.slice(-2) }, items: [{ id: 'm' + id.slice(-2), type: 'photo', name: 'Marker', note: '', lat: 30.5, lon: 114.3, created: '2026-11-01T00:00:00.000Z', tripId: id }] });
+const shareTrip = (u, id) => one(u, 'public.share_trip($1::jsonb)', [JSON.stringify(mkDoc(id))]);
+const counter = async (u) => (await sql(`select value from public.user_counters where user_id = $1 and key = 'shared_trips_created'`, [u]))[0]?.value ?? 0;
+ok(!(await unlocked(C)).includes('planner') && await counter(C) === 0, 'C has not shared a trip: no Planner');
+await shareTrip(C, T1);
+ok((await unlocked(C)).includes('planner') && await counter(C) === 1, 'sharing a trip unlocks Planner and counts one');
+const planner = (await stamps(C)).planner;
+await one(C, 'public.delete_shared_trip($1)', [T1]);
+ok(await counter(C) === 1 && (await unlocked(C)).includes('planner'), 'deleting the trip takes neither the count nor the achievement back');
+await shareTrip(C, T2);
+ok(await counter(C) === 2 && (await stamps(C)).planner === planner, 'sharing another counts two and keeps the first unlock time');
+ok(!(await unlocked(A)).includes('planner') && await counter(A) === 0, 'and nothing happened for anyone else');
+
+// ---------- featuring
+const feat = (u) => sql('select achievement_key as k from public.featured_achievements where user_id = $1 order by position', [u]).then((r) => r.map((x) => x.k));
+const setF = (u, keys) => one(u, 'public.set_featured($1::jsonb)', [JSON.stringify(keys)]);
+const badF = (u, keys) => refused(db, u, 'select public.set_featured($1::jsonb)', [typeof keys === 'string' ? keys : JSON.stringify(keys)]);
+const rf = await setF(D, ['ace-pilot', 'moving-up', 'elite-aviator']);
+ok(rf.status === 'saved' && same(rf.featured, ['ace-pilot', 'moving-up', 'elite-aviator']) && same(await feat(D), ['ace-pilot', 'moving-up', 'elite-aviator']), 'a user features three unlocked achievements, in order');
+await setF(D, ['moving-up', 'ace-pilot']);
+ok(same(await feat(D), ['moving-up', 'ace-pilot']), 'a new list replaces the old, and order is kept');
+const keep = await feat(D);
+const featRefusals = [
+  [['ace-pilot', 'moving-up', 'elite-aviator', 'experienced-pilot'], /up to 3/], [['ace-pilot', 'ace-pilot'], /once/], [['first-flight'], /unlocked/], [['no-such-achievement'], /unlocked/],
+  ['{"a":1}', /must be a list/], ['"ace-pilot"', /must be a list/], [[5], /list of achievement keys/], [[null], /list of achievement keys/], ['null', /must be a list/],
+];
+for (const [k, re] of featRefusals) ok(re.test(await badF(D, k) ?? ''), 'refused: ' + (typeof k === 'string' ? k : JSON.stringify(k)).slice(0, 56));
+ok(same(await feat(D), keep), 'a refused choice leaves the previous one untouched');
+ok(/unlocked/.test(await badF(A, ['ace-pilot']) ?? '') && same(await feat(D), keep), "a user cannot feature an achievement they have not unlocked, and it does not disturb anyone else's");
+await setF(A, ['t-open', 'first-flight']);
+ok(same(await feat(A), ['t-open', 'first-flight']) && same(await feat(D), keep), "each person's choice is their own");
+await setF(D, []);
+ok((await feat(D)).length === 0 && same(await feat(A), ['t-open', 'first-flight']), 'an empty list clears it');
+ok(/permission denied/.test(await refused(db, null, `select public.set_featured('[]'::jsonb)`)), 'a visitor cannot feature anything');
+ok(/permission denied/.test(await refused(db, A, `insert into public.featured_achievements (user_id, position, achievement_key) values ('${A}', 3, 'moving-up')`)), 'and nobody writes the table directly');
+ok(/violates foreign key/.test(await fails(`insert into public.featured_achievements (user_id, position, achievement_key) values ('${A}', 3, 'ace-pilot')`) ?? ''), 'the table itself only holds unlocked achievements');
+ok(/violates check/.test(await fails(`insert into public.featured_achievements (user_id, position, achievement_key) values ('${A}', 4, 'moving-up')`) ?? ''), 'and positions 1 to 3');
+
+// ---------- deleting an account removes everything of theirs, and only theirs
+await setF(C, ['planner']);
+await db.exec(`delete from auth.users where id = '${C}'`);
+const gone = (await sql(`select (select count(*) from public.user_achievements where user_id = $1)::int + (select count(*) from public.featured_achievements where user_id = $1)::int + (select count(*) from public.user_counters where user_id = $1)::int as n`, [C]))[0].n;
+ok(gone === 0 && same(await feat(A), ['t-open', 'first-flight']) && (await unlocked(A)).length > 0, "deleting C's account removes C's unlocks, featured choice and counters, and not A's");
+// C was an administrator who adjusted D's XP: deleting C keeps D's row and its reason, and only forgets who did it
+const dRow = (await sql(`select amount, reason, actor from public.xp_ledger where user_id = $1 and reason = 'Large deduction'`, [D]))[0];
+ok(dRow && dRow.amount === -2900 && dRow.actor === null && await total(D) === 100, "deleting an administrator's account keeps the adjustments they made (amount and reason) with the actor cleared");
+ok(/append-only/.test(await fails(`update public.xp_ledger set actor = null, amount = amount + 1 where user_id = '${D}'`) ?? '') && /append-only/.test(await fails(`update public.xp_ledger set actor = '${A}' where user_id = '${D}' and reason = 'Large deduction'`) ?? ''), 'but the ledger still refuses any other change');
