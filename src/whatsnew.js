@@ -2,6 +2,16 @@
 // (the date is a good id): visitors who have not seen it get the dashboard opened with it, once. Keep each entry to a few short lines.
 export const WHATS_NEW = [
   {
+    id: '2026-11-14-progression',
+    date: '2026-11-14',
+    title: 'Ranks and achievements',
+    items: [
+      'Sign in and open the Friends tab: your new Progression card shows your rank, XP and the achievements you have unlocked. You can feature up to three.',
+      'Friends and people in your shared trips see your rank and achievements in your profile, and you see theirs. The "Show my bio, location, interests and progression" switch in Edit profile turns that off.',
+      'XP from simulator hours and flight sessions is coming in the next updates.',
+    ],
+  },
+  {
     id: '2026-11-12-sidequests',
     date: '2026-11-12',
     title: 'Side Quests',

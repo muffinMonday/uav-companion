@@ -106,7 +106,7 @@ await ctx.close();
 
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: { showOnStart: true, welcomed: true, seen: null, hideUntil: TODAY } }));
 ok(await stateOf(p) === 'expanded' && /What’s new/.test(await p.textContent('#dash-body')) && /Singapore no-fly zones/.test(await p.textContent('#dash-body')), 'a What\'s new entry the visitor has not seen opens it, even after "not for today"');
-ok(/Quick setup/.test(await p.textContent('#dash-body')) && /More swipes/.test(await p.textContent('#dash-body')), 'the newest entries are announced to a visitor who has not seen them (at most three are shown)');
+ok(/Ranks and achievements/.test(await p.textContent('#dash-body')) && /Side Quests/.test(await p.textContent('#dash-body')) && /Quick setup/.test(await p.textContent('#dash-body')), 'the newest entries are announced to a visitor who has not seen them (at most three are shown)');
 await p.click('#dash-collapse'); await p.waitForTimeout(250);
 ok((await dashSaved(p)).seen === LATEST_SEEN, 'putting it away marks the entry as seen');
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1000);

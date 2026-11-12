@@ -97,8 +97,8 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
     c.append(il, tags, intRow);
 
     // ---- who sees the bio, location and interests
-    const sw = el('label', 'switch'); const sp = el('span', '', 'Show my bio, location and interests');
-    sp.append(el('small', '', 'To your friends and the people in your shared trips. Your name and avatar are shown to them either way. Off: they see only those two.'));
+    const sw = el('label', 'switch'); const sp = el('span', '', 'Show my bio, location, interests and progression');
+    sp.append(el('small', '', 'To your friends and the people in your shared trips: the bio, location and interests, and your rank, XP and achievements (on the map too). Your name and avatar are shown to them either way. Off: they see only those two.'));
     const cb = el('input'); cb.type = 'checkbox'; cb.id = 'pf-share'; cb.checked = d.share;
     cb.addEventListener('change', () => { d.share = cb.checked; touch(); });
     sw.append(sp, cb); c.append(sw);

@@ -1,6 +1,7 @@
 // A small read-only popover with someone's profile, opened by their avatar or name in the Friends list and in a trip's party.
 // It draws only the row it is given (list_friends / list_trip_members); what a row contains is decided by the database, so nothing here asks for more.
 import { profileView } from './profile-ui.js';
+import { mountProgression } from './progression-ui.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const isPhone = () => window.matchMedia('(max-width: 520px)').matches;
@@ -31,6 +32,12 @@ function place(from) {
   pop.style.top = Math.max(8, Math.min(r.top - 8, innerHeight - pop.offsetHeight - 8)) + 'px';
 }
 
+let progression = null; // getProgression(client), set by the screens that list people (friends-ui, party-ui)
+/** Lets the popover show rank, XP and achievements: `api` is a progression-api instance (or null to show the profile alone). */
+export function setProgressionSource(api) { progression = api; }
+/** The handle the database knows a person by: a party member id, or the friendship id of an accepted friend. Nothing else can be asked for. */
+const handleOf = (row) => (row?.member_id ? { kind: 'member', id: row.member_id } : row?.status === 'friends' && row.id ? { kind: 'friend', id: row.id } : null);
+
 /** Shows `row` (a friend or party member: display_name, avatar, bio, location, interests) next to `from`; `sub` is an optional line such as "online". */
 export function showProfile(row, from, sub = '') {
   if (!pop) build();
@@ -38,6 +45,12 @@ export function showProfile(row, from, sub = '') {
   close.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; // constant markup
   close.addEventListener('click', () => hide());
   pop.replaceChildren(close, profileView(row));
+  const h = handleOf(row);
+  if (progression && h) {
+    const slot = el('div', 'pv-prog'); pop.append(slot);
+    const self = row.is_me === true;
+    mountProgression(slot, { load: () => progression.get(h.kind, h.id), peek: () => progression.peek(h.kind, h.id), mode: self ? 'self' : 'other', api: self ? progression : null, onDraw: () => { if (!pop.hidden && anchor) place(anchor); } });
+  }
   if (sub) pop.append(el('small', 'pv-sub', sub));
   pop.hidden = false; anchor = from;
   place(from);

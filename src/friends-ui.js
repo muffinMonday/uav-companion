@@ -5,7 +5,9 @@ import { describeWhen } from './sync/core.js';
 import { avatarEl } from './avatars.js';
 import { profileBits } from './profile-ui.js';
 import { createProfileDialog } from './profile-dialog.js';
-import { profileTrigger } from './profile-popover.js';
+import { profileTrigger, setProgressionSource } from './profile-popover.js';
+import { getProgression } from './progression-api.js';
+import { mountProgression } from './progression-ui.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 .3 5 2.6 5 5.8"/></svg>';
@@ -15,6 +17,8 @@ const LIVE_MS = 30000;   // while the Friends tab is showing: how often to refre
 /** `handle` is what initSyncUI returns: { sync, adapter, onChange }. `cloud` is the holder the dashboard reads (friends: { incoming, open }). */
 export function initFriendsUI({ panel, handle, toast, cloud }) {
   const social = createSocial(handle.adapter.client);
+  const progression = getProgression(handle.adapter.client);
+  setProgressionSource(progression);
   const pane = el('section'); pane.id = 'pane-friends';
   const tab = panel.addTab({ key: 'friends', label: 'Friends', icon: ICON, pane });
   let profile = null, list = [], blocked = [], message = '', busy = false, loadedFor = null;
@@ -33,8 +37,9 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
   }
 
   async function load({ withProfile = false } = {}) {
-    if (!signedIn()) { profile = null; list = []; blocked = []; loadedFor = null; publish(); render(); return; }
+    if (!signedIn()) { profile = null; list = []; blocked = []; loadedFor = null; progression.forget(); publish(); render(); return; }
     try {
+      if (loadedFor && loadedFor !== handle.sync.status().session.email) progression.forget(); // a different account on the same page: nothing of the last one's is kept
       list = await social.list();
       if (withProfile || profile) profile = await social.profile();
       if (shown()) blocked = await social.blocked();
@@ -90,6 +95,12 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     sho.append(sp2, cb2); me.append(sho);
     me.append(el('p', 'hint', 'Share your code only with people you know. Someone with it can send you a request, which you can accept, decline or block.'));
     pane.append(me);
+
+    // ---- your progression (rank, XP, featured achievements); the same card others see, plus your history
+    const pc = el('div', 'card'); pc.id = 'fr-progression'; pc.append(el('h2', '', 'Progression'));
+    const slot = el('div'); pc.append(slot);
+    mountProgression(slot, { load: () => progression.mine(), peek: () => progression.peek('me'), mode: 'self', api: progression, toast });
+    pane.append(pc);
 
     // ---- add a friend
     const add = el('div', 'card');

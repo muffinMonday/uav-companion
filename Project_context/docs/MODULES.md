@@ -44,6 +44,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `sync-ui.js` | Cloud copy card (status, sync, versions), sign-in form and sign-out flow, conflict prompt; returns the handle used below | `initSyncUI` |
 | `account-ui.js` (also the delete-account dialog) | Account button (panel header and rail) and its popover: guest note and sign-in, or name, friend code, sync state, Edit profile, Friends, Sign out | handle |
 | `avatars.js` (pure lists, `avatarEl`), `profile-ui.js` | Preset avatars and interest tags; the Profile card and the bio/location lines | `avatarEl`, `profileBits` |
+| `progression.js` (pure), `progression-api.js`, `progression-ui.js` | Rank progress, validation of what the database returns, a short cache, and the rank badge, progression card, achievement collection and XP history | `cleanProgression`, `rankProgress`, `getProgression`, `mountProgression`, `rankBadge` |
 | `social.js` | Friends and profile RPC wrappers | `createSocial` |
 | `friends-ui.js` | Friends tab (you, add a friend, lists), invitations, badge; rows open the profile popover | handle |
 | `profile-dialog.js` | The Edit profile dialog (name, avatar, bio, location, interests, share switch, preview); opened only by Edit profile buttons | `createProfileDialog` |

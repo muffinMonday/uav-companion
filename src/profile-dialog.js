@@ -40,7 +40,8 @@ export function createProfileDialog({ social, toast, onSaved }) {
     back.addEventListener('click', () => { mode = 'edit'; paint(); });
     const row = el('div', 'btn-row'); row.append(back, closeBtn());
     const box = profileView(view); box.id = 'pf-preview';
-    dlg.append(h, note, box, row);
+    const prog = el('small', 'hint', d.share ? 'Your rank, XP and achievements are shown too.' : 'Your rank, XP and achievements are hidden.');
+    dlg.append(h, note, box, prog, row);
   }
 
   return {
