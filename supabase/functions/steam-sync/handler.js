@@ -1,0 +1,65 @@
+// The logic of the steam-sync (a person's own "Sync now") and steam-sync-all (the daily run) edge functions, free of Deno and Supabase so Node tests can run it (tests/steam-unit.mjs).
+// Both read a player's playtime from Steam and hand it to apply_steam_playtime, which does the counting. The manual sync claims its cooldown first (the database refuses it inside
+// the hour) and gives it back if Steam does not answer or the profile is private, so a failure does not cost the person their sync. The daily run has no cooldown.
+// `deps`: getUser(authorization), rpc(fn, args) (service role), getSteamId(userId) -> the person's linked SteamID or null, fetchGames(steamId) -> { status, totals }, env: { cronSecret }.
+import { SteamError, sameSecret } from '../_shared/steam.js';
+
+const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization, content-type, apikey, x-client-info, x-cron-secret', 'access-control-allow-methods': 'POST, OPTIONS' };
+const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { ...CORS, 'content-type': 'application/json' } });
+
+/** One person's sync. Returns { status: 'ok' | 'private' | 'error' | 'not_linked', result? }. */
+async function syncOne(userId, deps) {
+  const steamId = await deps.getSteamId(userId);
+  if (!steamId) return { status: 'not_linked' };
+  let games;
+  try { games = await deps.fetchGames(steamId); }
+  catch (e) {
+    await deps.rpc('apply_steam_playtime', { p_user: userId, p_totals: {}, p_status: 'error' }).catch(() => {});
+    return { status: 'error', code: e instanceof SteamError ? e.code : 'unavailable' };
+  }
+  if (games.status === 'private') { await deps.rpc('apply_steam_playtime', { p_user: userId, p_totals: {}, p_status: 'private' }); return { status: 'private' }; }
+  const result = await deps.rpc('apply_steam_playtime', { p_user: userId, p_totals: games.totals, p_status: 'ok' });
+  return { status: result?.status === 'ok' ? 'ok' : (result?.status ?? 'error'), result };
+}
+
+/** POST with the person's session: "Sync now". */
+export async function handleManual(req, deps) {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+  if (req.method !== 'POST') return json(405, { error: 'use POST' });
+  const authorization = req.headers.get('authorization') || '';
+  if (!/^Bearer\s+\S+/i.test(authorization)) return json(401, { error: 'not signed in' });
+  let user = null;
+  try { user = await deps.getUser(authorization); } catch { user = null; }
+  if (!user?.id) return json(401, { error: 'not signed in' });
+  let claim;
+  try { claim = await deps.rpc('claim_manual_sync', { p_user: user.id }); } catch { return json(500, { error: 'Could not start the sync.' }); }
+  if (!claim?.allowed) {
+    if (claim?.reason === 'cooldown') return json(429, { reason: 'cooldown', retry_after_seconds: claim.retry_after_seconds });
+    return json(409, { reason: claim?.reason ?? 'not_available' });
+  }
+  const release = () => deps.rpc('release_manual_sync', { p_user: user.id, p_previous: claim.previous ?? null }).catch(() => {});
+  let out;
+  try { out = await syncOne(user.id, deps); } catch { await release(); return json(500, { error: 'The sync failed. Try again.' }); }
+  if (out.status === 'ok') return json(200, { status: 'ok', hours_added: out.result?.hours_added ?? 0, hours: out.result?.hours ?? 0 });
+  await release();
+  if (out.status === 'private') return json(200, { status: 'private' });
+  if (out.status === 'not_linked') return json(409, { reason: 'not_linked' });
+  return json(502, { status: 'error', error: 'Steam did not answer. Try again in a little while.' });
+}
+
+/** POST with the project's cron secret in x-cron-secret: the daily run over everyone whose last sync is old. Returns the counts only. */
+export async function handleAll(req, deps) {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+  if (req.method !== 'POST') return json(405, { error: 'use POST' });
+  if (!deps.env.cronSecret || !sameSecret(req.headers.get('x-cron-secret'), deps.env.cronSecret)) return json(401, { error: 'not allowed' });
+  let due = [];
+  try { due = (await deps.rpc('list_steam_due', { p_limit: 200 })) ?? []; } catch { return json(500, { error: 'Could not list who is due.' }); }
+  const counts = { due: due.length, ok: 0, private: 0, error: 0, skipped: 0 };
+  for (const d of due) {
+    try {
+      const o = await syncOne(d.user_id, deps);
+      if (o.status === 'ok') counts.ok++; else if (o.status === 'private') counts.private++; else if (o.status === 'not_linked') counts.skipped++; else counts.error++;
+    } catch { counts.error++; }
+  }
+  return json(200, counts);
+}

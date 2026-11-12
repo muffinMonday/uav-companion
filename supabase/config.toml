@@ -22,3 +22,15 @@ enable_confirmations = false
 # The edge function that deletes an account (the platform checks the caller token first; the handler checks it again).
 [functions.delete-account]
 verify_jwt = true
+
+# Steam linking and sync (progression phase 6). steam-link: the platform check is off because Steam redirects the browser back without a session; the function checks the session (POST) or a signed state (GET) itself.
+[functions.steam-link]
+verify_jwt = false
+
+# A person's own Sync now: a signed-in session is required.
+[functions.steam-sync]
+verify_jwt = true
+
+# The daily run, called by a scheduler with the x-cron-secret header.
+[functions.steam-sync-all]
+verify_jwt = false

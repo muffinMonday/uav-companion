@@ -44,6 +44,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `sync-ui.js` | Cloud copy card (status, sync, versions), sign-in form and sign-out flow, conflict prompt; returns the handle used below | `initSyncUI` |
 | `account-ui.js` (also the delete-account dialog) | Account button (panel header and rail) and its popover: guest note and sign-in, or name, friend code, sync state, Edit profile, Friends, Sign out | handle |
 | `avatars.js` (pure lists, `avatarEl`), `profile-ui.js` | Preset avatars and interest tags; the Profile card and the bio/location lines | `avatarEl`, `profileBits` |
+| `steam.js` (pure + API wrapper), `steam-ui.js` | Steam: validation, wording, reading the sign-in result, the Steam card (link, sync, unlink) | `createSteam`, `cleanSteam`, `createSteamCard`, `announceSteamReturn` |
 | `sessions.js` (pure + API wrapper), `sessions-ui.js` | Flight sessions: validation, which controls to offer, the card with RSVP and the organiser's manage panel | `createSessions`, `sessionState`, `createSessionsCard` |
 | `progression.js` (pure), `progression-api.js`, `progression-ui.js` | Rank progress, validation of what the database returns, a short cache, and the rank badge, progression card, achievement collection and XP history | `cleanProgression`, `rankProgress`, `getProgression`, `mountProgression`, `rankBadge`, `progressionMini` (map pin card; `livemap.js` `setRanks`) |
 | `social.js` | Friends and profile RPC wrappers | `createSocial` |

@@ -1050,3 +1050,9 @@ input[type=email]:focus{border-color:var(--accent)}
 .ses-walkin{margin:8px 0}.ses-form{display:flex;flex-direction:column;gap:4px;margin-top:8px}
 .ses-form input,.ses-form textarea{width:100%;box-sizing:border-box}
 .ses-message{margin-top:8px}
+/* Steam card (steam-ui.js) */
+.steam-card{display:flex;flex-direction:column;gap:6px}
+.steam-rules{margin:0;padding-left:18px;color:var(--muted);font-size:12.5px}.steam-rules li{margin:2px 0}
+.steam-apps summary{cursor:pointer;font-weight:600}.steam-apps ul{margin:4px 0 0;padding-left:18px}
+.steam-stats{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.steam-hours{font-weight:700;font-size:16px}.steam-minutes,.steam-last{color:var(--muted)}
+.steam-warn{color:var(--unk)}.steam-card .btn-row{margin:6px 0 0}.steam-message{margin-top:6px}

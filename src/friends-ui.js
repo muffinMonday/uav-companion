@@ -9,6 +9,7 @@ import { profileTrigger, setProgressionSource } from './profile-popover.js';
 import { getProgression } from './progression-api.js';
 import { mountProgression } from './progression-ui.js';
 import { createSessionsCard } from './sessions-ui.js';
+import { createSteamCard, announceSteamReturn } from './steam-ui.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 .3 5 2.6 5 5.8"/></svg>';
@@ -21,6 +22,9 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
   const progression = getProgression(handle.adapter.client);
   setProgressionSource(progression);
   const sessions = createSessionsCard({ client: handle.adapter.client });
+  const steam = createSteamCard({ client: handle.adapter.client, onChange: () => { progression.forget(); render(); } });
+  const steamSlot = el('div'); steam.mount(steamSlot);
+  announceSteamReturn(toast); // Steam's sign-in sends the person back here with ?steam=...
   const sesSlot = el('div'); sessions.mount(sesSlot); // kept between redraws of the tab so an open manage panel or form is not lost
   const pane = el('section'); pane.id = 'pane-friends';
   const tab = panel.addTab({ key: 'friends', label: 'Friends', icon: ICON, pane });
@@ -40,11 +44,11 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
   }
 
   async function load({ withProfile = false } = {}) {
-    if (!signedIn()) { profile = null; list = []; blocked = []; loadedFor = null; progression.forget(); sessions.reset(); publish(); render(); return; }
+    if (!signedIn()) { profile = null; list = []; blocked = []; loadedFor = null; progression.forget(); sessions.reset(); steam.reset(); publish(); render(); return; }
     try {
       if (loadedFor && loadedFor !== handle.sync.status().session.email) progression.forget(); // a different account on the same page: nothing of the last one's is kept
       list = await social.list();
-      sessions.reload();
+      sessions.reload(); steam.reload();
       if (withProfile || profile) profile = await social.profile();
       if (shown()) blocked = await social.blocked();
       loadedFor = handle.sync.status().session.email;
@@ -105,6 +109,10 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     const slot = el('div'); pc.append(slot);
     mountProgression(slot, { load: () => progression.mine(), peek: () => progression.peek('me'), mode: 'self', api: progression, toast });
     pane.append(pc);
+
+    // ---- Steam: link an account to earn XP for simulator hours
+    const stc = el('div', 'card'); stc.id = 'fr-steam'; stc.append(el('h2', '', 'Steam'), steamSlot);
+    pane.append(stc);
 
     // ---- flight sessions: RSVP; organisers and administrators also manage them
     const sc = el('div', 'card'); sc.id = 'fr-sessions'; sc.append(el('h2', '', 'Flight sessions'), sesSlot);
