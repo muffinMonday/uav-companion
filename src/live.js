@@ -5,6 +5,8 @@
 //     person signs out, leaves or is removed, when the trip ends (a day after its end date), or when location permission is refused.
 //   - While sharing, the device's position is sent at most every 5 s, and only when it has moved 5 m or 15 s have passed since the last one.
 //   - The others' positions are looked for every 5 s while the page is visible. A position the server no longer returns (older than 2 minutes) disappears.
+//   - One device at a time: the page that most recently turned sharing on holds the position; an older one is told "moved" on its next send and stops (the
+//     device id is added by the api, see sharedtrip/api.js).
 
 const MIN_MS = 5000, KEEP_MS = 15000, MOVE_M = 5, POLL_MS = 5000, DAY = 86400000;
 
@@ -46,8 +48,14 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
     try {
       const end = getTrip(id)?.endDate;
       if (endedMoreThanADay(end, now())) { await stop(id, 'The trip has ended, so sharing your location stopped.'); return; }
-      const r = await api.shareLocation(id, p.lat, p.lon, p.accuracy);
+      const r = await api.shareLocation(id, p.lat, p.lon, p.accuracy, t.claim);
       if (!trips.has(id)) { await quiet(api.stopSharing(id)); return; } // stopped while the position was on its way
+      if (r?.status === 'moved') { // another device of this account started sharing in this trip after this one: it holds the position now
+        trips.delete(id); if (!trips.size) endWatch();
+        note('Sharing moved to your other device, so this one stopped.');
+        return;
+      }
+      t.claim = false; // the first position took the trip over from any other device; the ones after it only update
       if (r?.status === 'ended') { await stop(id, 'The trip has ended, so sharing your location stopped.'); return; }
       t.sentAt = now(); t.sent = { lat: p.lat, lon: p.lon }; t.accuracy = p.accuracy; t.status = 'ok'; t.error = null;
     } catch (e) {
@@ -103,7 +111,7 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
     start(id) {
       if (!geo) return { ok: false, reason: 'This browser cannot give a position.' };
       if (trips.has(id)) return { ok: true };
-      trips.set(id, { status: 'waiting' });
+      trips.set(id, { status: 'waiting', claim: true });
       if (watch === null) watch = geo.watchPosition(onPosition, onError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
       else if (last) send(id);
       emit();

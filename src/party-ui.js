@@ -62,7 +62,10 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
       if (who && who !== s.email) eng.reset(); // another person signed in on this device: shared trips here are not theirs
       try { localStorage.setItem(WHO_KEY, s.email); } catch { /* ignore */ }
       started = true; eng.start(); live.startPolling(wantsLive); live.poll();
-    } else if (!s && started) { started = false; eng.stop(); live.stopAll(); live.stopPolling(); layer?.clear(); }
+    } else if (!s && started) {
+      started = false; eng.stop(); live.stopAll(); live.stopPolling(); layer?.clear();
+      if (!store.trips().some((t) => t.shared)) eng.reset(); // the device was wiped at sign-out: forget the shared-trip bookkeeping too
+    }
   }
   eng.onChange(() => {
     for (const id of live.sharingIds()) if (!store.getTrip(id)?.shared) live.stop(id, 'You are no longer in this trip, so sharing your location stopped.');

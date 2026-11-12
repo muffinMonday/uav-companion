@@ -95,6 +95,30 @@ await age(B, 5); await share(B);
 await one(B, 'public.stop_all_sharing()');
 ok(!(await live(A)).some((l) => l.display_name === 'Bea'), 'stop everywhere does too');
 
+// ---------- two devices of one account: the newest to start sharing takes over
+const dev = (uid, device, claim, lat = 30.5, lon = 114.3) => one(uid, 'public.share_location($1, $2, $3, 10, $4, $5)', [TRIP, lat, lon, device, claim]);
+const posOf = async (uid) => (await db.query(`select lat, device from public.live_locations where user_id = '${uid}' and trip_id = '${TRIP}'`)).rows[0];
+await db.exec(`delete from public.live_locations where user_id = '${D}'`);
+ok((await dev(D, 'phone', true, 10, 10)).status === 'ok' && (await posOf(D)).device === 'phone', 'a device that starts sharing holds the position');
+ok((await dev(D, 'laptop', false, 20, 20)).status === 'moved' && (await posOf(D)).lat === 10, 'a second device that did not claim is told "moved" and changes nothing');
+ok((await dev(D, 'laptop', true, 20, 20)).status === 'ok' && (await posOf(D)).device === 'laptop' && (await posOf(D)).lat === 20, 'starting to share on the second device takes over at once (not held back by the 2 s limit)');
+await age(D, 5);
+ok((await dev(D, 'phone', false, 11, 11)).status === 'moved' && (await posOf(D)).lat === 20, 'the first device is now told "moved" and cannot overwrite');
+ok((await dev(D, 'laptop', false, 21, 21)).status === 'ok' && (await dev(D, 'laptop', false, 22, 22)).status === 'slow', 'the holder keeps sending and keeps the 2 s limit');
+await one(D, 'public.stop_sharing_location($1, $2)', [TRIP, 'phone']);
+ok((await posOf(D))?.device === 'laptop', 'a stop from a device that does not hold the position does nothing');
+await one(D, 'public.stop_all_sharing($1)', ['phone']);
+ok((await posOf(D))?.device === 'laptop', 'and neither does stop everywhere');
+await one(D, 'public.stop_all_sharing($1)', ['laptop']);
+ok(!(await posOf(D)), 'the holder\'s stop removes it');
+await dev(D, 'phone', true, 10, 10); await age(D, 5);
+await one(D, 'public.stop_sharing_location($1)', [TRIP]);
+ok(!(await posOf(D)), 'a stop without a device id (an older app) still removes it');
+await share(D); await age(D, 5);
+ok((await dev(D, 'laptop', false)).status === 'ok' && (await posOf(D)).device === 'laptop', 'a row without a device (older app) can be taken by a device without a claim');
+ok(/not a device/.test(await refused(db, D, 'select public.share_location($1, 1, 1, 10, $2, false)', [TRIP, ''])), 'an empty device id is refused');
+await db.exec(`delete from public.live_locations where user_id = '${D}'`);
+
 // ---------- leaving and removal end it
 await age(B, 5); await share(B); await share(D);
 ok((await live(A)).length >= 1, 'two members are sharing again');

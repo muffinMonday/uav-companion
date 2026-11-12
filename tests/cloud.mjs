@@ -99,6 +99,6 @@ ok(await p.locator('#cloud-card .cloud-version').count() === 1 && /Chrome on Win
 
 // ---------- sign out
 await p.click('#cloud-card >> text=Sign out'); await p.waitForTimeout(600);
-ok(await p.locator('#cloud-card input[type=email]').isVisible() && await stored(p) === 'FromPhone,Lake,Tower', 'sign-out returns to the form and keeps the data on the device');
+ok(await p.locator('#cloud-card input[type=email]').isVisible() && await stored(p) === '' && cloud.rows.get(USER.email).doc.items.length === 3, 'sign-out returns to the form, clears this device (it was in step with the cloud) and leaves the cloud copy alone');
 ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
 await b.close();

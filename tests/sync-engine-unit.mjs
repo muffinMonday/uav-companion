@@ -167,3 +167,76 @@ ok(d1.sync.status().status === 'synced' && e1.rows.size === 1, 'the next pass re
 await laptop.sync.signOut();
 ok(laptop.sync.status().status === 'off' && laptop.sync.status().baseRev === null && laptop.store.items().length > 0, 'sign-out keeps the data and forgets the revision');
 await laptop.sync.stop(); await phone.sync.stop(); await tablet.sync.stop();
+
+// ---------- an upload that reached the server but whose answer was lost: the retry does not ask, and nothing is duplicated
+{
+  const c = makeCloud(), u = { email: 'r@example.test' }, d = device(c, 'laptop', { user: u });
+  d.store.add(M('one')); d.store.add(M('two'));
+  const real = d.adapter.save;
+  d.adapter.save = async (...a) => { await real(...a); throw new Error('network dropped'); }; // saved, but the device never hears
+  await d.sync.start();
+  ok(d.sync.status().status === 'error' && c.rows.get(u.email).rev === 1 && d.sync.status().baseRev === null, 'lost answer: the device shows an error and does not think it synced');
+  d.adapter.save = real;
+  await d.sync.sync();
+  ok(d.sync.status().status === 'synced' && d.sync.status().baseRev === 1 && c.rows.get(u.email).doc.items.length === 2 && c.rows.get(u.email).rev === 1, 'the retry recognises its own upload: no question, no duplicate, no new revision');
+  await d.sync.stop();
+}
+// ---------- the same data on a second device (never synced): no question either; different data still asks
+{
+  const c = makeCloud(), u = { email: 's@example.test' };
+  const a = device(c, 'laptop', { user: u }); a.store.add(M('one')); await a.sync.start();
+  const b = device(c, 'phone', { user: u }); b.store.replaceAll(a.store.items(), a.store.trips()); await b.sync.start();
+  ok(b.sync.status().status === 'synced' && c.rows.get(u.email).rev === 1, 'identical data on a second device syncs without asking');
+  const e = device(c, 'tablet', { user: u }); e.store.add(M('other')); await e.sync.start();
+  ok(e.sync.status().status === 'ask', 'different data on a second device still asks');
+  await a.sync.stop(); await b.sync.stop(); await e.sync.stop();
+}
+
+// ---------- sign-out with a wipe: the next person on this device does not inherit the data
+{
+  const c = makeCloud(), A = { email: 'a@example.test' }, B = { email: 'b@example.test' };
+  const d = device(c, 'shared pc', { user: A });
+  d.store.add(M('one')); d.store.add(M('two'));
+  await d.sync.start();
+  const r = await d.sync.signOut({ wipe: true });
+  ok(r.ok && d.store.items().length === 0 && d.store.trips().length === 0 && d.backups.length === 0, 'wipe: in step with the cloud, so the device is cleared with no backup');
+  ok(c.rows.get(A.email).doc.items.length === 2 && d.sync.status().status === 'off', 'wipe: the cloud copy is untouched');
+  // another account signs in on the same browser with an empty cloud: nothing of A's reaches B
+  const s2 = createSync({ store: d.store, adapter: c.adapter(B), storage: d.storage, device: 'shared pc', debounceMs: 10 });
+  await s2.start();
+  ok(!c.rows.has(B.email) && d.store.items().length === 0, 'two accounts on one browser: the second account\'s cloud stays empty');
+  await s2.stop(); await d.sync.stop();
+}
+{
+  const c = makeCloud(), A = { email: 'a@example.test' };
+  const d = device(c, 'laptop', { user: A });
+  d.store.add(M('one'));
+  await d.sync.start();
+  c.failNext = 'offline';
+  d.store.add(M('late')); // a change the cloud cannot accept now
+  await tick(40);
+  c.failNext = 'offline';
+  const r = await d.sync.signOut({ wipe: true });
+  ok(!r.ok && r.reason === 'unsynced' && d.store.items().length === 2 && d.sync.status().session, 'wipe refused while a change is not in the cloud: data and session intact');
+  c.failNext = 'offline';
+  const r2 = await d.sync.signOut({ wipe: true, force: true });
+  ok(r2.ok && d.store.items().length === 0 && d.backups.length === 1 && d.backups[0].side === 'device' && d.backups[0].n === 2, 'forced: the whole device is handed to the backup first, then cleared');
+  await d.sync.stop();
+}
+{
+  const c = makeCloud(), d = device(c, 'phone', { user: { email: 'a@example.test' } });
+  d.store.add({ ...M('v'), checkin: { at: '2026-11-11T10:00:00.000Z', lat: 30, lon: 114, accuracy: 10 } });
+  await d.sync.start();
+  const r = await d.sync.signOut({ wipe: true });
+  ok(!r.ok && r.reason === 'checkins' && d.store.items().length === 1, 'check-ins are never uploaded, so a wipe asks first');
+  const r2 = await d.sync.signOut({ wipe: true, force: true });
+  ok(r2.ok && d.backups.length === 1 && d.store.items().length === 0, 'and a forced wipe backs them up');
+  await d.sync.stop();
+}
+{
+  const c = makeCloud(), d = device(c, 'tablet', { user: { email: 'a@example.test' } });
+  d.store.add(M('x')); await d.sync.start();
+  const r = await d.sync.signOut();
+  ok(r.ok && d.store.items().length === 1, 'without wipe, sign-out still only forgets the revision');
+  await d.sync.stop();
+}

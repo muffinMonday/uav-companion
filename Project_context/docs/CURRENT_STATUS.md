@@ -3,6 +3,9 @@
 Updated: 2026-11-12
 Task: Side Quest feature (sub-markers). All five phases (5, 1, 2, 3, 4) built; phase 4 committed, pushed and deployed with this checkpoint. Standing rule: commit, push and deploy after every phase (memory `commit-deploy-each-phase`).
 
+## Next feature
+Account and profile milestone: backlog in `docs/ACCOUNT_BACKLOG.md` (phases A to E). Phase A (data safety: AC-1 sign-out wipe, AC-2 identical-data adoption after a lost upload answer, AC-3b one device shares live location) is built and tested; migration `20261112100000_live_device.sql` is NOT yet pushed to the hosted dev project (`npx supabase db push --remote --dry-run`, then `--yes`); AC-3 test-only items covered in `tests/sync-engine-unit.mjs`. Phase B is next; after each phase: test, commit, push, deploy, then ask the owner.
+
 ## Objective
 Side Quests are optional nearby stops attached to a main stop: hidden by default (a "+N" badge on the parent pin, a "▾ N" chip on the parent card), revealed when the parent is opened or expanded, draggable like main cards.
 

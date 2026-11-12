@@ -7,7 +7,7 @@
 //
 // Status: 'off' (no adapter or not signed in), 'idle', 'syncing', 'synced', 'ask' (waiting for the user's choice), 'error'.
 
-import { buildDoc, decide, diffDocs, keepLocalCheckins, counts } from './core.js';
+import { buildDoc, decide, diffDocs, keepLocalCheckins, counts, sameContent } from './core.js';
 
 const KEY = 'uavzones.v1.sync';
 const DEBOUNCE_MS = 2500;
@@ -58,7 +58,12 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
     const action = decide({ hasData: hasData(), dirty: state.dirty, baseRev: state.baseRev }, cloud);
     if (action === 'nothing' || action === 'in-sync') { state.lastSyncedAt = state.lastSyncedAt ?? now(); persist(); set('synced'); return; }
     if (action === 'pull') { applyCloud(await adapter.fetch()); set('synced'); return; }
-    if (action === 'ask') { await askUser(cloud); return; }
+    if (action === 'ask') {
+      // Identical content on both sides (an upload that reached the server but whose answer was lost, or the same data on two devices): nothing to choose.
+      const got = state.baseRev == null ? await adapter.fetch() : null;
+      if (got && sameContent(localDoc(), got.doc)) { state = { baseRev: got.rev, dirty: false, lastSyncedAt: now() }; persist(); set('synced'); return; }
+      await askUser(cloud); return;
+    }
     const r = await push(false); // push, push-first
     if (r.status === 'conflict') { await askUser(r); return; }
     set('synced');
@@ -93,7 +98,26 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
     start: () => sync(),
     sync,
     async signIn(email) { try { await adapter.signIn(email); return { ok: true }; } catch (e) { return { ok: false, error: String(e?.message || e) }; } },
-    async signOut() { clearTimeout(timer); await adapter.signOut(); session = null; state = { baseRev: null, dirty: false, lastSyncedAt: null }; persist(); set('off'); },
+    /**
+     * Signs out. With `wipe`, this device's markers and trips are removed afterwards so the next person to sign in here does not inherit them (the data
+     * stays in the cloud copy). It refuses ({ ok: false, reason }) while something here is not in the cloud copy: 'unsynced' (a change the cloud has not
+     * accepted, or a pending question) or 'checkins' (check-ins are not uploaded). `force` goes ahead anyway, after handing the whole device to `backup`.
+     */
+    async signOut({ wipe = false, force = false } = {}) {
+      clearTimeout(timer);
+      if (wipe && session && hasData()) {
+        await running;
+        if (state.dirty || state.baseRev == null) await sync();
+        const unsynced = state.dirty || state.baseRev == null || status === 'ask' || status === 'error';
+        const checkins = !includeCheckins() && store.items().some((i) => i.checkin);
+        if ((unsynced || checkins) && !force) { schedule(); return { ok: false, reason: unsynced ? 'unsynced' : 'checkins' }; }
+        if ((unsynced || checkins) && backup) await backup('device', buildDoc({ items: store.items(), trips: store.trips(), includeCheckins: true }));
+      }
+      await adapter.signOut(); session = null; state = { baseRev: null, dirty: false, lastSyncedAt: null }; persist();
+      if (wipe) { applying = true; try { store.replaceAll([], []); } finally { applying = false; } }
+      set('off');
+      return { ok: true };
+    },
     /** The user's answer to a question: 'cloud' (take the cloud copy) or 'device' (keep this device's data, replacing the cloud copy); backup: save the side that loses first. */
     async resolve(choice, { backup: wantBackup = true } = {}) {
       if (status !== 'ask') return;

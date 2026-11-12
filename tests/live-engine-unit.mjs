@@ -25,11 +25,11 @@ const age = (uid, s) => db.exec(`update public.live_locations set updated_at = n
 const rowOf = async (uid) => (await db.query(`select * from public.live_locations where user_id = '${uid}'`)).rows[0];
 
 /** A device: its engine, a fake position source and a fake clock. */
-function device(uid, trip = { id: TRIP }) {
+function device(uid, trip = { id: TRIP }, devId = null) {
   let t = Date.now();
   const watchers = [];
   const geo = { watchPosition: (ok2, err) => { watchers.push({ ok2, err }); return watchers.length; }, clearWatch: () => { watchers.length = 0; } };
-  const api = dbApi(db, uid);
+  const api = dbApi(db, uid, { device: devId });
   const eng = createLive({ api, geo, getTrip: () => trip, now: () => t, pollMs: 100000 });
   const pos = (lat, lon, acc = 10) => { for (const w of watchers) w.ok2({ coords: { latitude: lat, longitude: lon, accuracy: acc } }); };
   const fail = (code) => { for (const w of watchers) w.err({ code }); };
@@ -131,4 +131,22 @@ await tick(30);
 const stopping = late.eng.stop(TRIP);
 release(); await stopping; await tick(200);
 ok(await rowOf(A) === undefined, 'a position that was on its way when sharing was stopped does not remain on the server');
+
+// ---------- two devices of one account: the newest to start sharing takes over, the other stops
+{
+  await db.exec(`delete from public.live_locations`);
+  const phone = device(A, { id: TRIP }, 'phone'), laptop = device(A, { id: TRIP }, 'laptop');
+  phone.eng.start(TRIP); phone.pos(10, 10); await tick(150);
+  ok((await rowOf(A)).device === 'phone' && (await rowOf(A)).lat === 10, 'the first device holds the position');
+  laptop.eng.start(TRIP); laptop.pos(20, 20); await tick(150);
+  ok((await rowOf(A)).device === 'laptop' && (await rowOf(A)).lat === 20 && laptop.eng.isSharing(TRIP), 'the second device takes over when it starts sharing');
+  await age(A, 5); phone.advance(6000); phone.pos(11, 11); await tick(150);
+  ok(!phone.eng.isSharing(TRIP) && phone.watchers.length === 0 && phone.eng.takeNotices().some((n) => /moved to your other device/.test(n)) && (await rowOf(A)).lat === 20, 'the first device is told on its next position, stops and says so; it does not overwrite');
+  await phone.eng.stopAll();
+  ok((await rowOf(A)).device === 'laptop', 'and its stop does not remove the other device position');
+  await age(A, 5); laptop.advance(6000); laptop.pos(21, 21); await tick(150);
+  ok(laptop.eng.isSharing(TRIP) && (await rowOf(A)).lat === 21, 'the holder keeps sharing');
+  await laptop.eng.stopAll();
+  ok(await rowOf(A) === undefined, 'the holder stop removes it');
+}
 await db.close();

@@ -1,7 +1,7 @@
 // The shared-trip functions of the cloud database (supabase/migrations/20261111140000_shared_trips.sql), called through the sync adapter's client.
 // Every call throws an Error carrying the database's own message ("trip not found", "you can only invite friends", ...).
 
-export function createTripsApi(client) {
+export function createTripsApi(client, { device = globalThis.crypto?.randomUUID?.() ?? String(Math.random()).slice(2) + Date.now() } = {}) {
   const rpc = async (fn, args) => {
     const { data, error } = await client.rpc(fn, args);
     if (error) throw new Error(error.message);
@@ -26,9 +26,10 @@ export function createTripsApi(client) {
     /** The owner's friends who are not in the trip yet: [{ friendship_id, display_name }] */
     invitable: (id) => rpc('list_invitable_friends', { p_trip: id }),
     /** Live locations (see live.js): sends this device's position for a trip, stops sharing there or everywhere, and lists the others' positions. */
-    shareLocation: (id, lat, lon, accuracy) => rpc('share_location', { p_trip: id, p_lat: lat, p_lon: lon, p_accuracy: accuracy ?? null }),
-    stopSharing: (id) => rpc('stop_sharing_location', { p_trip: id }),
-    stopAll: () => rpc('stop_all_sharing'),
+    // `device` names this page (made fresh at each load, so two tabs are two devices); `claim` is true for the first position after sharing is turned on.
+    shareLocation: (id, lat, lon, accuracy, claim = false) => rpc('share_location', { p_trip: id, p_lat: lat, p_lon: lon, p_accuracy: accuracy ?? null, p_device: device, p_claim: !!claim }),
+    stopSharing: (id) => rpc('stop_sharing_location', { p_trip: id, p_device: device }),
+    stopAll: () => rpc('stop_all_sharing', { p_device: device }),
     live: () => rpc('list_live_locations'),
     /** [{ rev, updated_at, updated_by_name, markers }] */
     versions: async (id) => (await rpc('list_shared_trip_versions', { p_trip: id })).map((v) => ({ ...v, rev: Number(v.rev) })),

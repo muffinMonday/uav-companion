@@ -25,7 +25,7 @@ A static front end (GitHub Pages) that works fully without a server, plus an **o
 ## Data flows
 | Flow | Modules | Cadence and rule |
 |---|---|---|
-| Cloud copy (markers + trips as one document) | `sync/core.js` rules, `sync/engine.js`, `sync/supabase.js`, `sync-ui.js` | Push about 2.5 s after a change; revision per device (`baseRev`, `dirty`); true conflict asks the user (backup of the losing side offered); 20 versions or 30 days kept. Check-ins excluded unless the user opts in |
+| Cloud copy (markers + trips as one document) | `sync/core.js` rules, `sync/engine.js`, `sync/supabase.js`, `sync-ui.js` | Push about 2.5 s after a change; revision per device (`baseRev`, `dirty`); true conflict asks the user (backup of the losing side offered); 20 versions or 30 days kept. Check-ins excluded unless the user opts in. Sign-out (`signOut({ wipe: true })`) syncs first, then clears this device's markers and trips (data stays in the cloud copy); it refuses while changes are unsynced or check-ins exist only here, and a forced sign-out downloads a backup first. Identical data on a never-synced device and the cloud is adopted without a question |
 | Friends | `social.js`, `friends-ui.js` | Friend code, no search; tab refreshes every 30 s while shown, badge every 2 min |
 | Shared trips | `sharedtrip/{api,core,engine}.js`, `party-ui.js` | One document per trip with revision; poll every 10 s, save about 2 s after a change; three-way field-level merge in the client (edit beats delete); owner-only delete and membership; Home markers and check-ins refused by the database |
 | Online status | `presence.js` | Heartbeat every 30 s while signed in and visible; online within 75 s; hideable (symmetric) |

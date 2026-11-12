@@ -70,7 +70,16 @@ export async function initSyncUI({ store, toast }) {
     if (s.status === 'ask') btn('Choose…', () => question(s));
     btn('Sync now', () => sync.sync());
     btn('Earlier versions', async () => { try { versions = await adapter.listVersions(); } catch (e) { toast('Could not load versions: ' + e.message); return; } render(); });
-    btn('Sign out', async () => { await sync.signOut(); message = ''; versions = null; render(); toast('Signed out. Your data stays on this device.'); });
+    btn('Sign out', async () => {
+      let r = await sync.signOut({ wipe: true });
+      if (!r.ok) {
+        const why = r.reason === 'checkins' ? 'Your check-ins are not uploaded, so they exist only on this device.' : 'Your latest changes have not reached the cloud copy.';
+        if (!confirm(why + ' Download a backup of this device and sign out? Its markers and trips will be removed from this device.')) return;
+        r = await sync.signOut({ wipe: true, force: true });
+      }
+      message = ''; versions = null; render();
+      toast('Signed out. This device\'s markers and trips were removed; they stay in your cloud copy.', 8000);
+    });
     card.append(row);
     if (versions) {
       const box = el('div', 'cloud-versions');
