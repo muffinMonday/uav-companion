@@ -19,7 +19,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | File | Responsibility | Depends on |
 |---|---|---|
 | `poi.js` (pure) | Types, sanitize, store, GeoJSON export/import, limits; Side Quest helpers `isMain`, `isSub`, `stopNo`, `NOT_SUB` | `countries.js` |
-| `poi-ui.js` | Marker list, window, edit, select/delete, import/export | `poi`, `distance`, `trips`, `cards` |
+| `poi-ui.js` | Marker list, window, edit, select/delete, import/export; Side Quest folding (`+N` badge, nested rows, `sideState` shared with the Trips tab) and convert actions | `poi`, `distance`, `trips`, `cards` |
 | `trips.js` (pure), `trips-ui.js` | Trip rules (days, warnings, status); Side Quest lookup `parentOf`, `defaultParent`, `sideQuestMap`, `sideQuests` and the conversions `sideQuestPatch`, `mainStopPatch`; Trips tab and plan screen | `poi` |
 | `tripweather.js` | Daily forecast per trip | `weather`, `privacy` |
 | `distance.js` (pure) | Nearest Home point/Hotel, nearest Home | - |

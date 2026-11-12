@@ -51,7 +51,7 @@ export function initReorder({ list, scroller, onLift, onEnd, onDrop, onStep, hol
     for (const li of list.children) {
       if (li.dataset.scope !== st.scope) continue;
       if (li.classList.contains('day-head')) groups.push({ key: li.dataset.gkey, head: li, rows: [] });
-      else if (li.dataset.id && li.dataset.id !== st.id && groups.length) groups[groups.length - 1].rows.push(li);
+      else if (li.dataset.id && li.dataset.id !== st.id && !li.dataset.sub && groups.length) groups[groups.length - 1].rows.push(li);
     }
     const slots = [];
     for (const g of groups) {

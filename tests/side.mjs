@@ -82,6 +82,8 @@ await p.click('.poi-pop button[type=submit]'); await p.waitForTimeout(500);
 let d = await stored(p, 'D');
 ok(d.isSub === true && d.parentId === 'A' && !('order' in d), 'saving stores a Side Quest with the chosen parent and no stop number');
 await closeWin(p);
+ok((await p.locator('#poi-list li', { has: p.locator('b:text-is("Delta")') }).count()) === 0, 'it is now folded under Alpha, so the list no longer shows it on its own');
+await p.locator('#poi-list li', { has: p.locator('b:text-is("Alpha")') }).locator('.side-chip').click(); await p.waitForTimeout(300);
 await openName(p, 'Delta');
 await p.click('.poi-pop .pop-tools button[title="Edit"]'); await p.waitForSelector('.poi-pop form', { timeout: 5000 });
 ok(await p.isChecked('#edit-side') && (await p.inputValue('.poi-pop .near-lab select')) === 'A', 'the form reopens with the box ticked and Alpha chosen');

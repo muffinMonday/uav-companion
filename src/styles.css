@@ -672,6 +672,20 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 
 /* ---------- check-in at the right of a marker row ---------- */
 .poi-list li.with-checkin{display:flex;align-items:center;gap:6px}
+.poi-list li.side-row{margin-left:18px;border-left:2px dotted var(--line)}
+.poi-list li.side-row .poi-item{padding-top:5px;padding-bottom:5px}
+.side-chip{flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:2px 8px;font:650 11.5px/1.4 var(--font);cursor:pointer;white-space:nowrap}
+.side-chip:hover,.side-chip[aria-expanded=true]{border-color:var(--accent);color:var(--accent)}
+.poi-pin.side-hidden{display:none}
+.poi-pin.side-pin>svg{transform:scale(.72);transform-origin:50% 100%}
+.poi-pin.side-pin>svg path:first-child{stroke-dasharray:3 2}
+.poi-pin .sidecount{position:absolute;left:-8px;bottom:-2px;padding:0 5px;border-radius:999px;background:var(--surface);color:var(--fg);border:1.5px dashed var(--fg);font:700 10px/1.5 var(--font);pointer-events:none}
+.plan-group{display:grid;gap:4px}
+.plan-side{margin-left:16px;opacity:.92}
+.pop-side{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}
+.pop-side small{color:var(--muted)}
+.pop-side-btn{border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:999px;padding:2px 9px;font:600 12px/1.4 var(--font);cursor:pointer}
+.pop-side-btn:hover{border-color:var(--accent)}
 .poi-list li.with-checkin .poi-item{flex:1;min-width:0;width:auto}
 .checkin{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:46%}
 .checkin-btn{position:relative;width:28px;height:28px;color:var(--muted);border:1px solid transparent}

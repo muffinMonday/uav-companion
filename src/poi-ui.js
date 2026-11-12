@@ -12,7 +12,7 @@ import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, comp
 import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { visitGroups, visitLabel } from './places.js';
-import { dayInfo, dayText, tripSequence, defaultParent, sideQuestPatch, mainStopPatch } from './trips.js';
+import { dayInfo, dayText, tripSequence, defaultParent, sideQuestPatch, mainStopPatch, sideQuestMap } from './trips.js';
 import { mapLinkIcons } from './maplinks-ui.js';
 import { MODES } from './maplinks.js';
 import { planMove, stepSlot, groupKey, addDays } from './reorder.js';
@@ -25,9 +25,10 @@ const HOLD_MS = 380; // press and hold this long before a pin can be moved
 const SLOP = 8;      // px of movement during the hold that cancels it (it was a swipe, not a hold)
 
 /** The pin, with a small dot in its trip's colour when the marker belongs to a trip. The colour comes from the fixed palette in poi.js. */
-const makeIcon = (type, tripColor, seq = '', visits = 0) => L.divIcon({
-  className: 'poi-pin',
-  html: pinSvg(type) + (tripColor ? `<i class="trip-dot" style="background:${tripColor}"></i>` : '') + (seq ? `<b class="seq">${seq}</b>` : '') + (visits > 1 ? `<b class="visits">×${visits}</b>` : ''),
+// `side`: { sub: a Side Quest (smaller, dashed), hidden: folded away until its main stop is open, count: how many Side Quests hang from this main stop (the +N badge) }
+const makeIcon = (type, tripColor, seq = '', visits = 0, side = null) => L.divIcon({
+  className: 'poi-pin' + (side?.sub ? ' side-pin' : '') + (side?.hidden ? ' side-hidden' : ''),
+  html: pinSvg(type) + (tripColor ? `<i class="trip-dot" style="background:${tripColor}"></i>` : '') + (seq ? `<b class="seq">${seq}</b>` : '') + (visits > 1 ? `<b class="visits">×${visits}</b>` : '') + (side?.count ? `<b class="sidecount">+${side.count}</b>` : ''),
   iconSize: [30, 40], iconAnchor: [15, 38],
 });
 const fmt = (v) => v.toFixed(5);
@@ -51,6 +52,11 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let suppressClick = false;
   let popup = null;
   let visitMap = new Map();   // id -> every marker at the same spot (two or more), see places.js
+  let sideMap = { byParent: new Map(), orphans: [] }; // Side Quests under their parent main stops (trips.js sideQuestMap)
+  let subParent = new Map();  // Side Quest id -> its parent's id (a Side Quest with no parent is not in it)
+  let expandedParent = null;  // the main stop whose Side Quests are unfolded in the lists (one at a time)
+  let showAllSide = !!loadPrefs().showSide;
+  const expandListeners = new Set();
   const visitCount = (id) => visitMap.get(id)?.length ?? 0;
   let selecting = false;      // "Select markers" mode in the list, for deleting several at once
   const selected = new Set(); // ids ticked in that mode (only ever markers that are shown)
@@ -137,6 +143,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const visible = items.filter((i) => (filter === 'all' || i.type === filter)
       && (tripFilter === 'all' || (tripFilter === 'none' ? !i.tripId : i.tripId === tripFilter)));
     visibleIds = new Set(visible.map((i) => i.id));
+    const nestedIds = new Set(); // Side Quests listed under their (shown) main stop instead of in the flow
+    for (const [pid, subs] of sideMap.byParent) if (visibleIds.has(pid)) for (const s of subs) if (visibleIds.has(s.id)) nestedIds.add(s.id);
     if (!items.length) selecting = false;
     for (const id of [...selected]) if (!visibleIds.has(id)) selected.delete(id); // the count always matches what is shown
     renderSelectBar(items);
@@ -150,7 +158,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const dragOk = !selecting && filter === 'all' && mode === 'date';
       const heading = (label, key) => { const h = el('li', 'day-head', label); h.setAttribute('role', 'presentation'); h.dataset.scope = scope; h.dataset.gkey = String(key); return h; };
       let lastGroup = null;
-      for (const it of sortForList(group, mode)) {
+      for (const it of sortForList(group.filter((x) => !nestedIds.has(x.id)), mode)) {
         if (mode !== 'plain') {
           const label = groupLabel(it, mode);
           if (label !== lastGroup) {
@@ -162,6 +170,14 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         row.dataset.id = it.id; row.dataset.scope = scope; row.dataset.mode = mode; row.dataset.gkey = String(groupKey(it, mode));
         if (dragOk && it.type !== 'residence' && isMain(it)) row.dataset.drag = '1';
         listEl.append(row);
+        if (expandedParent === it.id || selecting) { // its Side Quests, indented under it
+          for (const k of sideMap.byParent.get(it.id) ?? []) {
+            if (!visibleIds.has(k.id)) continue;
+            const kr = renderItem(k, items, mode);
+            kr.classList.add('side-row'); kr.dataset.id = k.id; kr.dataset.sub = '1'; kr.dataset.scope = scope;
+            listEl.append(kr);
+          }
+        }
       }
     };
     const heading = (text, trip) => {
@@ -328,6 +344,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     done() { setSelecting(false); },
   };
   function setSelecting(on) {
+    setTimeout(refreshIcons, 0); // while selecting, every Side Quest is on show so it can be ticked
     if (on) { setMode(null); map.closePopup(); panel.closeIfPhone(); } // exclusive with placing and editing; the map must be free to tap
     selecting = on; selected.clear(); selConfirm.hidden = true;
     renderList();
@@ -385,6 +402,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const detail = it.note ? it.note.split('\n')[0] : `${fmt(it.lat)}, ${fmt(it.lon)}`;
     const when = [gmode === 'day' ? (stopNo(it) !== undefined && `Stop ${stopNo(it)}`) : tripLabel(it, tripOf(it)), gmode === 'date' && it.endDate && dateLabel(it)].filter(Boolean).join(' · ');
     const name = el('b', '', it.name);
+    if (isSub(it)) name.append(' ', el('span', 'badge', 'Side Quest'));
     if (it.unverified) name.append(' ', el('span', 'badge', 'Unverified'));
     if (it.tripId && outsideTrip(it, store.getTrip(it.tripId))) name.append(' ', el('span', 'badge', 'Outside trip dates'));
     t.append(name, el('small', '', `${when ? `${when} · ` : ''}${typeOf(it.type).label} · ${detail}`));
@@ -401,9 +419,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       li.className = 'selecting';
       li.append(cb, num);
     } else {
-      b.addEventListener('click', () => flyToItem(it.id));
+      b.addEventListener('click', () => { if (isMain(it)) setExpanded(it.id); flyToItem(it.id); }); // a tap opens the marker and unfolds its Side Quests (any other card folds them)
     }
     li.append(b);
+    const kids = !selecting && isMain(it) ? (sideMap.byParent.get(it.id) ?? []).filter((k) => visibleIds.has(k.id)) : [];
+    if (kids.length) {
+      const open = expandedParent === it.id;
+      const chip = el('button', 'side-chip', `${open ? '▴' : '▾'} ${kids.length}`); chip.type = 'button';
+      chip.title = `${kids.length} Side Quest${kids.length === 1 ? '' : 's'}: ${open ? 'fold away' : 'show'}`; chip.setAttribute('aria-expanded', String(open)); chip.setAttribute('aria-label', chip.title);
+      chip.addEventListener('click', (e) => { e.stopPropagation(); setExpanded(open ? null : it.id); });
+      li.classList.add('with-checkin'); li.append(chip);
+    }
     const cell = checkinCell({ cin, store, id: it.id, ns: 'poi' }); // Check in, or what was recorded, at the right of the row
     if (cell) { li.classList.add('with-checkin'); li.append(cell); }
     return li;
@@ -614,6 +640,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let viewId = null; // the marker whose window is open
   function relink() {
     links.clearLayers();
+    refreshIcons(); // the open or selected marker decides which Side Quests are on show
     redrawRoutes(); paintFocus();
     const it = viewId && store.get(viewId);
     if (!it || !needsDistance(it)) return;
@@ -678,8 +705,42 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
 
   // ---------- markers ----------
   const tripOf = (it) => (it.tripId ? store.getTrip(it.tripId) : null);
-  const iconOf = (it) => makeIcon(it.type, tripColor(it), seqBadge(it, tripOf(it)), visitCount(it.id));
-  const sigOf = (it) => `${it.type}|${tripColor(it) ?? ''}|${seqBadge(it, tripOf(it))}|${visitCount(it.id)}`;
+  function computeSide(items) {
+    sideMap = sideQuestMap(items);
+    subParent = new Map();
+    for (const [pid, list] of sideMap.byParent) for (const s of list) subParent.set(s.id, pid);
+  }
+  /** The main stop whose Side Quests are on show: the one open or selected on the map (or the parent of the open Side Quest). */
+  const focusParent = () => { const v = viewId && store.get(viewId); return v ? (isSub(v) ? subParent.get(v.id) ?? null : v.id) : null; };
+  /** A Side Quest is folded away until its parent is open, expanded in a list or being selected; one with no parent has nothing to fold into. */
+  function sideHidden(it) {
+    if (!isSub(it)) return false;
+    const pid = subParent.get(it.id);
+    return !!pid && !(showAllSide || selecting || pid === expandedParent || pid === focusParent());
+  }
+  const sideOf = (it) => ({ sub: isSub(it), hidden: sideHidden(it), count: sideMap.byParent.get(it.id)?.length ?? 0 });
+  const iconOf = (it) => makeIcon(it.type, tripColor(it), isSub(it) ? '' : seqBadge(it, tripOf(it)), visitCount(it.id), sideOf(it));
+  const sigOf = (it) => { const s = sideOf(it); return `${it.type}|${tripColor(it) ?? ''}|${isSub(it) ? '' : seqBadge(it, tripOf(it))}|${visitCount(it.id)}|${s.sub ? 1 : 0}${s.hidden ? 1 : 0}${s.count}`; };
+  const sideLinks = L.layerGroup().addTo(map); // dotted lines from the Side Quests on show to their main stop
+  function drawSideLinks() {
+    sideLinks.clearLayers();
+    for (const pid of new Set([expandedParent, focusParent()])) {
+      const parent = pid && store.get(pid);
+      if (!parent) continue;
+      for (const s of sideMap.byParent.get(pid) ?? []) {
+        if (sideHidden(s)) continue;
+        L.polyline([[parent.lat, parent.lon], [s.lat, s.lon]], { color: tripColor(parent) ?? '#546e7a', weight: 2, opacity: 0.8, dashArray: '2 6', interactive: false }).addTo(sideLinks);
+      }
+    }
+  }
+  /** Unfolds the Side Quests of one main stop in the lists (and on the map), or folds them all (null). */
+  function setExpanded(id) {
+    const next = id && sideMap.byParent.has(id) ? id : null;
+    if (next === expandedParent) return;
+    expandedParent = next;
+    refreshIcons(); renderList();
+    for (const fn of expandListeners) { try { fn(); } catch (e) { console.error(e); } }
+  }
   function addMarker(item) {
     const m = L.marker([item.lat, item.lon], { icon: iconOf(item), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
     m._sig = sigOf(item);
@@ -690,15 +751,20 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
   /** Redraws any pin whose type or trip colour changed (a trip was edited or deleted, a marker was re-tagged). */
   function refreshIcons() {
-    visitMap = visitGroups(store.items());
-    for (const it of store.items()) {
+    const items = store.items();
+    visitMap = visitGroups(items);
+    computeSide(items);
+    if (expandedParent && !sideMap.byParent.has(expandedParent)) expandedParent = null; // its Side Quests are gone
+    for (const it of items) {
       const m = markers.get(it.id);
       if (m && m._sig !== sigOf(it)) { m.setIcon(iconOf(it)); m._sig = sigOf(it); }
     }
     paintPins();
+    drawSideLinks();
   }
   function rebuildMarkers() {
     visitMap = visitGroups(store.items());
+    computeSide(store.items());
     layer.clearLayers();
     markers.clear();
     for (const it of store.items()) addMarker(it);
@@ -851,6 +917,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       elev.ensure(id); // no-op unless ground elevation is on
 
       if (it.note) root.append(el('p', 'note', it.note));
+      { // Side Quests: this main stop's own, or the main stop a Side Quest hangs from
+        const kids = sideMap.byParent.get(id) ?? [];
+        const par = isSub(it) ? store.get(subParent.get(id)) : null;
+        if (kids.length || par) {
+          const box = el('div', 'pop-side');
+          const jump = (target, text) => { const bt = el('button', 'pop-side-btn', text); bt.type = 'button'; bt.addEventListener('click', () => setTimeout(() => openPopup(target.id), 0)); return bt; };
+          if (par) box.append(el('small', '', 'Side Quest near'), jump(par, par.name));
+          else { box.append(el('small', '', `Side Quests (${kids.length})`)); for (const k of kids) box.append(jump(k, k.name)); }
+          root.append(box);
+        }
+      }
 
       root.append(disclaimer());
 
@@ -1124,6 +1201,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   bannerReview.addEventListener('click', () => panel.open('poi')); // the list, with the route and the delete button
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (mode) setMode(null); else if (selecting) setSelecting(false); } });
   editSwitch.addEventListener('change', () => setMode(editSwitch.checked ? 'edit' : null));
+  $('poi-showside').checked = showAllSide;
+  $('poi-showside').addEventListener('change', (e) => { showAllSide = e.target.checked; savePrefs({ showSide: showAllSide ? true : null }); refreshIcons(); });
   showSwitch.addEventListener('change', () => {
     if (showSwitch.checked) map.addLayer(layer); else { map.removeLayer(layer); map.closePopup(); }
   });
@@ -1333,5 +1412,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     mw, elev,
     /** For the AI import: the current markers, bulk add, and zooming to what was added. */
     items: () => store.items(), addMany, fitToItems,
+    /** For the Trips tab: which main stop has its Side Quests unfolded (one at a time), and a way to hear about changes. */
+    sideState: { expanded: () => expandedParent, set: setExpanded, onChange: (fn) => expandListeners.add(fn) },
   };
 }

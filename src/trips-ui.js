@@ -1,7 +1,7 @@
 // The Trips tab: create, edit and delete trips, see what is in each, and jump to its markers.
 // A trip groups markers; distances from a waypoint to a hotel or home point stay inside its trip. Data is in poi.js.
 import { COUNTRIES, countryCode, countryName } from './countries.js';
-import { sortTrips, tripSummary, tripLength, tripStatus, countdownLabel, todayISO, isPastTrip, planDays, tripWarnings, warningsLine, dayInfo, dayText } from './trips.js';
+import { sortTrips, tripSummary, tripLength, tripStatus, countdownLabel, todayISO, isPastTrip, planDays, tripWarnings, warningsLine, dayInfo, dayText, sideQuestMap } from './trips.js';
 import { formatDate, typeOf, MAX_NOTES, MAX_CHECKLIST } from './poi.js';
 import { getDistanceSettings } from './units.js';
 import { fmtDistance } from './distance.js';
@@ -216,21 +216,33 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     const plan = planDays(items, t);
     const fc = tw.get(t.id);
     const limit = getWindLimit();
+    const sm = sideQuestMap(items); // each main stop's Side Quests, folded under it until it is tapped
     const stopRow = (it, day) => {
       const row = el('button', 'plan-stop'); row.type = 'button';
       const info = dayInfo(it, t);
-      const mark = el('span', 'plan-n', it.order !== undefined ? String(it.order) : '•');
+      const mark = el('span', 'plan-n', it.isSub ? '↳' : it.order !== undefined ? String(it.order) : '•');
       const text = el('span', 'plan-name');
       text.append(el('b', '', it.name), el('small', '', [typeOf(it.type).label, day === undefined && it.date && formatDate(it.date), info && info.last > info.day && dayText(info)].filter(Boolean).join(' · ')));
       const z = zoneChecks.get(t.id)?.get(it.id);
       if (z && z.sig === sigOf(it)) text.append(el('small', 'plan-zone ' + z.s.cls, z.s.title));
       row.append(mark, text);
-      row.addEventListener('click', () => poi.openMarker(it.id));
+      const kids = it.isSub ? [] : sm.byParent.get(it.id) ?? [];
+      row.addEventListener('click', () => { if (!it.isSub) poi.sideState.set(kids.length ? it.id : null); poi.openMarker(it.id); }); // a tap opens the marker and unfolds its Side Quests
       const cell = checkinCell({ cin, store, id: it.id, ns: 'trips' }); // Check in, or what was recorded, at the right
-      if (!cell) return row;
-      const line = el('div', 'plan-row');
-      line.append(row, cell);
-      return line;
+      let chip = null;
+      if (kids.length) {
+        const open = poi.sideState.expanded() === it.id;
+        chip = el('button', 'side-chip', `${open ? '▴' : '▾'} ${kids.length}`); chip.type = 'button';
+        chip.title = `${kids.length} Side Quest${kids.length === 1 ? '' : 's'}: ${open ? 'fold away' : 'show'}`; chip.setAttribute('aria-expanded', String(open)); chip.setAttribute('aria-label', chip.title);
+        chip.addEventListener('click', (e) => { e.stopPropagation(); poi.sideState.set(open ? null : it.id); });
+      }
+      let line = row;
+      if (cell || chip) { line = el('div', 'plan-row'); line.append(row, ...[chip, cell].filter(Boolean)); }
+      if (!kids.length || poi.sideState.expanded() !== it.id) return line;
+      const group = el('div', 'plan-group');
+      group.append(line);
+      for (const k of kids) { const kr = stopRow(k, day); kr.classList.add('plan-side'); group.append(kr); }
+      return group;
     };
     // the days, as pages of one card: ‹ and › turn to the previous and next day
     const pages = [];
@@ -294,6 +306,8 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
       paint(0);
       detail.append(flip);
     }
+    const lone = sm.orphans.filter((s) => s.tripId === t.id); // Side Quests with no main stop to hang from
+    if (lone.length) { detail.append(el('p', 'hint', `Side Quests with no main stop (${lone.length}):`)); for (const s of lone) detail.append(stopRow(s)); }
     if (!dated) detail.append(el('p', 'hint', 'Add start and end dates (Edit) to see the days.'));
     if (dated) detail.append(el('p', 'hint', 'Distances are straight lines between the stops of a day, not driving distances.'));
     if (dated && forecastSpots(plan.days, today).length) {
@@ -404,6 +418,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
 
   poi.setNewTripHandler((markerId) => openForm(null, { assign: markerId }));
   store.onChange(render);
+  poi.sideState.onChange(render); // a card was unfolded or folded in a list
   onPrivacyChange(render); // check-in switched on or off changes the rows
   render();
   return {

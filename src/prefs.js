@@ -17,6 +17,7 @@ function sanitize(raw) {
   if (typeof raw.currentTrip === 'string' && raw.currentTrip.length > 0 && raw.currentTrip.length <= 64) out.currentTrip = raw.currentTrip; // checked against the saved trips when used
   if (typeof raw.windowExpanded === 'boolean') out.windowExpanded = raw.windowExpanded;
   if (typeof raw.holdHint === 'boolean') out.holdHint = raw.holdHint;
+  if (raw.showSide === true) out.showSide = true; // show every Side Quest on the map (off: only those of the main stop that is open)
   if (raw.crosshair === false) out.crosshair = false; // the crosshair at the map centre is on unless switched off
   if (raw.markerDetails === false) out.markerDetails = false; // a click on a marker only selects it (no details window)
   if (raw.railFolded === true) out.railFolded = true; // the rail of tab icons is folded up into one circle
