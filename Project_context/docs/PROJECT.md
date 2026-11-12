@@ -327,7 +327,12 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 **F46. Account button (built, only when the build has a project address)**
 - An account button sits in the panel header (before the shield) and on the rail. It opens one popover (a bottom sheet on a phone). A guest sees that their markers and trips stay in this browser, the email sign-in form, and a link to export and import (the dashboard's Your data card). A signed-in visitor sees an initial avatar, name, email, friend code with Copy, the sync status line, Edit profile and Friends (both open the Friends tab until the profile editor exists), and Sign out (backup offer and local wipe as before).
 - The privacy settings' cloud card keeps only the sync tools (Sync now, Earlier versions, Delete my cloud copy) and a Sign in button for guests. Every "Sign in…" button (Friends, Party Members, the dashboard's cloud line) opens the popover.
-- Opening the popover while signed in creates the profile if it does not exist yet (the same call the Friends tab makes). Code: `src/account-ui.js`; test: `tests/cloud.mjs`.
+- Signing in, and each page load while signed in, fetches the profile (creating it if it does not exist, the same call the Friends tab makes); the popover refreshes it each time it opens. Code: `src/account-ui.js`; test: `tests/cloud.mjs`.
+
+**F47. Profile (built, signed-in only)**
+- The Friends tab has a **Profile** card (`src/profile-ui.js`): a preset **avatar** (20 drawn icons: FPV platforms such as 5-inch, 7-inch, cinewhoop, tiny whoop, toothpick, race quad and wing; photography drones; travel symbols; `src/avatars.js`), a **bio** (160 characters), a typed **location** (60 characters; the position is never read), up to 5 **interest tags** (travel and FPV flying styles), and one switch, **Show my bio, location and interests**. Each field has its own Clear; Save sends one change. An unsaved draft survives the tab redrawing.
+- Others see the avatar next to the name in the Friends list, in a trip's Party Members and as the editor in Earlier versions; bio, location and interests only when the switch is on (default on). A pending request shows a name only. The account button shows the avatar too (the first letter of the name when none is chosen).
+- Rules are in the database (`update_profile`, DATABASE.md); the editor and the lists only draw what they are given. Tests: `tests/db-profile-unit.mjs`, `tests/friends.mjs`, `tests/party.mjs`.
 
 ## 5. Non-functional requirements
 

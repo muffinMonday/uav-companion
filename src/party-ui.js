@@ -4,6 +4,8 @@ import { createTripsApi } from './sharedtrip/api.js';
 import { createSharedTrips } from './sharedtrip/engine.js';
 import { describeWhen } from './sync/core.js';
 import { presenceText } from './social.js';
+import { avatarEl } from './avatars.js';
+import { profileBits } from './profile-ui.js';
 import { createLive } from './live.js';
 import { createLiveLayer } from './livemap.js';
 
@@ -172,6 +174,7 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
         const li = el('li', 'party-row');
         const who = el('span', 'party-who');
         if (m.online !== null && m.online !== undefined) { const dot = el('i', 'presence ' + (m.online ? 'on' : 'off')); dot.setAttribute('aria-hidden', 'true'); who.append(dot); }
+        if (m.status === 'joined') who.append(avatarEl(m.avatar, m.display_name, 24), ' ');
         who.append(el('b', '', m.display_name));
         if (m.is_me) who.append(' ', el('span', 'badge', 'You'));
         if (m.role === 'owner') who.append(' ', el('span', 'badge ok', 'Owner'));
@@ -179,6 +182,7 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
         const pt = m.status === 'joined' ? presenceText(m, describeWhen) : '';
         if (pt) who.append(' ', el('small', 'presence-text', pt));
         if (sharers.has(m.member_id)) who.append(' ', el('small', 'presence-text', '📍 sharing their location'));
+        if (m.status === 'joined') who.append(...profileBits(m));
         li.append(who);
         if (sharers.has(m.member_id)) {
           const sb = el('button', 'btn small', 'Show on map'); sb.type = 'button';
@@ -230,7 +234,8 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
       vbox.append(el('small', 'hint', vs.length ? 'Every change is kept for 30 days (the last 20). Restoring one replaces the trip for the whole party; the current version is kept too.' : 'No earlier versions yet.'));
       for (const v of vs) {
         const r = el('div', 'party-version');
-        r.append(el('span', '', `${describeWhen(v.updated_at)} · ${v.updated_by_name} · ${plural(v.markers, 'marker')}`));
+        const by = el('span', 'party-ver-who'); by.append(avatarEl(v.updated_by_avatar, v.updated_by_name, 20), ' ', `${describeWhen(v.updated_at)} · ${v.updated_by_name} · ${plural(v.markers, 'marker')}`);
+        r.append(by);
         const b = el('button', 'btn small', 'Restore'); b.type = 'button';
         b.addEventListener('click', async () => {
           if (!confirm('Restore this version for the whole party? The current version is kept, so this can be undone.')) return;

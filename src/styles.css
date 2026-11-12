@@ -948,3 +948,25 @@ input[type=email]:focus{border-color:var(--accent)}
   .tabs button[aria-selected=true]{min-width:0;padding-left:8px;padding-right:8px}
   .tabs button[aria-selected=false]{flex-basis:30px}
 }
+
+/* profile: avatars, editor, and the lines under a name */
+.avatar{flex:none;overflow:hidden}
+.avatar svg{width:72%;height:72%;fill:none;stroke:#fff;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.dock button.account-btn .avatar{width:28px;height:28px}
+.fr-row .avatar,.party-row .avatar{flex:none}
+.fr-row{justify-content:flex-start}.fr-row .fr-who{flex:1}
+.party-who .avatar{display:inline-grid;vertical-align:middle}
+.profile-bits,.profile-bio{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.profile-bio{font-style:italic;color:var(--fg);opacity:.8}
+.party-ver-who{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.pf-head{display:flex;align-items:center;gap:10px;margin:2px 0 8px}.pf-head b{flex:1}
+.pf-avatars{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;margin-bottom:6px}
+.pf-pick{display:grid;place-items:center;padding:3px;border:2px solid transparent;border-radius:50%;background:none;cursor:pointer}
+.pf-pick[aria-pressed=true]{border-color:var(--accent)}
+.pf-pick:hover{background:var(--accent-soft)}
+.profile-card textarea,.profile-card input[type=text]{width:100%;box-sizing:border-box}
+.pf-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 6px}
+.pf-count{color:var(--muted);font-size:12px}
+.pf-tags{display:flex;flex-wrap:wrap;gap:6px}
+.profile-card .switch{margin-top:10px}
+.profile-card #pf-save{margin-top:10px}

@@ -10,6 +10,7 @@ The optional cloud side of UAV Companion. The app works fully without it (everyt
   - `20261111150000_presence.sql`: online status (`touch_presence`, `set_show_online`, and the status columns of `list_friends` and `list_trip_members`). Tested in `tests/db-presence-unit.mjs`.
   - `20261111160000_live_locations.sql`: the latest position of each party member who is sharing (`live_locations`, one row per person and trip, no history), and `share_location`, `stop_sharing_location`, `stop_all_sharing`, `list_live_locations`; leaving or removal deletes the position. Tested in `tests/db-live-unit.mjs`.
   - `20261112100000_live_device.sql`: a `device` on each position; the device that starts sharing takes the position over, an older one is told `moved`. Tested in `tests/db-live-unit.mjs` and `tests/live-engine-unit.mjs`.
+  - `20261112110000_profile.sql`: `avatar` (a key of a fixed list), `bio` (160), `location` (60, typed), `interests` (up to 5 keys of a fixed list) and `share_profile` on `profiles`; `update_profile(jsonb)`; the new fields in `ensure_profile`, `list_friends`, `list_trip_members`; the editor's avatar in `list_shared_trip_versions`. Lists: `profile_avatars()`, `profile_interests()`.
   - `20261111121000_harden_api_exposure.sql`: takes the API roles' access away from the platform's own `rls_auto_enable()` function.
 - `config.toml`: settings for the local stack (used only if the local stack is ever started).
 

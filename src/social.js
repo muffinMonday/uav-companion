@@ -8,8 +8,10 @@ export function createSocial(client) {
     return data;
   };
   return {
-    /** The caller's profile { display_name, friend_code, accepts_requests }, created on first use; a name sets or changes it. */
+    /** The caller's profile { display_name, friend_code, accepts_requests, show_online, avatar, bio, location, interests, share_profile }, created on first use; a name sets or changes it. */
     profile: (name) => rpc('ensure_profile', name === undefined ? {} : { p_display_name: name }),
+    /** Changes the profile fields from a patch ({ avatar, bio, location, interests, share_profile, display_name }; null clears). Returns the profile. */
+    updateProfile: (patch) => rpc('update_profile', { p_patch: patch }),
     setAccepts: (on) => rpc('set_accepts_requests', { p_accepts: !!on }),
     newCode: () => rpc('regenerate_friend_code'),
     /** Asks the owner of a friend code; { status: 'pending' | 'friends' }. */

@@ -136,9 +136,14 @@ ok(/Bea/.test(await party(p).textContent()) && !/Invited/.test(await party(p).te
 // ---------- who is online in the party
 ok(/Online/.test(await party(p).textContent()) && await party(p).locator('.presence.on').count() >= 1, 'a party member who has the app open shows as online, with a green dot');
 ok(await party(p).locator('.party-row', { hasText: 'Bea' }).locator('.presence.on').count() === 1, 'Bea\'s row has the dot');
+ok(await party(p).locator('.party-row .avatar').count() === 2 && (await party(p).locator('.party-row', { hasText: 'Bea' }).locator('.avatar').textContent()).trim() === 'B', 'each joined member has an avatar: the first letter of the name until they pick one');
 
+// ---------- profile avatars in the party and in the versions
+await db.query(`update public.profiles set avatar = 'photo-mini', bio = 'Mini pilot', share_profile = true where display_name = 'Bea'`);
+await db.query(`update public.profiles set avatar = 'travel-compass' where display_name = 'Alex'`);
 // ---------- earlier versions
 await party(p).locator('.party-versions summary').click(); await p.waitForTimeout(800);
+ok(await party(p).locator('.party-version .avatar[data-avatar]').count() >= 1, 'the earlier versions show who saved them with their avatar');
 ok(await party(p).locator('.party-version').count() >= 1 && /Bea|Alex/.test(await party(p).locator('.party-version').first().textContent()), 'earlier versions are listed with who saved them');
 
 // ---------- Bea leaves and keeps a private copy

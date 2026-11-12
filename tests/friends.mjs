@@ -109,6 +109,40 @@ ok(/Alex/.test(await bea.p.textContent('#fr-friends')) && !(await bea.p.locator(
 await p.evaluate(() => document.getElementById('tab-trips').click()); await p.waitForTimeout(200); await goFriends(p);
 ok(/Bea/.test(await p.textContent('#fr-friends')) && /Friends \(1\)/.test(await p.textContent('#fr-friends')), 'Alex sees Bea among his friends');
 
+// ---------- profile: editing, and what a friend sees
+const prof = async () => (await db.query(`select avatar, bio, location, interests, share_profile from public.profiles where user_id = '${A}'`)).rows[0];
+ok(await p.locator('#pf-card .pf-pick').count() >= 12 && await p.locator('#pf-card [data-interest]').count() >= 12, 'the Profile card offers the preset avatars and the interest tags');
+await p.click('#pf-card [data-pick=fpv-cinewhoop]');
+await p.fill('#pf-bio', 'Cinewhoop and chill'); await p.fill('#pf-location', 'Wuhan, China');
+await p.click('#pf-card [data-interest=fpv-cinematic]'); await p.click('#pf-card [data-interest=hiking]');
+await p.fill('#pf-bio', 'Draft kept while the tab redraws');
+await p.evaluate(() => document.getElementById('tab-trips').click()); await p.waitForTimeout(200); await goFriends(p); await p.waitForTimeout(600);
+ok(await p.inputValue('#pf-bio') === 'Draft kept while the tab redraws' && await p.getAttribute('#pf-card [data-pick=fpv-cinewhoop]', 'aria-pressed') === 'true', 'an unsaved draft survives the tab redrawing');
+await p.fill('#pf-bio', 'Cinewhoop and chill');
+for (const k of ['food', 'history', 'wildlife']) await p.click(`#pf-card [data-interest=${k}]`);
+await p.click('#pf-card [data-interest=cycling]');
+ok(/up to 5/.test(await p.textContent('#pf-card .pf-msg')) && await p.getAttribute('#pf-card [data-interest=cycling]', 'aria-pressed') === 'false', 'a sixth interest is refused with a message');
+await p.click('#pf-card [data-interest=food]'); await p.click('#pf-card [data-interest=history]'); await p.click('#pf-card [data-interest=wildlife]');
+await p.click('#pf-save'); await p.waitForTimeout(800);
+let row = await prof();
+ok(row.avatar === 'fpv-cinewhoop' && row.bio === 'Cinewhoop and chill' && row.location === 'Wuhan, China' && JSON.stringify(row.interests) === JSON.stringify(['fpv-cinematic', 'hiking']) && row.share_profile === true, 'Save writes all the fields: ' + JSON.stringify(row));
+await p.click('#account-btn'); await p.waitForSelector('#account-pop:not([hidden])'); await p.waitForTimeout(500);
+ok(await p.locator('#account-pop .avatar[data-avatar=fpv-cinewhoop]').count() === 1 && await p.locator('#account-btn .avatar[data-avatar=fpv-cinewhoop]').count() === 1, 'the account button and popover show the chosen avatar');
+await p.keyboard.press('Escape');
+await bea.p.evaluate(() => document.getElementById('tab-trips').click()); await bea.p.waitForTimeout(200); await goFriends(bea.p); await bea.p.waitForTimeout(700);
+let fr = await bea.p.textContent('#fr-friends');
+ok(await bea.p.locator('#fr-friends .avatar[data-avatar=fpv-cinewhoop]').count() === 1 && /Wuhan, China/.test(fr) && /FPV cinematic/.test(fr) && /Hiking/.test(fr) && /Cinewhoop and chill/.test(fr), 'Bea sees Alex\'s avatar, location, interests and bio in her friends list');
+await p.click('#pf-share'); await p.click('#pf-save'); await p.waitForTimeout(800);
+await bea.p.evaluate(() => document.getElementById('tab-trips').click()); await bea.p.waitForTimeout(200); await goFriends(bea.p); await bea.p.waitForTimeout(700);
+fr = await bea.p.textContent('#fr-friends');
+ok(await bea.p.locator('#fr-friends .avatar[data-avatar=fpv-cinewhoop]').count() === 1 && !/Wuhan|Cinewhoop and chill|FPV cinematic/.test(fr), 'with sharing off Bea still sees the avatar, but not the bio, location or interests');
+await p.click('#pf-share'); await p.click('#pf-save'); await p.waitForTimeout(800);
+await p.click('#pf-card .pf-row >> nth=0 >> text=Clear'); await p.waitForTimeout(700);
+ok((await prof()).bio === null && (await prof()).location === 'Wuhan, China', 'Clear on the bio empties only the bio');
+await p.click('#pf-card .pf-head >> text=Clear'); await p.waitForTimeout(700);
+ok((await prof()).avatar === null && await p.locator('#pf-card .pf-pick[aria-pressed=true]').count() === 0, 'Clear on the avatar removes it');
+ok(!JSON.stringify(await p.evaluate(() => document.getElementById('pane-friends').innerHTML)).includes('@'), 'no email address appears in the Friends tab');
+
 // ---------- online status
 const wakeBoth = async () => { for (const pg of [p, bea.p]) await pg.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await p.waitForTimeout(900); };
 const refreshFriends = async (pg) => { await pg.evaluate(() => document.getElementById('tab-trips').click()); await pg.waitForTimeout(150); await goFriends(pg); };

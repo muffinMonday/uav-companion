@@ -2,6 +2,8 @@
 // Only built when this build has a project address (see sync-ui.js); the tab shows a sign-in pointer until the visitor is signed in.
 import { createSocial, formatCode, presenceText } from './social.js';
 import { describeWhen } from './sync/core.js';
+import { avatarEl } from './avatars.js';
+import { createProfileEditor, profileBits } from './profile-ui.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 .3 5 2.6 5 5.8"/></svg>';
@@ -14,6 +16,14 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
   const pane = el('section'); pane.id = 'pane-friends';
   const tab = panel.addTab({ key: 'friends', label: 'Friends', icon: ICON, pane });
   let profile = null, list = [], blocked = [], message = '', busy = false, loadedFor = null;
+  const editor = createProfileEditor({
+    toast, rerender: () => render(),
+    save: async (patch) => {
+      if (busy) return { ok: false, error: 'Please wait a moment and try again.' };
+      busy = true;
+      try { profile = await social.updateProfile(patch); return { ok: true }; } catch (e) { return { ok: false, error: e.message }; } finally { busy = false; }
+    },
+  });
   const signedIn = () => !!handle.sync.status().session;
   const shown = () => panel.isOpen() && panel.getTab() === 'friends';
 
@@ -86,6 +96,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     sho.append(sp2, cb2); me.append(sho);
     me.append(el('p', 'hint', 'Share your code only with people you know. Someone with it can send you a request, which you can accept, decline or block.'));
     pane.append(me);
+    pane.append(editor.card(profile)); // avatar, bio, location, interests and who sees them
 
     // ---- add a friend
     const add = el('div', 'card');
@@ -99,9 +110,11 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     if (message) { const m = el('p', 'hint fr-message', message); m.setAttribute('role', 'status'); add.append(m); }
     pane.append(add);
 
-    const person = (name, sub, buttons, online = null) => {
+    const person = (name, sub, buttons, online = null, row = null) => {
       const r = el('div', 'fr-row');
+      if (row) r.append(avatarEl(row.avatar, name, 34));
       const who = el('div', 'fr-who'); const nm = el('b'); if (online !== null) { const dot = el('i', 'presence ' + (online ? 'on' : 'off')); dot.setAttribute('aria-hidden', 'true'); nm.append(dot); } nm.append(name); who.append(nm); if (sub) who.append(el('small', '', sub));
+      if (row) who.append(...profileBits(row));
       const bs = el('div', 'fr-actions'); for (const [label, fn, cls] of buttons) { const b = el('button', 'btn small' + (cls ? ' ' + cls : ''), label); b.type = 'button'; b.addEventListener('click', fn); bs.append(b); }
       r.append(who, bs); return r;
     };
@@ -126,7 +139,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     for (const x of friends) fc.append(person(x.display_name, [presenceText(x, describeWhen), 'friends since ' + describeWhen(x.since)].filter(Boolean).join(' · '), [
       ['Remove', () => { if (confirm('Remove ' + x.display_name + ' from your friends?')) act(() => social.remove(x.id), 'Removed.'); }],
       ['Block', () => { if (confirm('Block ' + x.display_name + '? This also removes them from your friends.')) act(() => social.block(x.id), 'Blocked.'); }, 'danger'],
-    ], x.online));
+    ], x.online, x));
     pane.append(fc);
     // ---- blocked
     if (blocked.length) {

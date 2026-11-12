@@ -3,6 +3,8 @@
 Current, constraining decisions only; superseded ones are removed (history: git, `CHANGELOG.md`). Grouped by area. "Owner" means the project owner chose it. Product-level open questions: `PROJECT.md` section 8.
 
 ## Platform and data
+**One profile switch, not one per field (owner, 2026-11-12).** `share_profile` shows or hides bio, location and interests together, to accepted friends and joined party members; the name and avatar are always shown to them. Reason: simple to explain and to enforce in SQL. Avatars are a fixed list of drawn icons (FPV platforms, photography drones, travel), no upload and no Storage; interests a fixed list of tags with FPV flying styles. Replaces the backlog's per-field visibility.
+
 **Static app, PMTiles, one file per region.** Reason: only tiles in view load; adding a region needs no code; static hosting. Consequences: local Node build with own PMTiles writer (`scripts/lib`); host must support range requests.
 
 **Region folders with `source.json` and `allow`/`restrict` semantics; optional `layers[]`.** Reason: China publishes where flying is allowed, most others where it is restricted; wording and colours follow. Consequences: point check returns every zone containing the point; raw data stays local, only `source.json` and `boundary.geojson` are in git; coverage uses a boundary (Singapore: 1.5 km margin).

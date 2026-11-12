@@ -4,6 +4,7 @@
 // Only built when this build has a project address (see sync-ui.js). Nothing is fetched until the popover is opened while signed in.
 import { createSocial, formatCode } from './social.js';
 import { statusLine } from './sync-ui.js';
+import { avatarEl } from './avatars.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const PERSON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5"/></svg>';
@@ -17,7 +18,6 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   let profile = null, profileFor = null, loading = false, trigger = null;
 
   const name = () => (profile?.display_name || session()?.email || '').trim();
-  const initial = () => (name()[0] || '?').toUpperCase();
 
   // ---- the two buttons
   const headBtn = el('button', 'icon-btn account-btn'); headBtn.id = 'account-btn';
@@ -31,7 +31,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     const label = on ? 'Account: signed in as ' + name() : 'Account: not signed in';
     for (const b of [headBtn, dockBtn]) {
       b.replaceChildren();
-      if (on) b.append(el('span', 'avatar', initial())); else b.innerHTML = PERSON; // constant markup
+      if (on) b.append(avatarEl(profile?.avatar, name(), b === dockBtn ? 28 : 26)); else b.innerHTML = PERSON; // constant markup
       b.setAttribute('aria-label', label); b.title = label; b.dataset.state = on ? 'in' : 'guest';
     }
   }
@@ -56,7 +56,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
       return;
     }
     const head = el('div', 'account-who');
-    head.append(el('span', 'avatar big', initial()));
+    head.append(avatarEl(profile?.avatar, name(), 44));
     const who = el('div'); who.append(el('b', 'account-name', name() || '…'));
     who.append(el('small', 'account-email', s.session.email));
     head.append(who);
@@ -81,9 +81,11 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     pop.append(out);
   }
 
-  async function loadProfile() {
+  /** Fetches the profile (the name, avatar and friend code). `force` refreshes one already held, as when the popover opens after edits made in the Friends tab. */
+  async function loadProfile({ force = false } = {}) {
     const email = session()?.email;
     if (!email) { profile = null; profileFor = null; paintButtons(); return; }
+    if (!force && profileFor === email && profile) return;
     loading = !profile; if (loading && !pop.hidden) render();
     try { profile = await social.profile(); profileFor = email; } catch { profile = null; }
     loading = false;
@@ -102,7 +104,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     render(); pop.hidden = false; place();
     for (const b of [headBtn, dockBtn]) b.setAttribute('aria-expanded', String(b === trigger));
     (pop.querySelector('input, button:not(.account-close)') || pop).focus?.();
-    loadProfile();
+    loadProfile({ force: true });
   }
   function hide(focus = true) {
     if (pop.hidden) return;
@@ -119,9 +121,11 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   handle.onChange(() => {
     if (!session()) { profile = null; profileFor = null; }
     paintButtons();
-    if (!pop.hidden) { render(); loadProfile(); }
+    if (session()) loadProfile();
+    if (!pop.hidden) render();
   });
   handle.account = { open: () => show(), close: () => hide(false) };
   paintButtons();
-  return { reload: () => { profile = null; profileFor = null; return loadProfile(); } };
+  if (session()) loadProfile();
+  return { reload: () => loadProfile({ force: true }) };
 }

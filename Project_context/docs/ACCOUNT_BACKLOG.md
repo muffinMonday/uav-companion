@@ -37,11 +37,11 @@ Audit findings that shaped this list: the Supabase backend, friends, shared trip
 - Add "Continue as guest" and "Create a profile" below Plan a trip / Plan a flight; neither blocks. Remember the choice in `dashstate.js`. Reword `src/splash.js:105`. Check: extend `tests/splash.mjs`.
 
 ## Phase D: profile (additive migration)
-### AC-7 Schema
+### AC-7 Schema (built; visibility is one switch, see DECISIONS)
 - `profiles` gains `avatar` (preset key from a fixed list), `bio` (max 160), `location` (max 60, typed, no GPS), `interests` (text[] from a fixed tag list), per-field visibility. Extend `ensure_profile`, add `update_profile`; writes only through SQL functions; email never returned. Check: `tests/db-friends-unit.mjs`.
-### AC-8 Edit UI
+### AC-8 Edit UI (built; the name keeps its own form in the You card)
 - Name, preset avatar picker, bio, location, interest tags, visibility, clear field.
-### AC-9 Display
+### AC-9 Display (built)
 - Avatar and permitted fields in friend rows (`src/friends-ui.js`), party members (`src/party-ui.js`), shared-trip "updated by"; visibility enforced server-side.
 
 ## Phase E: identity, deletion, docs
