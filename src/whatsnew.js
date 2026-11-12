@@ -9,7 +9,8 @@ export const WHATS_NEW = [
       'Sign in and open the Friends tab: your new Progression card shows your rank, XP and the achievements you have unlocked. You can feature up to three.',
       'Friends and people in your shared trips see your rank and achievements in your profile, and you see theirs. The "Show my bio, location, interests and progression" switch in Edit profile turns that off.',
       'On the map, people in your party who share their location get a ring in their rank colour and a small tier badge. Tap a pin to see their rank, XP and progress.',
-      'XP from simulator hours and flight sessions is coming in the next updates.',
+      'Flight sessions: the Friends tab lists planned meetups. Say you will come; an organiser marks who was there, and each session you attend earns 50 XP.',
+      'XP from simulator hours is coming in the next update.',
     ],
   },
   {

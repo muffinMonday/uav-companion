@@ -1038,3 +1038,15 @@ input[type=email]:focus{border-color:var(--accent)}
 .live-pop .prog-mini-name{font-size:14px}
 .live-pop .prog-summary{display:flex;flex-direction:column;gap:6px}
 .prog-summary{display:flex;flex-direction:column;gap:6px}
+/* flight sessions card (sessions-ui.js) */
+.ses-row{padding:8px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+.ses-row:last-of-type{border-bottom:0}
+.ses-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ses-title{font-size:14px}
+.ses-when,.ses-desc,.ses-count{color:var(--muted)}.ses-desc{overflow-wrap:anywhere}
+.ses-row .btn-row{margin:6px 0 0}.ses-row .badge{align-self:center}
+.ses-manage{margin-top:6px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--surface-2)}
+.ses-manage h3{margin:0 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ses-person{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0}.ses-person b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.ses-person small{color:var(--muted)}
+.ses-walkin{margin:8px 0}.ses-form{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.ses-form input,.ses-form textarea{width:100%;box-sizing:border-box}
+.ses-message{margin-top:8px}
