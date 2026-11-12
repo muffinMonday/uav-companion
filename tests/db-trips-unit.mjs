@@ -164,6 +164,12 @@ ok(left.t === 0 && left.m === 0 && left.v === 0, 'with its members and versions'
 // ---------- deleting an account deletes what it owns
 const T2 = '5a1c0000-0000-4000-8000-000000000002';
 await share(C, { v: 1, trip: { id: T2, name: 'Cam trip' }, items: [] });
+// Side Quests are ordinary fields of a marker: the database does not need to know about them
+const sqDoc = { v: 1, trip: { id: T2, name: 'Cam trip' }, items: [mk('p1', { tripId: T2 }), mk('q1', { tripId: T2, isSub: true, parentId: 'p1', order: 1 })] };
+const sqRev = (await one(C, 'public.get_shared_trip($1)', [T2])).rev;
+const sqSaved = await save(C, sqDoc, sqRev, T2);
+const sqBack = await one(C, 'public.get_shared_trip($1)', [T2]);
+ok(sqSaved.status === 'ok' && sqBack.doc.items.find((i) => i.id === 'q1').isSub === true && sqBack.doc.items.find((i) => i.id === 'q1').parentId === 'p1', 'a trip with a Side Quest (isSub, parentId) is saved and read back as it is');
 await db.exec(`delete from auth.users where id = '${C}'`);
 ok((await db.query('select count(*)::int as n from public.shared_trips')).rows[0].n === 0, 'deleting the owner\'s account deletes the shared trip too');
 await db.close();

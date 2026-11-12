@@ -34,6 +34,14 @@ const noDay = { ...base }; const withDay = { ...base, day: 2, updated: at(4) };
 ok(!('day' in mergeRecord(withDay, { ...withDay, updated: at(4) }, { ...noDay, updated: at(5) })), 'a field removed on one side only is removed');
 ok(J(mergeRecord(base, { ...base, checklist: [{ text: 'a', done: true }], updated: at(5) }, { ...base, updated: at(6) }).checklist) === J([{ text: 'a', done: true }]), 'a list field changed on one side only is taken whole');
 
+// Side Quest fields merge like any other field
+const sBase = mk('s', { isSub: true, parentId: 'a', order: 1, updated: at(0) });
+r = mergeRecord(sBase, { ...sBase, parentId: 'b', updated: at(5) }, { ...sBase, order: 2, updated: at(6) });
+ok(r.isSub === true && r.parentId === 'b' && r.order === 2, 'a Side Quest moved to another parent on one side and re-ordered on the other keeps both');
+r = mergeRecord(sBase, { ...sBase, updated: at(5) }, (() => { const { isSub, parentId, ...rest } = sBase; return { ...rest, updated: at(6) }; })());
+ok(!('isSub' in r) && !('parentId' in r), 'turning a Side Quest back into a main stop on one side removes both fields');
+ok(byId(buildSharedDoc(trip(), [mk('a'), sBase]), 's').isSub === true, 'the shared document keeps isSub and parentId');
+
 // ---------- merging documents
 const B0 = doc([mk('a', { updated: at(0) }), mk('b', { updated: at(0) }), mk('c', { updated: at(0) })]);
 const edit = (d0, id, patch, n) => ({ ...d0, items: d0.items.map((i) => (i.id === id ? { ...i, ...patch, updated: at(n) } : i)) });

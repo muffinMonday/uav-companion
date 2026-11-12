@@ -18,9 +18,9 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 ## Markers and trips (local model)
 | File | Responsibility | Depends on |
 |---|---|---|
-| `poi.js` (pure) | Types, sanitize, store, GeoJSON export/import, limits | `countries.js` |
+| `poi.js` (pure) | Types, sanitize, store, GeoJSON export/import, limits; Side Quest helpers `isMain`, `isSub`, `stopNo`, `NOT_SUB` | `countries.js` |
 | `poi-ui.js` | Marker list, window, edit, select/delete, import/export | `poi`, `distance`, `trips`, `cards` |
-| `trips.js` (pure), `trips-ui.js` | Trip rules (days, warnings, status); Trips tab and plan screen | `poi` |
+| `trips.js` (pure), `trips-ui.js` | Trip rules (days, warnings, status); Side Quest lookup `parentOf`, `sideQuestMap`, `sideQuests`; Trips tab and plan screen | `poi` |
 | `tripweather.js` | Daily forecast per trip | `weather`, `privacy` |
 | `distance.js` (pure) | Nearest Home point/Hotel, nearest Home | - |
 | `places.js`, `reorder.js` (pure), `reorder-ui.js` | Same-spot visits; reorder by hold and drag | `poi`, `trips` |
@@ -30,7 +30,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 ## AI import and sharing
 | File | Responsibility |
 |---|---|
-| `aiimport.js` (pure apart from geocode), `ai-ui.js` | Parse, sanitize, preview, add; share links `z.`/`z2.` |
+| `aiimport.js` (pure apart from geocode), `ai-ui.js` | Parse, sanitize, preview, add; share links `z.`/`z2.`; `linkSideQuests` finds each Side Quest's parent after import |
 | `aiprompt.js` (pure), `splash.js` | Quick-setup prompts and first-visit dialog |
 | `sharecompact.js` | Compact `z2.` share-link format |
 | `public/ai/` | Published prompt, schema, example (`trip-unit` checks them against `TYPES`) |

@@ -54,6 +54,8 @@ Current, constraining decisions only; superseded ones are removed (history: git,
 
 **Overnight route arrows pass through the hotel covering the night; hotels take no part in the thin day chain.**
 
+**Side Quests (owner, 2026-11-12):** optional nearby stops hung from a main stop. Stored as `isSub: true` plus optional `parentId`, written only when true; never for home, hotel, residence. Reason: collapse optional detours out of the route without a second data model. Consequences: a Side Quest reuses `order` as position among siblings, so labels use `stopNo()`, and every list that numbers, chains or counts stops uses `isMain` (Previous/Next, route chain, day plan, forecast, visited counts, reorder); it keeps its distance lines but is never a base; no date warnings; a missing or invalid parent falls back to the nearest main stop of the trip (`parentOf`); `z2.` link slots 11 and 12; no SQL change (documents are generic JSON). Older app versions drop the unknown fields, so Side Quests appear there as main stops.
+
 ## Interaction and layout
 **A map click only closes windows; a 2 s hold, right-click or Enter checks a spot (owner).** Popups use `closeOnClick:false`; never replace a clicked element's children mid-click inside a popup (Leaflet closes it).
 

@@ -59,6 +59,8 @@
             "endDate": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Last date of a multi-day stay, YYYY-MM-DD, later than date. Optional, and only with date." },
             "day": { "type": "integer", "minimum": 1, "maximum": 999, "description": "Itinerary day, 1 is the first day. Only for an itinerary with no calendar dates: when dates are given, leave this out (the app works the day out from the date and the trip start). Optional." },
             "order": { "type": "integer", "minimum": 1, "maximum": 999, "description": "Position within the day, 1 is the first stop. Optional." },
+            "sideQuest": { "type": "boolean", "description": "Optional. true for an optional nearby extra (a Side Quest) rather than a place the traveller is planning to go. Never for a hotel, home or residence." },
+            "near": { "type": "string", "maxLength": 80, "description": "Optional, with sideQuest: the exact name of the main stop (another feature) it is close to." },
             "query": { "type": "string", "maxLength": 200, "description": "Searchable text for a place without coordinates: venue, address, city, country." }
           }
         }

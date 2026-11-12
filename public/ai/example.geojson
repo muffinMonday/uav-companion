@@ -21,6 +21,11 @@
       "type": "Feature",
       "geometry": null,
       "properties": { "name": "东湖绿道 viewpoint", "type": "takeoff", "query": "东湖绿道, 武汉, 中国" }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": { "name": "Hubu Alley snack street", "type": "other", "query": "Hubuxiang, Wuchang District, Wuhan, China", "date": "2026-11-13", "sideQuest": true, "near": "Yellow Crane Tower" }
     }
   ]
 }

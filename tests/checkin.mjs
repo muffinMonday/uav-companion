@@ -57,7 +57,8 @@ await row(p, 'Tower').locator('.checkin-btn').click(); await p.waitForTimeout(50
 const rec = await stored(p, 'tw');
 ok(rec.checkin && Math.abs(rec.checkin.lat - 30.5930) < 0.0002 && Math.abs(rec.checkin.lon - 114.3057) < 0.0002 && rec.checkin.acc === 20 && Math.abs(Date.parse(rec.checkin.at) - Date.now()) < 60000, 'Check in saves your position, the accuracy and the time: ' + JSON.stringify(rec.checkin));
 const done = row(p, 'Tower').locator('.checkin-done');
-ok(/^✓/.test(await done.textContent()) && /\d{2}:\d{2}/.test(await done.textContent()), 'the row shows what was recorded: ' + await done.textContent());
+ok(/^✓$/.test((await done.textContent()).trim()) && /Checked in .*\d{2}:\d{2}/.test(await done.getAttribute('title')), 'the row shows just a tick, with the time in its tooltip: ' + await done.getAttribute('title'));
+ok((await done.boundingBox()).width <= 32 && (await row(p, 'Lake').locator('.checkin-btn').boundingBox()).width <= 32, 'the tick and the button are small');
 const item = await row(p, 'Tower').locator('.poi-item').boundingBox(), cell = await done.boundingBox();
 ok(cell.x > item.x + item.width * 0.4, 'and it sits at the right of the row');
 await p.screenshot({ path: 'tests/out/checkin-poi.png' });
@@ -74,11 +75,14 @@ ok(/✓/.test(await p.locator('#trip-detail .plan-row', { hasText: 'Tower' }).lo
 
 // clearing
 await p.click('#trip-detail >> text=‹ Trips'); await p.click('#tab-poi'); await p.waitForTimeout(300);
-const clear = row(p, 'Tower').locator('.checkin-clear');
+ok((await row(p, 'Tower').locator('.checkin-clear').count()) === 0, 'the row has no ✕ of its own');
+await row(p, 'Tower').locator('.poi-item').click(); await p.waitForSelector('.poi-pop .checkin-clear', { timeout: 8000 });
+const clear = p.locator('.poi-pop .checkin-clear');
 await clear.click(); await p.waitForTimeout(150);
 ok(/Clear\?/.test(await clear.textContent()) && (await stored(p, 'tw')).checkin, 'the ✕ asks first');
 await clear.click(); await p.waitForTimeout(400);
-ok(!(await stored(p, 'tw')).checkin && await row(p, 'Tower').locator('.checkin-btn').isVisible(), 'the second press clears it and the button is back');
+ok(!(await stored(p, 'tw')).checkin && (await p.locator('.poi-pop .pop-checkin').count()) === 0 && await row(p, 'Tower').locator('.checkin-btn').isVisible(), 'the second press clears it in the window and the button is back in the row');
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
 await row(p, 'Tower').locator('.checkin-btn').click(); await p.waitForTimeout(400);
 
 // a share link leaves it out, the export keeps it

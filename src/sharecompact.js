@@ -14,13 +14,14 @@ const trim = (row, keep) => { while (row.length > keep && (row[row.length - 1] =
 export function compactShare(gj) {
   const trips = Array.isArray(gj.trips) ? gj.trips : [];
   const tripAt = new Map(trips.map((t, i) => [t.id, i + 1]));
+  const rowOf = new Map(gj.features.map((f, i) => [f.properties?.id, i + 1])); // a Side Quest names its parent by that row's number
   let la0 = 0, lo0 = 0;
   const m = gj.features.map((f) => {
     const p = f.properties || {};
     const [lon, lat] = f.geometry.coordinates;
     const la = Math.round(lat * 1e6), lo = Math.round(lon * 1e6);
     const date = p.date ? toDays(p.date) : 0;
-    const row = [Math.max(0, TYPE_IDS.indexOf(p.type)), p.name ?? '', la - la0, lo - lo0, date, date && p.endDate ? toDays(p.endDate) - date : 0, p.order ?? 0, p.unverified ? 1 : 0, tripAt.get(p.tripId) ?? 0, p.note ?? '', p.day ?? 0];
+    const row = [Math.max(0, TYPE_IDS.indexOf(p.type)), p.name ?? '', la - la0, lo - lo0, date, date && p.endDate ? toDays(p.endDate) - date : 0, p.order ?? 0, p.unverified ? 1 : 0, tripAt.get(p.tripId) ?? 0, p.note ?? '', p.day ?? 0, p.isSub ? 1 : 0, (p.isSub && p.parentId !== undefined && rowOf.get(p.parentId)) || 0];
     la0 = la; lo0 = lo;
     return trim(row, 4);
   });
@@ -34,8 +35,9 @@ export function expandShare(obj) {
   const trips = (obj.t ?? []).map((t, i) => ({
     id: `t${i + 1}`, name: t[0] ?? '', ...(t[1] && { country: t[1] }), ...(t[2] && { startDate: fromDays(t[2]) }), ...(t[3] && { endDate: fromDays(t[3]) }), description: t[4] ?? '',
   }));
+  const parents = new Set(obj.m.filter((r) => r[11] && r[12]).map((r) => r[12])); // rows that a Side Quest hangs from get an id to be found by
   let la = 0, lo = 0;
-  const features = obj.m.map((r) => {
+  const features = obj.m.map((r, i) => {
     la += r[2] ?? 0; lo += r[3] ?? 0;
     const p = { type: TYPE_IDS[r[0]] ?? 'other', name: r[1] ?? '', note: r[9] ?? '' };
     if (r[4]) { p.date = fromDays(r[4]); if (r[5]) p.endDate = fromDays(r[4] + r[5]); }
@@ -43,6 +45,8 @@ export function expandShare(obj) {
     if (r[7]) p.unverified = true;
     if (r[8]) p.tripId = `t${r[8]}`;
     if (r[10]) p.day = r[10];
+    if (parents.has(i + 1)) p.id = 'm' + (i + 1);
+    if (r[11]) { p.isSub = true; if (r[12]) p.parentId = 'm' + r[12]; }
     return { type: 'Feature', properties: p, geometry: { type: 'Point', coordinates: [lo / 1e6, la / 1e6] } };
   });
   return { type: 'FeatureCollection', uavzones: 1, ...(trips.length && { trips }), features };

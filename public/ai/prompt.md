@@ -57,6 +57,8 @@ RULES
    {"name": "short trip name", "country": "country name in English", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD", "description": "one or two sentences"}
    "name" is required, and so are startDate and endDate whenever the itinerary gives dates (a one-day trip has the same date twice). They follow the same rules as date above: a full date with the year, never guessed. If the itinerary has no dates, leave them out and the app will ask the person for them. Leave out whatever you do not know. The app puts every place of the reply in that trip, except a "residence", which never belongs to a trip.
 
+10. SIDE QUESTS are optional. If my itinerary mentions a nearby extra that I would visit only if there is time (an optional detour, "worth a look if you pass by"), make it a Feature like the others and add "sideQuest": true to its properties, plus "near": the exact name of the main stop (another Feature in your reply) that it is close to. The main stops are the places I am actually planning to go. A hotel, home point or residence is never a side quest. Leave both properties out of ordinary stops.
+
 EXAMPLE OF THE REPLY
 
 ```json
@@ -73,6 +75,11 @@ EXAMPLE OF THE REPLY
       "type": "Feature",
       "geometry": null,
       "properties": { "name": "Yellow Crane Tower", "type": "photo", "query": "Yellow Crane Tower, Wuchang District, Wuhan, China", "date": "2026-11-13", "day": 2, "order": 1 }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": { "name": "Hubu Alley snack street", "type": "other", "query": "Hubuxiang, Wuchang District, Wuhan, China", "date": "2026-11-13", "sideQuest": true, "near": "Yellow Crane Tower" }
     }
   ]
 }

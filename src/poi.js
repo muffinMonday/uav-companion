@@ -59,6 +59,14 @@ export function isoDate(v) {
   return t.getUTCFullYear() === y && t.getUTCMonth() === mo - 1 && t.getUTCDate() === d ? `${m[1]}-${m[2]}-${m[3]}` : null;
 }
 
+/** The types that can never be a Side Quest: the bases a waypoint is measured to. */
+export const NOT_SUB = new Set(['home', 'hotel', 'residence']);
+/** A Side Quest (an optional stop near a main stop) or a main stop. Every list that numbers, chains or counts stops asks isMain. */
+export const isSub = (item) => item?.isSub === true;
+export const isMain = (item) => item?.isSub !== true;
+/** The stop number to show for a marker: a Side Quest has no stop number (its `order` only says where it sits among its siblings). */
+export const stopNo = (item) => (isSub(item) ? undefined : item.order);
+
 /**
  * Validates one raw item (from storage or an import). Returns a clean item or null.
  * `day`, `order` (position within the day), `date` and `endDate` (the trip dates; an end only makes sense after a start)
@@ -89,6 +97,12 @@ export function sanitize(raw) {
   const checkin = type !== 'residence' ? sanitizeCheckin(raw.checkin) : null; // where and when you were there; the Home marker cannot have one
   if (checkin) item.checkin = checkin;
   if (raw.unverified === true) item.unverified = true; // location came from an AI or a name lookup and has not been checked yet
+  // A Side Quest: an optional stop near a main stop. Never a Home point, Hotel or Home marker (those are what stops are measured to).
+  // `parentId` names the main stop it hangs from; it is only a preference: whoever uses it checks that the parent still exists and is a main stop (see parentOf in trips.js).
+  if (raw.isSub === true && !NOT_SUB.has(type)) {
+    item.isSub = true;
+    if (typeof raw.parentId === 'string' && raw.parentId.length > 0 && raw.parentId.length <= 64 && raw.parentId !== item.id) item.parentId = raw.parentId;
+  }
   // A trip tag. The Home marker (a residence) does not belong to a trip, so it never keeps one.
   if (typeof raw.tripId === 'string' && raw.tripId.length > 0 && raw.tripId.length <= 64 && type !== 'residence') item.tripId = raw.tripId;
   return item;
@@ -495,6 +509,7 @@ export function toGeoJSON(items, trips = []) {
         ...(i.day !== undefined && { day: i.day }), ...(i.order !== undefined && { order: i.order }),
         ...(i.date !== undefined && { date: i.date }), ...(i.endDate !== undefined && { endDate: i.endDate }), ...(i.unverified && { unverified: true }),
         ...(i.tripId !== undefined && { tripId: i.tripId }),
+        ...(i.isSub && { isSub: true }), ...(i.isSub && i.parentId !== undefined && { parentId: i.parentId }),
         ...(i.checkin && { checkin: i.checkin }),
       },
       geometry: { type: 'Point', coordinates: [i.lon, i.lat] },
@@ -517,7 +532,7 @@ export function parseGeoJSON(text) {
     const g = f?.geometry;
     if (g?.type !== 'Point' || !Array.isArray(g.coordinates)) { skipped++; continue; }
     const p = f.properties || {};
-    const item = sanitize({ id: p.id, type: p.type, name: p.name, note: p.note ?? p.description, created: p.created, day: p.day, order: p.order, date: p.date, endDate: p.endDate, unverified: p.unverified, checkin: p.checkin, tripId: p.tripId, lon: g.coordinates[0], lat: g.coordinates[1] });
+    const item = sanitize({ id: p.id, type: p.type, name: p.name, note: p.note ?? p.description, created: p.created, day: p.day, order: p.order, date: p.date, endDate: p.endDate, unverified: p.unverified, checkin: p.checkin, tripId: p.tripId, isSub: p.isSub, parentId: p.parentId, lon: g.coordinates[0], lat: g.coordinates[1] });
     if (item) items.push(item); else skipped++;
   }
   if (feats.length > MAX_ITEMS) skipped += feats.length - MAX_ITEMS;

@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import { dashClick } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
-const exampleText = fs.readFileSync(`${ROOT}/public/ai/example.geojson`, 'utf8');
+const exampleFull = fs.readFileSync(`${ROOT}/public/ai/example.geojson`, 'utf8');
+// sections 1 to 14 use the example's four ordinary places; section 15 uses all of it, with its Side Quest
+const exampleText = JSON.stringify({ ...JSON.parse(exampleFull), features: JSON.parse(exampleFull).features.filter((f) => !f.properties.sideQuest) }, null, 2);
 const promptText = fs.readFileSync(`${ROOT}/public/ai/prompt.md`, 'utf8');
 
 const b = await chromium.launch({ channel: CHANNEL });
@@ -256,6 +258,25 @@ const overflow = await p.evaluate(() => { const b = document.querySelector('#pan
 ok(overflow.sw <= overflow.cw + 1, `14: phone: the preview does not overflow sideways (${overflow.sw} <= ${overflow.cw})`);
 await p.locator('#ai-preview').scrollIntoViewIfNeeded();
 await p.screenshot({ path: SP + '/ai-phone.png' });
+await S.ctx.close();
+
+// ============ 15. a Side Quest in the reply
+S = await session();
+p = S.page;
+await setPriv(p, '#pv-geo', true);
+S.photonFn = (q) => (/Yellow Crane/.test(q) ? [30.5448, 114.3025] : /Hubu/.test(q) ? [30.5470, 114.3040] : null);
+S.nomFn = (q) => (/东湖/.test(q) ? [30.5701, 114.3784] : null);
+await preview(p, exampleFull);
+rows = await rowsText(p);
+ok(rows.length === 5 && /Side Quest/.test(rows[4]) && !/Side Quest/.test(rows[1]), '15: the preview marks the Side Quest row');
+ok(/5 places found: 2 with coordinates, 3 to look up/.test(await p.textContent('.prev-sum')), '15: the summary counts it with the others');
+await p.click('#ai-add');
+await p.waitForFunction(() => !document.getElementById('ai-add'), null, { timeout: 20000 });
+saved = await pois(p);
+const crane2 = saved.find((m) => m.name === 'Yellow Crane Tower'), hubu = saved.find((m) => m.name === 'Hubu Alley snack street');
+ok(saved.length === 5 && crane2 && hubu, '15: all five were added');
+ok(hubu.isSub === true && hubu.parentId === crane2.id && !('isSub' in crane2) && hubu.date === '2026-11-13', '15: the Side Quest is stored as one, hung from the main stop its "near" names');
+ok(S.photon.length === 3, '15: only the three place queries were sent (' + S.photon.length + ')');
 await S.ctx.close();
 
 console.log('errors:', errs.length ? errs : 'none');

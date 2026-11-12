@@ -46,8 +46,14 @@ export function checkinLabel(c) {
   return `${day}, ${time}`;
 }
 
-/** How many of these markers have a check-in, out of those that can have one (the Home marker cannot). */
+/** How many of these main stops have a check-in, out of those that can have one (the Home marker cannot; Side Quests are left out). */
 export function visitedCount(items) {
-  const eligible = items.filter((i) => i.type !== 'residence');
+  const eligible = items.filter((i) => i.type !== 'residence' && i.isSub !== true); // Side Quests are counted apart (sideVisitedCount)
+  return { done: eligible.filter((i) => i.checkin).length, total: eligible.length };
+}
+
+/** The same count for the Side Quests among these markers. */
+export function sideVisitedCount(items) {
+  const eligible = items.filter((i) => i.isSub === true);
   return { done: eligible.filter((i) => i.checkin).length, total: eligible.length };
 }

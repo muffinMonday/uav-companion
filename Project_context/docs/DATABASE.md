@@ -32,7 +32,7 @@ All reads are validated; damaged entries fall back to defaults. If storage is bl
 
 | Key | Owner | Shape and notes |
 |---|---|---|
-| `uavzones.v1.pois` | `poi.js` | `{ v: 1, items: [Item] }`. Item: `id`, `type` (home, hotel, takeoff, landing, photo, train, airport, hazard, residence, other), `name` (<= 80), `note` (<= 500), `lat`, `lon`, `created`; optional `day`, `order`, `date`, `endDate`, `unverified`, `tripId`, `checkin {at, lat, lon, acc}` (never on Home; exported, not shared), `updated` (shared-trip markers). `tripId` dropped for `residence` or an unknown trip. Import ceiling 2,000 items (`MAX_ITEMS`) |
+| `uavzones.v1.pois` | `poi.js` | `{ v: 1, items: [Item] }`. Item: `id`, `type` (home, hotel, takeoff, landing, photo, train, airport, hazard, residence, other), `name` (<= 80), `note` (<= 500), `lat`, `lon`, `created`; optional `day`, `order`, `date`, `endDate`, `unverified`, `tripId`, `checkin {at, lat, lon, acc}` (never on Home; exported, not shared), `updated` (shared-trip markers), `isSub: true` (a Side Quest; written only when true; never on home, hotel, residence) and `parentId` (its main stop; only with `isSub`; a preference, validated at use by `parentOf` in `trips.js`). A Side Quest's `order` is its position among its siblings, not a stop number (`stopNo`). `tripId` dropped for `residence` or an unknown trip. Import ceiling 2,000 items (`MAX_ITEMS`) |
 | `uavzones.v1.trips` | `poi.js` | `{ v: 1, trips: [Trip] }`. Trip: `id`, `name` (<= 80), `created`, `color`, optional `country`, `startDate`, `endDate`, `description` (<= 500), notes/checklist, and for shared trips `shared {owner, ownerName}`, `updated`. Max 200 |
 | `uavzones.v1.prefs` | `prefs.js` | Flat object: `basemap`, `country`, `opacity`, `popupOpacity`, `mode` (trip/flight), UI flags (`keyOpen`, `railFolded`, `panelTall`, `dashTall`, `panelCollapsed`, `windowExpanded`, `holdHint`, `markerDetails`, `crosshair`), privacy (`checkIn`, `autoWeather`, `weatherPrecision`, `fetchAltitude`, `lookupNames`), `units`, `maxRangeM`, `currentTrip`, `view {lat, lon, zoom}`. Authoritative list: `prefs.js` |
 | `uavzones.v1.wxcache`, `.elevcache`, `.tripwx` | `markerweather.js`, `elevation.js`, `tripweather.js` | Caches; weather refresh 30 min, outdated after 3 h; orphans pruned at start; never synced |
@@ -48,8 +48,8 @@ All reads are validated; damaged entries fall back to defaults. If storage is bl
 Limits: import file 2 MB; 2,000 items.
 
 ## 3. Files
-- **Export/import (GeoJSON, `uavzones: 1`):** Points `[lon, lat]` with `properties` (id, type, name, note, created, optional day/order/date/endDate/unverified/tripId/checkin), optional top-level `trips`. Import merges by id; existing ids skipped; markers of unknown trips arrive untagged. Home markers are exported, never put in share links.
-- **Share links:** `#import=z.<deflate-raw base64url>` and compact `z2.` (`sharecompact.js`); no Home, check-ins, notes, checklists.
+- **Export/import (GeoJSON, `uavzones: 1`):** Points `[lon, lat]` with `properties` (id, type, name, note, created, optional day/order/date/endDate/unverified/tripId/isSub/parentId/checkin), optional top-level `trips`. Import merges by id; existing ids skipped; markers of unknown trips arrive untagged. Home markers are exported, never put in share links.
+- **Share links:** `#import=z.<deflate-raw base64url>` and compact `z2.` (`sharecompact.js`; row slots 11 = Side Quest flag, 12 = parent row number, both absent on main stops, so older links and rows are unchanged); no Home, check-ins, notes, checklists.
 - **Static data (`public/data/`, not in git):** `index.json`, `<country>/manifest.json`, hashed PMTiles per region, `places/`. Sources in git: `data/regions/<country>/country.json`, `<region>/source.json` + `boundary.geojson`, `data/places/<country>.txt`. Hubei: 84,863 cells, verified against the shapefile by `npm run verify:data`.
 
 ## Migration notes

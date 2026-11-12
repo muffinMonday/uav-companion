@@ -672,14 +672,18 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .poi-list li.with-checkin{display:flex;align-items:center;gap:6px}
 .poi-list li.with-checkin .poi-item{flex:1;min-width:0;width:auto}
 .checkin{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:46%}
-.checkin-btn{padding:5px 9px;font-size:12px;white-space:nowrap}
-.checkin-btn:disabled{opacity:.5;cursor:not-allowed}
-.checkin-done{color:var(--ok);font-size:12px;font-weight:650;text-align:right;line-height:1.25}
+.checkin-btn{position:relative;width:28px;height:28px;color:var(--muted);border:1px solid transparent}
+.checkin-btn svg{width:16px;height:16px}
+.checkin-btn::after{content:"";position:absolute;inset:-8px} /* a larger touch target than the icon */
+.checkin-btn:disabled{opacity:.4;cursor:not-allowed;background:transparent}
+.checkin-btn.near{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.checkin-done{display:inline-grid;place-items:center;width:28px;height:28px;color:var(--ok);font-size:15px;font-weight:700;line-height:1}
 .checkin-clear{width:22px;height:22px;font-size:12px}
 .checkin-clear.armed{width:auto;padding:0 7px;border-radius:11px;background:var(--danger);color:#fff;font-weight:650}
 .plan-row{display:flex;align-items:center;gap:6px}
 .plan-row .plan-stop{flex:1;min-width:0;width:auto}
-.pop-checkin{margin-top:2px;color:var(--ok);font-size:12px;font-weight:650}
+.pop-checkin{margin-top:2px;color:var(--ok);font-size:12px;font-weight:650;display:flex;align-items:center;gap:4px}
+.pop-checkin .checkin-clear{color:var(--muted);font-weight:500}
 
 /* ---------- motion: short, subtle, transform and opacity only; nothing here applies with "reduce motion" ---------- */
 :root{--dur-fast:.12s;--dur:.2s;--dur-slow:.28s;--ease:cubic-bezier(.2,.7,.2,1)}

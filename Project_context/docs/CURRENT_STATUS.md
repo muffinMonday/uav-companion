@@ -1,36 +1,47 @@
 # Session Checkpoint
 
 Updated: 2026-11-12
-Task: none in development. Last session: documentation restructure (docs only, uncommitted).
+Task: Side Quest feature (sub-markers). Phases 5 and 1 done, uncommitted. Phases 2 to 4 not started.
 
 ## Objective
-Next product work is the owner's choice. Candidates, in the order planned: W6 flight sessions and public lobby (needs moderation and privacy policy first), W7 to W10 flight-controller diagnostics (`PROJECT.md` section 9.3), W3 steps b to f (test speed, optional). Shipped work: `CHANGELOG.md`.
+Side Quests are optional nearby stops attached to a main stop: hidden by default (a "+N" badge on the parent pin, a "▾ N" chip on the parent card), revealed when the parent is opened or expanded, draggable like main cards.
+
+## Agreed design (owner, 2026-11-12)
+- Data: `isSub: true` plus optional `parentId` (id of a non-base main marker; default nearest main stop in the trip; if the parent goes, fall back to the nearest). Only for non-base types (never hotel, home, residence). Side quests reuse `order` as position among siblings; every label and list using `order` must skip them. Written only when true: old data, exports and `z2.` links unchanged.
+- One predicate `isMain` (in `trips.js`) used by `chainOf`, `tripSequence`, `planDays`, `forecastSpots`, `trips-ui`, dashboard day stops, `seqBadge`, `tripLabel`, `summarise`.
+- `z2.` share link: new slots `r[11]` (side quest flag) and `r[12]` (parent as row index); `v` stays 2. No SQL change (`check_trip_doc` and the merge are generic): add test cases.
+- Side quests keep distance lines but never act as bases; no date warnings; visit grouping unchanged; check-in "visited" counted separately.
+- AI: optional `"sideQuest": true` and `"near": "<main stop name>"` in `public/ai/*`, `aiprompt.js`, `aiimport.js`.
+- Map: hidden by default, shown (small dashed pins, dotted connectors) only for the open main stop; pref "Show all side quests" off by default. Lists: tap a card opens the marker and expands its side quests; one expanded card per list; orphans in "Other side quests".
+- Reorder: new pure `planSideMove` (siblings, adopt onto a main card, or drop on a day heading as orphan; a side quest takes its parent's date); `planMove` cascades a main card's date to its side quests; side quests collapse while their parent is dragged. POI tab: full. Trips tab: drag within a day page only (option A); today only the POI tab has drag.
+- Create/convert: "Add as side quest" in the point-check window, toggle and "Near:" picker in forms, "Make side quest"/"Make main stop" with 10 s Undo, also in Select mode.
 
 ## Progress
-- [x] Documentation audit and restructure; every doc checked against `src/` and `supabase/migrations/`
-- [x] `npm run test:unit` all passing (2026-11-12, 8 s)
-- [ ] Owner review of the new docs, then commit
-- [ ] Browser suites not rerun this session (no code changed)
+- [x] Phase 5: check-in restyle. `checkin-ui.js` (icon button `.checkin-btn`, plain green ✓ with the time in its tooltip, new exported `checkinStamp` with the two-step ✕ in the marker window), `styles.css`, `poi-ui.js`; `tests/checkin.mjs` updated; `PROJECT.md` F37 updated
+- [x] Phase 1: data and plumbing. `poi.js` (`isSub`, `parentId`, `isMain`, `stopNo`, `NOT_SUB`; sanitize, export, import), `trips.js` (`parentOf`, `sideQuestMap`, `sideQuests`; `tripSequence` and `planDays` skip Side Quests), `checkin.js` (`visitedCount` main only, `sideVisitedCount`), `places.js`, `poi-ui.js` (stop labels, `chainOf`, `stopDates`, drag and reorder members skip Side Quests), `sharecompact.js` (slots 11 and 12), `aiimport.js` (`sideQuest`, `near`, `linkSideQuests`), `ai-ui.js` (preview tag, parent linking), `public/ai/{prompt.md,schema.json,example.geojson}`, `docs/AI.md`; tests `side-unit` (new, 55), `ai-unit`, `ai` (section 15), `db-trips-unit`, `sharedtrip-unit`
+- [ ] Phase 2: create, convert, parent picker
+- [ ] Phase 3: collapsed display on map and in both tabs
+- [ ] Phase 4: reorder (`planSideMove`, cascade, POI tab, Trips tab in-day)
+- [ ] Docs per phase: F45 in `PROJECT.md`, `DATABASE.md` item shape, `MODULES.md`, `DECISIONS.md`, a What's new entry; browser suite `side`
 
 ## Findings
-- The app is no longer purely static: optional Supabase accounts, cloud copy, friends, shared trips, online status and live locations exist (`ARCHITECTURE.md`, `DATABASE.md`). The live site has sign-in only when `VITE_SUPABASE_*` are set for the build; a plain `npm run deploy` switches it off.
-- Before real users: a second Supabase project, closed public sign-ups, email confirmation on, an outside email sender (the current project is tagged production but used as dev).
-- Hubei CRS declared WGS84 and unverified (GCJ-02 would shift zones by hundreds of metres); Hubei and Singapore licences unconfirmed, published by owner decision.
-- Not tested on real phones (touch, compass, map apps) or against live AI assistants. No offline support.
-- Typing in Max range then clicking a list row can swallow the click (blur re-render). `tests/trips.mjs` has one weak assertion (Home marker form has no Trip field).
-- Singapore data: `data/regions/sg/` OneMap layers built; OneMap terms unread.
+- Until phase 3 there is no UI to create a Side Quest and imported ones show as normal pins and rows in the POI list (no nesting, no "+N" yet); the Trips plan screen does not list them at all (`planDays` skips them; use `sideQuests(items, tripId)` and `sideQuestMap` there).
+- `tests/ai.mjs` sections 1 to 14 use the example without its Side Quest row (filtered in the test); section 15 uses the full example.
+- Check-in button names kept (`.checkin-btn`, `.checkin-done`, accessible name "Check in at <name>") so tests need small changes only. The row no longer has a ✕; clearing is in the marker window (the window is static, so `checkinStamp` removes its own line when cleared).
+- Hubei CRS unverified; licences unconfirmed (owner decision); not tested on real phones; no offline mode.
+- Before real users: second Supabase project, closed sign-ups, email confirmation, outside email sender.
 
 ## Working State
-- Branch: main
-- Last commit: `3371df7` (Work board: W24 done)
-- Uncommitted changes: Yes, Markdown only: new `Project_context/docs/CHANGELOG.md`, rewritten `Project_context/AGENTS.md`, `CLAUDE.md`, `Project_context/docs/*`, `docs/PROJECT.md` moved to `Project_context/docs/PROJECT.md`, link fixes in `README.md`, `docs/AI.md`, `supabase/README.md`
-- Tests/build: `npm run test:unit` pass; last full browser run 2026-11-11 (48 suites, 262 s, before shared trips and live locations); `npm run build` not run
+- Branch: main (pushed `0bdcf36`; live site deployed 2026-11-12 with sign-in on, `gh-pages` `9812bd9`)
+- Last commit: `0bdcf36`
+- Uncommitted changes: Yes: phase 5 (`src/checkin-ui.js`, `src/styles.css`, `tests/checkin.mjs`) and phase 1 (`src/poi.js`, `trips.js`, `checkin.js`, `places.js`, `poi-ui.js`, `sharecompact.js`, `aiimport.js`, `ai-ui.js`, `public/ai/*`, `docs/AI.md`, tests above, `tests/run.mjs`), docs (`DATABASE.md`, `MODULES.md`, `DECISIONS.md`, `PROJECT.md`, this file)
+- Tests/build: full `npm test` passed after phase 1 (71 suites, 372 s, 2026-11-12); `npm run build` not run. A dev server is running on :5173 (started this session)
 
 ## Blockers
 None.
 
 ## Next Action
-Owner reads the restructured docs and asks for a commit (do not commit unasked). Then pick the next product task and replace this checkpoint.
+Owner reviews phases 5 and 1 and says whether to commit. Then phase 2: the "Add as side quest" button in the point-check window (`main.js` `showCheck`), the Side Quest toggle and "Near:" picker in the placement and edit forms (`poi-ui.js` `editForm`), "Make side quest" / "Make main stop" with 10 s Undo (marker window bar, Select mode, `store.setMany`), hidden for hotel, home, residence; tests in a new browser suite `side`.
 
 ## Relevant Files
-`Project_context/AGENTS.md`, `Project_context/docs/*.md`, `CLAUDE.md`
+`src/poi.js`, `src/trips.js`, `src/distance.js`, `src/sharecompact.js`, `src/aiimport.js`, `public/ai/`, `src/poi-ui.js` (`makeIcon` l.29, `chainOf`, list `renderGroup`, reorder l.204), `src/reorder.js`, `src/reorder-ui.js`, `src/trips-ui.js` (plan rows l.216), `src/tripweather.js` l.36

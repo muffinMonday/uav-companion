@@ -1,10 +1,10 @@
 // Helpers for trips: wording, length, ordering and a date check. Pure functions; storage is in poi.js.
-import { dateLabel, listMode, sortForList } from './poi.js';
+import { dateLabel, listMode, sortForList, isMain, isSub } from './poi.js';
 import { countryName } from './countries.js';
 import { daysBetween, addDays } from './dates.js';
 import { haversineM } from './distance.js';
 
-export { daysBetween };
+export { daysBetween, isMain, isSub };
 
 /** Whole days from start to end, both counted (12 to 14 Nov is 3 days). null unless the trip has both dates. */
 export function tripLength(t) {
@@ -102,7 +102,7 @@ export const dayText = (info) => (info ? (info.last > info.day ? `Day ${info.day
  * markers with no stop last within their day. Hotels are included. Markers with neither a date nor a day are left out.
  */
 export function tripSequence(items, tripId) {
-  const members = items.filter((i) => i.tripId === tripId && (i.date !== undefined || i.day !== undefined));
+  const members = items.filter((i) => i.tripId === tripId && isMain(i) && (i.date !== undefined || i.day !== undefined)); // Side Quests are not stops
   return sortForList(members, listMode(members));
 }
 
@@ -121,9 +121,10 @@ const byStop = (a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || String(a.created
  * Every day of the trip is there, empty or not. A stay of several days is listed on its first day. `stops` are in stop order
  * (markers with no stop number last); `km` is the straight-line length of the chain of stops (0 for fewer than two).
  * `undated` have no date (an old stored day does not count); `outside` are dated before or after the trip.
+ * Only main stops are laid out; the trip's Side Quests are in `sideQuests(items, trip.id)`.
  */
 export function planDays(items, trip) {
-  const mine = items.filter((i) => i.tripId === trip.id);
+  const mine = items.filter((i) => i.tripId === trip.id && isMain(i)); // Side Quests are not stops: no chain, no kilometres, no warnings (see sideQuests)
   const n = tripLength(trip) ?? 0;
   const days = Array.from({ length: n }, (_, k) => ({ day: k + 1, date: addDays(trip.startDate, k), stops: [], km: 0 }));
   const undated = [], outside = [];
@@ -172,3 +173,51 @@ export function warningsLine(w) {
   if (w.noHotel.length) parts.push(`no hotel for the night of ${w.noHotel.length === 1 ? 'Day' : 'Days'} ${w.noHotel.join(', ')}`);
   return parts.join(' · ');
 }
+
+// ---------- Side Quests: optional stops that hang from a main stop ----------
+
+const BASE_PARENTS = new Set(['home', 'hotel', 'residence']);
+const onDay = (sub, m) => Boolean(sub.date) && Boolean(m.date) && sub.date <= (m.endDate ?? m.date) && m.date <= (sub.endDate ?? sub.date);
+
+/**
+ * The main stop a Side Quest hangs from, or null for another kind of marker or a Side Quest with no main stop in its trip.
+ * Its own `parentId` counts when that marker still exists, is a main stop (a hotel may be one) and is in the same trip. Otherwise the nearest
+ * main stop of the trip is taken (not a Home point, Hotel or Home marker), preferring one on the same date when both are dated.
+ */
+export function parentOf(sub, items) {
+  if (!isSub(sub)) return null;
+  const inTrip = items.filter((i) => isMain(i) && i.type !== 'residence' && (i.tripId ?? null) === (sub.tripId ?? null));
+  const own = sub.parentId ? inTrip.find((m) => m.id === sub.parentId) : null;
+  if (own) return own;
+  const stops = inTrip.filter((m) => !BASE_PARENTS.has(m.type));
+  const sameDay = stops.filter((m) => onDay(sub, m));
+  let best = null, bestM = Infinity;
+  for (const m of sameDay.length ? sameDay : stops) {
+    const d = haversineM(sub.lat, sub.lon, m.lat, m.lon);
+    if (d < bestM) { best = m; bestM = d; }
+  }
+  return best;
+}
+
+const bySibling = (a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || String(a.created).localeCompare(String(b.created));
+
+/**
+ * Every Side Quest of the given markers laid out under its parent: { byParent: Map(parent id -> [Side Quests in order]), orphans: [Side Quests with no parent] }.
+ * Pass the markers of one trip (or all of them: a Side Quest only ever hangs from a main stop of its own trip).
+ */
+export function sideQuestMap(items) {
+  const byParent = new Map(), orphans = [];
+  for (const s of items) {
+    if (!isSub(s)) continue;
+    const p = parentOf(s, items);
+    if (!p) { orphans.push(s); continue; }
+    if (!byParent.has(p.id)) byParent.set(p.id, []);
+    byParent.get(p.id).push(s);
+  }
+  for (const list of byParent.values()) list.sort(bySibling);
+  orphans.sort(bySibling);
+  return { byParent, orphans };
+}
+
+/** The trip's Side Quests, flat (a trip with id `tripId`; null for the markers that are in no trip). */
+export const sideQuests = (items, tripId) => items.filter((i) => isSub(i) && (i.tripId ?? null) === (tripId ?? null));

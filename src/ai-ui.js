@@ -1,7 +1,7 @@
 // "Plan with an AI": copy a prompt for any assistant, paste its answer (or open a share link), preview, then add.
 // Nothing is added until the preview is confirmed. See aiimport.js for what is accepted and public/ai/ for the spec.
 import { addDays } from './dates.js';
-import { parseItinerary, isDuplicate, isRevisit, geocode, pause, encodeShare, decodeShare, MAX_LOOKUPS } from './aiimport.js';
+import { parseItinerary, linkSideQuests, isDuplicate, isRevisit, geocode, pause, encodeShare, decodeShare, MAX_LOOKUPS } from './aiimport.js';
 import { typeOf, toGeoJSON, dateLabel } from './poi.js';
 import { tripDatesLabel } from './trips.js';
 import { countryName } from './countries.js';
@@ -105,7 +105,7 @@ export function initAI({ map, toast, panel, poi }) {
       const cb = el('input'); cb.type = 'checkbox'; cb.checked = r.include; cb.disabled = !!r.block;
       cb.addEventListener('change', () => { r.include = cb.checked; refreshCount(); });
       const body = el('span', 'pbody');
-      const trip = [r.date && dateLabel(r), r.day && `Day ${r.day}`, r.order && `Stop ${r.order}`].filter(Boolean).join(' · ');
+      const trip = [r.date && dateLabel(r), r.day && `Day ${r.day}`, r.isSub ? 'Side Quest' : r.order && `Stop ${r.order}`].filter(Boolean).join(' · ');
       body.append(el('b', '', r.name || '(no name)'), el('small', '', `${typeOf(r.type).label}${trip ? ` · ${trip}` : ''}`));
       body.append(el('small', r.block ? 'pwarn' : 'pstat', r.block || ((r.status === 'ok' ? `${r.lat.toFixed(5)}, ${r.lon.toFixed(5)}` : `Will look up “${r.query}”`) + (r.revisit ? ' · another visit (you have this place on a different date)' : ''))));
       lab.append(cb, body);
@@ -204,8 +204,12 @@ export function initAI({ map, toast, panel, poi }) {
       // a day number becomes a date in a trip with dates (day 1 is the start date); the day itself is then worked out from the date
       let date = r.date ?? undefined, day = r.day ?? undefined;
       if (trip?.startDate) { if (!date && day) date = addDays(trip.startDate, day - 1); day = undefined; }
-      return { type: r.type, name: r.name, note: r.note, day, order: r.order ?? undefined, date, endDate: r.endDate ?? undefined, lat: r.lat, lon: r.lon, unverified: r.unverified, tripId };
+      return { type: r.type, name: r.name, note: r.note, day, order: r.order ?? undefined, date, endDate: r.endDate ?? undefined, lat: r.lat, lon: r.lon, unverified: r.unverified, tripId, isSub: r.isSub ? true : undefined };
     }));
+    if (fresh.some((r) => r.isSub) && added.length === fresh.length) { // each Side Quest finds the main stop it hangs from
+      const links = linkSideQuests(fresh, added, existing);
+      if (links.length) poi.store.setMany(links.map((l) => ({ ...poi.store.get(l.id), parentId: l.parentId })));
+    }
     const unv = added.filter((a) => a.unverified).length;
     toast(`Added ${added.length} marker${added.length === 1 ? '' : 's'}${createdTrips ? ` and ${createdTrips} trip${createdTrips === 1 ? '' : 's'}` : ''}${unv ? `, ${unv} unverified: check ${unv === 1 ? 'it' : 'them'} on the map` : ''}.`
       + `${failed.length ? ` Not found: ${failed.slice(0, 5).join(', ')}${failed.length > 5 ? '…' : ''}.` : ''}`

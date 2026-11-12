@@ -1,12 +1,11 @@
 // Points of interest on the map: placing, listing, editing, moving, backup. Data and storage live in poi.js.
 import L from 'leaflet';
-import { KEY, TRIPS_KEY, TYPES, typeOf, pinSvg, createStore, toGeoJSON, parseGeoJSON, sortForList, posInt, isoDate, listMode, groupLabel, dateLabel } from './poi.js';
+import { KEY, TRIPS_KEY, TYPES, typeOf, pinSvg, createStore, toGeoJSON, parseGeoJSON, sortForList, posInt, isoDate, listMode, groupLabel, dateLabel, isMain, stopNo } from './poi.js';
 import { createMarkerWeather, formatWhen, rainOutlook } from './markerweather.js';
 import { createMarkerElevation } from './elevation.js';
 import { getPrivacy, onPrivacyChange } from './privacy.js';
-import { createCheckin, checkinCell } from './checkin-ui.js';
+import { createCheckin, checkinCell, checkinStamp } from './checkin-ui.js';
 import { reduced, EASE } from './motion.js';
-import { checkinLabel } from './checkin.js';
 import { getWindLimit } from './weather.js';
 import { getDistanceSettings, setDistanceSettings, onDistanceSettings } from './units.js';
 import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, compass, toDisplay, fromDisplay, haversineM } from './distance.js';
@@ -33,9 +32,9 @@ const makeIcon = (type, tripColor, seq = '', visits = 0) => L.divIcon({
 });
 const fmt = (v) => v.toFixed(5);
 /** Short form for the pin: "D2·3", "D2" or "#3"; '' when the marker has neither a day nor a stop. */
-const seqBadge = (it, trip) => { const d = dayInfo(it, trip)?.day; return d !== undefined ? `D${d}${it.order !== undefined ? `·${it.order}` : ''}` : it.order !== undefined ? `#${it.order}` : ''; };
+const seqBadge = (it, trip) => { const d = dayInfo(it, trip)?.day, n = stopNo(it); return d !== undefined ? `D${d}${n !== undefined ? `·${n}` : ''}` : n !== undefined ? `#${n}` : ''; };
 /** "Day 2 · Stop 3", or just one of them, or '' when the marker is not part of an itinerary. */
-const tripLabel = (it, trip) => [dayText(dayInfo(it, trip)), it.order !== undefined && `Stop ${it.order}`].filter(Boolean).join(' · ');
+const tripLabel = (it, trip) => [dayText(dayInfo(it, trip)), stopNo(it) !== undefined && `Stop ${stopNo(it)}`].filter(Boolean).join(' · ');
 
 export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWeather, locateOnce, panel }) {
   const store = createStore();
@@ -161,7 +160,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         }
         const row = renderItem(it, items, mode);
         row.dataset.id = it.id; row.dataset.scope = scope; row.dataset.mode = mode; row.dataset.gkey = String(groupKey(it, mode));
-        if (dragOk && it.type !== 'residence') row.dataset.drag = '1';
+        if (dragOk && it.type !== 'residence' && isMain(it)) row.dataset.drag = '1';
         listEl.append(row);
       }
     };
@@ -203,7 +202,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
 
   // ---------- reordering by holding a row ----------
   /** The markers a drag works on: those of one trip (or none), without the Home marker. */
-  const scopeMembers = (scope) => store.items().filter((i) => (i.tripId ?? 'none') === scope && i.type !== 'residence');
+  const scopeMembers = (scope) => store.items().filter((i) => (i.tripId ?? 'none') === scope && i.type !== 'residence' && isMain(i)); // Side Quests are not reordered with the stops
   function applyMove(id, scope, mode, key, index) {
     const members = scopeMembers(scope);
     const targetKey = mode === 'day' && key !== 'none' ? Number(key) : key;
@@ -383,7 +382,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     b.innerHTML = pinSvg(it.type);
     const t = el('span', 't');
     const detail = it.note ? it.note.split('\n')[0] : `${fmt(it.lat)}, ${fmt(it.lon)}`;
-    const when = [gmode === 'day' ? (it.order !== undefined && `Stop ${it.order}`) : tripLabel(it, tripOf(it)), gmode === 'date' && it.endDate && dateLabel(it)].filter(Boolean).join(' · ');
+    const when = [gmode === 'day' ? (stopNo(it) !== undefined && `Stop ${stopNo(it)}`) : tripLabel(it, tripOf(it)), gmode === 'date' && it.endDate && dateLabel(it)].filter(Boolean).join(' · ');
     const name = el('b', '', it.name);
     if (it.unverified) name.append(' ', el('span', 'badge', 'Unverified'));
     if (it.tripId && outsideTrip(it, store.getTrip(it.tripId))) name.append(' ', el('span', 'badge', 'Outside trip dates'));
@@ -494,7 +493,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const tripColour = (tripId) => store.getTrip(tripId)?.color ?? '#1a73e8';
   /** The stops of one trip on one date, joined in stop order. Hotels and the Home marker are not part of the chain. */
   function chainOf(tripId, date) {
-    return store.items().filter((i) => i.tripId === tripId && i.date === date && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence')
+    return store.items().filter((i) => i.tripId === tripId && i.date === date && isMain(i) && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence')
       .sort((a, b) => a.order - b.order || String(a.created).localeCompare(String(b.created)));
   }
   /** One arrow from stop a to stop b: bold ones say how far; an overnight link (to the next or from the previous day) is bold and dashed. */
@@ -520,7 +519,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     for (let i = 1; i < chain.length; i++) drawSeg(layer, chain[i - 1], chain[i], color, !!selId && (chain[i - 1].id === selId || chain[i].id === selId));
   }
   /** The days of a trip that have stops, in order. */
-  const stopDates = (tripId) => [...new Set(store.items().filter((i) => i.tripId === tripId && i.date && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence').map((i) => i.date))].sort();
+  const stopDates = (tripId) => [...new Set(store.items().filter((i) => i.tripId === tripId && i.date && isMain(i) && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence').map((i) => i.date))].sort();
   function redrawRoutes() {
     routes.clearLayers(); dayLayer.clearLayers();
     if (shownDay) { const chain = chainOf(shownDay.tripId, shownDay.date); if (chain.length >= 2) drawChain(dayLayer, chain, null, tripColour(shownDay.tripId)); }
@@ -795,7 +794,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const coordRow = el('div', 'coords-row');
       coordRow.append(el('span', 'coords', `${fmt(it.lat)}, ${fmt(it.lon)}`), mapLinkIcons({ lat: it.lat, lon: it.lon, name: it.name, home: it.type === 'residence' }));
       titles.append(coordRow);
-      if (it.checkin) titles.append(el('div', 'pop-checkin', '✓ Checked in ' + checkinLabel(it.checkin)));
+      { const stamp = checkinStamp({ cin, store, id }); if (stamp) titles.append(stamp); }
       head.append(badge, titles);
       root.append(head);
       const visits = visitMap.get(id);
@@ -861,7 +860,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
           const b = el('button', 'pop-seq-btn'); b.type = 'button';
           b.textContent = arrow === '‹' ? `‹ ${word}` : `${word} ›`;
           if (!target) { b.disabled = true; return b; }
-          const where = [dayText(dayInfo(target, tripOf(target))), target.order !== undefined && `Stop ${target.order}`].filter(Boolean).join(' · ');
+          const where = [dayText(dayInfo(target, tripOf(target))), stopNo(target) !== undefined && `Stop ${stopNo(target)}`].filter(Boolean).join(' · ');
           b.title = `${word} stop: ${target.name}${where ? ` (${where})` : ''}`;
           b.setAttribute('aria-label', b.title);
           b.addEventListener('click', () => setTimeout(() => openPopup(target.id), 0)); // after the click, so the old window going away is not seen as a map click

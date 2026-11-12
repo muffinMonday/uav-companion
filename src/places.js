@@ -1,6 +1,6 @@
 // The same place saved more than once (a second visit on another date). Each visit is its own marker; this finds the ones that share a spot.
 // Pure: no DOM, importable from Node tests.
-import { dateLabel } from './poi.js';
+import { dateLabel, stopNo } from './poi.js';
 import { dayInfo, dayText } from './trips.js';
 
 /** Markers closer than this are treated as the same place. */
@@ -59,7 +59,7 @@ export function visitGroups(items) {
 
 /** Short text for one visit: "Day 3 · Sat, Nov 14", or "No date"; with the trip's name when it is not the current marker's trip. */
 export function visitLabel(item, { tripName = '', trip = null } = {}) {
-  const parts = [dayText(dayInfo(item, trip)), item.order !== undefined && `Stop ${item.order}`, item.date !== undefined && dateLabel(item)].filter(Boolean);
+  const parts = [dayText(dayInfo(item, trip)), stopNo(item) !== undefined && `Stop ${stopNo(item)}`, item.date !== undefined && dateLabel(item)].filter(Boolean);
   const text = parts.length ? parts.join(' · ') : 'No date';
   return tripName ? `${text} · ${tripName}` : text;
 }

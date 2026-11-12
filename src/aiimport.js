@@ -5,7 +5,7 @@
 //   - a bare JSON array of { name, type, lat, lon, note, day, order, query } objects
 // What is never trusted: everything is passed through poi.js sanitize before it can become a marker, names and notes are only
 // ever shown as text, and nothing is added until the person confirms the preview.
-import { TYPES, posInt, isoDate, tripFields } from './poi.js';
+import { TYPES, NOT_SUB, posInt, isoDate, tripFields } from './poi.js';
 import { compactShare, expandShare } from './sharecompact.js';
 
 const MAX_CHARS = 2e6;
@@ -52,7 +52,9 @@ function coordsOf(feature, props) {
 
 /**
  * Parses an AI answer. Returns { rows, trips, skipped, notes, appExport }.
- * Each row: { name, type, note, day, order, date, endDate, tripRef, query, lat?, lon?, status: 'ok' | 'lookup', unverified }.
+ * Each row: { name, type, note, day, order, date, endDate, tripRef, query, lat?, lon?, status: 'ok' | 'lookup', unverified, isSub?, near?, srcId?, parentSrc? }.
+ *   isSub   a Side Quest: an AI's properties.sideQuest = true, or this app's own isSub. `near` is the name of the main stop an AI says it is near;
+ *           `srcId` and `parentSrc` are this app's own ids (a file or share link), so a Side Quest can find its parent again. See linkSideQuests.
  *   ok      has usable coordinates
  *   lookup  no coordinates, but a name or address that can be searched
  * trips: the trips the reply describes, [{ ref, name, country?, startDate?, endDate?, description }], from an optional top-level
@@ -93,11 +95,16 @@ export function parseItinerary(text) {
     // this app's own files say which trip each place is in; an AI's single `trip` covers every place. Home belongs to none.
     const ownRef = appExport && typeof p.tripId === 'string' && trips.some((t) => t.ref === p.tripId) ? p.tripId : null;
     const tripRef = type === 'residence' ? null : ownRef ?? (!appExport && trips.some((t) => t.ref === '@trip') ? '@trip' : null);
+    const sub = !NOT_SUB.has(type) && (appExport ? p.isSub === true : p.sideQuest === true || p.isSub === true);
     const base = {
       tripRef,
       name, type, note: str(p.note ?? p.description, 500),
       day: posInt(p.day), order: posInt(p.order), date, endDate: endDate && endDate > date ? endDate : null, query,
       unverified: appExport ? p.unverified === true : true, // anything an AI made counts as unchecked
+      ...(sub && { isSub: true }),
+      ...(sub && !appExport && str(p.near, 80) && { near: str(p.near, 80).trim() }),
+      ...(appExport && typeof p.id === 'string' && p.id.length <= 64 && { srcId: p.id }),
+      ...(sub && appExport && typeof p.parentId === 'string' && p.parentId.length <= 64 && { parentSrc: p.parentId }),
     };
     const c = coordsOf(f, p);
     if (c) { if (c.swapped) swappedCount++; rows.push({ ...base, lat: c.lat, lon: c.lon, status: 'ok' }); }
@@ -108,6 +115,33 @@ export function parseItinerary(text) {
   if (swappedCount) notes.push(`${swappedCount} place${swappedCount === 1 ? ' had' : 's had'} latitude and longitude the wrong way round, and ${swappedCount === 1 ? 'was' : 'were'} corrected.`);
   if (!rows.length) throw new Error('No usable places found: each needs coordinates, or a name or address to look up.');
   return { rows, trips, skipped, notes, appExport };
+}
+
+/**
+ * Which main stop each imported Side Quest hangs from. `rows` are the rows that were added and `added[i]` is the marker made from `rows[i]` (null
+ * or missing when that row was not added). A row from this app's own file or link finds its parent by id; an AI's `near` is matched by name against the
+ * main stops of the same trip (the added ones and `existing` markers), preferring one on the same date. Returns [{ id, parentId }] for the ones found;
+ * the others are left for parentOf (trips.js) to place by distance.
+ */
+export function linkSideQuests(rows, added, existing = []) {
+  const bySrc = new Map();
+  rows.forEach((r, i) => { if (r.srcId && added[i]) bySrc.set(r.srcId, added[i]); });
+  const pool = [...added.filter(Boolean), ...existing];
+  const out = [];
+  rows.forEach((r, i) => {
+    const me = added[i];
+    if (!me || !r.isSub) return;
+    const trip = me.tripId ?? null;
+    const mains = pool.filter((m) => m.id !== me.id && m.isSub !== true && m.type !== 'residence' && (m.tripId ?? null) === trip);
+    let parent = r.parentSrc ? bySrc.get(r.parentSrc) : null;
+    if (!parent && r.near) {
+      const n = r.near.toLowerCase();
+      const named = mains.filter((m) => m.name.toLowerCase() === n);
+      parent = named.find((m) => m.date && me.date && m.date <= (m.endDate ?? m.date) && me.date >= m.date && me.date <= (m.endDate ?? m.date)) ?? named[0];
+    }
+    if (parent && parent.id !== me.id && parent.isSub !== true && (parent.tripId ?? null) === trip) out.push({ id: me.id, parentId: parent.id });
+  });
+  return out;
 }
 
 const sameSpot = (row, e) => {

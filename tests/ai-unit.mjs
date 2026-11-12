@@ -24,7 +24,8 @@ ok(/ai\/prompt\.md/.test(llms) && /ai\/schema\.json/.test(llms) && /ai\/example\
 ok(schema.properties.features.items.$ref === '#/$defs/feature' && !schema.$defs.feature.properties.properties.required.includes('day') && !schema.$defs.feature.properties.properties.required.includes('order'), 'schema: day and order are not required');
 
 const ex = ai.parseItinerary(example);
-ok(ex.rows.length === 4 && ex.rows.filter((r) => r.status === 'ok').length === 2 && ex.rows.filter((r) => r.status === 'lookup').length === 2 && ex.skipped === 0, 'example.geojson parses: 2 with coordinates, 2 to look up, 0 skipped');
+ok(ex.rows.length === 5 && ex.rows.filter((r) => r.status === 'ok').length === 2 && ex.rows.filter((r) => r.status === 'lookup').length === 3 && ex.skipped === 0, 'example.geojson parses: 2 with coordinates, 3 to look up, 0 skipped');
+ok(ex.rows[4].isSub === true && ex.rows[4].near === ex.rows[1].name && ex.rows.slice(0, 4).every((r) => !r.isSub), 'the last row of the example is a Side Quest near Yellow Crane Tower');
 ok(ex.rows.every((r) => r.unverified === true), 'AI-made content defaults to unverified');
 ok(ex.rows[0].day === 1 && ex.rows[0].order === 1 && ex.rows[3].day === null && ex.rows[3].order === null, 'day/order read when present, null when absent');
 

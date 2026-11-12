@@ -5,6 +5,7 @@ import { checkinState, checkinTitle, checkinLabel } from './checkin.js';
 import { getDistanceSettings } from './units.js';
 import { fmtDistance } from './distance.js';
 
+const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.4-6-10a6 6 0 0 1 12 0c0 4.6-6 10-6 10z"/><path d="M9.2 10.8l2 2 3.6-3.8"/></svg>';
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 
 export function createCheckin({ store, panel, toast }) {
@@ -85,19 +86,13 @@ export function checkinCell({ cin, store, id, ns }) {
       if (shape !== 'done:' + it.checkin.at) {
         shape = 'done:' + it.checkin.at;
         wrap.replaceChildren();
-        const done = el('span', 'checkin-done', '✓ ' + checkinLabel(it.checkin));
+        // Just a green tick: the time is in the tooltip and in the marker window, where the check-in can also be cleared.
+        const done = el('span', 'checkin-done', '✓');
         if (Date.now() - Date.parse(it.checkin.at) < 3000) done.classList.add('pop'); // just recorded: a short pop
         const from = it.checkin.acc !== undefined ? ` (GPS accuracy about ${fmtDistance(it.checkin.acc, units)})` : '';
         done.title = `Checked in ${checkinLabel(it.checkin)} at ${it.checkin.lat.toFixed(5)}, ${it.checkin.lon.toFixed(5)}${from}`;
-        const clear = el('button', 'icon-btn checkin-clear', '✕'); clear.type = 'button';
-        clear.setAttribute('aria-label', 'Clear the check-in of ' + it.name); clear.title = 'Clear this check-in';
-        let armed = null;
-        clear.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (!armed) { clear.textContent = 'Clear?'; clear.classList.add('armed'); armed = setTimeout(() => { clear.textContent = '✕'; clear.classList.remove('armed'); armed = null; }, 4000); return; }
-          clearTimeout(armed); cin.clear(id);
-        });
-        wrap.append(done, clear);
+        done.setAttribute('role', 'img'); done.setAttribute('aria-label', 'Checked in ' + checkinLabel(it.checkin));
+        wrap.append(done);
         btn = null;
       }
       return;
@@ -106,14 +101,38 @@ export function checkinCell({ cin, store, id, ns }) {
     if (shape !== 'button') {
       shape = 'button';
       wrap.replaceChildren();
-      btn = el('button', 'btn small checkin-btn', 'Check in'); btn.type = 'button';
+      btn = el('button', 'icon-btn checkin-btn'); btn.type = 'button';
+      btn.innerHTML = ICON; // built from a constant only
+      btn.setAttribute('aria-label', 'Check in at ' + it.name);
       btn.addEventListener('click', (e) => { e.stopPropagation(); cin.record(id); });
       wrap.append(btn);
     }
     btn.disabled = !st.can;
+    btn.classList.toggle('near', st.can); // within reach: the one state that should stand out
     btn.title = checkinTitle(st, units, st.status);
   };
   paint();
   cin.bind(ns, paint);
   return wrap;
+}
+
+/**
+ * The line in a marker's window that says when it was checked in, with a small ✕ to clear it (it asks first: the second press clears).
+ * Returns null when the marker has no check-in. The line removes itself once cleared.
+ */
+export function checkinStamp({ cin, store, id }) {
+  const it = store.get(id);
+  if (!it?.checkin) return null;
+  const line = el('div', 'pop-checkin', '✓ Checked in ' + checkinLabel(it.checkin) + ' ');
+  const clear = el('button', 'icon-btn checkin-clear', '✕'); clear.type = 'button';
+  clear.setAttribute('aria-label', 'Clear the check-in of ' + it.name); clear.title = 'Clear this check-in';
+  let armed = null;
+  clear.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!armed) { clear.textContent = 'Clear?'; clear.classList.add('armed'); armed = setTimeout(() => { clear.textContent = '✕'; clear.classList.remove('armed'); armed = null; }, 4000); return; }
+    clearTimeout(armed);
+    if (cin.clear(id)) line.remove();
+  });
+  line.append(clear);
+  return line;
 }
