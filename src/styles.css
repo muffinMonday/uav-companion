@@ -1059,3 +1059,7 @@ input[type=email]:focus{border-color:var(--accent)}
 .steam-apps summary{cursor:pointer;font-weight:600}.steam-apps ul{margin:4px 0 0;padding-left:18px}
 .steam-stats{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.steam-hours{font-weight:700;font-size:16px}.steam-minutes,.steam-last{color:var(--muted)}
 .steam-warn{color:var(--unk)}.steam-card .btn-row{margin:6px 0 0}.steam-message{margin-top:6px}
+.pf-group{margin:14px 0 6px;padding-top:8px;border-top:1px solid var(--line)}.pf-group h3{margin:0;font-size:13px}.pf-group small{display:block;color:var(--muted);font-size:12px}
+.pf-opt{color:var(--muted);font-weight:400}
+.profile-dialog input[aria-invalid=true]{border-color:var(--danger,#c0392b);outline-color:var(--danger,#c0392b)}
+.profile-dialog .profile-card[aria-busy=true]{opacity:.7}

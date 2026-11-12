@@ -178,6 +178,24 @@ await p.click('#account-btn'); await p.waitForSelector('#account-pop:not([hidden
 await p.waitForSelector('#profile-dialog[open] #pf-card');
 ok(await p.locator('#account-pop').isHidden() && await p.locator('#pane-friends').isHidden() === false, 'Edit profile in the account popover opens the dialog (Escape closes it)');
 await p.keyboard.press('Escape');
+// ---------- the editor: validation, unsaved changes, account pane contents
+await editProfile(p);
+await p.fill('#pf-name', '   '); await p.click('#pf-save');
+ok(await p.locator('#pf-name[aria-invalid=true]').count() === 1 && /cannot be empty/.test(await p.textContent('#pf-card .pf-msg')) && await p.locator('#profile-dialog[open]').count() === 1, 'an empty display name is refused in the editor, with the field marked invalid');
+ok(await p.locator('#pf-card .pf-group').count() === 3 && await p.locator('#pf-card .pf-opt').count() === 3, 'the editor is grouped, and the optional fields say so');
+await p.fill('#pf-name', 'Alex'); await p.fill('#pf-bio', 'unsaved words');
+p.removeAllListeners('dialog'); p.once('dialog', (d) => d.dismiss()); await p.click('#profile-dialog .btn-row >> text=Cancel'); await p.waitForTimeout(300);
+ok(await p.locator('#profile-dialog[open]').count() === 1 && await p.inputValue('#pf-bio') === 'unsaved words', 'Cancel with unsaved changes asks first, and staying keeps the draft');
+p.once('dialog', (d) => d.accept()); await p.click('#profile-dialog .btn-row >> text=Cancel'); await p.waitForSelector('#profile-dialog', { state: 'hidden' });
+await editProfile(p);
+ok(await p.inputValue('#pf-bio') !== 'unsaved words', 'discarding drops the draft');
+p.on('dialog', (d) => d.accept());
+await p.click('#profile-dialog .btn-row >> text=Cancel'); await p.waitForSelector('#profile-dialog', { state: 'hidden' });
+await p.click('#account-btn'); await p.waitForSelector('#account-pop:not([hidden])');
+ok(await p.locator('#account-pop #pane-progression').count() === 1 && await p.locator('#account-pop #pane-steam').count() === 1 && !(await p.textContent('#account-pop')).includes('@'), 'the account pane holds Progression and Steam and shows no email address');
+await p.keyboard.press('Escape');
+await goFriends(p);
+ok(await p.locator('#pane-friends #fr-progression, #pane-friends #fr-steam').count() === 0 && await p.locator('#fr-friends').count() === 1, 'the Friends tab has neither card and keeps the friends list');
 ok(!JSON.stringify(await p.evaluate(() => document.getElementById('pane-friends').innerHTML)).includes('@'), 'no email address appears in the Friends tab');
 
 // ---------- online status

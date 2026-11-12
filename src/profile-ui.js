@@ -45,6 +45,9 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
     const say = (t) => { note = t; msg.textContent = t; msg.hidden = !t; };
     const touch = () => { d.dirty = true; say(''); };
 
+    const group = (title, hint) => { const h = el('div', 'pf-group'); h.append(el('h3', '', title)); if (hint) h.append(el('small', '', hint)); return h; };
+    const optional = (label, text) => { label.append(' ', el('small', 'pf-opt', '(optional)')); return label; };
+    c.append(group('Photo', 'Pick one, or leave it as the default.'));
     // ---- avatar
     const head = el('div', 'pf-head');
     const preview = el('span', 'pf-preview'); const paint = () => preview.replaceChildren(avatarEl(d.avatar, profile.display_name, 44));
@@ -63,7 +66,8 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
     c.append(head, grid);
 
     // ---- bio
-    const bl = el('label', 'fr-label', 'Bio'); bl.setAttribute('for', 'pf-bio');
+    c.append(group('About you', 'Everything here is optional. Clear a field to remove it.'));
+    const bl = optional(el('label', 'fr-label', 'Bio')); bl.setAttribute('for', 'pf-bio');
     const bio = el('textarea'); bio.id = 'pf-bio'; bio.rows = 2; bio.maxLength = MAX_BIO; bio.value = d.bio; bio.placeholder = 'A line about you and your flying';
     const count = el('small', 'pf-count', `${d.bio.length}/${MAX_BIO}`);
     bio.addEventListener('input', () => { d.bio = bio.value; count.textContent = `${bio.value.length}/${MAX_BIO}`; touch(); });
@@ -72,7 +76,7 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
     c.append(bl, bio, bioRow);
 
     // ---- location (typed text; the app never reads a position for it)
-    const ll = el('label', 'fr-label', 'Location'); ll.setAttribute('for', 'pf-location');
+    const ll = optional(el('label', 'fr-label', 'Location')); ll.setAttribute('for', 'pf-location');
     const loc = el('input'); loc.type = 'text'; loc.id = 'pf-location'; loc.maxLength = MAX_LOCATION; loc.value = d.location; loc.placeholder = 'For example Wuhan, China'; loc.autocomplete = 'off';
     loc.addEventListener('input', () => { d.location = loc.value; touch(); });
     const locRow = el('div', 'pf-row'); locRow.append(el('small', 'pf-count', 'Typed by you; your position is never used.')); const clearLoc = el('button', 'btn small', 'Clear'); clearLoc.type = 'button'; clearLoc.addEventListener('click', () => clearField('location', null));
@@ -80,7 +84,7 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
     c.append(ll, loc, locRow);
 
     // ---- interests
-    const il = el('div', 'fr-label', `Interests (up to ${MAX_INTERESTS})`);
+    const il = optional(el('div', 'fr-label', `Interests (up to ${MAX_INTERESTS})`));
     const tags = el('div', 'pf-tags'); tags.setAttribute('role', 'group'); tags.setAttribute('aria-label', 'Interests');
     for (const t of INTERESTS) {
       const b = el('button', 'chip', t.label); b.type = 'button'; b.dataset.interest = t.key; b.setAttribute('aria-pressed', String(d.interests.includes(t.key)));
@@ -97,6 +101,7 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
     c.append(il, tags, intRow);
 
     // ---- who sees the bio, location and interests
+    c.append(group('Visibility'));
     const sw = el('label', 'switch'); const sp = el('span', '', 'Show my bio, location, interests and progression');
     sp.append(el('small', '', 'To your friends and the people in your shared trips: the bio, location and interests, and your rank, XP and achievements (on the map too). Your name and avatar are shown to them either way. Off: they see only those two.'));
     const cb = el('input'); cb.type = 'checkbox'; cb.id = 'pf-share'; cb.checked = d.share;
@@ -105,10 +110,11 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
 
     const go = el('button', 'btn primary', 'Save profile'); go.type = 'button'; go.id = 'pf-save';
     go.addEventListener('click', async () => {
-      go.disabled = true;
       const name = getName?.();
+      if (name !== undefined && !name.trim()) { say('Display name cannot be empty.'); return; }
+      go.disabled = true; go.textContent = 'Saving…'; c.setAttribute('aria-busy', 'true');
       const r = await save({ ...(name !== undefined ? { display_name: name } : {}), avatar: d.avatar, bio: d.bio, location: d.location, interests: d.interests, share_profile: d.share });
-      go.disabled = false;
+      go.disabled = false; go.textContent = 'Save profile'; c.removeAttribute('aria-busy');
       if (r.ok) { d.dirty = false; note = ''; rerender(); toast('Profile saved.'); saved?.(); } else say(r.error);
     });
     c.append(go, msg);
@@ -121,5 +127,5 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
     }
     return c;
   }
-  return { card, draft: () => ({ avatar: d.avatar, bio: d.bio, location: d.location, interests: [...d.interests], share: d.share }), reset: () => { d.dirty = false; note = ''; } };
+  return { card, draft: () => ({ avatar: d.avatar, bio: d.bio, location: d.location, interests: [...d.interests], share: d.share }), reset: () => { d.dirty = false; note = ''; }, isDirty: () => d.dirty };
 }

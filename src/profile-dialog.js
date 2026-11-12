@@ -17,7 +17,10 @@ export function createProfileDialog({ social, toast, onSaved }) {
     getName: () => (nameDraft !== null && nameDraft !== profile.display_name ? nameDraft : undefined),
   });
 
-  const closeBtn = (label = 'Close') => { const b = el('button', 'btn small', label); b.type = 'button'; b.addEventListener('click', () => dlg.close()); return b; };
+  const unsaved = () => editor.isDirty() || (nameDraft !== null && nameDraft !== profile?.display_name);
+  const leave = () => { if (unsaved() && !confirm('Discard your unsaved changes?')) return; dlg.close(); };
+  dlg.addEventListener('cancel', (e) => { if (unsaved() && !confirm('Discard your unsaved changes?')) e.preventDefault(); }); // Escape
+  const closeBtn = (label = 'Cancel') => { const b = el('button', 'btn small', label); b.type = 'button'; b.addEventListener('click', leave); return b; };
 
   function paint() {
     dlg.replaceChildren();
@@ -25,12 +28,14 @@ export function createProfileDialog({ social, toast, onSaved }) {
     if (mode === 'edit') {
       const lab = el('label', 'fr-label', 'Display name'); lab.setAttribute('for', 'pf-name');
       const name = el('input'); name.type = 'text'; name.id = 'pf-name'; name.maxLength = 40; name.autocomplete = 'off'; name.value = nameDraft ?? profile.display_name;
-      name.addEventListener('input', () => { nameDraft = name.value; });
+      name.setAttribute('aria-required', 'true');
+      name.addEventListener('input', () => { nameDraft = name.value; name.setAttribute('aria-invalid', String(!name.value.trim())); });
       const row = el('div', 'btn-row');
       const prev = el('button', 'btn small', 'Preview as others see it'); prev.type = 'button'; prev.id = 'pf-preview-btn';
       prev.addEventListener('click', () => { mode = 'preview'; paint(); });
       row.append(prev, closeBtn());
-      dlg.append(h, lab, name, editor.card(profile), row);
+      const gi = el('div', 'pf-group'); gi.append(el('h3', '', 'Identity'));
+      dlg.append(h, gi, lab, name, editor.card(profile), row);
       return;
     }
     const d = editor.draft();
