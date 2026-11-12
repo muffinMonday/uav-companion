@@ -110,5 +110,5 @@ if (chosen.length) {
   status = bad ? (r.status || 1) : 0;
 }
 if (withBrowser && browserNeeded) { const r = spawnSync(process.execPath, ['tests/run.mjs', ...BROWSER], { cwd: ROOT, stdio: 'inherit' }); status = status || (r.status ?? 1); }
-else if (browserNeeded) console.log('verdict: unit part done; browser suites still to run (--browser or npm test).');
+else if (browserNeeded) console.log(status ? 'verdict: unit suites FAILED; not done.' : 'verdict: unit part passed; browser suites still to run (--browser or npm test).');
 process.exit(status);
