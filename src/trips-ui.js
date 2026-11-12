@@ -15,6 +15,7 @@ import { onPrivacyChange } from './privacy.js';
 import { routeLinks } from './maplinks-ui.js';
 import { MAX_STOPS } from './maplinks.js';
 import { loadPrefs } from './prefs.js';
+import { initReorder } from './reorder-ui.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -217,7 +218,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     const fc = tw.get(t.id);
     const limit = getWindLimit();
     const sm = sideQuestMap(items); // each main stop's Side Quests, folded under it until it is tapped
-    const stopRow = (it, day) => {
+    const stopRow = (it, day, dragKey, parentId) => { // dragKey: the date of the day page it is on (rows there can be held and dragged)
       const row = el('button', 'plan-stop'); row.type = 'button';
       const info = dayInfo(it, t);
       const mark = el('span', 'plan-n', it.isSub ? '↳' : it.order !== undefined ? String(it.order) : '•');
@@ -238,10 +239,14 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
       }
       let line = row;
       if (cell || chip) { line = el('div', 'plan-row'); line.append(row, ...[chip, cell].filter(Boolean)); }
+      if (dragKey && it.type !== 'residence' && (it.isSub ? parentId : it.date === dragKey)) {
+        Object.assign(line.dataset, { id: it.id, scope: t.id, mode: 'date', gkey: dragKey, drag: '1' });
+        if (it.isSub) Object.assign(line.dataset, { sub: '1', parent: parentId });
+      }
       if (!kids.length || poi.sideState.expanded() !== it.id) return line;
       const group = el('div', 'plan-group');
       group.append(line);
-      for (const k of kids) { const kr = stopRow(k, day); kr.classList.add('plan-side'); group.append(kr); }
+      for (const k of kids) { const kr = stopRow(k, day, dragKey, it.id); kr.classList.add('plan-side'); group.append(kr); }
       return group;
     };
     // the days, as pages of one card: ‹ and › turn to the previous and next day
@@ -274,7 +279,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
           if (d.km >= 0.1) body.append(el('small', 'plan-km', '≈ ' + fmtDistance(d.km * 1000, units) + ' between stops'));
           if (!stops.length) body.append(el('small', 'plan-empty', 'Nothing planned'));
         }
-        for (const it of stops) body.append(stopRow(it, pg.day ? pg.day.day : undefined));
+        for (const it of stops) body.append(stopRow(it, pg.day ? pg.day.day : undefined, pg.day?.date));
         if (stops.length) {
           const fit = el('button', 'btn small', pg.day ? 'Fit map to this day' : 'Fit map to these'); fit.type = 'button';
           fit.addEventListener('click', () => poi.fitItems(stops.map((x) => x.id)));
@@ -419,6 +424,21 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   poi.setNewTripHandler((markerId) => openForm(null, { assign: markerId }));
   store.onChange(render);
   poi.sideState.onChange(render); // a card was unfolded or folded in a list
+  // Hold a stop on a day page for 1 s and drag it to another place the same day (moving between days is done in the Points of Interest tab).
+  // The rules are the list's (poi-ui.js moveStop / stepStop); the page redraws from the store.
+  const refocus = (id) => setTimeout(() => detail.querySelector(`[data-id="${CSS.escape(id)}"] .plan-stop, .plan-stop[data-id="${CSS.escape(id)}"]`)?.focus(), 60);
+  initReorder({
+    list: detail, scroller: detail.closest('.sp-body') || detail, flat: true,
+    onDrop: (d) => { poi.moveStop(d); },
+    onStep: (id, scope, mode, dir) => {
+      const row = detail.querySelector(`[data-id="${CSS.escape(id)}"][data-drag]`);
+      // a main stop steps within its day only: stepping past the first or last stop of the page would change its date
+      const mates = [...detail.querySelectorAll(`[data-drag][data-scope="${scope}"]:not([data-sub])`)].map((x) => x.dataset.id);
+      const at = mates.indexOf(id);
+      if (row?.dataset.sub !== '1' && (at < 0 || at + dir < 0 || at + dir >= mates.length)) return;
+      if (poi.stepStop(id, scope, mode, dir)) refocus(id);
+    },
+  });
   onPrivacyChange(render); // check-in switched on or off changes the rows
   render();
   return {

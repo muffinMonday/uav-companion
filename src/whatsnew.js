@@ -2,6 +2,16 @@
 // (the date is a good id): visitors who have not seen it get the dashboard opened with it, once. Keep each entry to a few short lines.
 export const WHATS_NEW = [
   {
+    id: '2026-11-12-sidequests',
+    date: '2026-11-12',
+    title: 'Side Quests',
+    items: [
+      'A Side Quest is an optional stop near a main stop. Add one from the point-check window, the edit form, or "Make Side Quest" on any marker.',
+      'They stay folded under their main stop (a +N badge on the pin, a ▾ chip on the card) until you open it.',
+      'Hold a Side Quest for a second to drag it between its siblings or onto another stop. A main stop takes its Side Quests along when you move it to another day.',
+    ],
+  },
+  {
     id: '2026-11-12-setup',
     date: '2026-11-12',
     title: 'Quick setup',

@@ -440,11 +440,14 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .visit-chip[aria-current=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);cursor:default}
 
 /* ---------- reordering saved places by holding a row ---------- */
-.poi-item{position:relative;-webkit-user-select:none;user-select:none}
-.poi-item.holding::after{content:"";position:absolute;left:0;bottom:0;height:3px;border-radius:0 3px 3px 0;background:var(--accent);animation:hold-bar var(--hold-ms,2s) linear forwards}
+.poi-item,.plan-stop{position:relative;-webkit-user-select:none;user-select:none}
+.poi-item.holding::after,.plan-stop.holding::after{content:"";position:absolute;left:0;bottom:0;height:3px;border-radius:0 3px 3px 0;background:var(--accent);animation:hold-bar var(--hold-ms,2s) linear forwards}
 @keyframes hold-bar{from{width:0}to{width:100%}}
-@media (prefers-reduced-motion: reduce){.poi-item.holding::after{animation:none;width:100%}}
+@media (prefers-reduced-motion: reduce){.poi-item.holding::after,.plan-stop.holding::after{animation:none;width:100%}}
 .poi-list li.lift-source{opacity:.35}
+.poi-list li[hidden],.plan-row[hidden],.plan-stop[hidden]{display:none}
+.plan-stop.lift-source,.plan-row.lift-source{opacity:.35}
+div.drop-line{height:3px;margin:-2px 0;border-radius:2px;background:var(--accent);pointer-events:none}
 .poi-list li.drop-line{height:3px;margin:-2px 0;border-radius:2px;background:var(--accent);list-style:none;pointer-events:none}
 .day-head.drop-only{padding:4px 8px;border:1px dashed var(--line);border-radius:8px;opacity:.85}
 .drag-ghost{position:fixed;z-index:3000;list-style:none;margin:0;pointer-events:none;opacity:.96;filter:drop-shadow(0 8px 14px rgba(0,0,0,.3));transform:scale(1.02)}

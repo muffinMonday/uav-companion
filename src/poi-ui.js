@@ -15,7 +15,7 @@ import { visitGroups, visitLabel } from './places.js';
 import { dayInfo, dayText, tripSequence, defaultParent, sideQuestPatch, mainStopPatch, sideQuestMap } from './trips.js';
 import { mapLinkIcons } from './maplinks-ui.js';
 import { MODES } from './maplinks.js';
-import { planMove, stepSlot, groupKey, addDays } from './reorder.js';
+import { planMove, planSideMove, stepSideIndex, stepSlot, groupKey, addDays } from './reorder.js';
 import { initReorder } from './reorder-ui.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer, toolBar } from './cards.js';
@@ -174,7 +174,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
           for (const k of sideMap.byParent.get(it.id) ?? []) {
             if (!visibleIds.has(k.id)) continue;
             const kr = renderItem(k, items, mode);
-            kr.classList.add('side-row'); kr.dataset.id = k.id; kr.dataset.sub = '1'; kr.dataset.scope = scope;
+            kr.classList.add('side-row'); kr.dataset.id = k.id; kr.dataset.sub = '1'; kr.dataset.scope = scope; kr.dataset.parent = it.id;
+            if (dragOk) { kr.dataset.drag = '1'; kr.dataset.mode = mode; kr.dataset.gkey = String(groupKey(it, mode)); } // held and dragged like a main card
             listEl.append(kr);
           }
         }
@@ -222,7 +223,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function applyMove(id, scope, mode, key, index) {
     const members = scopeMembers(scope);
     const targetKey = mode === 'day' && key !== 'none' ? Number(key) : key;
-    const plan = planMove({ members, mode, movedId: id, targetKey, index, trip: scope === 'none' ? null : store.getTrip(scope) });
+    const plan = planMove({ members, mode, movedId: id, targetKey, index, trip: scope === 'none' ? null : store.getTrip(scope), sides: sideQuestMap(store.items().filter((i) => (i.tripId ?? 'none') === scope)).byParent });
     if (!plan) return false;
     const res = store.setMany(plan.items);
     const m = plan.moved;
@@ -230,6 +231,31 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     toast(`Moved “${m.name}” ${where}.${res.ok ? '' : ' The browser would not store it.'}`, 10000, { label: 'Undo', run: () => { store.setMany(res.previous); toast('Move undone.', 3000); } });
     return true;
   }
+  /** Moves a Side Quest: under a main stop (`parent`, at `index` among its Side Quests) or onto a date heading (`head`). The new parent stays unfolded. */
+  function applySideMove(id, scope, { parent, index, head, key }) {
+    const items = store.items().filter((i) => (i.tripId ?? 'none') === scope);
+    const plan = planSideMove({ items, movedId: id, parentId: head ? null : parent, index, date: head ? key : undefined });
+    if (!plan) return false;
+    const res = store.setMany(plan.items);
+    if (!head) setExpanded(parent);
+    toast(`${plan.summary}.${res.ok ? '' : ' The browser would not store it.'}`, 10000, { label: 'Undo', run: () => { store.setMany(res.previous); toast('Move undone.', 3000); } });
+    return true;
+  }
+  /** A row was dropped (by the list or a day page of the Trips tab). */
+  const dropRow = ({ id, scope, mode, key, index, sub, parent, kind }) => {
+    if (sub) applySideMove(id, scope, { parent, index, head: kind === 'head', key });
+    else applyMove(id, scope, mode, key, index);
+  };
+  /** Alt + arrow on a row: one place up or down (a Side Quest: among its siblings). True when something moved. */
+  const stepRow = (id, scope, mode, dir) => {
+    const me = store.get(id);
+    if (me && isSub(me)) {
+      const pid = subParent.get(id), to = stepSideIndex(sideMap.byParent.get(pid) ?? [], id, dir);
+      return to !== null && applySideMove(id, scope, { parent: pid, index: to });
+    }
+    const slot = stepSlot(scopeMembers(scope), mode, id, dir);
+    return !!slot && applyMove(id, scope, mode, slot.key, slot.index);
+  };
   initReorder({
     list: listEl, scroller: listEl.closest('.sp-body') || listEl,
     // While a row is lifted, the trip's dates that have no markers yet appear as places to drop. They are added to the list as it is,
@@ -250,10 +276,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       }
     },
     onEnd: () => { for (const h of listEl.querySelectorAll('li.drop-only')) h.remove(); },
-    onDrop: ({ id, scope, mode, key, index }) => { applyMove(id, scope, mode, key, index); },
+    onDrop: dropRow,
     onStep: (id, scope, mode, dir) => {
-      const slot = stepSlot(scopeMembers(scope), mode, id, dir);
-      if (slot && applyMove(id, scope, mode, slot.key, slot.index)) requestAnimationFrame(() => listEl.querySelector(`li[data-id="${CSS.escape(id)}"] .poi-item`)?.focus());
+      if (stepRow(id, scope, mode, dir)) requestAnimationFrame(() => listEl.querySelector(`li[data-id="${CSS.escape(id)}"] .poi-item`)?.focus());
     },
   });
 
@@ -1413,6 +1438,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     /** For the AI import: the current markers, bulk add, and zooming to what was added. */
     items: () => store.items(), addMany, fitToItems,
     /** For the Trips tab: which main stop has its Side Quests unfolded (one at a time), and a way to hear about changes. */
+    moveStop: dropRow, stepStop: stepRow, // for the day pages of the Trips tab, which hold and drag with the same rules
     sideState: { expanded: () => expandedParent, set: setExpanded, onChange: (fn) => expandListeners.add(fn) },
   };
 }

@@ -56,7 +56,7 @@ ok((await p.locator('#poi-list li', { has: p.locator('b:text-is("Alpha")') }).lo
 ok((await shown(p, 'Snack bar')) && (await shown(p, 'Old gate')) && !(await shown(p, 'Lookout')), 'on the map only Alpha\'s Side Quests appear');
 ok((await p.locator('.leaflet-overlay-pane path[stroke-dasharray="2 6"]').count()) === 2, 'with a dotted line from each to Alpha');
 ok(await mapView(p) === view0, 'the chip does not move the map');
-ok((await p.locator('#poi-list li.side-row[data-drag]').count()) === 0, 'the nested rows cannot be dragged (yet)');
+ok((await p.locator('#poi-list li.side-row[data-drag="1"]').count()) === 2, 'the nested rows can be held and dragged like main cards');
 
 // ================= tap a card: opens the marker, folds the other card, unfolds its own
 await p.locator('#poi-list li', { has: p.locator('b:text-is("Bravo")') }).locator('.poi-item').click();

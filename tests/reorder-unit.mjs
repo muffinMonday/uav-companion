@@ -97,3 +97,59 @@ ok(JSON.stringify(R.stepSlot(g, 'date', 'A', 1)) === JSON.stringify({ key: '2026
 ok(JSON.stringify(R.stepSlot(g, 'date', 'B', 1)) === JSON.stringify({ key: '2026-11-13', index: 0 }), 'step down from the last of a day: to the top of the next day');
 ok(JSON.stringify(R.stepSlot(g, 'date', 'C', -1)) === JSON.stringify({ key: '2026-11-12', index: 2 }), 'step up from the first of a day: to the end of the previous day');
 ok(R.stepSlot(g, 'date', 'A', -1) === null && R.stepSlot(g, 'date', 'C', 1) === null, 'step up at the very top and down into "No date set": not possible');
+
+// ---------- Side Quests: moving one
+{
+  const M1 = it('M1', { date: '2026-11-12', order: 1 }), M2 = it('M2', { date: '2026-11-13', order: 1 });
+  const S1 = it('S1', { isSub: true, parentId: 'M1', date: '2026-11-12', order: 1 }), S2 = it('S2', { isSub: true, parentId: 'M1', date: '2026-11-12', order: 2 });
+  const S3 = it('S3', { isSub: true, parentId: 'M1', date: '2026-11-12', order: 3 });
+  const all = [M1, M2, S1, S2, S3];
+  const snap = snapshot(all);
+  let p = R.planSideMove({ items: all, movedId: 'S1', parentId: 'M1', index: 2 });
+  ok(p && by(p, 'S1').order === 3 && by(p, 'S2').order === 1 && by(p, 'S3').order === 2 && p.items.length === 3, 'side: S1 to the end of its siblings renumbers them (S2 1, S3 2, S1 3)');
+  ok(snapshot(all) === snap, 'side: the original markers are not changed');
+  ok(R.planSideMove({ items: all, movedId: 'S2', parentId: 'M1', index: 1 }) === null, 'side: dropping a Side Quest where it is changes nothing');
+  p = R.planSideMove({ items: all, movedId: 'S2', parentId: 'M2', index: 0 });
+  ok(by(p, 'S2').parentId === 'M2' && by(p, 'S2').date === '2026-11-13' && by(p, 'S2').order === 1 && by(p, 'S3').order === 2 && !by(p, 'S1'), 'side: adopted by M2 it takes M2\'s date, is its first Side Quest, and M1\'s remaining ones are renumbered');
+  p = R.planSideMove({ items: all, movedId: 'S1', parentId: 'M2', index: 99 });
+  ok(by(p, 'S1').order === 1 && by(p, 'S1').parentId === 'M2', 'side: an index past the end is clamped');
+  p = R.planSideMove({ items: all, movedId: 'S3', parentId: null, date: '2026-11-13' });
+  ok(!('parentId' in by(p, 'S3')) && !('order' in by(p, 'S3')) && by(p, 'S3').date === '2026-11-13', 'side: dropped on a day heading it leaves its parent and takes that date');
+  p = R.planSideMove({ items: all, movedId: 'S3', parentId: null, date: 'none' });
+  ok(!('date' in by(p, 'S3')), 'side: dropped on "No date set" its date is cleared');
+  ok(R.planSideMove({ items: all, movedId: 'M1', parentId: 'M2' }) === null && R.planSideMove({ items: all, movedId: 'S1', parentId: 'S2' }) === null && R.planSideMove({ items: all, movedId: 'S1', parentId: 'nope' }) === null, 'side: only a Side Quest can move, and only under a main stop');
+  const HOME = it('HOME', { type: 'residence' });
+  ok(R.planSideMove({ items: [...all, HOME], movedId: 'S1', parentId: 'HOME' }) === null, 'side: never under the Home marker');
+  const OTHER = it('OTHER', { tripId: 'zz', date: '2026-11-12' });
+  ok(R.planSideMove({ items: [...all, OTHER], movedId: 'S1', parentId: 'OTHER' }) === null, 'side: never under a stop of another trip');
+  // implicit parent (no parentId): the nearest main stop, so siblings come from that
+  const I1 = it('I1', { isSub: true, date: '2026-11-12' });
+  p = R.planSideMove({ items: [M1, M2, I1], movedId: 'I1', parentId: 'M1', index: 0 });
+  ok(by(p, 'I1').parentId === 'M1' && by(p, 'I1').order === 1, 'side: pinning an implicit Side Quest to a parent sets parentId and order');
+  ok(R.stepSideIndex([S1, S2, S3], 'S1', 1) === 1 && R.stepSideIndex([S1, S2, S3], 'S3', -1) === 1 && R.stepSideIndex([S1, S2, S3], 'S1', -1) === null && R.stepSideIndex([S1, S2, S3], 'S3', 1) === null, 'side: keyboard steps stay among siblings');
+
+  // a main stop that changes date takes its Side Quests along
+  const sides = new Map([['M1', [S1, S2, S3]]]);
+  p = R.planMove({ members: [M1, M2], mode: 'date', movedId: 'M1', targetKey: '2026-11-13', index: 0, trip: TRIP, sides });
+  ok(by(p, 'M1').date === '2026-11-13' && ['S1', 'S2', 'S3'].every((id) => by(p, id)?.date === '2026-11-13' && by(p, id).parentId === 'M1'), 'cascade: M1 to 13 Nov, its Side Quests get 13 Nov and keep M1 as parent');
+  p = R.planMove({ members: [M1, M2], mode: 'date', movedId: 'M1', targetKey: 'none', index: 0, trip: TRIP, sides });
+  ok(['S1', 'S2', 'S3'].every((id) => by(p, id) && !('date' in by(p, id))), 'cascade: M1 out of the itinerary, its Side Quests lose their date too');
+  const M3 = it('M3', { date: '2026-11-12', order: 2 });
+  p = R.planMove({ members: [M1, M3, M2], mode: 'date', movedId: 'M1', targetKey: '2026-11-12', index: 1, trip: TRIP, sides });
+  ok(p.items.every((x) => !['S1', 'S2', 'S3'].includes(x.id)), 'cascade: reordering within the same day leaves its Side Quests alone');
+  p = R.planMove({ members: [M1, M2], mode: 'date', movedId: 'M1', targetKey: '2026-11-13', index: 0, trip: TRIP });
+  ok(!p.items.some((x) => x.isSub), 'cascade: without `sides` nothing extra changes');
+
+  const store2 = poi.createStore();
+  const tr2 = store2.addTrip({ name: 'W', startDate: '2026-11-12', endDate: '2026-11-14' }).trip;
+  const a = store2.add({ type: 'photo', name: 'A', lat: 30, lon: 114, tripId: tr2.id, date: '2026-11-12', order: 1 }).item;
+  const b = store2.add({ type: 'photo', name: 'B', lat: 30.1, lon: 114, tripId: tr2.id, date: '2026-11-13', order: 1 }).item;
+  const s = store2.add({ type: 'photo', name: 'S', lat: 30, lon: 114.01, tripId: tr2.id, date: '2026-11-12', isSub: true, parentId: a.id, order: 1 }).item;
+  const pl = R.planSideMove({ items: store2.items(), movedId: s.id, parentId: b.id, index: 0 });
+  const rr = store2.setMany(pl.items);
+  const sNow = store2.items().find((x) => x.id === s.id);
+  ok(rr.ok && sNow.parentId === b.id && sNow.date === '2026-11-13' && sNow.isSub === true, 'store: setMany accepts a Side Quest move');
+  store2.setMany(rr.previous);
+  const sBack = store2.items().find((x) => x.id === s.id);
+  ok(sBack.parentId === a.id && sBack.date === '2026-11-12', 'store: Undo restores the Side Quest');
+}

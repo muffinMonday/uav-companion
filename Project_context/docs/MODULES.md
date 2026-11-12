@@ -23,7 +23,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `trips.js` (pure), `trips-ui.js` | Trip rules (days, warnings, status); Side Quest lookup `parentOf`, `defaultParent`, `sideQuestMap`, `sideQuests` and the conversions `sideQuestPatch`, `mainStopPatch`; Trips tab and plan screen | `poi` |
 | `tripweather.js` | Daily forecast per trip | `weather`, `privacy` |
 | `distance.js` (pure) | Nearest Home point/Hotel, nearest Home | - |
-| `places.js`, `reorder.js` (pure), `reorder-ui.js` | Same-spot visits; reorder by hold and drag | `poi`, `trips` |
+| `places.js`, `reorder.js` (pure: `planMove`, `planSideMove`, `stepSlot`, `stepSideIndex`), `reorder-ui.js` | Same-spot visits; reorder by hold and drag (Points of Interest list; `flat` mode for the Trips day pages); Side Quest moves | `poi`, `trips` |
 | `checkin.js` (pure), `checkin-ui.js` | Check-in rules (300 m, 150 m accuracy), watcher | `privacy` |
 | `countries.js`, `dates.js`, `units.js` (pure) | Helpers | - |
 
