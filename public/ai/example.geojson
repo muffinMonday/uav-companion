@@ -20,7 +20,7 @@
     {
       "type": "Feature",
       "geometry": null,
-      "properties": { "name": "东湖绿道 viewpoint", "type": "takeoff", "query": "东湖绿道, 武汉, 中国" }
+      "properties": { "name": "东湖绿道 viewpoint", "type": "takeoff", "query": "East Lake Greenway, Wuhan, China", "queryLocal": "东湖绿道, 武汉, 中国" }
     },
     {
       "type": "Feature",

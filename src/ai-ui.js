@@ -1,7 +1,7 @@
 // "Plan with an AI": copy a prompt for any assistant, paste its answer (or open a share link), preview, then add.
 // Nothing is added until the preview is confirmed. See aiimport.js for what is accepted and public/ai/ for the spec.
 import { addDays } from './dates.js';
-import { parseItinerary, linkSideQuests, isDuplicate, isRevisit, geocode, pause, encodeShare, decodeShare, MAX_LOOKUPS } from './aiimport.js';
+import { parseItinerary, linkSideQuests, isDuplicate, isRevisit, geocode, pause, encodeShare, decodeShare, LOOKUP_BATCH, BATCH_PAUSE_MS } from './aiimport.js';
 import { typeOf, toGeoJSON, dateLabel } from './poi.js';
 import { tripDatesLabel } from './trips.js';
 import { countryName } from './countries.js';
@@ -41,10 +41,9 @@ export function initAI({ map, toast, panel, poi }) {
   });
 
   // ---------- preview ----------
-  function blocked(r, lookupIndex) {
+  function blocked(r) {
     if (r.dup) return 'Already saved';
     if (r.status === 'lookup' && !getPrivacy().lookupNames) return 'Needs a name lookup. Turn it on in Privacy settings.';
-    if (r.status === 'lookup' && lookupIndex >= MAX_LOOKUPS) return `Too many to look up at once (limit ${MAX_LOOKUPS}).`;
     return '';
   }
 
@@ -52,17 +51,23 @@ export function initAI({ map, toast, panel, poi }) {
     box.replaceChildren();
     box.hidden = false;
     const existing = poi.items();
-    let lookupIndex = 0;
+    const retry = !!meta.unresolved; // the places a lookup could not find, left here to be corrected
     rows.forEach((r) => {
       r.dup = isDuplicate(r, existing);
       r.revisit = isRevisit(r, existing);
-      r.block = blocked(r, r.status === 'lookup' ? lookupIndex++ : 0);
+      r.block = blocked(r);
       if (r.block) r.include = false;
     });
     const ok = rows.filter((r) => r.status === 'ok').length, look = rows.filter((r) => r.status === 'lookup').length;
-    box.append(el('p', 'prev-sum', `${rows.length} place${rows.length === 1 ? '' : 's'} found: ${ok} with coordinates, ${look} to look up${meta.skipped ? `, ${meta.skipped} skipped (nothing to place)` : ''}.`));
-    for (const n of meta.notes) box.append(el('p', 'hint', n));
-    box.append(el('p', 'hint', meta.appExport ? 'This list came from this app.' : 'Locations from an AI can be wrong. They will be added as unverified, so you can check each one on the map.'));
+    if (retry) {
+      box.append(el('p', 'prev-sum', `${rows.length} place${rows.length === 1 ? ' was' : 's were'} not found.`));
+      box.append(el('p', 'hint', 'The rest were added. Correct the address of each one below (a street, city and country work best), then look up again, or dismiss.'));
+    } else {
+      box.append(el('p', 'prev-sum', `${rows.length} place${rows.length === 1 ? '' : 's'} found: ${ok} with coordinates, ${look} to look up${meta.skipped ? `, ${meta.skipped} skipped (nothing to place)` : ''}.`));
+      for (const n of meta.notes) box.append(el('p', 'hint', n));
+      if (look > LOOKUP_BATCH) box.append(el('p', 'hint', `The ${look} lookups run in batches of ${LOOKUP_BATCH}, with a short pause between them.`));
+      box.append(el('p', 'hint', meta.appExport ? 'This list came from this app.' : 'Locations from an AI can be wrong. They will be added as unverified, so you can check each one on the map.'));
+    }
 
     // Which trip the places go into. A Home marker never goes into one, so with only Home rows there is nothing to choose.
     if (rows.some((r) => r.type !== 'residence')) {
@@ -110,13 +115,18 @@ export function initAI({ map, toast, panel, poi }) {
       body.append(el('small', r.block ? 'pwarn' : 'pstat', r.block || ((r.status === 'ok' ? `${r.lat.toFixed(5)}, ${r.lon.toFixed(5)}` : `Will look up “${r.query}”`) + (r.revisit ? ' · another visit (you have this place on a different date)' : ''))));
       lab.append(cb, body);
       li.append(lab);
+      if (retry && r.status === 'lookup' && !r.block) {
+        const q = el('input', 'ai-q'); q.type = 'text'; q.maxLength = 200; q.value = r.query; q.setAttribute('aria-label', `Address of ${r.name || 'this place'}`);
+        q.addEventListener('input', () => { r.query = q.value.trim().slice(0, 200); });
+        li.append(q);
+      }
       list.append(li);
     });
     box.append(list);
 
     const acts = el('div', 'btn-row');
     const add = el('button', 'btn primary'); add.type = 'button'; add.id = 'ai-add';
-    const cancel = el('button', 'btn', 'Cancel'); cancel.type = 'button'; cancel.id = 'ai-cancel';
+    const cancel = el('button', 'btn', retry ? 'Dismiss' : 'Cancel'); cancel.type = 'button'; cancel.id = 'ai-cancel';
     add.addEventListener('click', () => addSelected(add, cancel));
     cancel.addEventListener('click', () => { controller?.abort(); clearPreview(); });
     acts.append(add, cancel);
@@ -124,7 +134,7 @@ export function initAI({ map, toast, panel, poi }) {
 
     function refreshCount() {
       const n = rows.filter((r) => r.include).length;
-      add.textContent = `Add ${n} marker${n === 1 ? '' : 's'}`;
+      add.textContent = retry ? `Look up ${n} again` : `Add ${n} marker${n === 1 ? '' : 's'}`;
       add.disabled = n === 0;
     }
     refreshCount();
@@ -163,14 +173,21 @@ export function initAI({ map, toast, panel, poi }) {
     const found = [], failed = [];
     const lookups = chosen.filter((r) => r.status === 'lookup');
     const bias = map.getCenter();
+    const batchPause = Number.isFinite(globalThis.__uavBatchPauseMs) ? globalThis.__uavBatchPauseMs : BATCH_PAUSE_MS; // the override is for tests
     let done = 0;
     try {
       for (const r of chosen) {
         if (r.status === 'ok') { found.push(r); continue; }
+        if (!r.query) { failed.push(r); continue; }
+        if (done > 0 && done % LOOKUP_BATCH === 0) { // a short rest between batches: the services are shared and free
+          addBtn.textContent = `Looked up ${done} of ${lookups.length}. A short pause…`;
+          await pause(batchPause, controller.signal);
+        }
         addBtn.textContent = `Looking up ${++done} of ${lookups.length}…`;
         cancelBtn.textContent = 'Stop';
-        const g = await geocode(r.query, bias, controller.signal);
-        if (g) found.push({ ...r, lat: g.lat, lon: g.lon, unverified: true }); else failed.push(r.name || r.query);
+        let g = await geocode(r.query, bias, controller.signal);
+        if (!g && r.queryLocal) { await pause(250, controller.signal); g = await geocode(r.queryLocal, bias, controller.signal); } // the place's own script
+        if (g) found.push({ ...r, lat: g.lat, lon: g.lon, unverified: true }); else failed.push(r);
         await pause(250, controller.signal);
       }
     } catch (e) {
@@ -212,11 +229,13 @@ export function initAI({ map, toast, panel, poi }) {
     }
     const unv = added.filter((a) => a.unverified).length;
     toast(`Added ${added.length} marker${added.length === 1 ? '' : 's'}${createdTrips ? ` and ${createdTrips} trip${createdTrips === 1 ? '' : 's'}` : ''}${unv ? `, ${unv} unverified: check ${unv === 1 ? 'it' : 'them'} on the map` : ''}.`
-      + `${failed.length ? ` Not found: ${failed.slice(0, 5).join(', ')}${failed.length > 5 ? '…' : ''}.` : ''}`
+      + `${failed.length ? ` ${failed.length} not found: correct ${failed.length === 1 ? 'its address' : 'their addresses'} in the panel.` : ''}`
       + `${stored ? '' : ' The browser would not store them: export to keep them.'}`, 9000);
-    text.value = '';
-    clearPreview();
-    poi.fitToItems(added);
+    if (failed.length) { // keep them in the preview, to correct and look up again
+      rows = failed.map((r) => ({ ...r, include: true }));
+      meta = { ...meta, unresolved: true, skipped: 0, notes: [] };
+      render();
+    } else { text.value = ''; clearPreview(); poi.fitToItems(added); } // fitting closes the panel on a phone: not while there is a list to correct
   }
 
   // ---------- share links ----------

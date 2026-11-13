@@ -46,7 +46,8 @@ RULES
 
 6. COORDINATES: coordinates are [longitude, latitude] in decimal degrees (WGS84), in that order, for example [114.3055, 30.5928]. Give coordinates ONLY if you are confident they are accurate for that exact place. Do not estimate, round to a city centre, or make them up. If you are not sure:
    - set "geometry": null, and
-   - add properties.query: text precise enough to find the place in a map search (venue name, street address, city, country).
+   - add properties.query: text precise enough to find the place in a map search (venue name, street address, city, country), written IN ENGLISH (the official English or romanised name), whatever language my itinerary is in.
+   - optionally add properties.queryLocal: the same place written in its own local language and script (for example Chinese characters in China), which the app tries if the English query finds nothing.
    The app will look it up and mark the result unverified for me to check.
 
 7. Do not add flight zones, permissions, legal advice or weather. The app checks the flight zones itself.
@@ -79,7 +80,7 @@ EXAMPLE OF THE REPLY
     {
       "type": "Feature",
       "geometry": null,
-      "properties": { "name": "Hubu Alley snack street", "type": "other", "query": "Hubuxiang, Wuchang District, Wuhan, China", "date": "2026-11-13", "sideQuest": true, "near": "Yellow Crane Tower" }
+      "properties": { "name": "Hubu Alley snack street", "type": "other", "query": "Hubuxiang, Wuchang District, Wuhan, China", "queryLocal": "户部巷, 武昌区, 武汉, 中国", "date": "2026-11-13", "sideQuest": true, "near": "Yellow Crane Tower" }
     }
   ]
 }

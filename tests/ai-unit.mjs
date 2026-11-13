@@ -28,6 +28,10 @@ ok(ex.rows.length === 5 && ex.rows.filter((r) => r.status === 'ok').length === 2
 ok(ex.rows[4].isSub === true && ex.rows[4].near === ex.rows[1].name && ex.rows.slice(0, 4).every((r) => !r.isSub), 'the last row of the example is a Side Quest near Yellow Crane Tower');
 ok(ex.rows.every((r) => r.unverified === true), 'AI-made content defaults to unverified');
 ok(ex.rows[0].day === 1 && ex.rows[0].order === 1 && ex.rows[3].day === null && ex.rows[3].order === null, 'day/order read when present, null when absent');
+ok(/IN ENGLISH/.test(prompt) && /queryLocal/.test(prompt) && schema.$defs.feature.properties.properties.properties.queryLocal?.type === 'string' && /queryLocal/.test(llms), 'the prompt, schema and llms.txt ask for an English query and an optional queryLocal');
+const lake = ex.rows.find((r) => /东湖/.test(r.name));
+ok(lake.query === 'East Lake Greenway, Wuhan, China' && lake.queryLocal === '东湖绿道, 武汉, 中国' && !('queryLocal' in ex.rows[0]), 'queryLocal is read beside the English query, and left out when absent');
+ok(ai.LOOKUP_BATCH === 30 && ai.BATCH_PAUSE_MS >= 1000 && !('MAX_LOOKUPS' in ai), 'lookups are done in batches with a pause, not cut off at a limit');
 
 // ---- tolerant input
 const fc = JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [114.3, 30.6] }, properties: { name: 'A' } }] });
@@ -55,8 +59,11 @@ ok(one({ name: 'Str' }, { type: 'Point', coordinates: ['114.3', '30.6'] }).rows[
 ok(one({ name: 'Nan', query: 'q' }, { type: 'Point', coordinates: ['x', null] }).rows[0].status === 'lookup', 'non-numeric coordinates fall back to the query');
 ok(one({ name: 'Line', query: 'q' }, { type: 'LineString', coordinates: [[1, 2], [3, 4]] }).rows[0].status === 'lookup', 'a non-Point geometry is ignored');
 
+const lo = one({ name: 'Only local', queryLocal: '户部巷, 武汉' }, null).rows[0];
+ok(lo.status === 'lookup' && lo.query === '户部巷, 武汉' && !('queryLocal' in lo), 'a place with only queryLocal is looked up by it');
+
 // ---- optional fields
-const f = (p) => one({ name: 'F', ...p }, pt(114, 30)).rows[0];
+const f =(p) => one({ name: 'F', ...p }, pt(114, 30)).rows[0];
 ok(f({}).day === null && f({}).order === null, 'day and order absent: null');
 ok(f({ day: 3, order: 2 }).day === 3 && f({ day: '4', order: '1' }).day === 4, 'day/order accepted as numbers or numeric strings');
 ok([0, -1, 1000, 2.5, 'abc', '', null, true, [1]].every((v) => f({ day: v }).day === null), 'invalid day values (0, -1, 1000, 2.5, text, empty, null, true, array) are dropped, not guessed');

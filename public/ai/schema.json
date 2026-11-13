@@ -61,7 +61,8 @@
             "order": { "type": "integer", "minimum": 1, "maximum": 999, "description": "Position within the day, 1 is the first stop. Optional." },
             "sideQuest": { "type": "boolean", "description": "Optional. true for an optional nearby extra (a Side Quest) rather than a place the traveller is planning to go. Never for a hotel, home or residence." },
             "near": { "type": "string", "maxLength": 80, "description": "Optional, with sideQuest: the exact name of the main stop (another feature) it is close to." },
-            "query": { "type": "string", "maxLength": 200, "description": "Searchable text for a place without coordinates: venue, address, city, country." }
+            "query": { "type": "string", "maxLength": 200, "description": "Searchable text for a place without coordinates: venue, address, city, country, in English." },
+            "queryLocal": { "type": "string", "maxLength": 200, "description": "Optional. The same place in its own local language and script, tried if the English query finds nothing." }
           }
         }
       },

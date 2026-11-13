@@ -1,5 +1,11 @@
 # Session Checkpoint
 
+## Latest: Plan with AI gaps fixed (built, tested, committed; not pushed or deployed)
+- Owner request 2026-11-13: places over the lookup limit and places with no result were dropped silently. Plan: `C:/Users/cy071/.claude/plans/i-noticed-that-the-temporal-fairy.md`.
+- Built: lookups in batches of 30 with an 8 s pause (`LOOKUP_BATCH`, `BATCH_PAUSE_MS` in `src/aiimport.js`; the 30-place block is gone); unresolved places stay in the preview with an editable address, "Look up again", "Dismiss" (`src/ai-ui.js`); English `query` plus optional `queryLocal` fallback (prompt, schema, example, llms.txt, `docs/AI.md`, F16); Photon `lang=en`.
+- Tests: `ai-unit` 66, browser `ai` 85 passed (`rain` crashed once in the 4-job run, passed alone). Full `npm test`: all passed except `live` once ("Bea's pin moves", a load flake; passes alone, 52 s). Not verified: live Photon/Nominatim, a real assistant following the new prompt, phone layout of the address boxes.
+- Next: push and `deploy:live` when the owner says so.
+
 Updated: 2026-11-13 (UI design system phases 0 to 8 done, at the top of "Latest work")
 Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Phases 1 to 6 are built, tested, committed, pushed and deployed; the work is finished apart from the owner's set-up steps below.** Standing rule from the owner: after each finished, tested phase commit, push and deploy (hosted `db push`, function deploy, `deploy:live`) and move on without asking again (memory `commit-deploy-each-phase`); it does not cover unrelated work, live checks that create real users, or secrets.
 

@@ -10,7 +10,8 @@ import { compactShare, expandShare } from './sharecompact.js';
 
 const MAX_CHARS = 2e6;
 const MAX_ROWS = 200;
-export const MAX_LOOKUPS = 30;
+export const LOOKUP_BATCH = 30;      // places looked up in a row before a pause (the services are shared and free)
+export const BATCH_PAUSE_MS = 8000;  // the pause between two batches
 const FENCE = /```(?:json|geojson)?\s*([\s\S]*?)```/i;
 const typeIds = new Set(TYPES.map((t) => t.id));
 
@@ -88,7 +89,8 @@ export function parseItinerary(text) {
     if (!f || typeof f !== 'object') { skipped++; continue; }
     const p = f.properties && typeof f.properties === 'object' ? f.properties : (f.geometry ? {} : f);
     const name = str(p.name ?? p.title, 80);
-    const query = str(p.query ?? p.address, 200);
+    const queryLocal = str(p.queryLocal, 200); // the same place in its own script: tried when the English query finds nothing
+    const query = str(p.query ?? p.address, 200) || queryLocal;
     const date = isoDate(p.date);
     const endDate = date ? isoDate(p.endDate) : null; // an end date only means something after a start date
     const type = typeIds.has(p.type) ? p.type : 'other';
@@ -100,6 +102,7 @@ export function parseItinerary(text) {
       tripRef,
       name, type, note: str(p.note ?? p.description, 500),
       day: posInt(p.day), order: posInt(p.order), date, endDate: endDate && endDate > date ? endDate : null, query,
+      ...(queryLocal && queryLocal !== query && { queryLocal }),
       unverified: appExport ? p.unverified === true : true, // anything an AI made counts as unchecked
       ...(sub && { isSub: true }),
       ...(sub && !appExport && str(p.near, 80) && { near: str(p.near, 80).trim() }),
@@ -179,7 +182,7 @@ export async function geocode(query, bias, signal) {
   try {
     const bl = bias && Number.isFinite(bias.lat) && Number.isFinite(bias.lng ?? bias.lon) ? bias : null;
     const near = bl ? `&lat=${bl.lat.toFixed(2)}&lon=${(bl.lng ?? bl.lon).toFixed(2)}` : '';
-    const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1${near}`, { signal });
+    const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1&lang=en${near}`, { signal });
     if (r.ok) {
       const f = (await r.json()).features?.[0];
       if (f) { const [lon, lat] = f.geometry.coordinates; if (Number.isFinite(lat) && Number.isFinite(lon)) return { lat, lon, label: f.properties?.name || query }; }

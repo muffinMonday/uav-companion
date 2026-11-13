@@ -115,20 +115,42 @@ const crane = saved.find((m) => m.name === 'Yellow Crane Tower'), lake = saved.f
 ok(saved.length === 4 && crane && lake, '4: both looked-up places were added (4 markers now)');
 ok(Math.abs(crane.lat - 30.5448) < 1e-4 && crane.unverified === true && crane.date === '2026-11-13' && !('day' in crane) && crane.order === 1, '4: Photon result used, marked unverified, its day 2 became 13 Nov (the trip starts 12 Nov), order kept');
 ok(Math.abs(lake.lat - 30.5701) < 1e-4 && lake.unverified === true && lake.day === undefined, '4: Nominatim fallback used when Photon finds nothing; no day because the AI gave none');
-ok(S.photon.length === 2 && S.nom.length === 1, `4: Photon asked for both, Nominatim only for the one Photon missed (${S.photon.length}, ${S.nom.length})`);
+ok(S.photon.length === 3 && S.nom.length === 2, `4: the crane is found by Photon; the lake is tried in English then in its own script, on Photon then Nominatim (${S.photon.length}, ${S.nom.length})`);
 const pq = S.photon.map((r) => new URL(r.url).searchParams.get('q'));
-ok(pq.includes('Yellow Crane Tower, Wuchang District, Wuhan, China') && pq.includes('东湖绿道, 武汉, 中国'), '4: only the place queries were sent');
+ok(pq.includes('Yellow Crane Tower, Wuchang District, Wuhan, China') && pq.includes('East Lake Greenway, Wuhan, China') && pq.includes('东湖绿道, 武汉, 中国'), '4: only the place queries were sent, the English one before the local one');
+ok(pq.indexOf('East Lake Greenway, Wuhan, China') < pq.indexOf('东湖绿道, 武汉, 中国') && S.photon.every((r) => /[?&]lang=en/.test(r.url)), '4: English first, and Photon is asked for English labels');
 ok(S.photon.every((r) => /[?&]lat=-?\d+\.\d{2}&lon=-?\d+\.\d{2}/.test(r.url) && /limit=1/.test(r.url)), '4: the map position sent as a bias is rounded to 2 decimals: ' + S.photon[0].url.replace(/^.*\/api\//, ''));
-const lakePhoton = S.photon.find((r) => /%E4%B8%9C/.test(r.url)).t;
-ok(S.nom[0].t - lakePhoton >= 1000, `4: Nominatim is called at least 1 s after the previous request (${S.nom[0].t - lakePhoton} ms)`);
+const lakePhoton = S.photon.find((r) => /%E4%B8%9C/.test(r.url)).t, lakeNom = S.nom.find((r) => /%E4%B8%9C/.test(r.url)).t;
+ok(lakeNom - lakePhoton >= 1000 && S.nom[1].t - S.nom[0].t >= 1000, `4: Nominatim is called at least 1 s after the previous request (${lakeNom - lakePhoton} ms)`);
 const allSent = S.photon.map((r) => r.url).concat(S.nom.map((r) => r.url)).join(' ');
 ok(!/Riverside|Tianhe|Check-in/.test(decodeURIComponent(allSent)), '4: names and notes of other places were not sent');
 
 // ============ 5. a place that cannot be found
 S.photonFn = null; S.nomFn = null;
 await preview(p, fc(feat('Findable', {}, 114.5, 30.7), feat('Ghost Cafe', { query: 'Ghost Cafe Nowhere Street' }, null)));
-await p.click('#ai-add'); await p.waitForFunction(() => !document.getElementById('ai-add'), null, { timeout: 15000 });
-ok(/Not found: Ghost Cafe/.test(await toast(p)) && (await pois(p)).some((m) => m.name === 'Findable') && !(await pois(p)).some((m) => m.name === 'Ghost Cafe'), '5: a place nobody can find is reported, and the rest is still added');
+await p.click('#ai-add'); await p.waitForFunction(() => /Look up 1 again/.test(document.getElementById('ai-add')?.textContent || ''), null, { timeout: 15000 });
+ok(/1 not found/.test(await toast(p)) && (await pois(p)).some((m) => m.name === 'Findable') && !(await pois(p)).some((m) => m.name === 'Ghost Cafe'), '5: a place nobody can find is reported, and the rest is still added');
+ok(await p.isVisible('#ai-preview') && (await rowsText(p)).length === 1 && /Ghost Cafe/.test((await rowsText(p))[0]) && (await p.inputValue('#ai-preview .ai-q')) === 'Ghost Cafe Nowhere Street' && /Dismiss/.test(await p.textContent('#ai-cancel')), '5: the preview stays open with only the unresolved place and its editable address');
+ok((await p.inputValue('#ai-text')) !== '', '5: the pasted answer is kept while places are unresolved');
+S.photonFn = (q) => (/Ghost Cafe Real/.test(q) ? [30.8, 114.6] : null);
+await p.fill('#ai-preview .ai-q', 'Ghost Cafe Real Street'); await p.click('#ai-add');
+await p.waitForFunction(() => !document.getElementById('ai-add'), null, { timeout: 15000 });
+const ghost = (await pois(p)).find((m) => m.name === 'Ghost Cafe');
+ok(ghost && Math.abs(ghost.lat - 30.8) < 1e-4 && ghost.unverified === true && !(await p.isVisible('#ai-preview')) && (await p.inputValue('#ai-text')) === '', '5: after the address is corrected and looked up again, the place is added and the preview closes');
+
+// ============ 5b. more lookups than one batch: nothing is dropped, only the unfound one is listed
+await p.evaluate(() => { globalThis.__uavBatchPauseMs = 300; });
+S.photonFn = (q) => (/Bulk 7$/.test(q) ? null : [30.7 + Math.random() * 0.01, 114.7 + Math.random() * 0.01]);
+S.nomFn = null;
+const before5 = (await pois(p)).length;
+await preview(p, fc(...Array.from({ length: 35 }, (_, i) => feat(`Bulk ${i + 1}`, { query: `Bulk ${i + 1}` }, null))));
+ok((await p.$$eval('#ai-preview .prow input:disabled', (c) => c.length)) === 0 && /35 places found/.test(await p.textContent('.prev-sum')), '5b: 35 lookups are all selectable, none locked by a limit');
+await p.click('#ai-add');
+await p.waitForFunction(() => /Look up 1 again/.test(document.getElementById('ai-add')?.textContent || ''), null, { timeout: 90000 });
+ok((await pois(p)).length === before5 + 34, '5b: 34 of 35 were added across two batches');
+ok((await rowsText(p)).length === 1 && /Bulk 7/.test((await rowsText(p))[0]), '5b: the one place not found is the one listed');
+await p.click('#ai-cancel'); await p.waitForTimeout(300);
+ok(!(await p.isVisible('#ai-preview')), '5b: Dismiss closes the list');
 
 // ============ 6. stopping a lookup
 S.delay = 4000;
@@ -276,7 +298,7 @@ saved = await pois(p);
 const crane2 = saved.find((m) => m.name === 'Yellow Crane Tower'), hubu = saved.find((m) => m.name === 'Hubu Alley snack street');
 ok(saved.length === 5 && crane2 && hubu, '15: all five were added');
 ok(hubu.isSub === true && hubu.parentId === crane2.id && !('isSub' in crane2) && hubu.date === '2026-11-13', '15: the Side Quest is stored as one, hung from the main stop its "near" names');
-ok(S.photon.length === 3, '15: only the three place queries were sent (' + S.photon.length + ')');
+ok(S.photon.length === 4, '15: only the place queries were sent: three places, one of them tried a second time in its local script (' + S.photon.length + ')');
 await S.ctx.close();
 
 console.log('errors:', errs.length ? errs : 'none');

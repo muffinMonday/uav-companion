@@ -294,6 +294,7 @@ textarea{resize:vertical;min-height:60px}
 .prev-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px;max-height:300px;overflow-y:auto}
 .prow{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer}
 .prow input{margin-top:3px;accent-color:var(--accent)}
+.prev-list .ai-q{width:100%;box-sizing:border-box;margin-top:4px}
 .pbody{min-width:0;display:grid}
 .pbody b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pbody small{color:var(--muted)}

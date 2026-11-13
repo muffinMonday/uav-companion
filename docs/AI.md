@@ -28,7 +28,8 @@ The format is in `public/ai/` and served from the site root: `ai/prompt.md` (the
 | `trip` (top level, not per place) | **no** | `{ name, country?, startDate, endDate, description? }` (the dates are required to create the trip; the app asks for them if they are missing); every place in the reply is put in this trip (a Home marker is not). `country` is a name or ISO code from the standard list |
 | `properties.sideQuest` | no | `true` for an optional nearby extra (a Side Quest), not a place the traveller plans to go. Never for `hotel`, `home` or `residence` |
 | `properties.near` | no | with `sideQuest`: the exact name of the main stop (another feature) it is close to; without a match the app picks the nearest main stop of the trip |
-| `properties.query` | when `geometry` is `null` | text to search: venue, address, city, country |
+| `properties.query` | when `geometry` is `null` | text to search: venue, address, city, country, **in English** |
+| `properties.queryLocal` | no | the same place in its local language and script; tried if the English query finds nothing |
 
 `home` is the **drone's home point** (where flights start and return to). `residence` is the **traveller's own home**; an AI should add one only if the itinerary asks for it, and never guess an address. The app keeps `residence` markers private: they are left out of share links and automatic weather and elevation lookups.
 
@@ -46,7 +47,7 @@ Besides the zone check, each waypoint shows its straight-line distance to the ne
 Language models often return plausible but wrong coordinates. The prompt tells the AI to give coordinates only when it is confident, and otherwise to set `geometry` to `null` and give a `query`. Then:
 
 - A place **with coordinates** is added as given, marked unverified. A swapped latitude and longitude (an impossible latitude) is corrected and reported; `[0, 0]` is treated as missing.
-- A place **with only a query** is looked up by name, if the person has turned on **Privacy settings > Place lookup**. It is off by default because it sends the names to a third party (Photon, then Nominatim). Lookup runs only when **Add** is pressed, at most 30 places at a time, and can be stopped. Looked-up places are marked unverified.
+- A place **with only a query** is looked up by name, if the person has turned on **Privacy settings > Place lookup**. It is off by default because it sends the names to a third party (Photon, then Nominatim). Lookup runs only when **Add** is pressed, in batches of 30 places with a short pause (8 s) between batches, so a long reply is not cut off, and can be stopped. The English `query` is tried first, then `queryLocal` (the same place in its local script) if it finds nothing. Looked-up places are marked unverified. Places that return no result stay in the preview, each with an editable address, so the person can correct them and press **Look up again** (or dismiss); the places that were found are added at once.
 - Everything is previewed first. Places already saved (same name within about 30 m) are flagged and unticked.
 
 The app never trusts an AI to know the flight zones. Each marker's zone status is checked live from the zone data when its window opens.

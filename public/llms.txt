@@ -15,7 +15,7 @@ Key rules, in short:
 - Each Feature has properties.name (required) and optionally type (home, hotel, takeoff, landing, photo, train, airport, hazard, residence, other), note, date and endDate (YYYY-MM-DD with the year; endDate is the last date of a multi-day stay), day (itinerary day, 1 = first) and order (position within the day). date, endDate, day and order are all optional: omit them when unknown, and never guess a year.
 - If the whole itinerary is one trip, add a top-level "trip" object ({name, country, startDate, endDate, description}; name is required, and so are the dates whenever the itinerary has them; the app asks the person for dates you leave out). Give a day number only when there are no dates: the app works the day out from the dates. The app creates the trip and puts every place in it except a residence.
 - "home" is the drone's home point (where flights start and return to). "residence" is the traveller's own home, only if the itinerary asks for it. Do not confuse them.
-- Coordinates are [longitude, latitude] (WGS84), and only when accurate for that exact place. Never estimate or invent them. If unsure, set geometry to null and give properties.query (venue, address, city, country); the app looks it up and marks the result unverified.
+- Coordinates are [longitude, latitude] (WGS84), and only when accurate for that exact place. Never estimate or invent them. If unsure, set geometry to null and give properties.query (venue, address, city, country, in English) and optionally properties.queryLocal (the same place in its local script, tried if English finds nothing); the app looks it up and marks the result unverified.
 
 ## About the data and privacy
 
