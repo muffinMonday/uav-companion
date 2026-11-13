@@ -1,6 +1,6 @@
 # HTML and main.js Refactoring — Backlog and Implementation Plan
 
-**Status:** Phase 0, duplicate-ID correction and Phase 1 complete and verified. Phases 2–5 not implemented. Authorized publication is in progress.
+**Status:** Phase 0, duplicate-ID correction and Phase 1 complete, verified, committed, pushed and deployed. Phases 2–5 not implemented.
 
 **Decision date:** 2026-11-13.
 
@@ -280,3 +280,13 @@ Final screenshot gate:
 - Copies: `screenshot-manifest.json`, `screenshot-diff.json`, `screenshot-summary.json` and UTF-8 capture/comparison logs in the ignored evidence directory. `verification.json` records production HTML equivalence ignoring CR characters, unchanged runtime/dependency hashes and no implementation changes after tests.
 
 **Phase 1 complete; all Phase 1 gates passed.** The 41-line shell, eight fragments, compiler and registered tests are implemented and verified. The original duplicate-ID correction is intact. Minimal AGENTS/MODULES status corrections keep documentation accurate; full Phase 3/4 work is still pending. Phase 2 has not started. Owner subsequently authorized commit/push/deploy of this release and a Claude handover; publication results follow after success. Original :5173 development server remains running, and integration-test servers/builds/caches were disposed of.
+
+## 12. Publication and Claude handover (2026-11-14)
+
+- Owner explicitly authorized commit, push and deploy after Phase 1 verification, then requested a continuation prompt for Claude.
+- Source commit **`97d6df7`** (`Extract static HTML components with Vite assembly`) pushed to `origin/main`. It includes Phase 0 documentation, the verified duplicate-ID prerequisite, HTML extraction/compiler/tests and documentation. Generated test outputs, `.env*.local`, `dist/` and screenshot evidence were excluded.
+- **`npm run deploy:live` passed**, building with sign-in enabled and stripping/checking local-only data before publication. Published `gh-pages` commit **`dc4e2a7563d3f19adf202bad5ec46e29d69704ad`**. No migrations or edge functions were changed/deployed.
+- Live site: **`https://muffinmonday.github.io/uav-companion/`**. Verified HTTP 200 and exact SHA-256 matches for live HTML and all four head-referenced JS/CSS files: `index-DtUDN2mI.js`, `core-C-k915lv.js`, `supabase-CyqhLg5p.js`, `index-CidB6qNd.css`. This is the account-enabled release build; its configuration-dependent JS hashes differ from the unconfigured production baseline as expected.
+- Live guest-browser smoke passed: coverage initialized, sign-in form/cloud UI present, no duplicate IDs or include markers, both status lines populated and equal, zero page exceptions. No sign-in submission, real-account mutation or hosted backend test; external services were blocked in this browser check. Evidence: `tests/out/refactor-phase1-20261114/{live-verification.json,live-smoke.json,live-guest.png,deploy-live.log}` (ignored).
+- Existing acceptance evidence remains: build; 48 unit / 106 total suites passed; 298/298 byte-identical pre/post-extraction screenshots. Implementation hashes were unchanged after those tests. Follow-up publication/checkpoint edits are documentation only.
+- **Next:** Claude implements Phase 2 only when the owner submits/authorizes the continuation prompt. Read the repository startup rules and current Git state first, then the current `main.js` and section 9's dependency audit/extraction proposal. Preserve the Phase 1 compiler/fragments/fixture and duplicate-ID fix. Use `refactor-phase1-20261114` as the visual before set. Stop after Phase 2 validation; this release request does not authorize future phases, commits/pushes/deployments or database changes.
