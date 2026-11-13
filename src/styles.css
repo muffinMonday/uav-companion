@@ -66,7 +66,7 @@ textarea{resize:vertical;min-height:60px}
 .select-row{display:flex;gap:8px}
 .select-row select{flex:1;min-width:0}
 .select-row .btn{flex:none}
-.field small,.switch small{color:var(--muted);font-weight:var(--fw-regular)}
+.field small,.switch small{color:var(--muted);font-weight:var(--fw-regular);font-size:var(--fs-meta)}
 .check-row{display:flex;align-items:flex-start;gap:8px;font-size:var(--fs-small);cursor:pointer}
 .check-row input{margin-top:2px;flex:none}
 .switch{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 0;cursor:pointer}
@@ -806,7 +806,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .pop .dist-wrap .dist-row{flex:1 1 150px;margin:0;padding:5px 9px;gap:8px}
 .pop .dist-wrap .dist-row+.dist-row{margin-top:0}
 .pop .dist-wrap .dist-v{font-size:var(--fs-body)}
-.pop .dist-wrap .dist-txt small{font-size:var(--fs-micro)}
+.pop .dist-wrap .dist-txt small{font-size:var(--fs-meta)}
 .pop .dist-wrap .stats-note,.pop .dist-wrap .dist-empty{flex:1 1 100%}
 
 /* ---------- motion, part 2: leaving, and new rows (not with "reduce motion") ---------- */
