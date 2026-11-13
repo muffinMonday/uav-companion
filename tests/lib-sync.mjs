@@ -5,7 +5,7 @@ export function makeCloud() {
   const versions = new Map(); // user → [{ rev, doc, ... }]
   let tick = 0;
   const stamp = () => new Date(Date.UTC(2026, 10, 11, 12, 0, tick++)).toISOString();
-  const brief = (r) => ({ rev: r.rev, updated_at: r.updated_at, device: r.device, markers: r.doc.items?.length ?? 0, trips: r.doc.trips?.length ?? 0 });
+  const brief = (r) => ({ rev: r.rev, updated_at: r.updated_at, device: r.device, markers: r.doc.items?.length ?? 0, trips: r.doc.trips?.length ?? 0, settings: r.doc.settings ?? null });
   const server = {
     rows, versions, calls: [], failNext: null,
     adapter(user = { email: 'a@example.test' }, { signedIn = true } = {}) {

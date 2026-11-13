@@ -3,20 +3,21 @@
 //
 // Adapter: getSession() → { email } | null; signIn(email); signOut(); info() → { rev, updated_at, device, markers, trips } | null;
 //   fetch() → { doc, rev, updated_at, device } | null; save(doc, baseRev, device, force) → { status:'ok'|'conflict', rev, ... };
-//   listVersions(); restore(rev); remove().
+//   listVersions(); restore(rev); remove(). info() and fetch().doc may carry `settings` ({ theme, themeAt }, see core.js mergeSettings).
+// `settings` option: { get() -> { theme, themeAt } | null, apply(value) } for the synced settings; each is last-writer-wins and never causes a question.
 //
 // Status: 'off' (no adapter or not signed in), 'idle', 'syncing', 'synced', 'ask' (waiting for the user's choice), 'error'.
 
-import { buildDoc, decide, diffDocs, keepLocalCheckins, counts, sameContent } from './core.js';
+import { buildDoc, decide, diffDocs, keepLocalCheckins, counts, sameContent, contentSig, mergeSettings } from './core.js';
 
 const KEY = 'uavzones.v1.sync';
 const DEBOUNCE_MS = 2500;
 const SHARED_DEBOUNCE_MS = 30000; // a shared-trip change applied from the server is uploaded to the cloud copy later, and with the next ones together
 
-export function createSync({ store, adapter, storage = globalThis.localStorage, device = 'Browser', includeCheckins = () => false, backup = null, debounceMs = DEBOUNCE_MS, now = () => new Date().toISOString() }) {
+export function createSync({ store, adapter, storage = globalThis.localStorage, device = 'Browser', includeCheckins = () => false, settings = null, backup = null, debounceMs = DEBOUNCE_MS, now = () => new Date().toISOString() }) {
   const listeners = new Set();
-  let state = { baseRev: null, dirty: false, lastSyncedAt: null };
-  try { const s = JSON.parse(storage?.getItem(KEY) || 'null'); if (s && typeof s === 'object') state = { baseRev: Number.isFinite(s.baseRev) ? s.baseRev : null, dirty: !!s.dirty, lastSyncedAt: typeof s.lastSyncedAt === 'string' ? s.lastSyncedAt : null }; } catch { /* start fresh */ }
+  let state = { baseRev: null, dirty: false, lastSyncedAt: null, baseSig: null }; // baseSig: fingerprint of the markers and trips as last synced
+  try { const s = JSON.parse(storage?.getItem(KEY) || 'null'); if (s && typeof s === 'object') state = { baseRev: Number.isFinite(s.baseRev) ? s.baseRev : null, dirty: !!s.dirty, lastSyncedAt: typeof s.lastSyncedAt === 'string' ? s.lastSyncedAt : null, baseSig: typeof s.baseSig === 'string' ? s.baseSig : null }; } catch { /* start fresh */ }
 
   let status = adapter ? 'idle' : 'off';
   let session = null, error = null, pending = null, applying = false, timer = null, running = null, changes = 0, stopped = false;
@@ -25,24 +26,52 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
   const snapshot = () => ({ status, session, error, pending, baseRev: state.baseRev, dirty: state.dirty, lastSyncedAt: state.lastSyncedAt });
   const emit = () => listeners.forEach((fn) => fn(snapshot()));
   const set = (s, extra = {}) => { status = s; error = extra.error ?? null; pending = extra.pending ?? null; emit(); };
-  const localDoc = () => buildDoc({ items: store.items(), trips: store.trips(), includeCheckins: includeCheckins() });
+  const localDoc = () => buildDoc({ items: store.items(), trips: store.trips(), includeCheckins: includeCheckins(), settings: settings?.get() });
   const hasData = () => store.items().length + store.trips().length > 0;
   const fail = (e) => { set('error', { error: String(e?.message || e) }); };
 
+  /** Settings: the newer of the two wins. Applies the cloud's at once when it is newer; returns true when this device's are newer (the cloud copy needs them). */
+  function reconcileSettings(cloudSettings) {
+    if (!settings) return false;
+    const m = mergeSettings(settings.get(), cloudSettings);
+    if (m.from === 'cloud') { try { settings.apply(m.value); } catch { /* a settings problem must not stop the sync */ } }
+    return m.from === 'local';
+  }
+
   function applyCloud(res) {
-    applying = true;
-    try { store.replaceAll(includeCheckins() ? res.doc.items : keepLocalCheckins(res.doc.items, store.items()), res.doc.trips); } finally { applying = false; }
-    state = { baseRev: res.rev, dirty: false, lastSyncedAt: now() };
+    const items = includeCheckins() ? res.doc.items : keepLocalCheckins(res.doc.items, store.items());
+    if (!sameContent({ items: store.items(), trips: store.trips() }, { items, trips: res.doc.trips })) { // a change of settings only does not redraw the markers
+      applying = true;
+      try { store.replaceAll(items, res.doc.trips); } finally { applying = false; }
+    }
+    state = { baseRev: res.rev, dirty: false, lastSyncedAt: now(), baseSig: contentSig(res.doc) };
     persist();
+    return reconcileSettings(res.doc.settings); // true: this device's settings are newer than the copy just taken
   }
 
   async function push(force) {
-    const mark = changes, doc = localDoc();
-    const r = await adapter.save(doc, force ? (await adapter.info())?.rev ?? null : state.baseRev, device, force);
+    const mark = changes;
+    let base = state.baseRev;
+    if (force) { const cur = await adapter.info(); base = cur?.rev ?? null; reconcileSettings(cur?.settings); } // keep the cloud's settings if they are newer
+    const doc = localDoc();
+    const r = await adapter.save(doc, base, device, force);
     if (r.status === 'conflict') return r;
-    state = { baseRev: r.rev, dirty: changes !== mark, lastSyncedAt: now() }; // edits made while the save was in flight stay marked
+    state = { baseRev: r.rev, dirty: changes !== mark, lastSyncedAt: now(), baseSig: contentSig(doc) }; // edits made while the save was in flight stay marked
     persist();
     return r;
+  }
+
+  /** Uploads this device's settings alone: the cloud copy's markers and trips are taken as they are and only `settings` changes. No question, no dirty flag; once more if the cloud moved meanwhile. */
+  async function pushSettings() {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const got = await adapter.fetch();
+      if (!got) return; // no cloud copy: the first real upload carries the settings
+      if (!reconcileSettings(got.doc.settings)) return; // not newer here after all
+      const r = await adapter.save({ ...got.doc, settings: buildDoc({ settings: settings.get() }).settings }, got.rev, device, false);
+      if (r.status === 'conflict') continue;
+      if (state.baseRev === got.rev) { state = { ...state, baseRev: r.rev }; persist(); } // a real pending pull (another baseRev) stays visible
+      return;
+    }
   }
 
   async function askUser(cloud) {
@@ -56,13 +85,23 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
     session = await adapter.getSession();
     if (!session) { set('off'); return; }
     const cloud = await adapter.info();
-    const action = decide({ hasData: hasData(), dirty: state.dirty, baseRev: state.baseRev }, cloud);
-    if (action === 'nothing' || action === 'in-sync') { state.lastSyncedAt = state.lastSyncedAt ?? now(); persist(); set('synced'); return; }
-    if (action === 'pull') { applyCloud(await adapter.fetch()); set('synced'); return; }
+    const settingsNewer = reconcileSettings(cloud?.settings); // before anything else, and with no question: also while one is waiting
+    let action = decide({ hasData: hasData(), dirty: state.dirty, baseRev: state.baseRev }, cloud);
+    if (action === 'ask' && state.dirty && state.baseSig && cloud.rev > state.baseRev) {
+      // The cloud copy moved on, but if its markers and trips are what we last synced, only its settings changed (another device): our changes can go up on top of it.
+      const got = await adapter.fetch();
+      if (got && contentSig(got.doc) === state.baseSig) { state = { ...state, baseRev: got.rev }; persist(); action = 'push'; }
+    }
+    if (action === 'nothing' || action === 'in-sync') {
+      state.lastSyncedAt = state.lastSyncedAt ?? now(); persist();
+      if (action === 'in-sync' && settingsNewer) await pushSettings();
+      set('synced'); return;
+    }
+    if (action === 'pull') { const newer = applyCloud(await adapter.fetch()); set('synced'); if (newer) schedule(); return; }
     if (action === 'ask') {
       // Identical content on both sides (an upload that reached the server but whose answer was lost, or the same data on two devices): nothing to choose.
       const got = state.baseRev == null ? await adapter.fetch() : null;
-      if (got && sameContent(localDoc(), got.doc)) { state = { baseRev: got.rev, dirty: false, lastSyncedAt: now() }; persist(); set('synced'); return; }
+      if (got && sameContent(localDoc(), got.doc)) { state = { baseRev: got.rev, dirty: false, lastSyncedAt: now(), baseSig: contentSig(got.doc) }; persist(); reconcileSettings(got.doc.settings); if (settingsNewer) await pushSettings(); set('synced'); return; }
       await askUser(cloud); return;
     }
     const r = await push(false); // push, push-first
@@ -102,6 +141,13 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
     /** Look for a session (a returning visit, or coming back from the email link) and sync if there is one. */
     start: () => sync(),
     sync,
+    /** The user changed a synced setting here: upload it after the usual pause. */
+    noteSettings: () => schedule(),
+    /** A cheap look at the cloud copy's settings only (for a tab that comes back to the front): adopts newer ones now, and schedules the upload of ours if they are newer. Never asks anything. */
+    async checkSettings() {
+      if (!adapter || !session || !settings || stopped || running || status === 'ask' || status === 'syncing') return;
+      try { const cloud = await adapter.info(); if (cloud && reconcileSettings(cloud.settings)) schedule(); } catch { /* try again at the next visit */ }
+    },
     async signIn(email) { try { await adapter.signIn(email); return { ok: true }; } catch (e) { return { ok: false, error: String(e?.message || e) }; } },
     /**
      * Signs out. With `wipe`, this device's markers and trips are removed afterwards so the next person to sign in here does not inherit them (the data
@@ -118,7 +164,7 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
         if ((unsynced || checkins) && !force) { schedule(); return { ok: false, reason: unsynced ? 'unsynced' : 'checkins' }; }
         if ((unsynced || checkins) && backup) await backup('device', buildDoc({ items: store.items(), trips: store.trips(), includeCheckins: true }));
       }
-      await adapter.signOut(); session = null; state = { baseRev: null, dirty: false, lastSyncedAt: null }; persist();
+      await adapter.signOut(); session = null; state = { baseRev: null, dirty: false, lastSyncedAt: null, baseSig: null }; persist();
       if (wipe) { applying = true; try { store.replaceAll([], []); } finally { applying = false; } }
       set('off');
       return { ok: true };
@@ -156,7 +202,7 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
     /** Deletes the cloud copy and its versions; this device keeps its data and the next change uploads it again. */
     async deleteCloud() {
       await adapter.remove();
-      state = { baseRev: null, dirty: false, lastSyncedAt: null };
+      state = { baseRev: null, dirty: false, lastSyncedAt: null, baseSig: null };
       persist(); set('synced');
     },
     async stop() { stopped = true; clearTimeout(timer); await running; },

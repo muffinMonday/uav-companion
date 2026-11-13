@@ -18,13 +18,34 @@
 export const DOC_VERSION = 1;
 const MAX_DEVICE = 80;
 
-/** The document that goes to the cloud: the markers and trips (check-in positions only if the user chose to include them). */
-export function buildDoc({ items = [], trips = [], includeCheckins = false }) {
-  return {
+/** The document that goes to the cloud: the markers and trips (check-in positions only if the user chose to include them), and the synced settings when the user has chosen any. */
+export function buildDoc({ items = [], trips = [], includeCheckins = false, settings = null }) {
+  const doc = {
     v: DOC_VERSION,
     items: items.map((i) => { if (includeCheckins || !i.checkin) return i; const { checkin, ...rest } = i; return rest; }), // eslint-disable-line no-unused-vars
     trips: trips.slice(),
   };
+  const st = cleanSettings(settings);
+  if (st) doc.settings = st; // optional and additive: the document stays version 1, and sameContent / diffDocs ignore it
+  return doc;
+}
+
+const THEMES = ['system', 'light', 'dark']; // the same list as prefs.js (settings are synced as chosen, validated again on arrival)
+/** The synced settings { theme, themeAt } if they are valid, else null. A time in the future (a wrong clock) counts as now. */
+export function cleanSettings(s, now = Date.now()) {
+  if (!s || typeof s !== 'object' || !THEMES.includes(s.theme) || !Number.isFinite(s.themeAt) || s.themeAt <= 0) return null;
+  return { theme: s.theme, themeAt: Math.min(s.themeAt, now) };
+}
+
+/** Each setting is last-writer-wins by its time. Returns { from: 'local' | 'cloud' | 'none', value }: 'cloud' = take the cloud's, 'local' = the cloud needs ours, 'none' = nothing to do. A missing or invalid side loses; equal times change nothing. */
+export function mergeSettings(local, cloud, now = Date.now()) {
+  const l = cleanSettings(local, now), c = cleanSettings(cloud, now);
+  if (!l && !c) return { from: 'none', value: null };
+  if (!c) return { from: 'local', value: l };
+  if (!l) return { from: 'cloud', value: c };
+  if (c.themeAt > l.themeAt) return { from: 'cloud', value: c };
+  if (l.themeAt > c.themeAt) return { from: 'local', value: l };
+  return { from: 'none', value: l };
 }
 
 export const counts = (doc) => ({ markers: Array.isArray(doc?.items) ? doc.items.length : 0, trips: Array.isArray(doc?.trips) ? doc.trips.length : 0 });
@@ -34,10 +55,17 @@ const canon = (v) => {
   if (v && typeof v === 'object') return Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])]));
   return v;
 };
+const norm = (d) => JSON.stringify(canon({ items: [...(d?.items ?? [])].sort((x, y) => String(x.id).localeCompare(String(y.id))), trips: [...(d?.trips ?? [])].sort((x, y) => String(x.id).localeCompare(String(y.id))) }));
 /** Do two documents hold the same markers and trips (the order of the lists does not matter)? */
-export function sameContent(a, b) {
-  const norm = (d) => JSON.stringify(canon({ items: [...(d?.items ?? [])].sort((x, y) => String(x.id).localeCompare(String(y.id))), trips: [...(d?.trips ?? [])].sort((x, y) => String(x.id).localeCompare(String(y.id))) }));
-  return norm(a) === norm(b);
+export function sameContent(a, b) { return norm(a) === norm(b); }
+
+/** A short fingerprint of the markers and trips (not the settings): lets a device see that the cloud copy only changed in its settings since it last synced. */
+export function contentSig(doc) {
+  const t = norm(doc); let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < t.length; i++) { const c = t.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 }
 
 /** What to do. `local`: { hasData, dirty, baseRev }; `cloud`: the cloud copy's info ({ rev, ... }) or null. */

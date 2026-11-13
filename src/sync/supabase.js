@@ -16,7 +16,7 @@ export async function createSupabaseAdapter({ url = import.meta.env?.VITE_SUPABA
     async signOut() { await sb.auth.signOut(); },
     onAuthChange(fn) { const { data } = sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') fn(event); }); return () => data.subscription.unsubscribe(); },
     async info() {
-      const { data, error } = await sb.from('user_data').select('rev, updated_at, device, markers, trips').maybeSingle();
+      const { data, error } = await sb.from('user_data').select('rev, updated_at, device, markers, trips, settings:doc->settings').maybeSingle();
       if (error) throw new Error(error.message);
       return data ? { ...data, rev: Number(data.rev) } : null;
     },

@@ -5,7 +5,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 ## Map and zones
 | File | Responsibility | Depends on |
 |---|---|---|
-| `map.js` | Leaflet map, four OSM-family basemaps, scale, zone layer | `config.js`, `prefs.js` |
+| `map.js` | Leaflet map, four OSM-family basemaps (`baseTiles()` is the one place a dark tile source would plug in; dark today = CSS filter on `.base-tiles`), scale, zone layer | `config.js`, `prefs.js` |
 | `config.js` | Data base URL (`VITE_DATA_BASE_URL`) | - |
 | `zones.js` (pure), `pointcheck.js` | Zones at a point from PMTiles; verdict wording by region semantics | pmtiles, vector-tile |
 | `holdcheck.js` | 2 s hold, right-click, Enter to check a spot | - |
@@ -38,8 +38,8 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 ## Accounts, social, shared trips (need `VITE_SUPABASE_*`)
 | File | Responsibility | Interface |
 |---|---|---|
-| `sync/core.js` (pure) | Cloud-copy rules: `decide`, `buildDoc`, `diffDocs` | - |
-| `sync/engine.js` | Acts on the rules through an adapter; state in `uavzones.v1.sync` | adapter |
+| `sync/core.js` (pure) | Cloud-copy rules: `decide`, `buildDoc`, `diffDocs`, synced settings (`cleanSettings`, `mergeSettings`), `contentSig` | - |
+| `sync/engine.js` | Acts on the rules through an adapter; state in `uavzones.v1.sync`; optional `settings` hooks (theme: adopt newer, upload ours alone, `checkSettings` on tab focus) | adapter |
 | `sync/supabase.js` | Real adapter; dynamic-imports supabase-js; `configured()` | `client` |
 | `sync-ui.js` | Cloud copy card (status, sync, versions), sign-in form and sign-out flow, conflict prompt; returns the handle used below | `initSyncUI` |
 | `account-ui.js` (also the delete-account dialog) | Account button (panel header and rail) and its popover: guest note and sign-in, or name, friend code, sync state, Edit profile, Friends, Sign out | handle |

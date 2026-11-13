@@ -386,7 +386,7 @@ System design: `ARCHITECTURE.md`; build and deploy: `DEVELOPMENT.md`; adding a r
 9. No offline support yet (see section 5).
 10. (Withdrawn: the earlier prototype was removed from the repo.)
 11. Without an account, markers live in one browser on one device (an account adds a cloud copy). Safari can clear site data after a period without use, so the app asks for persistent storage and prompts for backups, but only an export is a guarantee. On GitHub Pages the storage origin is shared by every site under the same `<user>.github.io`, so keys are prefixed `uavzones.`.
-12. Marker popups keep light colours in the dark theme.
+12. (Removed: marker windows follow the chosen theme, light or dark; checked by screenshot and `tests/priv.mjs`.)
 13. Edit mode and the hold-and-drag were tested with a mouse and with emulated touch events in Edge, not on physical phones.
 14. AI-supplied coordinates are unreliable. The app cannot tell a correct coordinate from a plausible wrong one, so everything from an AI is marked unverified, and name lookups can also match the wrong place (Photon and Nominatim return their best guess). Check each one on the map.
 15. The AI import was tested with mocked geocoders and pasted text, not against live assistants. How well a given assistant follows `ai/prompt.md` is untested.

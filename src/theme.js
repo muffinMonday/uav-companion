@@ -13,7 +13,7 @@ export function resolveTheme(pref, systemDark) {
   return systemDark ? 'dark' : 'light';
 }
 
-const listeners = new Set();
+const listeners = new Set(), choiceListeners = new Set(), prefListeners = new Set();
 let mq = null;
 
 function systemDark() { try { return matchMedia(QUERY).matches; } catch { return false; } }
@@ -42,7 +42,26 @@ export function setTheme(pref) {
   if (!THEMES.includes(pref)) return;
   savePrefs({ theme: pref, themeAt: Date.now() });
   applyTheme();
+  for (const fn of choiceListeners) { try { fn(); } catch { /* ignore */ } }
 }
+
+/** Calls fn() when the user picks a theme here (not when one arrives from another device): cloud sync uploads it. */
+export function onThemeChoice(fn) { choiceListeners.add(fn); return () => choiceListeners.delete(fn); }
+
+/** The synced choice, for cloud sync: { theme, themeAt } or null when the user never chose. */
+export function themeSetting() { const p = loadPrefs(); return p.theme && p.themeAt ? { theme: p.theme, themeAt: p.themeAt } : null; }
+
+/** A choice that arrived from another device: kept with its own time (so it is not mistaken for a new choice here) and applied. */
+export function adoptTheme({ theme, themeAt }) {
+  if (!THEMES.includes(theme)) return;
+  savePrefs({ theme, themeAt });
+  applyTheme();
+  notifyPref();
+}
+
+/** Calls fn(pref) when the stored choice changed by itself (from another tab or another device), so the selector can follow. */
+export function onThemePref(fn) { prefListeners.add(fn); return () => prefListeners.delete(fn); }
+function notifyPref() { for (const fn of prefListeners) { try { fn(currentPref()); } catch { /* ignore */ } } }
 
 /** Applies the stored choice, follows the device while it is System, and follows a change made in another tab. */
 export function initTheme() {
@@ -51,5 +70,5 @@ export function initTheme() {
     mq = matchMedia(QUERY);
     mq.addEventListener('change', () => { if (currentPref() === 'system') applyTheme(); });
   } catch { /* no matchMedia: the stored choice still applies */ }
-  window.addEventListener('storage', (e) => { if (e.key === null || e.key === 'uavzones.v1.prefs') applyTheme(); });
+  window.addEventListener('storage', (e) => { if (e.key === null || e.key === 'uavzones.v1.prefs') { applyTheme(); notifyPref(); } });
 }

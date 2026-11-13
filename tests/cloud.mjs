@@ -24,7 +24,7 @@ const mock = async (route) => {
   if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
   hits.push(req.method() + ' ' + u.pathname);
   const json = (body, status = 200) => route.fulfill({ status, headers: { ...CORS, 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  if (u.pathname.endsWith('/rest/v1/user_data')) { const r = await server.fetch(); return json(r ? [{ ...r }] : []); }
+  if (u.pathname.endsWith('/rest/v1/user_data')) { const r = await server.fetch(); return json(r ? [{ ...r, settings: r.doc?.settings ?? null }] : []); } // (settings: what the real select of doc->settings returns)
   const m = /\/rest\/v1\/rpc\/(\w+)/.exec(u.pathname);
   if (m?.[1] === 'save_user_data') { const a = JSON.parse(req.postData()); return json(await server.save(a.p_doc, a.p_base_rev, a.p_device, a.p_force)); }
   if (m?.[1] === 'list_user_data_versions') return json(await server.listVersions());
@@ -151,6 +151,20 @@ ok(await p.locator('#account-delete-dialog[open]').count() === 0 && await p.loca
 ok(await stored(p) === 'Lake,Tower', 'markers and trips on this device are kept: ' + await stored(p));
 ok(/account was deleted/.test(await p.locator('#toast').textContent()), 'and a toast says so');
 await ctx.close();
+
+// ---------- the theme travels with the cloud copy
+{
+  cloud.rows.delete(USER.email);
+  cloud.rows.set(USER.email, { rev: 5, updated_at: '2026-11-10T00:00:00Z', device: 'other', doc: { v: 1, items: [mk('Tower', 30.5)], trips: [], settings: { theme: 'dark', themeAt: Date.now() - 5000 } } });
+  const t = await open({ signedIn: true, items: [] });
+  ok(await t.p.evaluate(() => document.documentElement.dataset.theme) === 'dark' && await t.p.isChecked('#theme-radios input[value=dark]'), 'a theme chosen on another device is adopted at sign-in, and the selector shows it');
+  ok(await stored(t.p) === 'Tower' && cloud.rows.get(USER.email).rev === 5, 'and nothing is uploaded for it');
+  await t.p.check('#theme-radios input[value=light]'); await t.p.waitForTimeout(3600);
+  const row = cloud.rows.get(USER.email);
+  ok(row.doc.settings.theme === 'light' && row.rev === 6 && row.doc.items.length === 1, 'choosing a theme here uploads it after the usual pause, markers untouched');
+  ok(await t.p.evaluate(() => document.documentElement.dataset.theme) === 'light', 'and it is applied here at once');
+  await t.ctx.close();
+}
 
 ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
 await b.close();

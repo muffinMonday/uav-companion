@@ -33,7 +33,7 @@ import { lookupElevation } from './elevation.js';
 import { tile, statsGrid } from './cards.js';
 import { dataUrl, localUrl, mayHaveLocalData } from './config.js';
 import { loadPrefs, savePrefs } from './prefs.js';
-import { initTheme, setTheme, currentPref } from './theme.js';
+import { initTheme, setTheme, currentPref, onThemePref } from './theme.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -60,12 +60,12 @@ async function loadJson(path) {
 // Remembered from the last visit: basemap, country choice, map position (all kept in this browser only)
 const prefs = loadPrefs();
 initTheme();
-{ // Appearance card: System / Light / Dark
-  const cur = currentPref();
-  document.querySelectorAll('#theme-radios input').forEach((r) => {
-    r.checked = r.value === cur;
-    r.addEventListener('change', () => { if (r.checked) setTheme(r.value); });
-  });
+{ // Appearance card: System / Light / Dark (follows a choice made in another tab or synced from another device)
+  const radios = [...document.querySelectorAll('#theme-radios input')];
+  const show = (cur) => radios.forEach((r) => { r.checked = r.value === cur; });
+  show(currentPref());
+  radios.forEach((r) => r.addEventListener('change', () => { if (r.checked) setTheme(r.value); }));
+  onThemePref(show);
 }
 const { map, switchBase, setScaleUnits } = createMap(prefs);
 onDistanceSettings((s) => setScaleUnits(s.units)); // the scale bar follows the distance units chosen in Points of Interest

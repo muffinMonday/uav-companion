@@ -22,6 +22,13 @@ const BASES = {
     { maxZoom: 19, attribution: OSM_CREDIT }],
 };
 
+/** The tile set for a basemap style: [url, options]. One seam for the theme: today the dark map is the same tiles darkened by a CSS filter on .base-tiles (styles.css);
+ *  a real dark tile source would take a theme argument here (plus its attribution, the privacy list and tests/layers.mjs). */
+export function baseTiles(key) {
+  const [url, opts] = BASES[key in BASES ? key : 'osm'];
+  return [url, { ...opts, className: 'base-tiles' }];
+}
+
 // One fill colour per meaning: allow = where flying is permitted (teal), restrict = where it is restricted (red).
 const FILL = { allow: '#2aa6b8', restrict: '#d64545' };
 const toLatLngBounds = (b) => L.latLngBounds([b[1], b[0]], [b[3], b[2]]);
@@ -34,10 +41,10 @@ export function createMap(initial = {}) {
   const makeScale = (units) => L.control.scale({ metric: units !== 'imperial', imperial: units === 'imperial', position: 'bottomleft', maxWidth: 140 }).addTo(map);
   let scale = makeScale(initial.units);
 
-  let base = L.tileLayer(...BASES[initial.basemap in BASES ? initial.basemap : 'osm']).addTo(map);
+  let base = L.tileLayer(...baseTiles(initial.basemap)).addTo(map);
   const switchBase = (key) => {
     map.removeLayer(base);
-    base = L.tileLayer(...BASES[key]).addTo(map);
+    base = L.tileLayer(...baseTiles(key)).addTo(map);
     base.bringToBack();
   };
   /** Metric or imperial scale bar, to match the distance units setting. */

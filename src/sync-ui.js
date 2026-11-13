@@ -3,6 +3,7 @@
 import { configured } from './sync/supabase.js';
 import { deviceName, describeWhen, buildDoc } from './sync/core.js';
 import { toGeoJSON } from './poi.js';
+import { themeSetting, adoptTheme, onThemeChoice } from './theme.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -36,7 +37,12 @@ export async function initSyncUI({ store, toast }) {
   const [{ createSupabaseAdapter }, { createSync }] = await Promise.all([import('./sync/supabase.js'), import('./sync/engine.js')]);
   let adapter;
   try { adapter = await createSupabaseAdapter(); } catch (e) { console.warn('cloud copy unavailable', e); return null; }
-  const sync = createSync({ store, adapter, device: deviceName(navigator.userAgent), backup: async (side, doc) => download(side, doc) });
+  const sync = createSync({ store, adapter, device: deviceName(navigator.userAgent), settings: { get: themeSetting, apply: adoptTheme }, backup: async (side, doc) => download(side, doc) });
+  onThemeChoice(() => sync.noteSettings()); // the theme travels with the cloud copy (last choice wins)
+  { // coming back to the tab: a quick look for a newer theme chosen on another device, at most once a minute
+    let last = 0;
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - last > 60000) { last = Date.now(); sync.checkSettings(); } });
+  }
 
   const card = el('div', 'card'); card.id = 'cloud-card';
   anchor.after(card);

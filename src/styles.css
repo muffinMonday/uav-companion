@@ -1003,6 +1003,8 @@ input[type=email]:focus{border-color:var(--accent)}
   --rank-6:#e0832e; --rank-7:#d2542f; --rank-8:#b63d7a; --rank-9:#7a4cc2; --rank-10:#c99700;
   --rar-common:#8a97a3; --rar-rare:#3b82c4; --rar-epic:#8a54c9; --rar-legendary:#d99a16;
 }
+:root[data-theme="dark"] .base-tiles{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9)} /* dark basemap: the light tiles, inverted; only the base layer carries .base-tiles (zones are another layer) */
+:root[data-theme="dark"]{--rank-9:#9a70dc} /* the only rank colour under 3:1 against the dark surface (2.8 to 4.4); the others pass in both themes */
 .rank-badge{--rb:22px;display:inline-flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box;width:var(--rb);height:var(--rb);border-radius:50%;border:max(2px,calc(var(--rb)/10)) solid var(--rank,var(--rank-1));background:var(--surface);color:var(--fg);font-weight:700;font-size:calc(var(--rb)*.42);line-height:1}
 .rank-badge[data-tier="10"]{box-shadow:0 0 0 2px color-mix(in srgb,var(--rank-10) 35%,transparent)}
 .pv-prog{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
