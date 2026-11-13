@@ -4,6 +4,7 @@ History only. **Do not load at session start**; open it when you need to know wh
 
 ## 2026-11-13 (UI design system, phases 0 to 8)
 - Phases 2 to 8: tokens for space, radius, elevation, scrim, layers, type, weight, controls and icons (phase 2 pixel-identical); headings and font scale (3); button, card, dialog proportions (4, and a tab-label overflow found by `tests/shell.mjs` fixed); one `pointer:coarse` block (5); hierarchy of progression, dashboard, sessions, friends (6, CSS only); pill family and identity-colour sources (7, pixel-identical); small-text floor and audit (8). Audit data and evidence: `DESIGN.md` section 15.
+- Fixes from the owner's phone check: profile popover no longer cut off on an unfolded phone; Previous/Next in the marker window scroll the lists to the card.
 - Phase 0: `docs/DESIGN.md`, `scripts/ui-baseline.mjs` (screenshots outside the repo), date and wording fixes in the docs. Phase 1 (`styles.css`): `--danger-solid`/`--on-danger` for white text on red (dark was 2.5:1), `--control-border` for fields and the switch track, `--rank-edge` outline on rank badges and rings, one disabled look, all `:hover` rules under `@media (hover:hover)`, dead colour fallbacks removed; new `tests/contrast-unit.mjs`.
 
 ## 2026-11-13 (logging and audit trail, F53)

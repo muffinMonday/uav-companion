@@ -739,6 +739,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (tab === 'poi') scrollToCard(listEl.querySelector(`li[data-id="${CSS.escape(id)}"]`));
     else for (const fn of revealListeners) { try { fn(id, tab); } catch (e) { log.error('poi', 'a listener failed', e); } }
   }
+  /** Opens another marker's window from a button inside a window (Previous/Next, visit chip, Side Quest link) and scrolls the panel to its card, as a map click does. After the click, so the old window going away is not seen as a map click. */
+  const goTo = (id) => setTimeout(() => { openPopup(id); revealCard(id); }, 0);
   function relink() {
     links.clearLayers();
     refreshIcons(); // the open or selected marker decides which Side Quests are on show
@@ -989,7 +991,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
           const chip = el('button', 'chip visit-chip', visitLabel(v, { trip: store.getTrip(v.tripId), tripName: v.tripId && v.tripId !== it.tripId ? store.getTrip(v.tripId)?.name ?? '' : '' }));
           chip.type = 'button';
           if (v.id === id) chip.setAttribute('aria-current', 'true');
-          else chip.addEventListener('click', () => setTimeout(() => openPopup(v.id), 0)); // after the click, so the old window going away is not seen as a map click
+          else chip.addEventListener('click', () => goTo(v.id));
           strip.append(chip);
         }
         root.append(strip);
@@ -1036,7 +1038,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         const par = isSub(it) ? store.get(subParent.get(id)) : null;
         if (kids.length || par) {
           const box = el('div', 'pop-side');
-          const jump = (target, text) => { const bt = el('button', 'pop-side-btn', text); bt.type = 'button'; bt.addEventListener('click', () => setTimeout(() => openPopup(target.id), 0)); return bt; };
+          const jump = (target, text) => { const bt = el('button', 'pop-side-btn', text); bt.type = 'button'; bt.addEventListener('click', () => goTo(target.id)); return bt; };
           if (par) box.append(el('small', '', 'Side Quest near'), jump(par, par.name));
           else { box.append(el('small', '', `Side Quests (${kids.length})`)); for (const k of kids) box.append(jump(k, k.name)); }
           root.append(box);
@@ -1057,7 +1059,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
           const where = [dayText(dayInfo(target, tripOf(target))), stopNo(target) !== undefined && `Stop ${stopNo(target)}`].filter(Boolean).join(' · ');
           b.title = `${word} stop: ${target.name}${where ? ` (${where})` : ''}`;
           b.setAttribute('aria-label', b.title);
-          b.addEventListener('click', () => setTimeout(() => openPopup(target.id), 0)); // after the click, so the old window going away is not seen as a map click
+          b.addEventListener('click', () => goTo(target.id));
           return b;
         };
         bar.append(stopBtn(seq[at - 1], '‹', 'Previous'), el('span', 'pop-seq-pos', `${at + 1} of ${seq.length}`), stopBtn(seq[at + 1], '›', 'Next'));

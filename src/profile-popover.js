@@ -30,7 +30,8 @@ function place(from) {
   const panel = document.getElementById('panel');
   const r = from.getBoundingClientRect(), pr = panel && !panel.hidden ? panel.getBoundingClientRect() : null;
   pop.style.left = 'auto';
-  pop.style.right = (pr ? Math.max(8, innerWidth - pr.left + 8) : 12) + 'px';
+  const right = pr ? Math.max(8, innerWidth - pr.left + 8) : 12;
+  pop.style.right = Math.max(8, Math.min(right, innerWidth - pop.offsetWidth - 8)) + 'px'; // never past the left edge: on a narrow wide screen (an unfolded phone) it overlaps the panel instead
   pop.style.top = Math.max(8, Math.min(r.top - 8, innerHeight - pop.offsetHeight - 8)) + 'px';
 }
 

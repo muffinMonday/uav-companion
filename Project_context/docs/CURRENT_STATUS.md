@@ -1,9 +1,12 @@
 # Session Checkpoint
 
-Updated: 2026-11-13 (UI design system, phase 0, at the top of "Latest work")
+Updated: 2026-11-13 (UI design system phases 0 to 8 done, at the top of "Latest work")
 Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Phases 1 to 6 are built, tested, committed, pushed and deployed; the work is finished apart from the owner's set-up steps below.** Standing rule from the owner: after each finished, tested phase commit, push and deploy (hosted `db push`, function deploy, `deploy:live`) and move on without asking again (memory `commit-deploy-each-phase`); it does not cover unrelated work, live checks that create real users, or secrets.
 
-## Latest work: UI design system, phases 0 and 1 (NOT committed; phase 1 awaits the owner's screenshot review)
+## Latest work: UI design system, phases 0 to 8 (all done; owner accepted the phase 8 audit 2026-11-13)
+- **Phase 8 done:** audit numbers and the open items are in `DESIGN.md` section 15. Open: owner real-device pass (iPhone Safari, Android Chrome); phone tap targets still short of 44 px on the map buttons, tabs and header icons (median reach 29 to 35 px); 3 more shadow rules than before (cause not traced); no forced-colors rules; `.msg` and `--shadow-pin` not built (section 12, phase 7).
+- Also fixed after the owner's phone check: the profile popover is kept inside the screen on a wide-but-narrow display (an unfolded phone; `place()` in `src/profile-popover.js`), and Previous/Next, visit chips and Side Quest links in the marker window now scroll the panel to the card (`goTo` in `src/poi-ui.js`). Tests: `stops`, `friends`; full `npm test` passed (443 s). Not deployed yet.
+- Earlier phase notes below are history.
 - **Phase 1 (owner approved 2026-11-13):** `src/styles.css` only: new tokens `--danger-solid --on-danger --control-border --rank-edge --disabled-opacity`; 31 hover rules gated; disabled unified; dead fallbacks removed; `tests/contrast-unit.mjs` (31 checks, in the unit list). Screenshots `~/UAV_UI_Screenshots/after-p1` vs `baseline` (compare output saved beside them). Phase 0 retraction: the avatar-glyph contrast failure in the review was wrong (see `DESIGN.md` section 10). Next: owner review, then phase 2 only with approval.
 - Owner approved the direction 2026-11-13 (standardise and refine, identity colours kept). Full review and phased plan: `C:/Users/cy071/.claude/plans/pasted-content-id-1c69-uav-golden-feather.md`; rules and tokens now live in `docs/DESIGN.md` (read it before any styling change).
 - Phase 0 done (the four `dash-tall` captures that failed were fixed): `scripts/ui-baseline.mjs` (screenshot matrix: 5 viewports x light/dark, fixed data and clock, writes OUTSIDE the repo to `~/UAV_UI_Screenshots/<label>/`, `--compare` for pixel differences), baseline captured as label `baseline`, `DESIGN.md`, doc corrections (dates, dark-block wording, popup height, start-up note). No CSS, JS or HTML changed.

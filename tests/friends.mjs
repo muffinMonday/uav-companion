@@ -161,6 +161,12 @@ const pop1 = await bea.p.textContent('#profile-pop');
 ok(/Alex/.test(pop1) && /Wuhan, China/.test(pop1) && /Hiking/.test(pop1) && /Cinewhoop and chill/.test(pop1) && await bea.p.locator('#profile-pop .avatar[data-avatar=fpv-cinewhoop]').count() === 1 && !pop1.includes('@'), "clicking a friend's avatar opens a small profile popover with what they share (and no email)");
 await bea.p.keyboard.press('Escape');
 ok(await bea.p.locator('#profile-pop').isHidden(), 'Escape closes the profile popover');
+const vp0 = bea.p.viewportSize(); // an unfolded phone: wider than the phone sheet, too narrow for the panel and the popover side by side
+await bea.p.setViewportSize({ width: 734, height: 707 }); await bea.p.waitForTimeout(300);
+await bea.p.click('#fr-friends .pv-trigger >> nth=0'); await bea.p.waitForSelector('#profile-pop:not([hidden])'); await bea.p.waitForTimeout(200);
+const edge = await bea.p.evaluate(() => { const r = document.getElementById('profile-pop').getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth }; });
+ok(edge.l >= 0 && edge.r <= edge.w, 'at 734 px wide the profile popover stays inside the screen: ' + JSON.stringify(edge));
+await bea.p.keyboard.press('Escape'); await bea.p.setViewportSize(vp0); await bea.p.waitForTimeout(300);
 await bea.p.click('#fr-friends .fr-who .pv-trigger >> nth=0'); await bea.p.waitForSelector('#profile-pop:not([hidden])'); await bea.p.click('#fr-friends .fr-who .pv-trigger >> nth=0');
 ok(await bea.p.locator('#profile-pop').isHidden(), 'clicking the same name again closes it');
 await editProfile(p); await p.click('#pf-share'); await p.click('#pf-save'); await p.waitForSelector('#profile-dialog', { state: 'hidden' }); await p.waitForTimeout(500);

@@ -100,5 +100,18 @@ ok(true, 'phone: Next works by touch');
 await p.screenshot({ path: `${SP}/stops-phone.png` });
 await ctx.close();
 
+// ================= the panel follows Previous / Next (a short window so the list scrolls)
+({ ctx, p } = await session({ viewport: { width: 1200, height: 380 } }));
+await openName(p, 'Hotel');
+const cardIn = (id) => p.evaluate((i) => { const c = document.querySelector(`#poi-list li[data-id="${i}"]`); const pn = document.getElementById('panel').getBoundingClientRect(); const r = c.getBoundingClientRect(); const scrolls = (() => { for (let e = c.parentElement; e; e = e.parentElement) if (e.scrollHeight > e.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(e).overflowY)) return true; return false; })(); return { scrolls, inside: r.top >= pn.top - 1 && r.bottom <= pn.bottom + 1 }; }, id);
+for (const [word, name, id] of [['Next', 'Alpha', 'A'], ['Next', 'Bravo', 'B'], ['Next', 'Charlie', 'C'], ['Next', 'Delta', 'D']]) {
+  await p.click(`.pop-seq-btn:has-text("${word}")`); await p.waitForFunction((n) => document.querySelector('.poi-pop h3')?.textContent === n, name, { timeout: 8000 }); await p.waitForTimeout(1200);
+  const c = await cardIn(id);
+  ok(c.scrolls && c.inside, `${word} to ${name}: the list scrolled so its card is in view`);
+}
+await p.click('.pop-seq-btn:has-text("Previous")'); await p.waitForFunction(() => document.querySelector('.poi-pop h3')?.textContent === 'Charlie', null, { timeout: 8000 }); await p.waitForTimeout(1200);
+ok((await cardIn('C')).inside, 'Previous to Charlie: its card is in view');
+await ctx.close();
+
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();
