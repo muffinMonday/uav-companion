@@ -1,5 +1,10 @@
 # Session Checkpoint
 
+## Latest: HTML/main.js refactor Phase 2 (2026-11-14; tested; commit/push/deploy under the owner's overnight authorization)
+- Owner authorized phases 2-5 unattended: commit, push and `deploy:live` after each phase, no database change, stop without release on a real failure, shut the PC down at the end. Details and results: backlog section 13.
+- Extracted `src/app/{point-check,map-settings,region-loader,region-ui}.js`; `main.js` 327 -> 171 lines. New `region-loader-unit` (12), `launchloc` +3. Full `npm test`: 107 suites passed. Screenshots 298/298 identical to same-day unmodified HEAD (the Phase 1 image set drifted in date text on this machine; use `refactor-phase2b-20261114`).
+- Next: Phase 3 (ownership map in MODULES.md), Phase 4 (AGENTS.md pointer), Phase 5 (final regression, CHANGELOG, handoff).
+
 ## Latest: HTML component extraction, Phase 1 (2026-11-14; committed, pushed, deployed and live-checked)
 - Owner explicitly authorized Phase 1 only. Added the eight approved `src/components/*.html` fragments and a 41-line `index.html` shell. Preserved the head/theme script, `/src/main.js`, shared stores, weather/banner/toast nodes, nesting and order. Expansion exactly reproduces the corrected pre-extraction HTML after LF normalization. `src/main.js` and the previously verified duplicate-ID correction are preserved; Phase 2 has not started.
 - `scripts/html-components.js` + `vite.config.js`: eight registered names, nested standalone include comments, cycle/unknown/missing/malformed errors with chains; build-time transformation before Vite HTML handling; full reload for fragment edit/add/remove, fresh reads. No runtime fetching, dependency or new build/deploy command.

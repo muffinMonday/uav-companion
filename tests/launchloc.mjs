@@ -79,5 +79,21 @@ await ctx.close();
   await ctx2.close();
 }
 
+// the zone data arrives long after the fix: the live launch flag still keeps the map on the visitor (zones.fit must not run) and the legend appears afterwards
+{
+  const ctx3 = await b.newContext({ viewport: { width: 1300, height: 850 }, permissions: ['geolocation'], geolocation: HERE });
+  await ctx3.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  await ctx3.route(/\/data\/index\.json/, async (r) => { await new Promise((x) => setTimeout(x, 2500)); r.continue(); });
+  const p3 = await ctx3.newPage();
+  p3.on('pageerror', (e) => errs.push('pageerror ' + e.message));
+  await p3.goto('http://localhost:5173/', { waitUntil: 'domcontentloaded' }); await p3.waitForTimeout(1500);
+  ok(await p3.locator('#legend > *').count() === 0, 'slow zone data: the legend is not drawn before the data arrives');
+  await p3.waitForTimeout(3500);
+  const w3 = await saved(p3);
+  ok(near(w3, HERE.latitude, HERE.longitude), 'slow zone data: the map stays on the visitor when the zones finally load ' + JSON.stringify(w3));
+  ok(await p3.locator('#legend > *').count() > 0 && /Coverage/.test(await p3.textContent('#regions-note')), 'slow zone data: the legend and coverage note appear once it has loaded');
+  await ctx3.close();
+}
+
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
 await b.close();

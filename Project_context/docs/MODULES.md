@@ -1,6 +1,6 @@
 # Modules
 
-Navigation index; read the file for exports and details. Paths under `src/` unless stated. **pure** = no DOM, importable from Node tests. Entry: `index.html` loads `main.js` (wires everything in start-up order).
+Navigation index; read the file for exports and details. Paths under `src/` unless stated. **pure** = no DOM, importable from Node tests. Entry: `index.html` loads `main.js` (wires everything in start-up order; its larger responsibilities live in `src/app/`).
 
 ## Map and zones
 | File | Responsibility | Depends on |
@@ -79,12 +79,22 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `tests/` (`run.mjs`, `lib*.mjs`) | Suites; see `DEVELOPMENT.md` |
 | `docs/` | `AI.md`, `ATTRIBUTIONS.md`, `regions/` |
 
-## HTML components (Phase 1; startup refactor remains planned)
+## Start-up modules (`src/app/`, refactor Phase 2)
+| File | Responsibility |
+|---|---|
+| `app/point-check.js` | `createPointCheckUI({ map, panel, weather, addAt })` returns `{ showCheck, showWeather }`: the point-check popup (elevation, weather button, map links, official map link, Add as marker/Side Quest, swipe). `addAt` is late-bound to the POI module |
+| `app/map-settings.js` | `initAppearanceSettings` (theme radios), `initMapSettings` (popup opacity, basemap, zone opacity value, saved view), `initWeatherSettings` (map app/mode, wind limit) |
+| `app/region-loader.js` | `loadRegionData({ dataUrl, localUrl, mayHaveLocalData })` returns `{ index, regions, places }`; local-only regions merged, tolerated if missing; unit test `region-loader-unit` |
+| `app/region-ui.js` | `initRegionUI` (country menu, Centre button, dashboard Fly in, returns `clearOfPanel`), `renderRegionInfo` (legend, coverage note) |
+
+`main.js` keeps the start-up order, toast, launch-location flags, POI/Trips/AI/dashboard/splash/cloud wiring (cloud starts without being awaited, concurrently with region loading), map click and hold handlers, flying-area pins and zone layers.
+
+## HTML components (Phase 1)
 
 Canonical plan and validation: `HTML_MAIN_REFACTOR_BACKLOG.md`. Static HTML fragments:
 `src/components/search.html`, `dock.html`, `panel.html`, `map-config.html`,
 `trips-panel.html`, `poi-panel.html`, `privacy-panel.html`, `dashboard.html`.
 
-`index.html` is the shell; `scripts/html-components.js` assembles these files through the Vite plugin in `vite.config.js`, in dev and production. `panel.html` includes its three tab sections and Privacy. Startup/wiring remains in `src/main.js`; no JS responsibility extraction yet. `tests/html-components-unit.mjs` and `tests/html-dom.mjs` cover assembly and DOM/reload behavior. Setup and include rules: `DEVELOPMENT.md`. The full HTML → JS → CSS → tests ownership map is Phase 3.
+`index.html` is the shell; `scripts/html-components.js` assembles these files through the Vite plugin in `vite.config.js`, in dev and production. `panel.html` includes its three tab sections and Privacy. Startup/wiring: `src/main.js` with `src/app/` (above). `tests/html-components-unit.mjs` and `tests/html-dom.mjs` cover assembly and DOM/reload behavior. Setup and include rules: `DEVELOPMENT.md`. The full HTML → JS → CSS → tests ownership map is Phase 3.
 
 Future Community Flying Areas plan: `COMMUNITY_FLYING_AREAS_PLAN.md`.

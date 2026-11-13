@@ -1,6 +1,6 @@
 # HTML and main.js Refactoring — Backlog and Implementation Plan
 
-**Status:** Phase 0, duplicate-ID correction and Phase 1 complete, verified, committed, pushed and deployed. Phases 2–5 not implemented.
+**Status:** Phases 0, 1 and 2 complete (Phase 2: section 13). Phases 3-5: see CURRENT_STATUS.md.
 
 **Decision date:** 2026-11-13.
 
@@ -290,3 +290,13 @@ Final screenshot gate:
 - Live guest-browser smoke passed: coverage initialized, sign-in form/cloud UI present, no duplicate IDs or include markers, both status lines populated and equal, zero page exceptions. No sign-in submission, real-account mutation or hosted backend test; external services were blocked in this browser check. Evidence: `tests/out/refactor-phase1-20261114/{live-verification.json,live-smoke.json,live-guest.png,deploy-live.log}` (ignored).
 - Existing acceptance evidence remains: build; 48 unit / 106 total suites passed; 298/298 byte-identical pre/post-extraction screenshots. Implementation hashes were unchanged after those tests. Follow-up publication/checkpoint edits are documentation only.
 - **Next:** Claude implements Phase 2 only when the owner submits/authorizes the continuation prompt. Read the repository startup rules and current Git state first, then the current `main.js` and section 9's dependency audit/extraction proposal. Preserve the Phase 1 compiler/fragments/fixture and duplicate-ID fix. Use `refactor-phase1-20261114` as the visual before set. Stop after Phase 2 validation; this release request does not authorize future phases, commits/pushes/deployments or database changes.
+
+## 13. Phase 2 implementation and validation (2026-11-14)
+
+Owner (asleep) authorized phases 2-5 in one run: commit/push/`deploy:live` after each phase, no database change, stop without release on a real gate failure, shut the PC down at the end. This overrides the earlier "ask first" rules for this run only.
+
+Implemented (one extraction at a time, affected suites after each): `src/app/point-check.js` (`createPointCheckUI`, late-bound `addAt`), `src/app/map-settings.js` (`initAppearanceSettings`, `initMapSettings`, `initWeatherSettings`), `src/app/region-loader.js` (`loadRegionData`; config helpers are passed in so it unit-tests in Node), `src/app/region-ui.js` (`initRegionUI`, `renderRegionInfo`). `main.js` went from 327 to 171 lines and keeps the startup order, launch flags, non-awaited cloud start, import-hash capture, click/hold handlers, point pins and zones. No `bootstrap.js`. Phase 1 fragments, compiler and fixture untouched; both weather-status IDs intact.
+
+Tests: new `region-loader-unit` (12 checks: public load, concurrency, local merge, local failures tolerated, public failures reject); `launchloc` +3 checks (slow zone data: map stays on the visitor; legend and coverage appear after load). The cloud start code in `main.js` is unchanged, so no new cloud test. Full `npm test`: all 107 suites passed (470 s). One unit run of `live-engine-unit` failed once under load ("the next position recovers") and passed 4/4 alone, also on unmodified code.
+
+Screenshots: the Phase 1 set is no longer a valid reference on this machine. Unmodified HEAD captured today differs from it in the same 70 images (date text "Thu, 12 Nov" became "Thu 12 Nov", en-GB). Cause not traced (same Edge version string and locale setting in the tool). The refactored tree against that same-day HEAD capture: **298/298 identical**. Evidence: `tests/out/refactor-phase2-20261114/`; captures `refactor-headcheck2-20261114` (HEAD) and `refactor-phase2b-20261114` (refactor) in `%TEMP%/UAV_UI_Screenshots/`. Use `refactor-phase2b-20261114` as the visual reference from now on.
