@@ -155,6 +155,11 @@ ok((await ledger(D)).length === 2, 'the original award row is still there');
 ok((await rsvps(A, open)).find((x) => x.display_name === 'Dee').revoked === true && (await rsvps(A, open)).find((x) => x.display_name === 'Dee').attended === false, 'the list shows it as revoked');
 ok((await sql(`select revoked_by, revoked_at, verified_by from public.session_attendance where id = $1`, [aid]))[0].revoked_by === A, 'the attendance row keeps who verified it and who revoked it');
 ok((await one(A, 'public.revoke_attendance($1, $2, $3)', [open, aid, 'again'])).status === 'already_revoked' && (await ledger(D)).length === 2, 'revoking twice does nothing more');
+{ // the audit trail (20261116120000_audit_events.sql): a controlled reason code, never the free text; refused and repeated revocations record nothing
+  const ev = await sql(`select actor, subject, ref, meta from public.audit_events where action = 'attendance.revoke' order by id`);
+  ok(ev.length === 1 && ev[0].actor === A && ev[0].subject === D && ev[0].ref === open, 'revoking attendance is recorded once: who, whose, which session');
+  ok(ev[0].meta.reason === 'other' && ev[0].meta.had_xp === true && Object.keys(ev[0].meta).sort().join() === 'amount,had_xp,reason' && !JSON.stringify(ev[0]).includes('wrong person'), 'with a reason code, whether XP was reversed and the amount, and none of the free text');
+}
 ok(/revoked by an administrator/.test(await badMark(B, open, 'code', cD2) ?? '') && await total(D) === 0, 'marking them again is refused and awards nothing');
 ok(!(await unlocked(D)).includes('xxx') && (await unlocked(D)).includes('first-meetup'), 'their achievement is not taken away');
 const aidC = (await rsvps(B, open)).find((x) => x.display_name === 'Cam').attendance_id;

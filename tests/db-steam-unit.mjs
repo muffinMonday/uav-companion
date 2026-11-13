@@ -205,3 +205,32 @@ ok((await lrow(A)).steam_id === '76561198000000009' && (await state(A))[LIFT] ==
 // ---------- deleting an account removes it all
 await db.exec(`delete from auth.users where id = '${C}'`);
 ok(!(await lrow(C)) && Object.keys(await state(C)).length === 0, 'deleting an account removes its Steam link and baseline');
+
+// ---------- the audit trail (20261116120000_audit_events.sql): link, unlink, and status changes into private/error only
+{
+  const NEW = '76561198000000099';
+  const ev = async (action) => sql(`select actor, subject, ref, meta from public.audit_events where action = $1 order by id`, [action]);
+  const n = async (action) => (await ev(action)).length;
+  const l0 = await n('steam.link'), u0 = await n('steam.unlink'), s0 = await n('steam.status');
+  await link(A, NEW, {});
+  let e = (await ev('steam.link')).pop();
+  ok(await n('steam.link') === l0 + 1 && e.actor === A && e.subject === null && e.ref === null && typeof e.meta.relink === 'boolean', 'linking is recorded (the person is the actor), with a relink flag');
+  await link(A, NEW, {});
+  e = (await ev('steam.link')).pop();
+  ok(e.meta.relink === true, 'linking the same account again is recorded as a relink');
+  ok(!JSON.stringify(await sql(`select * from public.audit_events where action like 'steam.%'`)).match(/[0-9]{17}/), 'no Steam id appears anywhere in the Steam audit rows');
+  await apply(A, {}, 'private'); await apply(A, {}, 'private');
+  ok(await n('steam.status') === s0 + 1, 'a status of private is recorded once, not on every sync');
+  await apply(A, {}, 'error');
+  await apply(A, {}, 'ok'); await apply(A, {}, 'ok');
+  ok(await n('steam.status') === s0 + 2, 'a change to error is recorded; an ok sync records nothing');
+  await apply(A, {}, 'private');
+  e = (await ev('steam.status')).pop();
+  ok(await n('steam.status') === s0 + 3 && e.actor === null && e.subject === A && e.meta.status === 'private' && Object.keys(e.meta).join() === 'status', 'private again after ok is recorded: no actor (service role), the person as subject, only the status');
+  await one(A, 'public.unlink_steam()'); await one(A, 'public.unlink_steam()');
+  e = (await ev('steam.unlink')).pop();
+  ok(await n('steam.unlink') === u0 + 1 && e.actor === A, 'unlinking is recorded once; unlinking when nothing is linked records nothing');
+  const t0 = await n('profile.delete');
+  await one(B, 'public.delete_profile()');
+  ok(await n('profile.delete') === t0 + 1, 'deleting a profile adds a tombstone');
+}

@@ -19,7 +19,7 @@ export function createProgression(client, now = () => Date.now()) {
     return data;
   };
   const cache = new Map(); // key -> { at, value }
-  const manyWait = createBackoff({ base: 10_000, max: 120_000, now }); // after a failed list call, `many` fails at once for a while instead of asking again
+  const manyWait = createBackoff({ base: 10_000, max: 120_000, now, name: 'progression' }); // after a failed list call, `many` fails at once for a while instead of asking again
   const fresh = (k) => { const c = cache.get(k); return c && now() - c.at < TTL_MS ? c.value : undefined; };
   const keep = (k, value) => { cache.set(k, { at: now(), value }); if (cache.size > 200) cache.delete(cache.keys().next().value); return value; };
 
@@ -40,7 +40,7 @@ export function createProgression(client, now = () => Date.now()) {
       for (let i = 0; i < want.length; i += 100) {
         const chunk = want.slice(i, i + 100);
         let rows;
-        try { rows = await rpc('list_progression', { p_kind: kind, p_ids: chunk }); manyWait.ok(); } catch (e) { manyWait.fail(); throw e; }
+        try { rows = await rpc('list_progression', { p_kind: kind, p_ids: chunk }); manyWait.ok(); } catch (e) { manyWait.fail(e); throw e; }
         const got = new Set();
         for (const r of Array.isArray(rows) ? rows : []) if (r && typeof r.id === 'string' && chunk.includes(r.id)) { got.add(r.id); keep('brief:' + kind + ':' + r.id, cleanProgression(r)); }
         for (const id of chunk) if (!got.has(id)) keep('brief:' + kind + ':' + id, { visible: false });

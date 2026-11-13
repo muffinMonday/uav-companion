@@ -34,6 +34,11 @@ import { tile, statsGrid } from './cards.js';
 import { dataUrl, localUrl, mayHaveLocalData } from './config.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { initTheme, setTheme, currentPref, onThemePref } from './theme.js';
+import { log, applyDebugParam } from './log.js';
+import { installErrorHandlers } from './errors.js';
+
+applyDebugParam(location.search); // ?debug=1 keeps DEBUG notes in the local log, ?debug=0 stops (log.js)
+installErrorHandlers({ log }); // uncaught errors and rejected promises leave a note in the local log; the browser still reports them as before
 
 const $ = (id) => document.getElementById(id);
 
@@ -184,7 +189,7 @@ const poi = initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWe
   const mig = poi.store.takeMigration();
   if (mig) toast(`Day numbers now follow the dates: ${mig.corrected} corrected${mig.converted ? `, ${mig.converted} turned into dates` : ''}.`, 9000);
 }
-initPrivacyUI({ mw: poi.mw, elev: poi.elev }); // the privacy settings own the weather and elevation switches
+initPrivacyUI({ mw: poi.mw, elev: poi.elev, toast }); // the privacy settings own the weather and elevation switches
 const trips = initTripsUI({ poi, panel, toast, checkPoint, zoneSummary });             // the Trips tab: create and edit trips, tag markers with them
 const ai = initAI({ map, toast, panel, poi });  // paste an AI's itinerary, or open a share link, then preview and add
 const opensShareLink = /^#import=/.test(location.hash); // read before fromHash() clears it
@@ -199,9 +204,9 @@ cloud.openData = () => dash.open(); // the account popover's export and import l
 const splash = initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud }); // the quick setup: greets a first visit, and "Quick setup" reopens it
 dash.onQuickSetup(splash.open);
 if (dash.splashFirst) splash.open();
-initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); initFriendsUI({ panel, handle: h, toast, cloud }); initAccountUI({ handle: h, panel, toast, cloud }); splash.refresh(); cloud.refresh?.(); } }).catch((e) => console.warn('cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
+initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); initFriendsUI({ panel, handle: h, toast, cloud }); initAccountUI({ handle: h, panel, toast, cloud }); splash.refresh(); cloud.refresh?.(); } }).catch((e) => log.warn('sync', 'cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 
-const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch(() => toast('Point check failed. Check your connection and try again.'));
+const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch((e) => { log.warn('map', 'point check failed', e); toast('Point check failed. Check your connection and try again.'); });
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.
 const hold = initHoldCheck({ map, isBusy: () => poi.isBusy(), onCheck: checkAt, holdMs: HOLD_MS });
 // (windows are opened with closeOnClick off: Leaflet would close them on the release that ends a hold, before this runs)
@@ -280,7 +285,7 @@ try {
         m.on('click', () => showCheck(L.latLng(p.lat, p.lon), p.name, { offsetY: -16, note: `${label(p.class)}. ${summary(p.class)}` }));
         m.addTo(pinLayer);
       }
-    } catch { /* the flying areas could not be loaded: the zones still work */ }
+    } catch (e) { log.warn('map', 'flying areas did not load', e); /* the zones still work */ }
   }
   $('show').addEventListener('change', (e) => (e.target.checked ? pinLayer.addTo(map) : map.removeLayer(pinLayer)));
 
@@ -317,6 +322,6 @@ try {
   b.textContent = `Coverage: ${regions.map((r) => r.name).join(', ') || 'none'}.${pending.length ? ` No data yet: ${pending.join(', ')}.` : ''} `;
   note.append(b, 'Official data: ' + [...new Set(regions.map((r) => `${r.source.authority} (effective ${r.source.effective})`))].join('; ') + '.');
 } catch (err) {
-  console.error(err);
+  log.error('map', 'zone data did not load', err);
   $('regions-note').textContent = 'Could not load zone data. Run "npm run build:data" first, then reload.';
 }

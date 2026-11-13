@@ -1,6 +1,7 @@
 // The Steam card (in the Friends tab): what counts, linking a Steam account, how many hours have been credited, Sync now (with its cooldown) and Unlink.
 // The database and the edge functions decide everything (see steam.js); this file only draws what it is given. Plain DOM, textContent only.
 import { createSteam, waitText, returnResult, withoutResult, RESULT_TEXT } from './steam.js';
+import { log } from './log.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const btn = (label, cls = 'btn small') => { const b = el('button', cls, label); b.type = 'button'; return b; };
@@ -26,7 +27,7 @@ export function createSteamCard({ client, onChange = () => {} }) {
     if (!state.info) { state = { ...state, status: 'loading' }; paint(); }
     try {
       const info = await api.status();
-      const apps = state.apps.length || !info.enabled ? state.apps : await api.apps().catch(() => []);
+      const apps = state.apps.length || !info.enabled ? state.apps : await api.apps().catch((e) => { log.warn('steam', 'the app list did not load', e); return []; });
       if (mine !== seq) return;
       state = { status: 'ready', info, apps };
     } catch { if (mine === seq) state = { ...state, status: 'error' }; }

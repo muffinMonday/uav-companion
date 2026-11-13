@@ -24,7 +24,7 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
 
   const snap = { invitations: [], trips: {}, notices: [], error: null, polledAt: null, liveActive: null };
   let applying = false, poller = null, chain = Promise.resolve(), stopped = false, ticking = false, quiet = 0, tickN = 0, listSig = '';
-  const backoff = createBackoff({ base: pollMs, max: 120000 }); // a failing list call is retried less and less often
+  const backoff = createBackoff({ base: pollMs, max: 120000, name: 'trip-poll' }); // a failing list call is retried less and less often
   const refused = new Map(); // trip id -> the server revision that could not be adopted (not fetched again until the revision changes)
   const timers = new Map();
 
@@ -103,7 +103,7 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
 
   async function pollNow() {
     let list;
-    try { list = await api.list(); } catch (e) { backoff.fail(); snap.error = e.message; emit(); return; }
+    try { list = await api.list(); } catch (e) { backoff.fail(e); snap.error = e.message; emit(); return; }
     backoff.ok();
     const sig = JSON.stringify(list.map((t) => [t.id, t.status, t.rev, t.members_rev, t.members, t.name, (t.live_active ?? 0) > 0]));
     quiet = sig === listSig && !snap.error ? quiet + 1 : 0; listSig = sig;

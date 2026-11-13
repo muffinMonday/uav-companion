@@ -2,6 +2,7 @@
 // Built only when this build has accounts (see sync-ui.js). The sync itself is sharedtrip/engine.js.
 import { createTripsApi } from './sharedtrip/api.js';
 import { createSharedTrips } from './sharedtrip/engine.js';
+import { log } from './log.js';
 import { describeWhen } from './sync/core.js';
 import { presenceText } from './social.js';
 import { avatarEl } from './avatars.js';
@@ -100,7 +101,7 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
   live.onChange((s) => {
     layer?.update(s.others, hiddenTrips);
     // rank rings: only for people already on the map; one call for those not held yet, answered from the cache otherwise. A failure leaves the pins as they are.
-    if (layer && s.others.length) progression.many('member', s.others.map((o) => o.member_id)).then((m) => layer.setRanks(m)).catch(() => {});
+    if (layer && s.others.length) progression.many('member', s.others.map((o) => o.member_id)).then((m) => layer.setRanks(m)).catch((e) => log.warn('party', 'member ranks did not load', e));
     for (const m of live.takeNotices()) toast(m, 9000);
     updateChip();
     // redraw the trip screen only when who is sharing changes, not on every new position (that would reset anything being typed)

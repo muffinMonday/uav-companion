@@ -40,7 +40,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
   }
 
   let inflight = null, inflightProfile = false, queued = null;
-  const wait = createBackoff({ base: POLL_MS, max: 600000 }); // after a failed load the background polls wait longer and longer
+  const wait = createBackoff({ base: POLL_MS, max: 600000, name: 'friends' }); // after a failed load the background polls wait longer and longer
   /** One load at a time: a call made while one is running shares it, and one that also wants the profile (and the running one does not) runs once more after it. */
   function load({ withProfile = false } = {}) {
     if (!signedIn()) return loadNow({ withProfile }); // nothing to fetch: just clears the screen
@@ -62,7 +62,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
       if (shown()) blocked = await social.blocked();
       loadedFor = handle.sync.status().session.email;
       wait.ok();
-    } catch (e) { message = e.message; wait.fail(); }
+    } catch (e) { message = e.message; wait.fail(e); }
     publish(); render();
   }
   function publish() {

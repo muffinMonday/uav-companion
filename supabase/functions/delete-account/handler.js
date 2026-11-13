@@ -5,6 +5,10 @@
 //   deleteAuthUser(id)        -> removes the sign-in record with the service-role key; throws on failure
 // The app data goes first and is one database transaction, so a failure leaves everything as it was; if only the last step fails the data is already gone and a retry
 // (the function can be called again, delete_account does nothing the second time) finishes the job.
+// The answer to the caller never carries the database's or the platform's error text: a fixed message and a stable `code` (delete_data_failed, delete_auth_failed). The
+// cause is logged on the server as a classification only (_shared/log.js). `deps.logOut` replaces the log destination (tests).
+
+import { logEvent, classify } from '../_shared/log.js';
 
 export const CONFIRM_WORD = 'DELETE';
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization, content-type, apikey, x-client-info', 'access-control-allow-methods': 'POST, OPTIONS' };
@@ -21,7 +25,13 @@ export async function handle(req, deps) {
   let body = null;
   try { body = await req.json(); } catch { body = null; }
   if (!body || body.confirm !== CONFIRM_WORD) return reply(400, { error: `send {"confirm":"${CONFIRM_WORD}"} to delete the account` });
-  try { await deps.deleteData(authorization); } catch (e) { return reply(500, { error: 'Could not delete your data: ' + String(e?.message || e) + '. Nothing was deleted.' }); }
-  try { await deps.deleteAuthUser(user.id); } catch (e) { return reply(500, { error: 'Your data was deleted, but the sign-in record could not be: ' + String(e?.message || e) + '. Try again.', partial: true }); }
+  try { await deps.deleteData(authorization); } catch (e) {
+    logEvent('error', 'delete-account', 'delete_data_failed', { code: classify(e) }, deps.logOut);
+    return reply(500, { error: 'Could not delete your data. Nothing was deleted. Try again.', code: 'delete_data_failed' });
+  }
+  try { await deps.deleteAuthUser(user.id); } catch (e) {
+    logEvent('error', 'delete-account', 'delete_auth_failed', { code: classify(e) }, deps.logOut);
+    return reply(500, { error: 'Your data was deleted, but the sign-in record could not be. Try again.', code: 'delete_auth_failed', partial: true });
+  }
   return reply(200, { status: 'deleted' });
 }

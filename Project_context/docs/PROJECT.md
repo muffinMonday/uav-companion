@@ -360,6 +360,12 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Signed in: the choice is stored inside the cloud copy and follows the account; the last choice made on any device wins, and it never opens the both-sides-changed question (`DATABASE.md`, `DECISIONS.md`). Signed out, it stays in this browser.
 - Not done: filter cost on weak phones and a rotated map is unmeasured; the hosted project is checked for reading and storing the setting (`tests/cloud-live.mjs`); the two-device flow is tested against an in-memory cloud.
 
+**F53. Local diagnostics and audit trail (built and deployed)**
+- **Diagnostics card** in the privacy settings: how many entries and bytes the local log holds, **Download diagnostics** (a dated JSON file) and **Clear log**. The log keeps at most 500 entries, 200 KB and 7 days, records WARN and ERROR (everything with `?debug=1`), and holds no positions, names, notes, tokens or account details. Nothing is sent anywhere.
+- Uncaught errors and unhandled promise rejections, failed background polls (first failure, still failing, recovery) and a short list of network and behaviour failures that used to be silent leave a note; repeats within a minute are counted, not repeated.
+- Backend: an append-only `audit_events` table (role, attendance, Steam, setting and deletion events), read by administrators through `admin_audit_events`; edge functions log classified one-line events and `delete-account` returns fixed messages with a stable code (`DATABASE.md`, `DECISIONS.md`).
+- Not done: remote monitoring (decided against for now), an admin screen for the audit trail, community-area moderation events (action names reserved), retention of audit rows.
+
 ## 5. Non-functional requirements
 
 - **Static delivery:** the app must run from static files with no server of our own; GitHub Pages or a similar static host must work. Accounts are optional (Supabase, section 9) and absent from a build without a project address.

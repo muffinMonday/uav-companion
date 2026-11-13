@@ -2,6 +2,9 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-13 (logging and audit trail, F53)
+- Milestone 1: `log.js`, `logscrub.js`, `logstore.js`, `errors.js`; `console.*` replaced; back-off streaks and about 12 silent network and behaviour catches logged; global handlers. Milestone 2: migration `20261116120000_audit_events.sql` (local only), `_shared/log.js`, `delete-account` fixed messages, Steam sync failure logging. Milestone 3: Diagnostics card, `tests/diag.mjs`, docs. A browser test caught a start-up crash when site data is blocked (a default parameter read `localStorage`).
+
 ## 2026-11-13 (colour theme, F52)
 - System / Light / Dark: selector in Map Configs, before-first-paint script, one dark block in the stylesheet (`a1170e1`). Dark basemap by CSS filter on the base layer, `baseTiles()` seam, rank-9 contrast fix (`9e679b6`). Theme stored in the `user_data` document, last choice wins, no chooser, `baseSig` (`9e679b6`; no migration). Tests: `theme-unit`, `theme`, `sync-settings-unit`, `cloud`.
 

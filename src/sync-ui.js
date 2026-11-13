@@ -1,5 +1,6 @@
 // The optional cloud copy: a card in the privacy settings with the sync state and its tools, the sign-in form and sign-out flow that the
 // account button (account-ui.js) uses, and the question that appears when this device and the cloud copy both changed. Does nothing (and loads nothing) unless the build has a project address; see sync/.
+import { log } from './log.js';
 import { configured } from './sync/supabase.js';
 import { deviceName, describeWhen, buildDoc } from './sync/core.js';
 import { toGeoJSON } from './poi.js';
@@ -36,7 +37,7 @@ export async function initSyncUI({ store, toast }) {
   if (!anchor) return null;
   const [{ createSupabaseAdapter }, { createSync }] = await Promise.all([import('./sync/supabase.js'), import('./sync/engine.js')]);
   let adapter;
-  try { adapter = await createSupabaseAdapter(); } catch (e) { console.warn('cloud copy unavailable', e); return null; }
+  try { adapter = await createSupabaseAdapter(); } catch (e) { log.warn('sync', 'cloud copy unavailable', e); return null; }
   const sync = createSync({ store, adapter, device: deviceName(navigator.userAgent), settings: { get: themeSetting, apply: adoptTheme }, backup: async (side, doc) => download(side, doc) });
   onThemeChoice(() => sync.noteSettings()); // the theme travels with the cloud copy (last choice wins)
   { // coming back to the tab: a quick look for a newer theme chosen on another device, at most once a minute
@@ -97,7 +98,7 @@ export async function initSyncUI({ store, toast }) {
       try { const b = await r.error.context?.json(); if (b?.error) m = b.error; } catch { /* keep the generic message */ }
       throw new Error(m);
     }
-    try { await sync.signOut(); } catch (e) { console.warn('sign-out after deletion', e); }
+    try { await sync.signOut(); } catch (e) { log.warn('sync', 'sign-out after deletion failed', e); }
     versions = null; render();
   }
 

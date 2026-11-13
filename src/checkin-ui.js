@@ -1,5 +1,6 @@
 // Check-in in the panel: the position watcher (opt-in, only while the panel shows markers) and the little control at the right of a marker row.
 // The position never leaves the browser. See privacy.js (checkIn) and checkin.js for the rules.
+import { log } from './log.js';
 import { getPrivacy, onPrivacyChange } from './privacy.js';
 import { checkinState, checkinTitle, checkinLabel } from './checkin.js';
 import { getDistanceSettings } from './units.js';
@@ -12,7 +13,7 @@ export function createCheckin({ store, panel, toast }) {
   let fix = null, watchId = null, status = 'off'; // off | waiting | ready | denied | unavailable
   const subs = new Set();
   const bound = new Map(); // namespace -> Set of refresh functions of the cells now on screen
-  const emit = () => { for (const fn of subs) { try { fn(); } catch (e) { console.error(e); } } for (const set of bound.values()) for (const fn of set) fn(); };
+  const emit = () => { for (const fn of subs) { try { fn(); } catch (e) { log.error('checkin', 'a listener failed', e); } } for (const set of bound.values()) for (const fn of set) fn(); };
 
   const enabled = () => !!getPrivacy().checkIn;
   const extra = []; // other screens that show check-in buttons (the dashboard)

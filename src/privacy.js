@@ -10,6 +10,7 @@
 //   lookupNames       when importing an AI-made itinerary, look up places that came without coordinates by sending
 //                     their names or addresses to a geocoder (Photon, then Nominatim)            (default off)
 import { loadPrefs, savePrefs } from './prefs.js';
+import { log } from './log.js';
 
 const saved = loadPrefs();
 let state = {
@@ -35,5 +36,5 @@ export function setPrivacy(patch) {
     checkIn: state.checkIn || null,
     locateOnLaunch: state.locateOnLaunch ? null : false, // null = back to the default (on)
   });
-  listeners.forEach((fn) => { try { fn(state); } catch (e) { console.error(e); } }); // one failing listener must not stop the others
+  listeners.forEach((fn) => { try { fn(state); } catch (e) { log.error('privacy', 'a listener failed', e); } }); // one failing listener must not stop the others
 }

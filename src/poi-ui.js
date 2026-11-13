@@ -1,4 +1,5 @@
 // Points of interest on the map: placing, listing, editing, moving, backup. Data and storage live in poi.js.
+import { log } from './log.js';
 import L from 'leaflet';
 import { KEY, TRIPS_KEY, TYPES, typeOf, pinSvg, createStore, toGeoJSON, parseGeoJSON, sortForList, posInt, isoDate, listMode, groupLabel, dateLabel, isMain, isSub, stopNo, NOT_SUB } from './poi.js';
 import { createMarkerWeather, formatWhen, rainOutlook } from './markerweather.js';
@@ -359,7 +360,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     }
     paintPins(); // the pins carry the same numbers
   }
-  function renderRoute() { for (const fn of routeListeners) { try { fn(); } catch (e) { console.error(e); } } }
+  function renderRoute() { for (const fn of routeListeners) { try { fn(); } catch (e) { log.error('poi', 'a listener failed', e); } } }
   const routeStops = () => routeOrder.map((id) => store.get(id)).filter(Boolean);
   const routeApi = {
     /** The route as it stands: { selecting, stops (markers, in order), mode, canSort }. */
@@ -736,7 +737,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const pid = subParent.get(id);
     if (pid && pid !== expandedParent) setExpanded(pid); // both lists are drawn again
     if (tab === 'poi') scrollToCard(listEl.querySelector(`li[data-id="${CSS.escape(id)}"]`));
-    else for (const fn of revealListeners) { try { fn(id, tab); } catch (e) { console.error(e); } }
+    else for (const fn of revealListeners) { try { fn(id, tab); } catch (e) { log.error('poi', 'a listener failed', e); } }
   }
   function relink() {
     links.clearLayers();
@@ -839,7 +840,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (next === expandedParent) return;
     expandedParent = next;
     refreshIcons(); renderList();
-    for (const fn of expandListeners) { try { fn(); } catch (e) { console.error(e); } }
+    for (const fn of expandListeners) { try { fn(); } catch (e) { log.error('poi', 'a listener failed', e); } }
   }
   function addMarker(item) {
     const m = L.marker([item.lat, item.lon], { icon: iconOf(item), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });

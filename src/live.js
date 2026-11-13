@@ -9,6 +9,7 @@
 //     device id is added by the api, see sharedtrip/api.js).
 
 import { createBackoff, canPoll } from './backoff.js';
+import { log } from './log.js';
 
 const MIN_MS = 5000, KEEP_MS = 15000, MOVE_M = 5, POLL_MS = 5000, DAY = 86400000;
 
@@ -26,7 +27,7 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
   const listeners = new Set();
   const trips = new Map(); // trip id -> { sentAt, sent, accuracy, status: 'waiting' | 'ok' | 'error', error, busy }
   let watch = null, last = null, others = [], error = null, timer = null, notices = [], lastSig = '', polling = null;
-  const pollWait = createBackoff({ base: pollMs, max: 60000, now }); // a failing poll is repeated less and less often
+  const pollWait = createBackoff({ base: pollMs, max: 60000, now, name: 'live-poll' }); // a failing poll is repeated less and less often
 
   const snapshot = () => ({
     sharing: Object.fromEntries([...trips].map(([id, t]) => [id, { status: t.status, accuracy: t.accuracy ?? null, error: t.error ?? null, at: t.sentAt ?? null }])),
@@ -39,7 +40,7 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
     lastSig = sig; listeners.forEach((fn) => fn(s));
   };
   const note = (m) => { if (m) notices.push(m); };
-  const quiet = (p) => Promise.resolve(p).catch(() => { /* best effort: the server forgets a position after 2 minutes anyway */ });
+  const quiet = (p) => Promise.resolve(p).catch((e) => { log.warn('live', 'a stop or clean-up call failed', e); /* best effort: the server forgets a position after 2 minutes anyway */ });
 
   function endWatch() { if (watch !== null && geo) geo.clearWatch(watch); watch = null; last = null; }
 
@@ -63,7 +64,7 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
       t.sentAt = now(); t.sent = { lat: p.lat, lon: p.lon }; t.accuracy = p.accuracy; t.status = 'ok'; t.error = null; t.retry.ok();
     } catch (e) {
       if (/trip not found/.test(e.message)) { await stop(id, 'You are no longer in this trip, so sharing your location stopped.'); return; }
-      t.status = 'error'; t.error = e.message; t.retry.fail(); // the next position is sent after a wait that grows with each failure
+      t.status = 'error'; t.error = e.message; t.retry.fail(e); // the next position is sent after a wait that grows with each failure
     } finally { t.busy = false; emit(); }
   }
 
@@ -104,7 +105,7 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
   function poll() {
     if (polling) return polling;
     polling = (async () => {
-      try { others = await api.live(); error = null; pollWait.ok(); } catch (e) { error = e.message; pollWait.fail(); }
+      try { others = await api.live(); error = null; pollWait.ok(); } catch (e) { error = e.message; pollWait.fail(e); }
       emit();
     })().finally(() => { polling = null; });
     return polling;
@@ -120,7 +121,7 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
     start(id) {
       if (!geo) return { ok: false, reason: 'This browser cannot give a position.' };
       if (trips.has(id)) return { ok: true };
-      trips.set(id, { status: 'waiting', claim: true, retry: createBackoff({ base: minMs, max: 60000, now }) });
+      trips.set(id, { status: 'waiting', claim: true, retry: createBackoff({ base: minMs, max: 60000, now, name: 'live-send' }) });
       if (watch === null) watch = geo.watchPosition(onPosition, onError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
       else if (last) send(id);
       emit();

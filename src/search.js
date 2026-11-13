@@ -1,5 +1,6 @@
 import L from 'leaflet';
 import { parseCoordinates } from './coordparse.js';
+import { log } from './log.js';
 
 const KIND = { city: 'City', county: 'District / county', landmark: 'Landmark' };
 const norm = (t) => t.toLowerCase().replace(/[\s'’\-]/g, '');
@@ -97,7 +98,7 @@ export function initSearch(map, places, { show }) {
         return { label: p.name || q, sub: `${sub} · online`, lat, lon, zoom: 14 };
       });
       if (list.length) return render(list, '');
-    } catch { /* fall through to Nominatim */ }
+    } catch (e) { log.warn('search', 'Photon lookup failed, trying Nominatim', e); /* fall through to Nominatim */ }
     try {
       const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&accept-language=zh,en&q=${encodeURIComponent(q)}`);
       if (!r.ok) throw new Error(r.status);

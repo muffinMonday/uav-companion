@@ -63,6 +63,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `panel.js`, `swipe.js` | Side panel, rail, tabs (generic over `[role=tab]`), phone sheet; swipe gestures (sheets, dashboard, the map popups via `onPopupSwipe`, and the profile, achievement and account dialogs via `onDialogSwipe`) |
 | `dashboard.js`, `dashstate.js` (pure), `whatsnew.js` | Bottom dashboard and its start rules; What's new entries (add one to announce a change) |
 | `prefs.js`, `privacy.js`, `privacy-ui.js` | Validated settings; opt-in switches and rounding |
+| `log.js`, `logscrub.js`, `logstore.js`, `errors.js` | Local diagnostics: the logger (levels, `?debug=1`, repeat counting), privacy scrubbing (allow-list), the IndexedDB ring buffer with rotation and JSON export, and the observe-only global error handlers. `backoff.js` (`name`) logs the start and end of a failure streak | none (`privacy-ui.js` shows the Diagnostics card) |
 | `theme.js` | System / Light / Dark: resolves the choice, sets `<html data-theme>`, follows the device and other tabs (`index.html` has a matching before-first-paint script) | `prefs.js` |
 | `weather.js`, `markerweather.js`, `elevation.js` | Open-Meteo forecast, per-marker caches, elevation |
 | `controls.js`, `motion.js`, `cards.js`, `styles.css` | Number/date fields; animation helpers; `el()` DOM helper; all styling |

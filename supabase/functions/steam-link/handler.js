@@ -3,6 +3,7 @@
 // the owned games are read once and credited (hours played before linking count) (a player whose game details are private is told to make them public), and the link is recorded with the service role.
 // `deps`: getUser(authorization) -> { id } or null; rpc(fn, args) -> data (service role; throws on error); fetchFn; env: { secret, key, callbackUrl, origins, appIds }; now().
 import { SteamError, signState, verifyState, allowedReturn, withResult, authUrl, verifyAssertion, fetchOwnedGames } from '../_shared/steam.js';
+import { logEvent, classify } from '../_shared/log.js';
 
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization, content-type, apikey, x-client-info', 'access-control-allow-methods': 'GET, POST, OPTIONS' };
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { ...CORS, 'content-type': 'application/json' } });
@@ -32,7 +33,7 @@ export async function handle(req, deps) {
   const params = new URL(req.url).searchParams;
   let who;
   try { who = await verifyState(params.get('state'), env.secret, now); }
-  catch (e) { return text(400, e?.code === 'expired' ? 'This link has expired. Start again from the app.' : 'This link is not valid. Start again from the app.'); }
+  catch (e) { logEvent('warn', 'steam-link', 'bad_state', { code: e?.code === 'expired' ? 'expired' : 'bad_state' }, deps.logOut); return text(400, e?.code === 'expired' ? 'This link has expired. Start again from the app.' : 'This link is not valid. Start again from the app.'); }
   const back = (result) => go(withResult(who.returnUrl, result));
   try {
     const steamId = await verifyAssertion(params, { callbackUrl: env.callbackUrl, fetchFn: deps.fetchFn });
@@ -41,7 +42,9 @@ export async function handle(req, deps) {
     await deps.rpc('steam_link', { p_user: who.userId, p_steam_id: steamId, p_totals: games.totals });
     return back('linked');
   } catch (e) {
-    if (e instanceof SteamError) return back('error');
-    return back(/already linked to another account/.test(String(e?.message)) ? 'taken' : 'error');
+    if (e instanceof SteamError) { logEvent('warn', 'steam-link', 'link_failed', { code: classify(e) }, deps.logOut); return back('error'); }
+    const taken = /already linked to another account/.test(String(e?.message)); // the message is matched, never logged
+    logEvent(taken ? 'info' : 'error', 'steam-link', 'link_failed', { code: taken ? 'taken' : classify(e) }, deps.logOut);
+    return back(taken ? 'taken' : 'error');
   }
 }

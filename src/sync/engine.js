@@ -9,6 +9,7 @@
 // Status: 'off' (no adapter or not signed in), 'idle', 'syncing', 'synced', 'ask' (waiting for the user's choice), 'error'.
 
 import { buildDoc, decide, diffDocs, keepLocalCheckins, counts, sameContent, contentSig, mergeSettings } from './core.js';
+import { log } from '../log.js';
 
 const KEY = 'uavzones.v1.sync';
 const DEBOUNCE_MS = 2500;
@@ -34,7 +35,7 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
   function reconcileSettings(cloudSettings) {
     if (!settings) return false;
     const m = mergeSettings(settings.get(), cloudSettings);
-    if (m.from === 'cloud') { try { settings.apply(m.value); } catch { /* a settings problem must not stop the sync */ } }
+    if (m.from === 'cloud') { try { settings.apply(m.value); } catch (e) { log.warn('sync', 'applying the synced settings failed', e); /* a settings problem must not stop the sync */ } }
     return m.from === 'local';
   }
 
@@ -146,7 +147,7 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
     /** A cheap look at the cloud copy's settings only (for a tab that comes back to the front): adopts newer ones now, and schedules the upload of ours if they are newer. Never asks anything. */
     async checkSettings() {
       if (!adapter || !session || !settings || stopped || running || status === 'ask' || status === 'syncing') return;
-      try { const cloud = await adapter.info(); if (cloud && reconcileSettings(cloud.settings)) schedule(); } catch { /* try again at the next visit */ }
+      try { const cloud = await adapter.info(); if (cloud && reconcileSettings(cloud.settings)) schedule(); } catch (e) { log.warn('sync', 'checking the cloud settings failed', e); /* try again at the next visit */ }
     },
     async signIn(email) { try { await adapter.signIn(email); return { ok: true }; } catch (e) { return { ok: false, error: String(e?.message || e) }; } },
     /**

@@ -9,6 +9,7 @@ import { createTripWeather, weatherInfo, forecastSpots } from './tripweather.js'
 import { getWindLimit } from './weather.js';
 import { getPrivacy } from './privacy.js';
 import { el } from './cards.js';
+import { log } from './log.js';
 import { checkinCell } from './checkin-ui.js';
 import { visitedCount } from './checkin.js';
 import { onPrivacyChange } from './privacy.js';
@@ -157,7 +158,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     let n = 0;
     for (const it of stops) {
       btn.textContent = 'Checking ' + (++n) + ' of ' + stops.length + '…';
-      try { found.set(it.id, { sig: sigOf(it), s: zoneSummary(await checkPoint(it.lat, it.lon)) }); } catch { /* a stop that cannot be read simply has no verdict */ }
+      try { found.set(it.id, { sig: sigOf(it), s: zoneSummary(await checkPoint(it.lat, it.lon)) }); } catch (e) { log.warn('trips', 'a stop could not be checked', e); /* a stop that cannot be read simply has no verdict */ }
     }
     zoneChecks.set(t.id, found);
     const bad = [...found.values()].filter((z) => z.s.cls === 'no').length;

@@ -2,13 +2,14 @@
 // comes back into view. The server shows friends and party members "online" for 75 s after the last signal, and does nothing for someone who hides their status.
 import { createSocial } from './social.js';
 import { canPoll } from './backoff.js';
+import { log } from './log.js';
 
 const EVERY_MS = 30000;
 
 export function initPresence({ handle }) {
   const social = createSocial(handle.adapter.client);
   const signedIn = () => !!handle.sync.status().session;
-  const beat = () => { if (signedIn() && canPoll()) social.touch().catch(() => { /* the next one will do */ }); };
+  const beat = () => { if (signedIn() && canPoll()) social.touch().catch((e) => { log.warn('presence', 'heartbeat failed', e); /* the next one will do */ }); };
   setInterval(beat, EVERY_MS);
   document.addEventListener('visibilitychange', beat);
   let was = signedIn();

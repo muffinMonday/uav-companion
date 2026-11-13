@@ -10,3 +10,5 @@ Patterns learned from corrections. One line each: what went wrong, the rule that
 - A new What's new entry pushes the oldest of the three shown entries out; update the `dashboard` suite's "announced" assertion in the same change (or append to the newest entry).
 - The Supabase CLI asks for `--yes` on hosted `db push` and `functions deploy` in agent runs; use it only under the owner's standing phase-deploy choice, and dry-run first.
 - A browser mock that runs the real handler (`handleManual`) or real SQL (PGlite) behind the HTTP route finds more than hand-written fake replies; reuse the pattern in `tests/progression.mjs`, `sessions.mjs`, `steam.mjs`.
+- Never read `localStorage` or `indexedDB` in a default parameter or at module load: when site data is blocked the property getter throws before any try/catch (the `prefs` suite's blocked-storage check caught it). Reach them inside the try.
+- In a browser test that imports a module the page also loads, import the URL the page actually fetched (`performance.getEntriesByType('resource')`): after an edit Vite serves it with `?t=`, a second copy of the module with its own state.
