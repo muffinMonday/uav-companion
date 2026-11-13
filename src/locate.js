@@ -41,7 +41,7 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
   /** Draws (or moves) the blip and its accuracy ring. */
   function drawBlip(latlng, accuracy) {
     if (dot) { dot.setLatLng(latlng); ring.setLatLng(latlng).setRadius(accuracy); return; }
-    ring = L.circle(latlng, { radius: accuracy, weight: 1, color: '#1a73e8', fillOpacity: 0.12, interactive: false }).addTo(map);
+    ring = L.circle(latlng, { radius: accuracy, weight: 1, color: getComputedStyle(document.documentElement).getPropertyValue('--info').trim(), fillOpacity: 0.12, interactive: false }).addTo(map);
     dot = L.marker(latlng, {
       icon: L.divIcon({ className: '', html: DOT, iconSize: [14, 14] }),
       zIndexOffset: 1000, title: 'You are here',

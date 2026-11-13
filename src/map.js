@@ -30,7 +30,8 @@ export function baseTiles(key) {
 }
 
 // One fill colour per meaning: allow = where flying is permitted (teal), restrict = where it is restricted (red).
-const FILL = { allow: '#2aa6b8', restrict: '#d64545' };
+/** The zone fill for a region's meaning: the colours live in styles.css (--zone, --zone-restrict) so the legend and the map cannot drift apart. */
+export const zoneFill = (semantics) => getComputedStyle(document.documentElement).getPropertyValue(semantics === 'allow' ? '--zone' : '--zone-restrict').trim();
 const toLatLngBounds = (b) => L.latLngBounds([b[1], b[0]], [b[3], b[2]]);
 
 /** `initial` carries the remembered settings: { view: {lat, lon, zoom}, basemap, units }. All optional. */
@@ -70,7 +71,7 @@ export function createZones(map, regions) {
     // A region with named classes (Singapore) is drawn class by class, in the order of its classes, each in its own colour.
     paintRules: r.classes
       ? r.classes.filter((c) => !c.points).map((c) => ({ dataLayer: 'zones', filter: (zoom, f) => f.props.c === c.id, symbolizer: new PolygonSymbolizer({ fill: c.color }) }))
-      : [{ dataLayer: 'zones', symbolizer: new PolygonSymbolizer({ fill: FILL[r.semantics] }) }],
+      : [{ dataLayer: 'zones', symbolizer: new PolygonSymbolizer({ fill: zoneFill(r.semantics) }) }],
     labelRules: [],
     attribution: `Zones: ${r.source.authority}`,
   });

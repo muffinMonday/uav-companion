@@ -1,7 +1,7 @@
 import 'leaflet/dist/leaflet.css';
 import './styles.css';
 import L from 'leaflet';
-import { createMap, createZones } from './map.js';
+import { createMap, createZones, zoneFill } from './map.js';
 import { initSearch } from './search.js';
 import { initPointCheck, checkPoint, describeCheck, zoneSummary } from './pointcheck.js';
 import { addLocateControl, addCompassControl, launchFix } from './locate.js';
@@ -299,8 +299,8 @@ try {
 
   const legend = $('legend');
   const meanings = {
-    allow: ['#2aa6b8', 'Teal: suitable-flight airspace (flying permitted within the stated height); everything else is controlled.'],
-    restrict: ['#d64545', 'Red: restricted area. Elsewhere there is no restriction in this data, which is not the same as permission to fly.'],
+    allow: [zoneFill('allow'), 'Teal: suitable-flight airspace (flying permitted within the stated height); everything else is controlled.'],
+    restrict: [zoneFill('restrict'), 'Red: restricted area. Elsewhere there is no restriction in this data, which is not the same as permission to fly.'],
   };
   const addLegend = (colour, text) => { const row = document.createElement('div'); const sw = document.createElement('i'); sw.style.background = colour; row.append(sw, text); legend.append(row); };
   for (const r of regions.filter((x) => x.classes)) {

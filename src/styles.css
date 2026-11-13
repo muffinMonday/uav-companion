@@ -2,7 +2,8 @@
 :root{
   --bg:#ffffff; --surface:#ffffff; --surface-2:#f2f5f8; --fg:#14202b; --muted:#5b6b79; --line:#e0e7ee;
   --accent:#0e7c8f; --accent-fg:#ffffff; --accent-soft:color-mix(in srgb,var(--accent) 12%,transparent);
-  --danger:#c62828; --zone:#2aa6b8;
+  --danger:#c62828; --zone:#2aa6b8; --zone-restrict:#d64545; /* the two zone fills: map.js and the legend read them from here */
+  --info:#1a73e8; /* the "you are here" blue: the dot below and the accuracy ring in locate.js */
   --danger-solid:#c62828; --on-danger:#ffffff; /* a fill behind white text; --danger is for text and outlines */
   --control-border:#7b8b99; /* the visible edge of a field or switch (3:1 on --surface-2); --line is for dividers */
   --rank-edge:color-mix(in srgb,var(--fg) 55%,transparent); /* the thin outline on rank badges and rings */
@@ -136,7 +137,8 @@ textarea{resize:vertical;min-height:60px}
 @media (hover:hover){.type-btn:hover{border-color:var(--accent)}}
 .type-btn[aria-checked=true]{border-color:var(--accent);background:var(--accent-soft)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
-.chip{padding:4px 10px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface);cursor:pointer;font-size:var(--fs-meta);font-weight:var(--fw-semibold)}
+.chip,.pop-seq-btn,.side-chip,.pop-side-btn{border:1px solid var(--line);border-radius:var(--radius-pill);cursor:pointer;font-weight:var(--fw-semibold)} /* the pill family: one edge, shape, cursor and weight; each keeps its own size and fill */
+.chip{padding:4px 10px;background:var(--surface);font-size:var(--fs-meta)}
 .chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 .poi-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .poi-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;text-align:left}
@@ -224,7 +226,7 @@ textarea{resize:vertical;min-height:60px}
 .leaflet-control-scale-line{background:color-mix(in srgb,var(--surface) 88%,transparent)!important;color:var(--fg);border-color:var(--muted)!important;border-radius:0 0 4px 4px}
 .leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--muted)!important}
 .leaflet-control-attribution a{color:var(--accent)!important}
-.you-dot{background:#1a73e8;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(26,115,232,.35)}
+.you-dot{background:var(--info);border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px color-mix(in srgb,var(--info) 35%,transparent)}
 
 /* point-check popup extras */
 .pop.check{max-width:300px}
@@ -517,7 +519,7 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 /* ---------- previous / next stop ---------- */
 .pop-seq{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px -16px -14px;padding:8px 16px;border-top:1px solid var(--line);border-radius:0 0 var(--radius-lg) var(--radius-lg);background:color-mix(in srgb,var(--surface) calc(var(--pop-alpha) * 100%),transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .pop-seq-pos{font-size:var(--fs-meta);font-weight:var(--fw-semibold);color:var(--muted);font-variant-numeric:tabular-nums}
-.pop-seq-btn{padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface);color:var(--fg);font-weight:var(--fw-semibold);font-size:var(--fs-small);cursor:pointer}
+.pop-seq-btn{padding:6px 10px;background:var(--surface);color:var(--fg);font-size:var(--fs-small)}
 @media (hover:hover){.pop-seq-btn:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}}
 .pop-seq-btn:disabled{opacity:var(--disabled-opacity);cursor:not-allowed}
 
@@ -710,7 +712,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .poi-list li.with-checkin{display:flex;align-items:center;gap:6px}
 .poi-list li.side-row{margin-left:18px;border-left:2px dotted var(--line)}
 .poi-list li.side-row .poi-item{padding-top:5px;padding-bottom:5px}
-.side-chip{flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);border-radius:var(--radius-pill);padding:2px 8px;font:var(--fw-semibold) var(--fs-meta)/1.4 var(--font);cursor:pointer;white-space:nowrap}
+.side-chip{flex:none;background:var(--surface-2);color:var(--muted);padding:2px 8px;font:var(--fw-semibold) var(--fs-meta)/1.4 var(--font);white-space:nowrap}
 .side-chip[aria-expanded=true]{border-color:var(--accent);color:var(--accent)}
 @media (hover:hover){.side-chip:hover{border-color:var(--accent);color:var(--accent)}}
 /* the POI card wraps the button and its chip: the chip sits inside the card, so cards keep one width */
@@ -728,7 +730,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .plan-side.is-sel{opacity:1}
 .pop-side{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}
 .pop-side small{color:var(--muted)}
-.pop-side-btn{border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:var(--radius-pill);padding:2px 9px;font:var(--fw-semibold) var(--fs-meta)/1.4 var(--font);cursor:pointer}
+.pop-side-btn{background:var(--surface-2);color:var(--fg);padding:2px 9px;font:var(--fw-semibold) var(--fs-meta)/1.4 var(--font)}
 @media (hover:hover){.pop-side-btn:hover{border-color:var(--accent)}}
 .poi-list li.with-checkin .poi-card{flex:1;min-width:0}
 .checkin{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:46%}
