@@ -53,7 +53,9 @@ Current, constraining decisions only; superseded ones are removed (history: git,
 
 **Shared trips: party members may edit the trip and its markers; only the owner deletes it or manages members; field-level three-way merge in the client (edit beats delete); 30-day versions; leaving keeps a private copy (owner).** Alternatives not chosen: CRDT library, whole-document last-writer-wins. Consequences: limits 10 people, 500 markers, 20 shared trips per owner; Home and check-ins refused by the database.
 
-**Updates by polling, not Realtime** (shared trips 10 s, live locations 5 s, presence 30 s). Reason: testable with the same access rules. Realtime remains a later option.
+**Updates by polling, not Realtime** (shared trips 10 s, live locations 5 s, presence 30 s). Reason: testable with the same access rules. Realtime remains a later option. Efficiency review (2026-11-15): polling is kept; it was made cheaper instead (adaptive polling driven by `live_active`, back-off after failures, one request at a time, no document reads in the poll calls). Realtime would need select policies on tables that have none by design, or a new private-channel access rule, and its message limits are reached sooner by a party sharing positions than by polling; revisit only if measured load still needs it (`CURRENT_STATUS.md`).
+
+**Retention job (pg_cron) on hold** (owner, 2026-11-15): stale `live_locations` rows and old versions are still removed only by writes; a scheduled clean-up waits for real users or a second project.
 
 **Online status is symmetric: hiding yours hides theirs from you.** **Live location sharing is per trip, off on every app start, never resumed, ends a day after the trip, latest position only.**
 

@@ -11,6 +11,7 @@ import { buildDoc, decide, diffDocs, keepLocalCheckins, counts, sameContent } fr
 
 const KEY = 'uavzones.v1.sync';
 const DEBOUNCE_MS = 2500;
+const SHARED_DEBOUNCE_MS = 30000; // a shared-trip change applied from the server is uploaded to the cloud copy later, and with the next ones together
 
 export function createSync({ store, adapter, storage = globalThis.localStorage, device = 'Browser', includeCheckins = () => false, backup = null, debounceMs = DEBOUNCE_MS, now = () => new Date().toISOString() }) {
   const listeners = new Set();
@@ -79,16 +80,20 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
     return running;
   }
 
-  function schedule() {
+  let timerMs = 0;
+  /** Uploads after a pause. A person's own edit restarts a shorter pause; a server-applied change (`later`) never touches a pause that is already running, so it neither delays nor multiplies uploads. */
+  function schedule(later = false) {
     if (!adapter || !session || status === 'ask' || stopped) return;
-    clearTimeout(timer);
-    timer = setTimeout(() => { timer = null; sync(); }, debounceMs);
+    const ms = later ? Math.max(debounceMs, SHARED_DEBOUNCE_MS) : debounceMs;
+    if (timer && (later || ms > timerMs)) return;
+    clearTimeout(timer); timerMs = ms;
+    timer = setTimeout(() => { timer = null; sync(); }, ms);
   }
 
-  store.onChange(() => {
+  store.onChange((kind) => {
     if (applying) return;
     changes++; state.dirty = true; persist();
-    if (status === 'synced' || status === 'idle' || status === 'error') schedule();
+    if (status === 'synced' || status === 'idle' || status === 'error') schedule(kind === 'shared');
   });
 
   return {

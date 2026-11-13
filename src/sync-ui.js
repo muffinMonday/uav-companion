@@ -165,7 +165,7 @@ export async function initSyncUI({ store, toast }) {
     if (s.status !== 'ask') { asked = false; if (dlg.open) dlg.close(); }
     render(s); listeners.forEach((fn) => fn(s));
   });
-  adapter.onAuthChange?.((ev) => { if (ev === 'SIGNED_IN') sync.sync(); });
+  adapter.onAuthChange?.((ev) => { sync.sync(); }); // SIGNED_IN: sync; SIGNED_OUT (another tab, or a refresh that failed): sync() finds no session and the polls stop
   render();
   sync.start();
   Object.assign(handle, {

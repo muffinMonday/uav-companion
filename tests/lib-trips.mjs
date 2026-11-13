@@ -14,7 +14,8 @@ export function dbApi(db, uid, hooks = {}) {
     calls: [],
     list: async () => { api.calls.push('list'); if (hooks.failNext) { const m = hooks.failNext; hooks.failNext = null; throw new Error(m); } return (await rows('select * from public.list_my_trips()')).map((t) => ({ ...t, rev: Number(t.rev), members_rev: Number(t.members_rev) })); },
     get: async (id) => { api.calls.push('get'); return num(await one('public.get_shared_trip($1)', [id])); },
-    save: async (id, doc, baseRev) => { api.calls.push('save'); if (hooks.beforeSave) await hooks.beforeSave(id, doc); return num(await one('public.save_shared_trip($1, $2::jsonb, $3)', [id, J(doc), baseRev])); },
+    save: async (id, doc, baseRev) => { api.calls.push('save'); if (hooks.beforeSave) await hooks.beforeSave(id, doc); if (!hooks.quick) await serial(db, () => db.exec(`update public.shared_trips set updated_at = updated_at - interval '3 minutes' where id = '${id}'`)); // saves minutes apart, not seconds (version_coalesce)
+      return num(await one('public.save_shared_trip($1, $2::jsonb, $3)', [id, J(doc), baseRev])); },
     share: async (doc) => num(await one('public.share_trip($1::jsonb)', [J(doc)])),
     invite: (id, f) => one('public.invite_to_trip($1, $2)', [id, f]),
     respond: (id, a) => one('public.respond_trip_invite($1, $2)', [id, !!a]),

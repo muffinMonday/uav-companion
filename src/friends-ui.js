@@ -7,6 +7,7 @@ import { profileBits } from './profile-ui.js';
 import { createProfileDialog } from './profile-dialog.js';
 import { profileTrigger, setProgressionSource } from './profile-popover.js';
 import { getProgression } from './progression-api.js';
+import { createBackoff, canPoll } from './backoff.js';
 import { createSessionsCard } from './sessions-ui.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -38,7 +39,20 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     await load(); // render happens in load
   }
 
-  async function load({ withProfile = false } = {}) {
+  let inflight = null, inflightProfile = false, queued = null;
+  const wait = createBackoff({ base: POLL_MS, max: 600000 }); // after a failed load the background polls wait longer and longer
+  /** One load at a time: a call made while one is running shares it, and one that also wants the profile (and the running one does not) runs once more after it. */
+  function load({ withProfile = false } = {}) {
+    if (!signedIn()) return loadNow({ withProfile }); // nothing to fetch: just clears the screen
+    if (inflight) {
+      if (withProfile && !inflightProfile) queued = queued ?? inflight.then(() => { queued = null; return load({ withProfile: true }); });
+      return queued ?? inflight;
+    }
+    inflightProfile = withProfile;
+    inflight = loadNow({ withProfile }).finally(() => { inflight = null; });
+    return inflight;
+  }
+  async function loadNow({ withProfile = false } = {}) {
     if (!signedIn()) { profile = null; list = []; blocked = []; loadedFor = null; progression.forget(); sessions.reset(); publish(); render(); return; }
     try {
       if (loadedFor && loadedFor !== handle.sync.status().session.email) progression.forget(); // a different account on the same page: nothing of the last one's is kept
@@ -47,7 +61,8 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
       if (withProfile || profile) profile = await social.profile();
       if (shown()) blocked = await social.blocked();
       loadedFor = handle.sync.status().session.email;
-    } catch (e) { message = e.message; }
+      wait.ok();
+    } catch (e) { message = e.message; wait.fail(); }
     publish(); render();
   }
   function publish() {
@@ -163,8 +178,8 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
   cloud.friends = { incoming: 0, invites: 0, open: () => panel.open('friends'), editProfile: () => profileDialog.open(), reload: () => load({ withProfile: true }), recount: () => { publish(); render(); } };
   handle.onChange(() => { if (signedIn() && loadedFor !== handle.sync.status().session.email) load(); else if (!signedIn() && loadedFor) load(); });
   panel.onChange(() => { if (shown() && signedIn()) load({ withProfile: true }); else if (shown()) render(); });
-  setInterval(() => { if (signedIn() && document.visibilityState === 'visible') load(); }, POLL_MS);
-  setInterval(() => { if (shown() && signedIn() && document.visibilityState === 'visible') load(); }, LIVE_MS);
+  setInterval(() => { if (signedIn() && canPoll() && wait.ready()) load(); }, POLL_MS);
+  setInterval(() => { if (shown() && signedIn() && canPoll() && wait.ready()) load(); }, LIVE_MS);
   render();
   if (signedIn()) load();
   return { reload: () => load({ withProfile: true }) };

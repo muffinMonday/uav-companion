@@ -162,7 +162,10 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     showModalQuiet(nameDlg); focusField(input);
   }
 
-  async function loadProfile({ force = false } = {}) {
+  let profileLoad = null;
+  /** A call made while the profile is already being fetched shares that fetch. */
+  function loadProfile(opts = {}) { return profileLoad ?? (profileLoad = loadProfileNow(opts).finally(() => { profileLoad = null; })); }
+  async function loadProfileNow({ force = false } = {}) {
     const email = session()?.email;
     if (!email) { profile = null; profileFor = null; paintButtons(); return; }
     if (!force && profileFor === email && profile) return;

@@ -183,3 +183,15 @@ ok(r.status === 200 && body.due === 5 && body.ok === 2 && body.private === 1 && 
 ok(!a.calls.some((c) => c[0] === 'claim_manual_sync' || c[0] === 'release_manual_sync'), 'the daily run never touches the manual cooldown');
 ok(!JSON.stringify(body).includes('u1') && !JSON.stringify(body).includes(SID), 'and the answer holds counts only, no ids');
 r = await handleAll(cron('cron-secret'), allDeps(null, { rpc: async () => { throw new Error('db'); } })); ok(r.status === 500, 'if the list cannot be read: 500');
+ok(body.left === 0, 'when everyone is done nobody is left');
+{ // a few at a time, and the time budget stops the run without losing anyone: the rest are counted as left
+  const many = Array.from({ length: 12 }, (_, i) => ({ user_id: 'p' + i }));
+  let live = 0, peak = 0;
+  const d1 = allDeps(many, { fetchGames: async () => { live++; peak = Math.max(peak, live); await new Promise((r) => setTimeout(r, 5)); live--; return { status: 'ok', totals: { 410340: 5 } }; } });
+  r = await handleAll(cron('cron-secret'), d1); body = await r.json();
+  ok(body.ok === 12 && body.left === 0 && peak > 1 && peak <= 5, 'the daily run works on up to five people at once (' + peak + ' at most at once)');
+  let t = 0;
+  const d2 = allDeps(many, { now: () => t, budgetMs: 100, concurrency: 1, fetchGames: async () => { t += 40; return { status: 'ok', totals: { 410340: 5 } }; } });
+  r = await handleAll(cron('cron-secret'), d2); body = await r.json();
+  ok(body.due === 12 && body.ok === 3 && body.left === 9, 'and stops starting new people when the time budget is used: ' + JSON.stringify(body));
+}

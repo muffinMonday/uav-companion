@@ -8,6 +8,8 @@
 //   - One device at a time: the page that most recently turned sharing on holds the position; an older one is told "moved" on its next send and stops (the
 //     device id is added by the api, see sharedtrip/api.js).
 
+import { createBackoff, canPoll } from './backoff.js';
+
 const MIN_MS = 5000, KEEP_MS = 15000, MOVE_M = 5, POLL_MS = 5000, DAY = 86400000;
 
 /** Metres between two positions (good enough at the scale of a few metres to a few kilometres). */
@@ -23,7 +25,8 @@ export const endedMoreThanADay = (endDate, nowMs) => /^\d{4}-\d{2}-\d{2}$/.test(
 export function createLive({ api, geo = globalThis.navigator?.geolocation, getTrip = () => null, now = () => Date.now(), minMs = MIN_MS, keepMs = KEEP_MS, moveM = MOVE_M, pollMs = POLL_MS }) {
   const listeners = new Set();
   const trips = new Map(); // trip id -> { sentAt, sent, accuracy, status: 'waiting' | 'ok' | 'error', error, busy }
-  let watch = null, last = null, others = [], error = null, timer = null, notices = [], lastSig = '';
+  let watch = null, last = null, others = [], error = null, timer = null, notices = [], lastSig = '', polling = null;
+  const pollWait = createBackoff({ base: pollMs, max: 60000, now }); // a failing poll is repeated less and less often
 
   const snapshot = () => ({
     sharing: Object.fromEntries([...trips].map(([id, t]) => [id, { status: t.status, accuracy: t.accuracy ?? null, error: t.error ?? null, at: t.sentAt ?? null }])),
@@ -57,10 +60,10 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
       }
       t.claim = false; // the first position took the trip over from any other device; the ones after it only update
       if (r?.status === 'ended') { await stop(id, 'The trip has ended, so sharing your location stopped.'); return; }
-      t.sentAt = now(); t.sent = { lat: p.lat, lon: p.lon }; t.accuracy = p.accuracy; t.status = 'ok'; t.error = null;
+      t.sentAt = now(); t.sent = { lat: p.lat, lon: p.lon }; t.accuracy = p.accuracy; t.status = 'ok'; t.error = null; t.retry.ok();
     } catch (e) {
       if (/trip not found/.test(e.message)) { await stop(id, 'You are no longer in this trip, so sharing your location stopped.'); return; }
-      t.status = 'error'; t.error = e.message;
+      t.status = 'error'; t.error = e.message; t.retry.fail(); // the next position is sent after a wait that grows with each failure
     } finally { t.busy = false; emit(); }
   }
 
@@ -68,6 +71,7 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
     const c = pos.coords;
     last = { lat: c.latitude, lon: c.longitude, accuracy: Number.isFinite(c.accuracy) ? c.accuracy : null, t: now() };
     for (const [id, t] of trips) {
+      if (!t.retry.ready()) { t.accuracy = last.accuracy; continue; }
       const idle = t.sentAt === undefined ? Infinity : now() - t.sentAt;
       const moved = t.sent ? meters(t.sent.lat, t.sent.lon, last.lat, last.lon) : Infinity;
       if (t.sentAt === undefined || (idle >= minMs && (moved >= moveM || idle >= keepMs))) send(id);
@@ -96,9 +100,14 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
     emit();
   }
 
-  async function poll() {
-    try { others = await api.live(); error = null; } catch (e) { error = e.message; }
-    emit();
+  /** One look for the others' positions. A call while one is already on its way gets that one's answer. */
+  function poll() {
+    if (polling) return polling;
+    polling = (async () => {
+      try { others = await api.live(); error = null; pollWait.ok(); } catch (e) { error = e.message; pollWait.fail(); }
+      emit();
+    })().finally(() => { polling = null; });
+    return polling;
   }
 
   return {
@@ -111,17 +120,20 @@ export function createLive({ api, geo = globalThis.navigator?.geolocation, getTr
     start(id) {
       if (!geo) return { ok: false, reason: 'This browser cannot give a position.' };
       if (trips.has(id)) return { ok: true };
-      trips.set(id, { status: 'waiting', claim: true });
+      trips.set(id, { status: 'waiting', claim: true, retry: createBackoff({ base: minMs, max: 60000, now }) });
       if (watch === null) watch = geo.watchPosition(onPosition, onError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
       else if (last) send(id);
       emit();
       return { ok: true };
     },
     stop, stopAll, poll,
-    /** Looks for the others' positions every few seconds while `wanted()` and the page is visible. */
+    /** Looks for the others' positions every few seconds while `wanted()` (someone in the party is sharing) and the page is visible. */
     startPolling(wanted = () => true) {
       clearInterval(timer);
-      timer = setInterval(() => { if (wanted() && (typeof document === 'undefined' || document.visibilityState === 'visible')) poll(); }, pollMs);
+      timer = setInterval(() => {
+        if (!wanted()) { if (others.length) { others = []; emit(); } return; } // nobody is sharing any more: their pins go
+        if (canPoll() && pollWait.ready()) poll();
+      }, pollMs);
     },
     stopPolling() { clearInterval(timer); timer = null; others = []; emit(); },
   };

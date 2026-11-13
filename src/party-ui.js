@@ -27,7 +27,8 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
   const HIDE_KEY = 'uavzones.v1.livehide'; // trips whose party this person chose not to see on the map
   const hiddenTrips = (() => { try { const a = JSON.parse(localStorage.getItem(HIDE_KEY) || '[]'); return new Set(Array.isArray(a) ? a.filter((x) => typeof x === 'string') : []); } catch { return new Set(); } })();
   const saveHidden = () => { try { localStorage.setItem(HIDE_KEY, JSON.stringify([...hiddenTrips])); } catch { /* ignore */ } };
-  const wantsLive = () => !!handle.sync.status().session && store.trips().some((t) => t.shared);
+  // positions are looked for only while someone else is sharing (list_my_trips says so: live_active); until the server has said, or if it does not say, as before
+  const wantsLive = () => !!handle.sync.status().session && store.trips().some((t) => t.shared) && (eng.snapshot().liveActive ?? 1) > 0;
   const signedIn = () => !!handle.sync.status().session;
   let view = null; // the trips screen: { refresh() }
   const members = new Map();   // trip id -> { rev, list }
@@ -81,7 +82,7 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
   });
   handle.onChange(lifecycle);
   lifecycle();
-  document.addEventListener('visibilitychange', () => { if (started && document.visibilityState === 'visible') { eng.poll(); live.poll(); } });
+  document.addEventListener('visibilitychange', () => { if (started && document.visibilityState === 'visible') { eng.nudge().then(() => { if (wantsLive()) live.poll(); }); } });
   window.addEventListener('pagehide', () => { live.stopAll(); }); // closing the page ends sharing (the server forgets a position after 2 minutes in any case)
 
 

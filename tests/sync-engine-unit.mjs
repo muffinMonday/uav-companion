@@ -21,6 +21,25 @@ const names = (d) => d.store.items().map((i) => i.name).sort().join();
 const byName = (d, n) => d.store.items().find((i) => i.name === n);
 const cloudNames = (c, u) => c.rows.get(u).doc.items.map((i) => i.name);
 
+// ---------- a shared-trip change applied from the server waits for a later, shared upload; a person's own edit does not wait
+{
+  const c = makeCloud(), d = device(c, 'phone', { user: { email: 'a@example.test' } });
+  d.store.add(M('own'));
+  const { trip } = d.store.addTrip({ name: 'Shared' });
+  await d.sync.start();
+  const saves = () => c.calls.filter((x) => x === 'save').length;
+  const base = saves();
+  const remote = (n) => ({ v: 1, trip: { id: trip.id, name: 'Shared' }, items: Array.from({ length: n }, (_, i) => ({ id: 'r' + i, type: 'photo', name: 'Remote ' + i, lat: 30.5, lon: 114.3, tripId: trip.id, created: '2026-12-01T00:00:00Z' })) });
+  d.store.applyShared(trip.id, remote(1)); await tick(80);
+  d.store.applyShared(trip.id, remote(2)); await tick(80);
+  ok(d.sync.status().dirty && saves() === base, 'a change applied from the server is not uploaded within the usual pause');
+  d.store.add(M('mine')); await tick(120);
+  ok(saves() === base + 1 && !d.sync.status().dirty, "the person's own edit uploads at once, taking the server-applied changes with it");
+  d.store.applyShared(trip.id, remote(3)); await tick(80);
+  ok(saves() === base + 1, 'and the next server-applied change waits again');
+  await d.sync.stop();
+}
+
 // ---------- not signed in: nothing happens
 {
   const cloud = makeCloud(), d = device(cloud, 'laptop', { signedIn: false });

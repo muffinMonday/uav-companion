@@ -1,6 +1,7 @@
 // The progression functions of the cloud database (supabase/migrations/20261114110000_achievements.sql and 20261114120000_progression_read.sql), with a short cache.
 // A person is named by the handle the app already holds: ('friend', friendship id) or ('member', party member id). Nothing here ever has a user id.
 import { cleanProgression, cleanHistory } from './progression.js';
+import { createBackoff } from './backoff.js';
 
 const TTL_MS = 30_000;
 const clients = new WeakMap();
@@ -18,6 +19,7 @@ export function createProgression(client, now = () => Date.now()) {
     return data;
   };
   const cache = new Map(); // key -> { at, value }
+  const manyWait = createBackoff({ base: 10_000, max: 120_000, now }); // after a failed list call, `many` fails at once for a while instead of asking again
   const fresh = (k) => { const c = cache.get(k); return c && now() - c.at < TTL_MS ? c.value : undefined; };
   const keep = (k, value) => { cache.set(k, { at: now(), value }); if (cache.size > 200) cache.delete(cache.keys().next().value); return value; };
 
@@ -34,9 +36,11 @@ export function createProgression(client, now = () => Date.now()) {
     async many(kind, ids) {
       const uniq = [...new Set(ids)];
       const want = uniq.filter((id) => fresh('brief:' + kind + ':' + id) === undefined);
+      if (want.length && !manyWait.ready()) throw new Error('progression is unavailable, trying again shortly');
       for (let i = 0; i < want.length; i += 100) {
         const chunk = want.slice(i, i + 100);
-        const rows = await rpc('list_progression', { p_kind: kind, p_ids: chunk });
+        let rows;
+        try { rows = await rpc('list_progression', { p_kind: kind, p_ids: chunk }); manyWait.ok(); } catch (e) { manyWait.fail(); throw e; }
         const got = new Set();
         for (const r of Array.isArray(rows) ? rows : []) if (r && typeof r.id === 'string' && chunk.includes(r.id)) { got.add(r.id); keep('brief:' + kind + ':' + r.id, cleanProgression(r)); }
         for (const id of chunk) if (!got.has(id)) keep('brief:' + kind + ':' + id, { visible: false });

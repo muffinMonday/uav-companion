@@ -49,8 +49,13 @@ export async function refused(db, uid, sql, params = []) {
   try { await as(db, uid, sql, params); return null; } catch (e) { return String(e.message || e); }
 }
 
-/** save_user_data as a user; the result is the jsonb the function returns. */
-export async function save(db, uid, doc, baseRev = null, device = 'test', force = false) {
+/**
+ * save_user_data as a user; the result is the jsonb the function returns. Saves made within 2 minutes of each other by one device are one editing session and
+ * keep no version between them (20261115110000_version_coalesce.sql); unless `quick` is true, the stored copy is first made 3 minutes old, as if the saves
+ * were minutes apart, so each save keeps a version as the tests expect.
+ */
+export async function save(db, uid, doc, baseRev = null, device = 'test', force = false, quick = false) {
+  if (!quick) await db.exec(`update public.user_data set updated_at = updated_at - interval '3 minutes' where user_id = '${uid}'`);
   const rows = await as(db, uid, 'select public.save_user_data($1::jsonb, $2::bigint, $3, $4) as r', [JSON.stringify(doc), baseRev, device, force]);
   return rows[0].r;
 }

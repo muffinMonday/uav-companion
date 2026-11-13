@@ -22,7 +22,7 @@ Members earn **XP**; XP gives a **rank** (10 tiers, Rookie 0 XP to Ace 3,500; mo
 | Achievements, featured | `20261114110000_achievements.sql` | `progression.js` (pure), `progression-api.js`, `progression-ui.js` |
 | Read API | `20261114120000_progression_read.sql` | own card in the account pane (`account-ui.js`), others' card in `profile-popover.js`, `livemap.js` ring |
 | Sessions | `20261114130000_flight_sessions.sql` | `sessions.js`, `sessions-ui.js` (Friends tab) |
-| Steam | `20261114140000_steam.sql`, `supabase/functions/{steam-link,steam-sync,steam-sync-all,_shared}` | `steam.js`, `steam-ui.js` (Friends tab) |
+| Steam | `20261114140000_steam.sql`, `20261115120000_steam_queue.sql` (batched hours, attempt-ordered daily list), `supabase/functions/{steam-link,steam-sync,steam-sync-all,_shared}` | `steam.js`, `steam-ui.js` (Friends tab) |
 
 Tests: `db-progression-unit`, `db-progression-read-unit`, `db-sessions-unit`, `db-steam-unit` (PGlite); `progression-unit`, `sessions-unit`, `steam-unit` (edge logic), `steamui-unit`; browser `progression`, `sessions`, `steam`, and the rank checks in `live`.
 

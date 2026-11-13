@@ -1,5 +1,5 @@
 // The cloud tables and their access rules, tested on a real Postgres (PGlite) with the roles Supabase uses. No browser, no network, no Docker.
-import { makeDb, as, refused, save, doc, A, B } from './lib-db.mjs';
+import { makeDb, as, refused, save, doc, A, B, D } from './lib-db.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 
 const db = await makeDb();
@@ -82,6 +82,21 @@ ok((await as(db, A, 'select markers from public.user_data')).length === 1 && (aw
 await as(db, A, 'select public.delete_user_data()');
 ok((await as(db, A, 'select * from public.user_data')).length === 0 && (await as(db, A, 'select * from public.list_user_data_versions()')).length === 0, 'delete_user_data removes the document and every version');
 ok((await as(db, B, 'select * from public.user_data')).length === 1, 'and leaves other users alone');
+// ---------- a burst of saves from one device keeps one version, not one per save (version_coalesce)
+{
+  const vcount = async () => (await as(db, D, 'select * from public.list_user_data_versions()')).length;
+  const s1 = await save(db, D, doc(1, 0), null, 'laptop', false, true);
+  const s2 = await save(db, D, doc(2, 0), s1.rev, 'laptop', false, true);
+  const s3 = await save(db, D, doc(3, 0), s2.rev, 'laptop', false, true);
+  ok(s3.status === 'ok' && s3.rev === 3 && await vcount() === 0, 'saves seconds apart from one device keep no version between them (revision 3, no versions)');
+  const s4 = await save(db, D, doc(4, 0), s3.rev, 'phone', false, true);
+  ok(s4.rev === 4 && await vcount() === 1, 'a save from another device keeps what it replaces');
+  const s5 = await save(db, D, doc(5, 0), s4.rev, 'phone', false);
+  ok(s5.rev === 5 && await vcount() === 2, 'a save two minutes or more after the last one keeps it');
+  const s6 = await save(db, D, doc(6, 0), s5.rev, 'phone', true, true);
+  ok(s6.status === 'ok' && await vcount() === 3, 'a forced overwrite always keeps what it replaces');
+  await as(db, D, 'select public.delete_user_data()');
+}
 await db.exec(`delete from auth.users where id = '${B}'`);
 ok((await db.query('select count(*)::int as n from public.user_data')).rows[0].n === 0 && (await db.query('select count(*)::int as n from public.user_data_versions')).rows[0].n === 0, 'deleting an account deletes its data too');
 await db.close();

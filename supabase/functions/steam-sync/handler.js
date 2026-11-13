@@ -54,12 +54,20 @@ export async function handleAll(req, deps) {
   if (!deps.env.cronSecret || !sameSecret(req.headers.get('x-cron-secret'), deps.env.cronSecret)) return json(401, { error: 'not allowed' });
   let due = [];
   try { due = (await deps.rpc('list_steam_due', { p_limit: 200 })) ?? []; } catch { return json(500, { error: 'Could not list who is due.' }); }
-  const counts = { due: due.length, ok: 0, private: 0, error: 0, skipped: 0 };
-  for (const d of due) {
-    try {
-      const o = await syncOne(d.user_id, deps);
-      if (o.status === 'ok') counts.ok++; else if (o.status === 'private') counts.private++; else if (o.status === 'not_linked') counts.skipped++; else counts.error++;
-    } catch { counts.error++; }
+  const counts = { due: due.length, ok: 0, private: 0, error: 0, skipped: 0, left: 0 };
+  // a few people at a time, and no new person once the time budget is used (the function has a wall-clock limit); the ones left are due again at the next run
+  const now = deps.now ?? Date.now, budgetMs = deps.budgetMs ?? 100000, started = now();
+  let next = 0;
+  async function worker() {
+    while (next < due.length && now() - started < budgetMs) {
+      const d = due[next++];
+      try {
+        const o = await syncOne(d.user_id, deps);
+        if (o.status === 'ok') counts.ok++; else if (o.status === 'private') counts.private++; else if (o.status === 'not_linked') counts.skipped++; else counts.error++;
+      } catch { counts.error++; }
+    }
   }
+  await Promise.all(Array.from({ length: Math.min(deps.concurrency ?? 5, due.length) }, worker));
+  counts.left = due.length - next;
   return json(200, counts);
 }

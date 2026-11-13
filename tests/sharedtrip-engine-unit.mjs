@@ -162,6 +162,33 @@ ok(!alex.store.getTrip(TID).shared && alex.store.items().some((i) => i.tripId ==
 await bea2.eng.poll();
 ok(!bea2.store.getTrip(TID).shared && bea2.eng.takeNotices().length === 1 && (await rows(A, 'select * from public.list_my_trips()')).length === 0, 'the others keep a private copy and are told; the server holds nothing');
 
+// ---------- polling that backs off, and the live signal (a fake server, no database)
+{
+  globalThis.localStorage = memStorage();
+  let lists = [], calls = 0, failing = false;
+  const api = { list: async () => { calls++; if (failing) throw new Error('down'); return lists; }, get: async () => { throw new Error('not used'); }, save: async () => { throw new Error('not used'); } };
+  const e = createSharedTrips({ store: createStore(), api, storage: memStorage(), pollMs: 100000, slowAfter: 2, slowerAfter: 4 });
+  const run = async (n) => { for (let i = 0; i < n; i++) await e.tick(); };
+  ok(e.snapshot().liveActive === null, 'before any poll the live count is unknown');
+  lists = [{ id: 'a', status: 'joined', role: 'owner', rev: 1, members_rev: 1, members: 2, name: 'T', live_active: 2 }, { id: 'b', status: 'joined', role: 'member', rev: 1, members_rev: 1, members: 2, name: 'U', live_active: 1 }, { id: 'c', status: 'invited', role: 'member', rev: 1, members_rev: 1, members: 2, name: 'V', live_active: 0 }];
+  await e.poll();
+  ok(e.snapshot().liveActive === 3, 'the live count adds up the joined trips (' + e.snapshot().liveActive + ')');
+  lists = lists.map(({ live_active, ...t }) => t); await e.poll();
+  ok(e.snapshot().liveActive === null, 'a server that does not say gives null (the live poll then runs as before)');
+  lists = []; await e.poll();
+  ok(e.snapshot().liveActive === 0, 'no joined trips: zero');
+
+  calls = 0; await run(30);
+  ok(calls < 20 && calls >= 8, 'with nothing new, 30 ticks make fewer polls (' + calls + ')');
+  const before = calls; e.nudge(); await tick(60);
+  ok(calls === before + 1, 'coming back to the page polls at once');
+  const t1 = e.tick(); await t1;
+  ok(t1 !== undefined, 'and the very next tick polls too (the normal pace is back)');
+  failing = true; await e.nudge(); calls = 0; await run(5);
+  ok(calls === 0, 'after a failed poll the timer waits (' + calls + ' polls in 5 ticks)');
+  await e.stop();
+}
+
 // ---------- stopping
 await alex.eng.stop(); await bea.eng.stop(); await bea2.eng.stop(); await cam.eng.stop(); await dee.eng.stop();
 await db.close();

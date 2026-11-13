@@ -10,7 +10,7 @@ const TRIP = '5a1c0000-0000-4000-8000-000000000001';
 const mk = (id, extra = {}) => ({ id, type: 'photo', name: 'Marker ' + id, note: '', lat: 30.5, lon: 114.3, created: '2026-11-01T00:00:00.000Z', tripId: TRIP, ...extra });
 const docOf = (items = [], trip = {}) => ({ v: 1, trip: { id: TRIP, name: 'Hubei spring', ...trip }, items });
 const share = (uid, doc = docOf([mk('m1'), mk('m2')])) => one(uid, 'public.share_trip($1::jsonb)', [J(doc)]);
-const save = (uid, doc, base, trip = TRIP) => one(uid, 'public.save_shared_trip($1, $2::jsonb, $3)', [trip, J(doc), base]);
+const save = async (uid, doc, base, trip = TRIP) => { await db.exec(`update public.shared_trips set updated_at = updated_at - interval '3 minutes' where id = '${trip}'`); return one(uid, 'public.save_shared_trip($1, $2::jsonb, $3)', [trip, J(doc), base]); }; // saves minutes apart, so each keeps a version (version_coalesce)
 const members = (uid, trip = TRIP) => rows(uid, 'select * from public.list_trip_members($1)', [trip]);
 const mine = (uid) => rows(uid, 'select * from public.list_my_trips()');
 
@@ -170,6 +170,29 @@ const sqRev = (await one(C, 'public.get_shared_trip($1)', [T2])).rev;
 const sqSaved = await save(C, sqDoc, sqRev, T2);
 const sqBack = await one(C, 'public.get_shared_trip($1)', [T2]);
 ok(sqSaved.status === 'ok' && sqBack.doc.items.find((i) => i.id === 'q1').isSub === true && sqBack.doc.items.find((i) => i.id === 'q1').parentId === 'p1', 'a trip with a Side Quest (isSub, parentId) is saved and read back as it is');
+// ---------- a burst of saves by one person keeps one version, not one per save (version_coalesce)
+{
+  const T = '5a1c0000-0000-4000-8000-0000000000ab';
+  const doc = (n) => ({ v: 1, trip: { id: T, name: 'Burst', startDate: '2026-12-01', endDate: '2026-12-02' }, items: Array.from({ length: n }, (_, i) => mk('b' + i, { tripId: T })) });
+  const vn = async () => (await rows(A, 'select * from public.list_shared_trip_versions($1)', [T])).length;
+  await share(A, doc(1));
+  const t = (await db.query(`select start_date, end_date from public.shared_trips where id = '${T}'`)).rows[0];
+  ok(t.start_date === '2026-12-01' && t.end_date === '2026-12-02', 'share_trip stores the dates in their columns');
+  const fast = (uid, d, base) => one(uid, 'public.save_shared_trip($1, $2::jsonb, $3)', [T, J(d), base]);
+  await fast(A, doc(2), 1); await fast(A, doc(3), 2); await fast(A, doc(4), 3);
+  ok((await one(A, 'public.get_shared_trip($1)', [T])).rev === 4 && await vn() === 0, 'saves seconds apart by one person keep no version between them');
+  await db.exec(`update public.shared_trips set updated_by = '${B}' where id = '${T}'`);
+  await fast(A, doc(5), 4);
+  ok(await vn() === 1, "a save over someone else's keeps what it replaces");
+  await db.exec(`update public.shared_trips set updated_at = updated_at - interval '3 minutes' where id = '${T}'`);
+  await fast(A, { ...doc(5), trip: { ...doc(5).trip, endDate: '2026-12-09' } }, 5);
+  ok(await vn() === 2, 'and so does a save over a document that is two minutes old or more');
+  const t2 = (await db.query(`select end_date from public.shared_trips where id = '${T}'`)).rows[0];
+  ok(t2.end_date === '2026-12-09', 'save_shared_trip keeps the end date column in step');
+  const l = (await rows(A, 'select * from public.list_my_trips()')).find((x) => x.id === T);
+  ok(l.end_date === '2026-12-09' && l.start_date === '2026-12-01', 'and list_my_trips reads the dates from the columns');
+  await one(A, 'public.delete_shared_trip($1)', [T]);
+}
 await db.exec(`delete from auth.users where id = '${C}'`);
 ok((await db.query('select count(*)::int as n from public.shared_trips')).rows[0].n === 0, 'deleting the owner\'s account deletes the shared trip too');
 await db.close();

@@ -10,17 +10,22 @@
 //     device: the trip and its markers stay as a private copy, and a notice says so.
 
 import { buildSharedDoc, mergeDocs, sameDoc, describeChange } from './core.js';
+import { createBackoff, canPoll } from '../backoff.js';
 
 const KEY = 'uavzones.v1.shared';
 
-export function createSharedTrips({ store, api, storage = globalThis.localStorage, pollMs = 10000, debounceMs = 2000 }) {
+// A list call that finds nothing new is repeated less often: every `pollMs` at first, every second tick after `slowAfter` quiet polls (about a minute), every third after
+// `slowerAfter` (about three minutes). Anything that changes (the list, a local edit, coming back to the page, an action) starts again at the normal pace.
+export function createSharedTrips({ store, api, storage = globalThis.localStorage, pollMs = 10000, debounceMs = 2000, slowAfter = 6, slowerAfter = 18 }) {
   const listeners = new Set();
   let bases = {};
   try { const d = JSON.parse(storage?.getItem(KEY) || 'null'); if (d && typeof d === 'object' && d.bases && typeof d.bases === 'object') bases = d.bases; } catch { bases = {}; }
   const persist = () => { try { storage?.setItem(KEY, JSON.stringify({ v: 1, bases })); } catch { /* the next start merges from scratch */ } };
 
-  const snap = { invitations: [], trips: {}, notices: [], error: null, polledAt: null };
-  let applying = false, poller = null, chain = Promise.resolve(), stopped = false;
+  const snap = { invitations: [], trips: {}, notices: [], error: null, polledAt: null, liveActive: null };
+  let applying = false, poller = null, chain = Promise.resolve(), stopped = false, ticking = false, quiet = 0, tickN = 0, listSig = '';
+  const backoff = createBackoff({ base: pollMs, max: 120000 }); // a failing list call is retried less and less often
+  const refused = new Map(); // trip id -> the server revision that could not be adopted (not fetched again until the revision changes)
   const timers = new Map();
 
   let lastSig = '';
@@ -32,7 +37,8 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
     lastSig = sig;
     listeners.forEach((fn) => fn(s));
   };
-  const snapshot = () => ({ invitations: snap.invitations.slice(), trips: { ...snap.trips }, error: snap.error, polledAt: snap.polledAt, notices: snap.notices.slice() });
+  /** liveActive: how many other members are sharing their location now, over all joined trips (null until a poll has said). Not part of the change signature: it is read by the live poll, not drawn. */
+  const snapshot = () => ({ invitations: snap.invitations.slice(), trips: { ...snap.trips }, error: snap.error, polledAt: snap.polledAt, notices: snap.notices.slice(), liveActive: snap.liveActive });
   const notice = (m) => { snap.notices.push(m); };
   const setStatus = (id, patch) => { snap.trips[id] = { ...(snap.trips[id] ?? {}), ...patch }; };
   const setBase = (id, rev, doc) => { bases[id] = { rev, doc }; persist(); };
@@ -67,9 +73,11 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
     setStatus(id, { role: e.role, members_rev: e.members_rev, members: e.members });
     const local = store.getTrip(id);
     if (!local) { // a trip this person joined, not on this device yet
+      if (refused.get(id) === e.rev) return;
       const g = await api.get(id);
       const r = (() => { applying = true; try { return store.adoptShared(g.doc, info); } finally { applying = false; } })();
-      if (!r.ok) { setStatus(id, { status: 'error', error: r.reason === 'limit' ? 'You have the most trips this app holds.' : 'Could not add the trip.' }); return; }
+      if (!r.ok) { refused.set(id, e.rev); setStatus(id, { status: 'error', error: r.reason === 'limit' ? 'You have the most trips this app holds.' : 'Could not add the trip.' }); return; }
+      refused.delete(id);
       setBase(id, g.rev, g.doc); setStatus(id, { status: 'synced', rev: g.rev, lastBy: g.updated_by_name, error: null });
       return;
     }
@@ -95,10 +103,14 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
 
   async function pollNow() {
     let list;
-    try { list = await api.list(); } catch (e) { snap.error = e.message; emit(); return; }
+    try { list = await api.list(); } catch (e) { backoff.fail(); snap.error = e.message; emit(); return; }
+    backoff.ok();
+    const sig = JSON.stringify(list.map((t) => [t.id, t.status, t.rev, t.members_rev, t.members, t.name, (t.live_active ?? 0) > 0]));
+    quiet = sig === listSig && !snap.error ? quiet + 1 : 0; listSig = sig;
     snap.error = null; snap.polledAt = Date.now();
     snap.invitations = list.filter((t) => t.status === 'invited').map((t) => ({ id: t.id, name: t.name, ownerName: t.owner_name, startDate: t.start_date, endDate: t.end_date }));
     const joined = list.filter((t) => t.status === 'joined');
+    snap.liveActive = joined.every((t) => Number.isFinite(t.live_active)) ? joined.reduce((n, t) => n + t.live_active, 0) : null; // null: the server does not say, so the live poll runs as before
     const ids = new Set(joined.map((t) => t.id));
     for (const e of joined) {
       try { await syncTrip(e); } catch (err) { setStatus(e.id, { status: 'error', error: err.message }); }
@@ -113,6 +125,14 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
     emit();
   }
   const poll = () => (stopped ? Promise.resolve() : serial(pollNow));
+  /** One timer tick. Returns the poll's promise, or undefined when the tick is skipped (hidden or offline page, a poll still running, the wait after a failure, or the slower pace). */
+  function tick() {
+    if (!canPoll() || ticking || !backoff.ready()) return undefined;
+    const every = quiet >= slowerAfter ? 3 : quiet >= slowAfter ? 2 : 1;
+    if (++tickN % every) return undefined;
+    ticking = true;
+    return poll().finally(() => { ticking = false; });
+  }
 
   function schedule(id) {
     clearTimeout(timers.get(id));
@@ -123,6 +143,7 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
   }
   store.onChange(() => {
     if (applying) return;
+    quiet = 0; // something changed on this device
     for (const t of store.trips()) {
       const base = bases[t.id];
       if (!t.shared || !base) continue;
@@ -139,7 +160,10 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
     /** Notices (a trip stopped being shared with this person ...) the interface has not shown yet; reading them clears them. */
     takeNotices: () => { const n = snap.notices; snap.notices = []; return n; },
     poll,
-    start() { stopped = false; poll(); clearInterval(poller); poller = setInterval(() => { if (typeof document === 'undefined' || document.visibilityState === 'visible') poll(); }, pollMs); },
+    start() { stopped = false; poll(); clearInterval(poller); poller = setInterval(tick, pollMs); },
+    tick,
+    /** Polls now and goes back to the normal pace (the page came back into view). */
+    nudge() { quiet = 0; return poll(); },
     stop() { stopped = true; clearInterval(poller); for (const t of timers.values()) clearTimeout(t); timers.clear(); return chain; },
 
     /** Starts sharing one of this person's trips with friends (the trip becomes shared; nobody is invited yet). */

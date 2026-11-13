@@ -149,6 +149,23 @@ ok(J((await hoursRows(A)).map((x) => x.ref)) === J(Array.from({ length: awardedB
 await link(A, '76561198000000009', { [LIFT]: 123 });
 ok((await lrow(A)).steam_id === '76561198000000009' && (await state(A))[LIFT] === 123 && (await lrow(A)).hours_awarded === awardedBefore + 1, 'linking a different Steam account replaces the link and the baseline, and keeps the hours');
 
+// ---------- the daily list goes by the last attempt, so people whose sync keeps failing cannot take every place (steam_queue)
+{
+  const ids = (await sql('select user_id from public.steam_links where steam_id is not null order by user_id')).map((x) => x.user_id);
+  ok(ids.length >= 2, 'at least two people are linked for this check (' + ids.length + ')');
+  await db.exec("update public.steam_links set last_synced_at = now() - interval '2 days', last_attempt_at = null");
+  const due = async (n = 10) => (await svc('select * from public.list_steam_due($1)', [n])).map((x) => x.user_id);
+  const first = (await due())[0];
+  await apply(first, {}, 'private');
+  ok((await lrow(first)).last_attempt_at !== null && (await lrow(first)).last_status === 'private', 'a failed attempt is stamped');
+  ok((await due(1))[0] !== first && (await due()).at(-1) === first, 'and the person who failed goes to the back of the line, so the others are served first');
+  await db.exec(`update public.steam_links set last_attempt_at = now() - interval '3 days' where user_id = '${first}'`);
+  ok((await due(1))[0] === first, 'the one who has waited longest since an attempt is first again');
+  await apply(first, { [LIFT]: 0 }, 'ok');
+  ok(!(await due()).includes(first), 'a successful sync takes them off the list for 20 hours');
+  await db.exec("update public.steam_links set last_synced_at = now()");
+}
+
 // ---------- deleting an account removes it all
 await db.exec(`delete from auth.users where id = '${C}'`);
 ok(!(await lrow(C)) && Object.keys(await state(C)).length === 0, 'deleting an account removes its Steam link and baseline');

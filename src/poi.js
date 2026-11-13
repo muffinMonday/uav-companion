@@ -289,7 +289,7 @@ export function createStore() {
     if (!ls) return true;
     try { ls.setItem(TRIPS_KEY, JSON.stringify({ v: 1, trips })); return true; } catch { return false; }
   }
-  const emit = () => listeners.forEach((fn) => fn());
+  const emit = (kind) => listeners.forEach((fn) => fn(kind)); // kind 'shared': the change came from the server (a shared trip applied here), not from the person
   const nextColor = () => TRIP_COLORS.find((c) => !trips.some((t) => t.color === c)) ?? TRIP_COLORS[trips.length % TRIP_COLORS.length];
   load();
 
@@ -431,7 +431,7 @@ export function createStore() {
       const removed = [...local.keys()].filter((id) => !keep.has(id)).length;
       items = items.filter((x) => !keep.has(x.id) && x.tripId !== tripId).concat(incoming);
       items.sort((a, b) => b.created.localeCompare(a.created));
-      const ok = saveTrips() && save(); emit();
+      const ok = saveTrips() && save(); emit('shared');
       return { ok, added, removed, changed };
     },
     /** Brings a shared trip onto this device: links the trip if it is already here, otherwise adds it, then applies the document. */

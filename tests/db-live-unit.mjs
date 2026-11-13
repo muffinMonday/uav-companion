@@ -132,6 +132,33 @@ ok((await db.query(`select count(*)::int as n from public.live_locations where u
 await age(A, 5); await share(A);
 await one(A, 'public.delete_shared_trip($1)', [TRIP]);
 ok(await count() === 0, 'deleting the trip deletes the positions');
+// ---------- list_my_trips says how many others are sharing now (the app looks for positions only while this is above zero), and the clean-up of old positions
+const TRIP3 = '5a1c0000-0000-4000-8000-0000000000ff';
+await one(A, 'public.share_trip($1::jsonb)', [J(docOf(TRIP3))]);
+for (const [n, join, who] of [['Bea', true, B], ['Cam', false, C]]) { await one(A, 'public.invite_to_trip($1, $2)', [TRIP3, await fid(A, n)]); if (join) await one(who, 'public.respond_trip_invite($1, true)', [TRIP3]); }
+const share3 = (uid) => one(uid, 'public.share_location($1, 30.5, 114.3, 12)', [TRIP3]);
+const act = async (uid) => (await rows(uid, 'select * from public.list_my_trips()')).find((t) => t.id === TRIP3)?.live_active;
+const age3 = (uid, seconds) => db.exec(`update public.live_locations set updated_at = now() - interval '${seconds} seconds' where user_id = '${uid}' and trip_id = '${TRIP3}'`);
+await db.exec('delete from public.live_locations');
+ok(await act(A) === 0 && await act(B) === 0, 'live_active is 0 when nobody is sharing');
+await share3(A);
+ok(await act(B) === 1, 'one other is sharing: the party sees 1');
+ok(await act(A) === 0, 'the sharer does not count themself');
+ok(await act(C) === 0, 'someone only invited sees 0');
+await share3(B);
+ok(await act(A) === 1 && await act(B) === 1, 'two sharing: each sees the other one');
+await age3(A, 130);
+ok(await act(B) === 0, 'a position older than 2 minutes does not count');
+await db.exec('delete from public.live_locations');
+await share3(A); await age3(A, 5); await share3(B);
+ok(await count() === 2, 'recent positions are all kept');
+await db.exec(`update public.live_locations set updated_at = now() - interval '11 minutes' where user_id = '${A}'`);
+await age3(B, 5); await share3(B);
+ok(await count() === 1, 'a position over 10 minutes old is removed by the next one sent');
+await db.exec('delete from public.live_locations');
+ok((await db.query("select count(*)::int as n from pg_indexes where indexname = 'live_locations_updated'")).rows[0].n === 1, 'there is an index on the position age');
+await one(A, 'public.delete_shared_trip($1)', [TRIP3]);
+
 await one(A, 'public.share_trip($1::jsonb)', [J(docOf(TRIP))]);
 await one(A, 'public.share_location($1, 1, 1)', [TRIP]);
 await db.exec(`delete from auth.users where id = '${A}'`);

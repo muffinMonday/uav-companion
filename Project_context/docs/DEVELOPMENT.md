@@ -68,6 +68,9 @@ See `supabase/README.md`: migrations, how the access rules are tested without Do
 - Tests use real touch events through the browser protocol (`ctx.newCDPSession(p)` and `Input.dispatchTouchEvent`, as in `tests/hold.mjs` and `tests/swipe.mjs`). The panel bodies scroll smoothly, so wait until `scrollTop` has arrived before measuring a control or starting a swipe.
 - A first visit now shows the quick setup (`tests/splash.mjs`). Suites that need a clean first visit remove the `uavzones.v1.dash` key, then click `#splash-skip` (or Escape) before using the dashboard; `tests/lib.mjs` seeds `welcomed: true` for everything else. Chrome swallows the first synthetic tap after a drag that began on the folded rail circle (`tests/swipe.mjs` taps again).
 
+## Load test (`scripts/loadtest.mjs`)
+Virtual users that make the app's own requests at the app's own pace against the hosted project (it creates throwaway users `loadtest-...@example.test` and deletes them at the end; there is no second project, so it also loads the one the live site uses: run off-peak, start with `--users 3 --minutes 1`). `node scripts/loadtest.mjs --yes --users 25 --minutes 5 --scenario live`; add `--adaptive` to model the client after the efficiency review (live poll only while `live_active` > 0, slower trip poll when quiet) and compare the two runs; `--cleanup` removes leftovers. Reports requests/s, p50/p95/p99 per call and errors; read CPU, memory, disk IO and `pg_stat_statements` in the Supabase dashboard for the same period. Never run it without the owner's go-ahead.
+
 ## Writing tests that can run in parallel
 The runner runs four suites side by side by default, so every new or changed suite follows these rules:
 - **Self-contained.** A suite seeds everything it needs itself (an `addInitScript` that writes `localStorage`, guarded by `sessionStorage.__seeded` so a reload keeps the state) and never depends on another suite having run, or on the order.
