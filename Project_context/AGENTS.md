@@ -18,7 +18,8 @@ Vite + Leaflet JS app; static hosting plus optional Supabase (accounts, friends,
 **Context:** update `CURRENT_STATUS.md` at each milestone and before stopping or clearing; say "saved" only after editing it. At about 65% context, finish the step and checkpoint; above 75%, no new large work. Claude cannot run `/clear`: checkpoint, then tell the user to run `/clear` (auto-compaction is fine; the checkpoint is the recovery source). Finished history goes to CHANGELOG, decisions to DECISIONS. Final message of a session: done, state, remaining, blockers, files, test results, next action.
 
 
-## Future backlogs (documentation only)
-- `docs/HTML_MAIN_REFACTOR_BACKLOG.md`: refactor source `index.html` into build-time fragments and simplify `src/main.js`; prioritize before Community Flying Areas.
-- `docs/COMMUNITY_FLYING_AREAS_PLAN.md`: approved product specification for locally saved, admin-reviewed community polygons.
-HTML Phase 1 (fragment assembly) is complete; the JavaScript refactor and Community Flying Areas remain **planned, not implemented**. Read only when relevant. Do not start further phases, commit, push or deploy without owner authorization. For UI edits, consult `docs/MODULES.md`.
+## UI and startup map
+For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map": feature -> HTML fragment -> JS -> CSS -> suites) before opening `index.html` or `main.js`. `index.html` is a shell; fragments are in `src/components/`; startup responsibilities are in `src/app/`. Refactor history: `docs/HTML_MAIN_REFACTOR_BACKLOG.md`.
+
+## Future backlog (documentation only)
+- `docs/COMMUNITY_FLYING_AREAS_PLAN.md`: approved product specification for locally saved, admin-reviewed community polygons. **Planned, not implemented**; its file paths should follow the component convention above. Do not start it, commit, push or deploy without owner authorization.
