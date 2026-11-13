@@ -1,0 +1,185 @@
+# DESIGN: UI design system
+
+Load before any styling change. One stylesheet (`src/styles.css`), no framework. Source code beats this file: if they disagree, fix the file in the same change. Review that produced this file and the phased plan: owner-approved 2026-11-13 (plan in the owner's plans folder, summary below).
+
+**Status.** Phases 0 and 1 are done. **Everything marked "planned" does not exist in `styles.css` yet.** Later phases are listed in section 12 and each needs the owner's approval first.
+
+Terms: **current** = in `styles.css` today; **planned (Pn)** = decided, to be added in phase n; **rule** = binding for new and changed CSS from now on.
+
+## 1. Principles (rules)
+1. Standardise, refine, do not redesign: keep the look, the colour language and the identity colours (section 7).
+2. Hierarchy first: title > primary value > body > meta > micro. Each role has one size and weight.
+3. Shared foundations, not mega-components: tokens plus a few small building blocks (section 6). A component with one use stays bespoke and only uses tokens.
+4. Use semantic tokens. No raw colour in component CSS except `#fff`/`#000` for glyphs and shadows, and the identity palette.
+5. Light and dark use the same tokens; a component never branches on theme (only `styles.css` token blocks and the three dark-only rules in section 8 do).
+6. Phones first for space and touch: 44 px hit area on touch, 12 px minimum for text people read, 16 px inputs on touch screens.
+7. No new runtime cost: do not add `backdrop-filter`, CSS filters or extra shadow layers; animate transform and opacity only; no web fonts.
+8. Do not change behaviour or the tuned phone sheet / dashboard logic (`.sidepanel.tall`, `.dash.tall`, swipe handling) when restyling.
+
+## 2. Tokens (current, `:root` and `:root[data-theme="dark"]`)
+| Group | Tokens | Notes |
+|---|---|---|
+| Colour | `--bg --surface --surface-2 --fg --muted --line` | page, cards, inset areas, text, secondary text, dividers |
+| | `--accent --accent-fg --accent-soft` | brand teal; soft = 12% tint for hover and selected |
+| | `--danger` | text/outline red; **not a fill behind white text in dark** (2.5:1): use `--danger-solid` with `--on-danger` (P1, built) |
+| | `--danger-solid --on-danger` | fill and its text (tab badge, armed delete buttons); 5.6:1 light, 4.8:1 dark |
+| | `--control-border` | edge of fields, number buttons and the switch track, >= 3:1 on `--surface-2` (light `#7b8b99`, dark `#6a8094`); `--line` stays for dividers |
+| | `--rank-edge` | 1 px outline on rank badges and rings (55% of `--fg`, 3.7:1 light, 5:1 dark) |
+| | `--disabled-opacity` | .5 for every disabled control |
+| | `--ok --ok-bg --no --no-bg --unk --unk-bg` | status pairs (text on tinted background) |
+| | `--zone` | zone teal (identity) |
+| Shape | `--radius:14px --radius-sm:9px` | everything else is a literal today (6/8/10/11/12/16/18/20/24/999) |
+| Elevation | `--shadow --shadow-sm` | panels/popups vs small floating controls |
+| Type | `--font` | system stack with `Noto Sans SC`; no size tokens yet |
+| Motion | `--dur-fast .12s --dur .2s --dur-slow .28s --ease` | motion block is wrapped in `prefers-reduced-motion:no-preference` |
+| Popup | `--pop-alpha` (0.5 to 1) | set from the opacity slider; glass effect |
+| Rank / rarity | `--rank-1..10 --rar-common/rare/epic/legendary` | identity; `--rank-9` has a dark override |
+| Layout vars set by code | `--panel-w --dash-lift --cols --h --hold-ms --rot --rank --rb --c` | written from JS with `style.setProperty`; keep |
+
+### Planned tokens (P2 unless stated; names are the contract, values may be tuned in review)
+- **Type scale (P3):** `--fs-micro:11px --fs-meta:12px --fs-small:13px --fs-body:14px --fs-title:16px --fs-head:18px --fs-display:24px`; weights `--fw-regular:400 --fw-medium:500 --fw-semibold:600 --fw-bold:700` (550/650 fold into 600, 750/800 into 700; 250 stays only for the dashboard greeting as `--fw-light`); line heights `--lh-tight:1.2 --lh-meta:1.35 --lh-body:1.45`.
+- **Space:** `--sp-1:4px --sp-2:8px --sp-3:12px --sp-4:16px --sp-5:24px`, with 2 px and 6 px allowed only in dense rows.
+- **Radius:** `--radius-xs:6px --radius-sm:9px --radius:14px --radius-lg:18px --radius-pill:999px`.
+- **Control size (P4/P5):** `--control-h` (about 36 px), `--control-h-sm` (about 30 px), `--tap:44px` (touch only), icon `--icon:18px --icon-sm:16px --icon-lg:22px`, stroke 2. Different control categories keep different sizes (owner decision): buttons, inputs, icon buttons, tabs, map controls.
+- **Elevation:** `--shadow-1`, `--shadow-2` (aliases of today's two), `--shadow-pin`, `--scrim`.
+- **Colour:** `--info` (replaces `#1a73e8` for the location dot and accuracy ring), `--focus`. (`--danger-solid`, `--on-danger`, `--control-border`, `--rank-edge`, `--disabled-opacity` were added in P1: see section 2.)
+- **Layers:** `--z-*` names for the numbers in section 5.
+
+## 3. Typography (rules; the scale is planned for P3)
+| Role | Size / weight | Used for |
+|---|---|---|
+| Display | 24, light | dashboard greeting, hero numbers |
+| Head | 18, bold | popup place name, splash title, big values (XP) |
+| **Section title** | **16, bold, normal case** | genuine card / section / dialog / pane headings (owner decision 2026-11-13). Replaces `.card h2` (12 px, uppercase, muted) |
+| Body | 14, regular; item titles 600 | list rows, form text |
+| Small | 13 | secondary lines, buttons (small) |
+| Meta | 12, muted | captions, counts, timestamps |
+| Micro / eyebrow | 11, uppercase, 600-700, tracked | **secondary labels and metadata only**: sub-group labels, stat keys, day heads, badges. Never a primary heading |
+Numbers: `font-variant-numeric:tabular-nums` for counts, distances, times, XP. Minimum readable text: 12 px on phones (11 px only for badges and map labels).
+Current state: 17 distinct sizes (9 to 25 px, half-pixel steps), 9 weights; `P3` maps them onto the scale above.
+
+## 4. Spacing and layout (rules, planned values)
+4-px rhythm. Card padding 12/16 (`--sp-3` `--sp-4`); gap between cards 12; stack gap inside a card 8; popup padding 16; dialog padding 24 (today 18; owner approved roomier dialogs); `.btn-row` margin symmetric. Related items closer than unrelated ones. Current state: gaps 2/3/4/5/6/8/10/12, margin-top 2/3/4/6/8/10/12/18 chosen by feel.
+
+## 5. Elevation, layers, motion
+Shadows: two tokens today. Do not add new shadow values.
+Layers. `#map` has no `z-index`, so there is no stacking context around the whole map: Leaflet's map pane (`.leaflet-map-pane`, which carries `.leaflet-pane`, **400 at page level**) and its controls (800, 1000) compete with the application's overlays in one stack. The Leaflet pane values 100 to 700 below are **relative inside the map pane**, not page levels. Verified in `styles.css` and `leaflet.css` 2026-11-13:
+| Level | Value | Who |
+|---|---|---|
+| **Leaflet (library, not ours)** | | |
+| **map pane** | **400 (page level)** | `.leaflet-map-pane`: everything below, up to the popup pane, is inside it |
+| canvas / svg inside the map pane | 100 / 200 | |
+| tile pane | 200 | |
+| panes (default), overlay pane | 400 | zones, routes, circles |
+| shadow pane | 500 | |
+| marker pane | 600 | markers (per marker: `zIndexOffset`) |
+| tooltip pane | 650 | |
+| popup pane | 700 | marker windows, point check |
+| controls | 800 (`.leaflet-control`) | zoom, locate, tool buttons |
+| control corners | 1000 (`.leaflet-top`, `.leaflet-bottom`) | ties with our panel; the later element in the DOM wins |
+| marker offsets (JS, relative inside the marker pane) | 900 live pins (`livemap.js`), 1000 location dot (`locate.js`) | not page-level z-index |
+| **Application overlays (`styles.css`)** | | |
+| 1 | `.search-btn` | inside `.search` (its own stacking: `position:absolute` with `z-index:1002`), orders the button above the input |
+| 5 | `.subpanel` | inside `.sidepanel` (`overflow:hidden`, `z-index:1000`): local ordering, not a page layer |
+| 450 | `.crosshair` | page level, just above the map pane (so above markers and popups; the class `.crosshair.under` hides it, set from `crosshair.js`, not checked when) |
+| 700 | `.hold-ring` | page level, above the map pane, below the panels |
+| 1000 | `.sidepanel` | |
+| 1001 | `.dock` (rail) | |
+| 1002 | `.search` | |
+| 1003 | `.live-chip` | |
+| 1004 | `.dash`, `.dash-peek`, `.dash-tab` | |
+| 1050 | `.wx` (weather card) | |
+| 1060 | `.banner` | |
+| 1070 | `.sidepanel.tall`, `.dash.tall` (phone) | above the banner and weather card |
+| 1080 | `.account-pop` | |
+| 1100 | `.toast` | |
+| 3000 | `.drag-ghost` | |
+Native `<dialog>`s use the browser's top layer (above all of this). The 1 and 5 are local orderings inside a parent that already forms a stacking context, so they are not layers and need no token; the planned `--z-*` names cover the 1000 to 3000 application layers and `450`/`700`. New overlays take an existing layer or ask.
+Motion: short, transform/opacity only, always inside `prefers-reduced-motion:no-preference` (or killed by the global `reduce` rule). Do not add continuous animations.
+
+## 6. Components and states
+### Building blocks (shared foundations; consolidation planned P7)
+| Block | Current classes | Standard |
+|---|---|---|
+| Button | `.btn` `.primary` `.small` `.danger` `.tool` (icon), `.icon-btn`, `.link-btn` | primary / secondary / danger / ghost-icon; heights per category (planned); disabled uniform |
+| Field | `input[type=text|url|email|number|date]`, `select`, `textarea`, `.field`, `.num-field`, `.date-field`, `.switch`, `.check-row`, `.radio` | one control rule, visible 3:1 border, label 12-13 semibold, help text meta |
+| Pill | `.chip`, `.side-chip`, `.pop-side-btn`, `.visit-chip`, `.pop-seq-btn` (+ separate: `.badge`, `.tab-badge`, `.ach-chip`) | the first five become one `.chip`; badges stay display-only |
+| Dialog / sheet | `.account-dialog` (+ `.profile-dialog`, `.prog-dialog`), `.cloud-dialog`, `.splash`; phone sheets `.account-pop`, `.sidepanel`, `.dash` | one shell; phone = bottom sheet with safe-area padding |
+| Section heading | `.card h2`, `.dash-card h3`, `.account-pop h2` ... | `.section-title` plus `.eyebrow` (planned P3) |
+| Message | `.form-error`, `.fr-message`, `.cloud-status`, `.pf-msg`, `.steam-message`, `.ses-message`, `.hint` | `.msg` with `.error/.ok/.warn` (planned, low priority) |
+### Bespoke (stay separate; tokens only)
+`.card` (side panel), `.pane-sec` (collapsible), `.dash-card`, `.trip-card`; tabs + `.tab-pill`, rail `.dock`, side panel, dashboard, popup content, verdict `.status` and `.stat` tiles (the model for "primary information"), name tag, live pin, crosshair, Leaflet controls. Tooltips: native `title` only.
+### State contract (rule)
+- **hover:** pointer devices only: every `:hover` rule sits in `@media (hover:hover)` (P1, enforced by `tests/contrast-unit.mjs`). A disabled button still shows its hover look on a mouse (not yet changed).
+- **active:** pressed feedback (scale .96-.97 or `--surface-2`), inside the motion-safe block.
+- **focus-visible:** the global 2 px `--accent` ring, offset 2; never remove it; inputs also change border colour.
+- **disabled:** `opacity:var(--disabled-opacity); cursor:not-allowed` (P1; was .3 to .55 and mixed cursors).
+- **loading:** `[aria-busy=true]` on the control or card, spinner or dimmed content, still announces its label.
+- **selected / on:** ARIA drives it (`aria-selected|pressed|checked|current|expanded`): accent border + `--accent-soft`; solid accent for toggles that stay on.
+- **error:** `[aria-invalid=true]` -> danger border plus a message below; colour is never the only signal.
+- **destructive:** two steps: first press arms (label changes, solid danger fill, white text via `--on-danger`), second confirms. Dialogs for irreversible actions name the consequence.
+
+## 7. Identity colours (intentional hardcoded colours: do not "tokenise" them into the theme)
+Marker types (`poi.js`): home `#2e7d32`, hotel `#6a4fb3`, takeoff `#1565c0`, landing `#8d6e63`, photo `#c2185b`, train `#00796b`, airport `#039be5`, hazard `#e65100`, residence `#827717`, other `#546e7a`. Trip colours (`TRIP_COLORS`, `poi.js`): `#e91e63 #3949ab #00897b #fb8c00 #6d4c41 #546e7a #7cb342 #8e24aa`. Friend palette (`livemap.js` `PALETTE`): `#e53935 #8e24aa #1e88e5 #00897b #f4511e #6d4c41 #3949ab #c0ca33`. Zone fills (`map.js` `FILL`): allow `#2aa6b8`, restrict `#d64545` (duplicated in the legend, `main.js:302-303`: planned single source, P7). Ranks `--rank-1..10`, rarities `--rar-*` (`styles.css`, bottom). Location dot `#1a73e8` (CSS `.you-dot` and `locate.js` ring: to become `--info`). These are not themed (DECISIONS.md, colour theme). **Fix contrast around them** (outline, text colour, the label inside), never by changing the hue, unless the owner decides.
+**Rank indicators (owner decision 2026-11-13):** keep the palette; add one subtle, consistent outline to rank badges/rings where needed for contrast in both themes (P1). Do not change the ten colours.
+
+## 8. Themes
+`theme.js` writes the resolved theme to `<html data-theme>`; `index.html` runs the same few lines before first paint (`tests/theme-unit.mjs` keeps them equal). Dark values: the `:root[data-theme="dark"]` token block at the top of `styles.css`, plus three small dark-only rules: `:root[data-theme="dark"]{color-scheme:dark}`, the `.base-tiles` filter (dark basemap = light OSM tiles inverted by a CSS filter, base layer only), and `--rank-9`. Rules: a new colour is a token with a dark value; no `@media (prefers-color-scheme)` in components; test both themes.
+
+## 9. Responsive and mobile
+Breakpoints (documented, current): **phone <= 520 px** (bottom sheets: `.sidepanel`, `.dash`, `.account-pop`), **compact <= 760 px** (rail icons only, search shortens), 420 px (splash choices stack), touch + height <= 900 (dashboard expand button). No tablet tier (761-1024 uses the desktop layout: checked in the baseline screenshots `tabport`, `tabland`). Phone sheet sizes: panel 62vh (max 560) / `tall` 90dvh; dashboard max 54vh / `tall` 90dvh; account sheet 85vh; marker window: sized to fit above the pin (collapsed) or 60% of the screen (expanded, 85% on a computer) (`src/view.js`). **Do not change these without the owner.**
+Rules: touch hit area 44 px (grow the target with padding or `::after`, not necessarily the glyph; `.checkin-btn` is the existing example); inputs 16 px on `(pointer:coarse)` to stop iOS zoom (P5); bottom safe-area padding on sheets and dialogs; no information carried only by colour; never rely on hover.
+
+## 10. Accessibility: facts and known issues (verified 2026-11-13 from the token values, WCAG 2 luminance)
+| Pair | Light | Dark | Needs | Status |
+|---|---|---|---|---|
+| `--fg` / `--bg` | 16.5 | 13.8 | 4.5 | ok |
+| `--muted` / `--bg`, `--surface-2` | 5.5, 5.0 | 7.2, 6.3 | 4.5 | ok |
+| `--accent` text on `--bg` / `--surface-2` | 4.9 / 4.5 | 7.7 / 6.7 | 4.5 | ok (light on surface-2 is borderline) |
+| `--accent-fg` on `--accent` | 4.9 | 7.8 | 4.5 | ok |
+| white on `--danger` (old) / on `--danger-solid` (now) | 5.6 / 5.6 | 2.5 / **4.8** | 4.5 | **fixed in P1** (dark fill `#d03a35`) |
+| white preset-avatar glyph on its disc (`hsl(h 52% 36%)`, 20 hues) | worst 3.6 | same (not themed) | 3 | **ok.** The phase 0 review wrongly listed this as 2.1:1 on `--accent`; preset avatars never sit on `--accent` (letter avatars use `--accent-fg`). Retracted |
+| `--ok/--no/--unk` on their `-bg` | 4.7 to 5.7 | 6.5 to 8.2 | 4.5 | ok |
+| `--line` vs `--bg` (control edge) | **1.25** | **1.42** | 3 (controls) | `--line` is now only for dividers; controls use `--control-border` (3.5 / 3.9 on the page): **fixed in P1** |
+| switch track vs `--bg` | 1.9 -> **3.5** | 2.6 -> **3.9** | 3 | **fixed in P1** (track = `--control-border`) |
+| rank colours vs surface | ranks 1,2,4,5,6,10 = 2.4-3.0 (**below 3**) | rank 7/8/9 = 3.9/3.0/2.8 (9 already overridden) | 3 (graphic) | **fixed in P1** by `--rank-edge` (hues unchanged); the `--rank-9` comment in `styles.css` now says so |
+Other known gaps: touch targets 18-30 px (only `.checkin-btn` extends its hit area); one `pointer:coarse` rule; no `forced-colors` rules; inputs 14 px; native `title` tooltips do not show on touch; 39 text declarations at <= 11.5 px. Not verified: screen readers, a real phone's touch accuracy.
+Good and to keep: global focus ring, `prefers-reduced-motion` handling, accessible names on icon buttons (`.tool-label`, `.sr-only`), `color-scheme`, native `<dialog>`.
+
+## 11. Map UI
+Popups (frosted glass via `--pop-alpha`), scale, attribution and Leaflet bar buttons follow the theme; `!important` in the Leaflet skin is deliberate (Leaflet's CSS is more specific). Markers, zones and routes keep identity colours. Do not add filters or blur beyond today's two (popup blur, `.base-tiles` filter): filter cost on a weak phone or a rotated map is still unmeasured. Check on the filtered dark map: `.crosshair` (`#111`), `.dist-label-text` border (`#888`).
+
+## 12. Phases (owner approved the direction 2026-11-13; each phase from 1 on needs approval after review)
+| Phase | Scope | Visible | Status |
+|---|---|---|---|
+| 0 | Baseline screenshots, this file, doc fixes | no | **done** |
+| 1 | Contrast and state fixes (`--danger-solid`, rank outline, `--control-border`, disabled, hover gating, contrast test) | small | **done** (validated 2026-11-13: after-p1 screenshots, contrast test, full npm test) |
+| 2 | Token layer, pixel-identical (diff must be empty); duplicate rules removed | none | not started |
+| 3 | Typography and hierarchy (scale, section title vs eyebrow, weights) | yes | not started |
+| 4 | Controls and proportions (+2-3 px, roomier dialogs, per-category sizes) | yes | not started |
+| 5 | Mobile ergonomics (44 px targets, 16 px inputs, safe areas) | phones | not started |
+| 6 | Hierarchy of dashboard, profile, progression, sessions, friends | yes | not started |
+| 7 | Consolidation (pills, fields, dialog shell, messages, identity-colour registry) | minimal | not started |
+| 8 | Final audit (screenshots, contrast test, performance) | no | not started |
+Phases 3 to 6 need the owner's approval of the before/after screenshots before they are committed. The owner does the final real-device pass; automated screenshots, browser tests and regression checks are ours.
+
+## 13. Screenshot baseline and regression workflow
+Tool: `scripts/ui-baseline.mjs` (drives the running app like the browser suites; changes nothing in the app). Output goes **outside the repository** to `~/UAV_UI_Screenshots/<label>/` (override with `--out`), so nothing is committed.
+```
+npm run dev                                         # the app on :5173
+node scripts/ui-baseline.mjs --label baseline       # all viewports x light/dark (about 25-35 min with --jobs 3)
+node scripts/ui-baseline.mjs --label after-p3 --vp desk,phone --only popup,panel
+node scripts/ui-baseline.mjs --compare baseline after-p3   # per-file pixel difference, writes diff_<a>_vs_<b>.json
+node tests/run.mjs --unit contrast                          # token contrast pairs and the hover/fallback guards
+```
+Viewports (fixed): `desk` 1440x900, `tabland` 1024x768, `tabport` 768x1024, `phone` 390x844, `phones` 360x640; touch on all but `desk`; theme forced per run; scale 1. File names: `<viewport>_<theme>_<NN>-<screen>.png` (NN is the screen's position in `SCREENS`; do not reorder, append new screens at the end so numbers stay stable for comparison). Each run writes `manifest.json` (browser version, clock, failures) and `index.html`, a contact sheet with light beside dark and the **priority** screens (marked `prio`, desktop and phone only) first for manual review.
+Determinism: fixed browser date (2026-11-13 10:00 +08, then running), `Asia/Singapore`, `en-GB`, reduced motion, placeholder map tiles (no network: everything not on localhost is blocked), fixed seed data (9 markers, 3 trips, in `ui-baseline.mjs`), a mocked Supabase on in-memory Postgres for signed-in screens, friend codes masked. Sessions are seeded for March 2027 because the database cannot be given a fake "now"; **re-date them in the script after March 2027**. Baselines are only comparable on the same machine and browser build (fonts and rendering differ otherwise); regenerate `baseline` if either changes.
+Not covered: live friends' pins with the rank ring, weather card, real map tiles, a scrolled-down panel, hover/focus states, a real phone. Add screens at the end of `SCREENS` as needed.
+Per-phase validation: before/after screenshots for both themes and the five viewports; `--compare` must report zero differences for a phase that claims "no visual change" (P2); stress content (long names, CJK, many items) before P3/P4; automated checks planned for P1-P5 (contrast pairs in a unit test, minimum hit area at 390 px, text-size floor, overflow); performance: the count of `box-shadow`/`filter`/`backdrop-filter` rules must not rise, and a CPU-throttled trace of panel open and map pan before/after P4 to P6; then `/test-impact` while iterating and the full `npm test` before each commit (AGENTS.md).
+
+## 14. Decisions (owner, 2026-11-13)
+1. Genuine card/section headings become 16 px normal case; small uppercase stays for secondary labels and metadata.
+2. Rank palette unchanged; subtle consistent outline on rank indicators where needed, both themes.
+3. Modest +2-3 px on controls and roomier dialogs are approved; keep different sizes for different control categories (no single height).
+4. Owner does the final real-device pass; automated browser tests, screenshots and regression checks are ours.
+5. Screenshots live outside the repository or in a git-ignored folder, with consistent names and viewports (section 13).

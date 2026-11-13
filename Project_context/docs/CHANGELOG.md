@@ -2,16 +2,19 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-13 (UI design system, phases 0 and 1)
+- Phase 0: `docs/DESIGN.md`, `scripts/ui-baseline.mjs` (screenshots outside the repo), date and wording fixes in the docs. Phase 1 (`styles.css`): `--danger-solid`/`--on-danger` for white text on red (dark was 2.5:1), `--control-border` for fields and the switch track, `--rank-edge` outline on rank badges and rings, one disabled look, all `:hover` rules under `@media (hover:hover)`, dead colour fallbacks removed; new `tests/contrast-unit.mjs`.
+
 ## 2026-11-13 (logging and audit trail, F53)
 - Milestone 1: `log.js`, `logscrub.js`, `logstore.js`, `errors.js`; `console.*` replaced; back-off streaks and about 12 silent network and behaviour catches logged; global handlers. Milestone 2: migration `20261116120000_audit_events.sql` (local only), `_shared/log.js`, `delete-account` fixed messages, Steam sync failure logging. Milestone 3: Diagnostics card, `tests/diag.mjs`, docs. A browser test caught a start-up crash when site data is blocked (a default parameter read `localStorage`).
 
 ## 2026-11-13 (colour theme, F52)
-- System / Light / Dark: selector in Map Configs, before-first-paint script, one dark block in the stylesheet (`a1170e1`). Dark basemap by CSS filter on the base layer, `baseTiles()` seam, rank-9 contrast fix (`9e679b6`). Theme stored in the `user_data` document, last choice wins, no chooser, `baseSig` (`9e679b6`; no migration). Tests: `theme-unit`, `theme`, `sync-settings-unit`, `cloud`.
+- System / Light / Dark: selector in Map Configs, before-first-paint script, dark colours as one token block in the stylesheet plus three small dark-only rules (`a1170e1`). Dark basemap by CSS filter on the base layer, `baseTiles()` seam, rank-9 contrast fix (`9e679b6`). Theme stored in the `user_data` document, last choice wins, no chooser, `baseSig` (`9e679b6`; no migration). Tests: `theme-unit`, `theme`, `sync-settings-unit`, `cloud`.
 
-## 2026-11-14 (profile pane)
+## 2026-11-13 (profile pane)
 - Progression and Steam moved from Friends into the account pane; Edit profile gets grouping, validation and an unsaved-changes guard. Tests updated (progression, steam, sessions, friends).
 
-## 2026-11-14
+## 2026-11-13 (progression, phases 1 to 6)
 - Progression system, phases 1 to 6 (design and owner to-do: `PROGRESSION.md`; features F49 to F51):
   - 1 XP ledger, ranks and settings as data, admin and organiser roles, administrator XP adjustment (`9470fd0`, migration `20261114100000_progression_core.sql`).
   - 2 Achievements: 16 launch definitions, permanent unlocks, featured three, unlock engine, shared-trip counter; fix so deleting an administrator account works (`e2408b6`, `20261114110000_achievements.sql`).

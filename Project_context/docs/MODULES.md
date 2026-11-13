@@ -66,7 +66,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `log.js`, `logscrub.js`, `logstore.js`, `errors.js` | Local diagnostics: the logger (levels, `?debug=1`, repeat counting), privacy scrubbing (allow-list), the IndexedDB ring buffer with rotation and JSON export, and the observe-only global error handlers. `backoff.js` (`name`) logs the start and end of a failure streak | none (`privacy-ui.js` shows the Diagnostics card) |
 | `theme.js` | System / Light / Dark: resolves the choice, sets `<html data-theme>`, follows the device and other tabs (`index.html` has a matching before-first-paint script) | `prefs.js` |
 | `weather.js`, `markerweather.js`, `elevation.js` | Open-Meteo forecast, per-marker caches, elevation |
-| `controls.js`, `motion.js`, `cards.js`, `styles.css` | Number/date fields; animation helpers; `el()` DOM helper; all styling |
+| `controls.js`, `motion.js`, `cards.js`, `styles.css` | Number/date fields; animation helpers; `el()` DOM helper; all styling (rules and tokens: `DESIGN.md`) |
 
 ## Build, data, tests
 | Path | Responsibility |

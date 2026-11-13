@@ -1,6 +1,6 @@
 # Progression: XP, ranks, achievements, sessions, Steam
 
-The design as built (phases 1 to 6, 2026-11-14). Load this when a task touches progression; user-facing description is `PROJECT.md` F49 to F51, table and function lists are in `supabase/README.md` (one entry per migration), the module map is `MODULES.md`. The approved plan lived outside the repo; this file replaces it.
+The design as built (phases 1 to 6, 2026-11-13). Load this when a task touches progression; user-facing description is `PROJECT.md` F49 to F51, table and function lists are in `supabase/README.md` (one entry per migration), the module map is `MODULES.md`. The approved plan lived outside the repo; this file replaces it.
 
 ## What it is
 Members earn **XP**; XP gives a **rank** (10 tiers, Rookie 0 XP to Ace 3,500; more XP keeps counting, rank stays Ace); milestones unlock **achievements** (16 at launch, four rarities, no XP of their own). XP sources: **offline flight-session attendance** (50 XP, only when an organiser marks the person present) and **approved Steam simulator playtime** (10 XP per completed hour). Everything is decided by the database; the app only draws.
@@ -37,7 +37,7 @@ Tests: `db-progression-unit`, `db-progression-read-unit`, `db-sessions-unit`, `d
 2. Switch Steam on: set secrets `STEAM_API_KEY`, `STEAM_STATE_SECRET`, `STEAM_CRON_SECRET`, `STEAM_RETURN_ORIGINS`, then set `steam_enabled` to 1. The functions are already deployed.
 3. Schedule the daily call to `steam-sync-all` (pg_cron + pg_net or a scheduled GitHub Actions workflow; snippets in `supabase/README.md`).
 4. First live check against real Steam with a chosen account (never done: built and tested only against fakes).
-5. (DONE 2026-11-16) `delete_profile` now wipes XP, achievements, counters, attendance and the Steam link; roles and `steam_credited` stay.
+5. (DONE 2026-11-13) `delete_profile` now wipes XP, achievements, counters, attendance and the Steam link; roles and `steam_credited` stay.
 
 ## Known gaps and risks
 - Real-world flying achievements (Maiden Flight, Back in the Air, Weekend Warrior, Frequent Flyer) are not defined: nothing records a flight yet (check-ins are local, live positions have no history). Needs a flight-logging feature (phase 7, not started).

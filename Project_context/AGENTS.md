@@ -3,7 +3,7 @@ Vite + Leaflet JS app; static hosting plus optional Supabase (accounts, friends,
 
 **Start:** read only `CLAUDE.md`, this file, `docs/CURRENT_STATUS.md`, `docs/SMALL_FIXES.md`; run `git status`, `git log -3`; reconcile the checkpoint with them before editing. Never discard uncommitted work.
 
-**Load on demand (`docs/`):** ARCHITECTURE (design, auth, flows), MODULES (code map), DATABASE (storage, Supabase, RLS), DEVELOPMENT (setup, tests, deploy), DECISIONS (why), PROJECT (features; large: grep the section), EFFICIENCY (polling, load test results, open items), PROGRESSION (XP, ranks, achievements, sessions, Steam: rules, how to extend, owner to-do). CHANGELOG: never at start.
+**Load on demand (`docs/`):** DESIGN (UI tokens, component rules, screenshot baseline: read before any styling change), ARCHITECTURE (design, auth, flows), MODULES (code map), DATABASE (storage, Supabase, RLS), DEVELOPMENT (setup, tests, deploy), DECISIONS (why), PROJECT (features; large: grep the section), EFFICIENCY (polling, load test results, open items), PROGRESSION (XP, ranks, achievements, sessions, Steam: rules, how to extend, owner to-do). CHANGELOG: never at start.
 
 **Skills (`.claude/skills/`):** `/change-workflow` for code changes, `/test-impact` to pick unit suites, `/supabase-change`, `/region-data`.
 
@@ -11,6 +11,7 @@ Vite + Leaflet JS app; static hosting plus optional Supabase (accounts, friends,
 - Source code beats docs; fix a wrong doc in the same change; link, don't copy.
 - Validate all stored/imported/shared data; DOM via `el()`/`textContent`. Nothing user-specific leaves the browser unless opted in; Home marker never shared. Keep `uavzones.` keys; shape change = version bump + `DATABASE.md` note.
 - DB writes only via SQL functions, RLS on every table, new migration files only. Never commit secrets or `.env*.local`.
+- Dates in docs are calendar dates from `git log` / `date`, never copied from a migration file name (those run ahead).
 - Minimal root-cause changes. `npm run test:unit`; `npm test` (app on :5173) before committing `src/`, `index.html`, `public/ai/` changes; read results before saying done.
 - Ask before commit, push or `npm run deploy`.
 

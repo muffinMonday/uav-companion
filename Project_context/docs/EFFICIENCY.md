@@ -1,4 +1,4 @@
-# Efficiency and scalability review (2026-11-15)
+# Efficiency and scalability review (2026-11-13)
 
 What was reviewed, what was found, what was changed, what was measured, and what is left. Source code beats this file; the numbers are from the code at commit `3f104f3` and the load runs below. **V** = verified in code, **A** = assumption (platform limits, plan shapes, real document sizes).
 

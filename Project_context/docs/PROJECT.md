@@ -160,7 +160,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 **F21. Look and phone layout (built)**
 - Backup lives at the bottom of the Points of Interest tab, in a dashed "Backup" block so it reads as separate from the tab's own cards. The weather and elevation card was removed from that tab: the privacy sub-panel (shield button) is the one place for those settings and the weather status line.
 - Number fields have − / + buttons (the browser spinner is hidden); date fields are rounded, themed for light and dark, and have a clear button (the native date picker still opens). Scroll bars are thin and themed. The fields are enhanced by `src/controls.js`, including those in marker windows built later.
-- Phones (up to 520 px): the search box and the dock never overlap (the dock is icons only below 760 px, the search box takes the space left, with a shorter hint). A marker window takes at most 45% of the screen height and scrolls inside; the map can be dragged around it.
+- Phones (up to 520 px): the search box and the dock never overlap (the dock is icons only below 760 px, the search box takes the space left, with a shorter hint). A marker window is sized to fit above its pin (collapsed) or at most 60% of the screen height (expanded; 85% on a computer) and scrolls inside; the map can be dragged around it (`popupMaxHeight`, `expandedMaxHeight` in `src/view.js`).
 - Day and stop: a pin shows a small label ("D2·3" day and stop, "D2" day only, "#3" stop only); list rows say "Day 2 · Stop 3" (only "Stop 3" under a "Day 2" heading); the marker window shows it under the type.
 
 **F22. Frosted marker window (built)**
