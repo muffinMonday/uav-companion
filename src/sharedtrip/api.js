@@ -9,7 +9,7 @@ export function createTripsApi(client, { device = globalThis.crypto?.randomUUID?
   };
   const num = (r) => (r && r.rev !== undefined ? { ...r, rev: Number(r.rev) } : r);
   return {
-    /** Every shared trip and invitation of the caller: [{ id, name, role, status, owner_name, rev, members_rev, markers, start_date, end_date, members, updated_at }] */
+    /** Every shared trip and invitation of the caller: [{ id, name, role, status, owner_name, rev, members_rev, markers, start_date, end_date, members, updated_at, live_active, online_others }] */
     list: async () => (await rpc('list_my_trips')).map((t) => ({ ...t, rev: Number(t.rev), members_rev: Number(t.members_rev) })),
     /** { doc, rev, updated_at, updated_by_name, role } */
     get: async (id) => num(await rpc('get_shared_trip', { p_trip: id })),
@@ -31,6 +31,10 @@ export function createTripsApi(client, { device = globalThis.crypto?.randomUUID?
     stopSharing: (id) => rpc('stop_sharing_location', { p_trip: id, p_device: device }),
     stopAll: () => rpc('stop_all_sharing', { p_device: device }),
     live: () => rpc('list_live_locations'),
+    // The same for friends (all accepted friends, no trip): the positions come back with the friendship id as member_id.
+    shareLocationFriends: (lat, lon, accuracy, claim = false) => rpc('share_location_friends', { p_lat: lat, p_lon: lon, p_accuracy: accuracy ?? null, p_device: device, p_claim: !!claim }),
+    stopSharingFriends: () => rpc('stop_sharing_friends', { p_device: device }),
+    friendLive: () => rpc('list_friend_live_locations'),
     /** [{ rev, updated_at, updated_by_name, markers }] */
     versions: async (id) => (await rpc('list_shared_trip_versions', { p_trip: id })).map((v) => ({ ...v, rev: Number(v.rev) })),
     restore: async (id, rev) => num(await rpc('restore_shared_trip_version', { p_trip: id, p_rev: rev })),

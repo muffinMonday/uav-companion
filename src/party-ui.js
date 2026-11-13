@@ -9,8 +9,12 @@ import { avatarEl } from './avatars.js';
 import { profileBits } from './profile-ui.js';
 import { profileTrigger, setProgressionSource } from './profile-popover.js';
 import { getProgression } from './progression-api.js';
-import { createLive } from './live.js';
+import { createLive, FRIENDS } from './live.js';
 import { createLiveLayer } from './livemap.js';
+import { createAutoShare } from './autoshare.js';
+import { createSocial } from './social.js';
+import { getPrivacy, setPrivacy, onPrivacyChange } from './privacy.js';
+import { createBackoff, canPoll } from './backoff.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const WHO_KEY = 'uavzones.v1.sharedwho';
@@ -25,12 +29,32 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
   // Live locations: sending this device's position (only when the person turns it on, for one trip) and drawing the party's on the map
   const live = createLive({ api, getTrip: (id) => store.getTrip(id) });
   const layer = map ? createLiveLayer(map) : null;
-  const HIDE_KEY = 'uavzones.v1.livehide'; // trips whose party this person chose not to see on the map
+  const HIDE_KEY = 'uavzones.v1.livehide'; // trips whose party this person chose not to see on the map (and 'friends': friends' pins)
   const hiddenTrips = (() => { try { const a = JSON.parse(localStorage.getItem(HIDE_KEY) || '[]'); return new Set(Array.isArray(a) ? a.filter((x) => typeof x === 'string') : []); } catch { return new Set(); } })();
   const saveHidden = () => { try { localStorage.setItem(HIDE_KEY, JSON.stringify([...hiddenTrips])); } catch { /* ignore */ } };
   // positions are looked for only while someone else is sharing (list_my_trips says so: live_active); until the server has said, or if it does not say, as before
   const wantsLive = () => !!handle.sync.status().session && store.trips().some((t) => t.shared) && (eng.snapshot().liveActive ?? 1) > 0;
   const signedIn = () => !!handle.sync.status().session;
+  // Friends: who is online now (list_friends, every 30 s while the page is visible), for automatic sharing and for looking for friends' positions
+  const social = createSocial(handle.adapter.client);
+  let friendList = [];
+  const friendWait = createBackoff({ base: 30000, max: 300000, name: 'friends-online' });
+  const friendsOnline = () => friendList.filter((f) => f.status === 'friends' && f.online === true).length;
+  async function loadFriends() {
+    if (!signedIn() || !canPoll() || !friendWait.ready()) return;
+    try { friendList = await social.list(); friendWait.ok(); } catch (e) { friendWait.fail(e); return; }
+    autoshare.evaluate();
+  }
+  // Automatic sharing (autoshare.js): starts and stops sharing by itself, after the person said yes once
+  const autoshare = createAutoShare({
+    live, privacy: { get: getPrivacy, set: setPrivacy }, signedIn, friendsOnline,
+    trips: () => store.trips().filter((t) => t.shared).map((t) => ({ id: t.id, online: eng.snapshot().online[t.id] ?? 0, endDate: t.endDate })),
+    consent: async ({ party, friends }) => confirm(
+      'Share your location automatically?\n\nWhen ' + (party && friends ? 'someone in your party or a friend is' : party ? 'someone in your party is' : 'a friend is') +
+      ' online, this app can start sharing your location with them by itself, so you do not have to switch it on each time. Only while this page is open; party members and friends see you on the map. ' +
+      'You can stop at any time with the Stop button, and turn this off in the privacy settings.\n\nOK turns it on. Cancel: not now.') ? 'on' : 'later',
+  });
+  onPrivacyChange(() => autoshare.evaluate()); // the master switch in the privacy settings
   let view = null; // the trips screen: { refresh() }
   const members = new Map();   // trip id -> { rev, list }
   const asking = new Set();
@@ -69,14 +93,17 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
       let who = null; try { who = localStorage.getItem(WHO_KEY); } catch { /* ignore */ }
       if (who && who !== s.email) eng.reset(); // another person signed in on this device: shared trips here are not theirs
       try { localStorage.setItem(WHO_KEY, s.email); } catch { /* ignore */ }
-      started = true; eng.start(); live.startPolling(wantsLive); live.poll();
+      started = true; eng.start(); live.startPolling(wantsLive, () => friendsOnline() > 0); live.poll(); loadFriends();
     } else if (!s && started) {
-      started = false; eng.stop(); live.stopAll(); live.stopPolling(); layer?.clear();
+      started = false; eng.stop(); live.stopAll(); live.stopPolling(); layer?.clear(); friendList = [];
       if (!store.trips().some((t) => t.shared)) eng.reset(); // the device was wiped at sign-out: forget the shared-trip bookkeeping too
     }
   }
+  setInterval(() => { if (started) loadFriends(); }, 30000);
+  setInterval(() => { if (started && canPoll()) autoshare.evaluate(); }, 15000); // who is online in the trips changes with the trip poll
   eng.onChange(() => {
-    for (const id of live.sharingIds()) if (!store.getTrip(id)?.shared) live.stop(id, 'You are no longer in this trip, so sharing your location stopped.');
+    autoshare.evaluate();
+    for (const id of live.sharingIds()) if (id !== FRIENDS && !store.getTrip(id)?.shared) live.stop(id, 'You are no longer in this trip, so sharing your location stopped.');
     for (const m of eng.takeNotices()) toast(m, 9000);
     cloud.friends?.recount?.();
     refresh();
@@ -90,18 +117,27 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
   // ---------- the indicator that stays on screen while this device is sharing
   const chip = el('div', 'live-chip'); chip.id = 'live-chip'; chip.hidden = true; chip.setAttribute('role', 'status');
   const chipText = el('span'); const chipStop = el('button', 'btn small', 'Stop'); chipStop.type = 'button'; chipStop.setAttribute('aria-label', 'Stop sharing my location');
-  chipStop.addEventListener('click', () => live.stopAll('Sharing your location stopped.'));
+  chipStop.addEventListener('click', () => { for (const id of live.sharingIds()) autoshare.handStopped(id); live.stopAll('Sharing your location stopped.'); });
   chip.append(chipText, chipStop); document.body.append(chip);
   function updateChip() {
     const ids = live.sharingIds();
     chip.hidden = !ids.length;
-    if (ids.length) chipText.textContent = ids.length === 1 ? `Sharing your location with “${store.getTrip(ids[0])?.name ?? 'your party'}”` : `Sharing your location with ${ids.length} trips`;
+    if (ids.length) {
+      const trips = ids.filter((id) => id !== FRIENDS), fr = ids.includes(FRIENDS);
+      const to = [...(trips.length === 1 ? [`“${store.getTrip(trips[0])?.name ?? 'your party'}”`] : trips.length ? [`${trips.length} trips`] : []), ...(fr ? ['friends'] : [])];
+      chipText.textContent = 'Sharing your location with ' + to.join(' and ');
+    }
   }
   let liveSig = '';
   live.onChange((s) => {
     layer?.update(s.others, hiddenTrips);
     // rank rings: only for people already on the map; one call for those not held yet, answered from the cache otherwise. A failure leaves the pins as they are.
-    if (layer && s.others.length) progression.many('member', s.others.map((o) => o.member_id)).then((m) => layer.setRanks(m)).catch((e) => log.warn('party', 'member ranks did not load', e));
+    // Party members are named by their member id, friends by the friendship id (two kinds, merged: the ids never clash).
+    if (layer && s.others.length) {
+      const ids = (rel) => s.others.filter((o) => (o.relation === 'friend') === (rel === 'friend')).map((o) => o.member_id);
+      const ask = (kind) => (ids(kind).length ? progression.many(kind, ids(kind)) : Promise.resolve(new Map()));
+      Promise.all([ask('member'), ask('friend')]).then(([a, b]) => layer.setRanks(new Map([...a, ...b]))).catch((e) => log.warn('party', 'ranks did not load', e));
+    }
     for (const m of live.takeNotices()) toast(m, 9000);
     updateChip();
     // redraw the trip screen only when who is sharing changes, not on every new position (that would reset anything being typed)
@@ -161,10 +197,10 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
     box.append(status);
     const mine = live.snapshot().sharing[t.id];
     const sw = el('label', 'switch'); const sp = el('span', '', 'Share my location with the party');
-    sp.append(el('small', '', 'Only while this page is open: the others in the party see where you are on the map. It is off every time you open the app, and stops when you close it, sign out or leave the trip.'));
+    sp.append(el('small', '', 'Only while this page is open: the others in the party see where you are on the map. With automatic sharing on (privacy settings) it starts by itself when another party member is online; switching it off here keeps it off for this trip until you switch it on again. It stops when you close the page, sign out or leave the trip.'));
     const cb = el('input'); cb.type = 'checkbox'; cb.id = 'party-live'; cb.checked = !!mine; cb.disabled = !signedIn();
     cb.addEventListener('change', () => {
-      if (cb.checked) { const r = live.start(t.id); if (!r.ok) { cb.checked = false; say(r.reason); } } else live.stop(t.id);
+      if (cb.checked) { const r = live.start(t.id); if (!r.ok) { cb.checked = false; say(r.reason); } else autoshare.handStarted(t.id); } else { autoshare.handStopped(t.id); live.stop(t.id); }
       updateChip(); refresh();
     });
     sw.append(sp, cb); box.append(sw);
@@ -286,6 +322,17 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
     /** How many people are in a shared trip (joined), or null if not known yet. */
     membersCount: (id) => members.get(id)?.list.filter((m) => m.status === 'joined').length ?? eng.snapshot().trips[id]?.members ?? null,
     ready: signedIn,
+    /** Sharing with friends, for the Friends tab: is this device sharing, and are friends' pins on the map. */
+    friendShare: {
+      sharing: () => live.isSharing(FRIENDS),
+      setSharing(on) {
+        if (on) { const r = live.start(FRIENDS); if (!r.ok) { say(r.reason); return false; } autoshare.handStarted(FRIENDS); } else { autoshare.handStopped(FRIENDS); live.stop(FRIENDS); }
+        updateChip(); return true;
+      },
+      shown: () => !hiddenTrips.has(FRIENDS),
+      setShown(on) { if (on) hiddenTrips.delete(FRIENDS); else hiddenTrips.add(FRIENDS); saveHidden(); layer?.update(live.snapshot().others, hiddenTrips); },
+      onChange: (fn) => live.onChange(fn),
+    },
     attach(v) { view = v; },
     onChange: (fn) => eng.onChange(fn),
     engine: eng,

@@ -10,6 +10,8 @@ What was reviewed, what was found, what was changed, what was measured, and what
 | Call | Pace | Source |
 |---|---|---|
 | `list_live_locations` | 5 s | `src/live.js` |
+| `list_friend_live_locations` | 10 s, only while a friend is online | `src/live.js` |
+| `list_friends` (online check for automatic sharing) | 30 s while signed in and visible | `src/party-ui.js` |
 | `list_my_trips` | 10 s | `src/sharedtrip/engine.js` |
 | `touch_presence` | 30 s | `src/presence.js` |
 | `list_friends` + `list_sessions` + `my_roles` | 120 s (30 s on the Friends tab) | `src/friends-ui.js` |

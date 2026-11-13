@@ -22,7 +22,7 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
   try { const d = JSON.parse(storage?.getItem(KEY) || 'null'); if (d && typeof d === 'object' && d.bases && typeof d.bases === 'object') bases = d.bases; } catch { bases = {}; }
   const persist = () => { try { storage?.setItem(KEY, JSON.stringify({ v: 1, bases })); } catch { /* the next start merges from scratch */ } };
 
-  const snap = { invitations: [], trips: {}, notices: [], error: null, polledAt: null, liveActive: null };
+  const snap = { invitations: [], trips: {}, notices: [], error: null, polledAt: null, liveActive: null, online: {} };
   let applying = false, poller = null, chain = Promise.resolve(), stopped = false, ticking = false, quiet = 0, tickN = 0, listSig = '';
   const backoff = createBackoff({ base: pollMs, max: 120000, name: 'trip-poll' }); // a failing list call is retried less and less often
   const refused = new Map(); // trip id -> the server revision that could not be adopted (not fetched again until the revision changes)
@@ -38,7 +38,7 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
     listeners.forEach((fn) => fn(s));
   };
   /** liveActive: how many other members are sharing their location now, over all joined trips (null until a poll has said). Not part of the change signature: it is read by the live poll, not drawn. */
-  const snapshot = () => ({ invitations: snap.invitations.slice(), trips: { ...snap.trips }, error: snap.error, polledAt: snap.polledAt, notices: snap.notices.slice(), liveActive: snap.liveActive });
+  const snapshot = () => ({ invitations: snap.invitations.slice(), trips: { ...snap.trips }, error: snap.error, polledAt: snap.polledAt, notices: snap.notices.slice(), liveActive: snap.liveActive, online: { ...snap.online } });
   const notice = (m) => { snap.notices.push(m); };
   const setStatus = (id, patch) => { snap.trips[id] = { ...(snap.trips[id] ?? {}), ...patch }; };
   const setBase = (id, rev, doc) => { bases[id] = { rev, doc }; persist(); };
@@ -111,6 +111,7 @@ export function createSharedTrips({ store, api, storage = globalThis.localStorag
     snap.invitations = list.filter((t) => t.status === 'invited').map((t) => ({ id: t.id, name: t.name, ownerName: t.owner_name, startDate: t.start_date, endDate: t.end_date }));
     const joined = list.filter((t) => t.status === 'joined');
     snap.liveActive = joined.every((t) => Number.isFinite(t.live_active)) ? joined.reduce((n, t) => n + t.live_active, 0) : null; // null: the server does not say, so the live poll runs as before
+    snap.online = Object.fromEntries(joined.map((t) => [t.id, Number.isFinite(t.online_others) ? t.online_others : 0])); // other members online now, per trip (read by autoshare.js; not part of the change signature)
     const ids = new Set(joined.map((t) => t.id));
     for (const e of joined) {
       try { await syncTrip(e); } catch (err) { setStatus(e.id, { status: 'error', error: err.message }); }

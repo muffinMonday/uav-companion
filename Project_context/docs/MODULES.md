@@ -55,7 +55,8 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `presence.js` | 30 s heartbeat | `initPresence` |
 | `sharedtrip/api.js`, `core.js` (pure merge), `engine.js` | Shared-trip RPCs, three-way merge, polling | `createTripsApi`, `createSharedTrips` |
 | `party-ui.js` | Party Members, invitations, live-location switch | handle, store |
-| `live.js` (pure rules), `livemap.js` | Sending positions; pins on the map | `createLive`, `createLiveLayer` |
+| `live.js` (pure rules), `livemap.js` | Sending positions (trips and the `FRIENDS` scope); pins on the map (friends drawn as rounded squares) | `createLive`, `createLiveLayer` |
+| `autoshare.js` (pure) | Decides when to start and stop sharing by itself (consent, who is online, by-hand stops); wired in `party-ui.js` | `createAutoShare` |
 
 ## Shell and settings
 | File | Responsibility |
@@ -77,3 +78,13 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `supabase/migrations/`, `supabase/README.md` | Database; see `DATABASE.md` |
 | `tests/` (`run.mjs`, `lib*.mjs`) | Suites; see `DEVELOPMENT.md` |
 | `docs/` | `AI.md`, `ATTRIBUTIONS.md`, `regions/` |
+
+## Planned UI component refactor (not yet implemented)
+
+Canonical plan: `HTML_MAIN_REFACTOR_BACKLOG.md`. Proposed future HTML fragments:
+`src/components/search.html`, `dock.html`, `panel.html`, `map-config.html`,
+`trips-panel.html`, `poi-panel.html`, `privacy-panel.html`, `dashboard.html`.
+
+These paths **do not exist yet**. Until the refactor is implemented, static markup remains in root `index.html`, and startup/wiring remains in `src/main.js`. After refactoring, replace this section with an accurate HTML → JS → CSS → tests ownership map.
+
+Future Community Flying Areas plan: `COMMUNITY_FLYING_AREAS_PLAN.md`.

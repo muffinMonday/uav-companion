@@ -927,6 +927,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .live-pin b{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;font-size:var(--fs-small);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .live-pin span{margin-top:3px;padding:1px 6px;border-radius:var(--radius-pill);background:var(--surface);color:var(--fg);font-size:var(--fs-micro);font-weight:var(--fw-semibold);white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .live-pin.stale{opacity:.55}
+.live-pin.friend b{border-radius:9px}
 .party-live-status{margin:2px 0 6px}
 
 /* a turned map: markers and popups stay upright; route arrows turn with the map; the arrow on the location marker; the compass button */

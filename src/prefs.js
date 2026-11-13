@@ -32,6 +32,9 @@ function sanitize(raw) {
   if (typeof raw.fetchAltitude === 'boolean') out.fetchAltitude = raw.fetchAltitude;
   if (typeof raw.lookupNames === 'boolean') out.lookupNames = raw.lookupNames;
   if (typeof raw.checkIn === 'boolean') out.checkIn = raw.checkIn; // use the position to enable check-in at markers
+  if (raw.autoShare === 'on' || raw.autoShare === 'off') out.autoShare = raw.autoShare; // automatic location sharing: the answer to the first-time question (unset = not answered yet)
+  if (raw.shareFriends === false) out.shareFriends = false; // automatic sharing does not include friends (on unless switched off)
+  if (Array.isArray(raw.shareOff)) out.shareOff = raw.shareOff.filter((x) => typeof x === 'string' && x.length > 0 && x.length <= 64).slice(0, 50); // trips (and 'friends') the person stopped by hand: never started automatically
   if (raw.locateOnLaunch === false) out.locateOnLaunch = false; // on launch the map is not centred on the visitor (on unless switched off)
   if (['auto', 'amap', 'google'].includes(raw.mapApp)) out.mapApp = raw.mapApp; // which map app the Open / Navigate buttons use
   if (['drive', 'transit', 'walk', 'bike'].includes(raw.mapMode)) out.mapMode = raw.mapMode; // the usual way of travelling

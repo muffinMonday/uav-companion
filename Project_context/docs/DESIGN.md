@@ -123,6 +123,8 @@ Motion: short, transform/opacity only, always inside `prefers-reduced-motion:no-
 
 ## 7. Identity colours (intentional hardcoded colours: do not "tokenise" them into the theme)
 Marker types (`poi.js`): home `#2e7d32`, hotel `#6a4fb3`, takeoff `#1565c0`, landing `#8d6e63`, photo `#c2185b`, train `#00796b`, airport `#039be5`, hazard `#e65100`, residence `#827717`, other `#546e7a`. Trip colours (`TRIP_COLORS`, `poi.js`): `#e91e63 #3949ab #00897b #fb8c00 #6d4c41 #546e7a #7cb342 #8e24aa`. Friend palette (`livemap.js` `PALETTE`): `#e53935 #8e24aa #1e88e5 #00897b #f4511e #6d4c41 #3949ab #c0ca33`. Zone fills (`map.js` `FILL`): allow `#2aa6b8`, restrict `#d64545` (duplicated in the legend, `main.js:302-303`: planned single source, P7). Ranks `--rank-1..10`, rarities `--rar-*` (`styles.css`, bottom). Location dot `#1a73e8` (CSS `.you-dot` and `locate.js` ring: to become `--info`). These are not themed (DECISIONS.md, colour theme). **Fix contrast around them** (outline, text colour, the label inside), never by changing the hue, unless the owner decides.
+**Friend pins (2026-11-13):** a live pin for a friend (`.live-pin.friend`) has a rounded-square avatar (9 px radius) instead of a circle, the word "Friend" at the start of its label and a dashed accuracy circle; no new colour, the identity colour and rank ring work as for party pins. Not yet in the screenshot set.
+
 **Rank indicators (owner decision 2026-11-13):** keep the palette; one subtle, consistent outline (`--rank-edge`) on rank badges and rings for contrast in both themes (P1, built). The ten colours are unchanged. Screens `rank-rings` (27) in the screenshot set draw all ten tiers as badges and live pins.
 
 ## 8. Themes

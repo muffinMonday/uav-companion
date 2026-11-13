@@ -5,7 +5,7 @@ import { diagnostics } from './log.js';
 const $ = (id) => document.getElementById(id);
 
 export function initPrivacyUI({ mw, elev, toast = () => {} }) {
-  const auto = $('pv-auto'), alt = $('pv-alt'), geo = $('pv-geo'), chk = $('pv-checkin'), lau = $('pv-locate');
+  const auto = $('pv-auto'), alt = $('pv-alt'), geo = $('pv-geo'), chk = $('pv-checkin'), lau = $('pv-locate'), ash = $('pv-autoshare'), asf = $('pv-autoshare-friends');
   const radios = [...document.querySelectorAll('input[name=pv-prec]')];
 
   const sync = () => {
@@ -15,6 +15,7 @@ export function initPrivacyUI({ mw, elev, toast = () => {} }) {
     geo.checked = p.lookupNames;
     chk.checked = p.checkIn;
     lau.checked = p.locateOnLaunch;
+    if (ash) { ash.checked = p.autoShare === 'on'; asf.checked = p.shareFriends; asf.disabled = p.autoShare !== 'on'; }
     for (const r of radios) r.checked = r.value === p.weatherPrecision;
   };
   sync();
@@ -25,6 +26,11 @@ export function initPrivacyUI({ mw, elev, toast = () => {} }) {
   geo.addEventListener('change', () => setPrivacy({ lookupNames: geo.checked }));
   chk.addEventListener('change', () => setPrivacy({ checkIn: chk.checked }));
   lau.addEventListener('change', () => setPrivacy({ locateOnLaunch: lau.checked }));
+  // Automatic sharing: turning it on here is the person's yes (autoshare.js starts and stops sharing by itself from then on; it also reads this setting each pass)
+  if (ash) {
+    ash.addEventListener('change', () => { setPrivacy({ autoShare: ash.checked ? 'on' : 'off' }); sync(); });
+    asf.addEventListener('change', () => setPrivacy({ shareFriends: asf.checked }));
+  }
   for (const r of radios) r.addEventListener('change', () => { if (r.checked) setPrivacy({ weatherPrecision: r.value }); });
 
   initDiagnostics(toast);

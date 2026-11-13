@@ -20,7 +20,7 @@ const session = (id, email) => {
 const db = await makeDb();
 let lock = Promise.resolve();
 const serial = (fn) => { const r = lock.then(fn, fn); lock = r.catch(() => {}); return r; };
-const SETOF = new Set(['list_friends', 'list_blocked', 'list_my_trips', 'list_trip_members', 'list_shared_trip_versions', 'list_invitable_friends', 'list_live_locations']);
+const SETOF = new Set(['list_friends', 'list_blocked', 'list_my_trips', 'list_trip_members', 'list_shared_trip_versions', 'list_invitable_friends', 'list_live_locations', 'list_friend_live_locations']);
 const JSONB = new Set(['p_doc']);
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
 const mockFor = (uid) => async (route) => {

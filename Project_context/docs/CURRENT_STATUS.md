@@ -3,7 +3,14 @@
 Updated: 2026-11-13 (UI design system phases 0 to 8 done, at the top of "Latest work")
 Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Phases 1 to 6 are built, tested, committed, pushed and deployed; the work is finished apart from the owner's set-up steps below.** Standing rule from the owner: after each finished, tested phase commit, push and deploy (hosted `db push`, function deploy, `deploy:live`) and move on without asking again (memory `commit-deploy-each-phase`); it does not cover unrelated work, live checks that create real users, or secrets.
 
-## Latest work: UI design system, phases 0 to 8 (all done; owner accepted the phase 8 audit 2026-11-13)
+## Latest work: automatic location sharing with friends (built, unit and targeted browser suites pass; full `npm test` running; NOT committed, NOT deployed; migration not pushed)
+- Owner request 2026-11-13: sharing on by default when a party has another member online and when a friend is online; friends distinguishable on the map. Plan: `C:/Users/cy071/.claude/plans/i-want-to-change-cosmic-flurry.md`. Owner decisions: one-time opt-in plus master switch; all friends; a by-hand stop sticks; friends = rounded-square pin + "Friend" label.
+- Built: migration `supabase/migrations/20261117100000_friend_live_locations.sql` (friend positions, `online_others` in `list_my_trips`, `delete_profile` rebuilt from the audit version); `src/autoshare.js`; `src/live.js` (scope `FRIENDS`, halted/denied, friend poll); `src/livemap.js` + CSS (friend pins); `src/party-ui.js` (wiring, consent `confirm`, chip, `friendShare` hook); Friends tab switches (`#fr-share`, `#fr-map`); privacy card (`#pv-autoshare`, `#pv-autoshare-friends`); `privacy.js`/`prefs.js` keys. Tests: `autoshare-unit`, browser `autoshare`, additions to `db-live-unit`.
+- Deviations from the plan: the setting is local (`uavzones.v1.prefs`), not synced (browser permission is per browser); the question is a `confirm` (OK = on, Cancel = ask again next session; permanent off is the privacy switch).
+- Not verified: a real phone, the hosted project (migration not pushed; dry run first), friend pins in the screenshot set and in dark mode, `DESIGN.md` baseline. Owner to confirm: auto-started sharing stops when everyone is offline; "online" respects `show_online`.
+- Next: owner review, then commit, `db push` (dry run first), `deploy:live`.
+
+## Earlier: UI design system, phases 0 to 8 (all done; owner accepted the phase 8 audit 2026-11-13)
 - **Phase 8 done:** audit numbers and the open items are in `DESIGN.md` section 15. Open: owner real-device pass (iPhone Safari, Android Chrome); phone tap targets still short of 44 px on the map buttons, tabs and header icons (median reach 29 to 35 px); 3 more shadow rules than before (cause not traced); no forced-colors rules; `.msg` and `--shadow-pin` not built (section 12, phase 7).
 - Also fixed after the owner's phone check: the profile popover is kept inside the screen on a wide-but-narrow display (an unfolded phone; `place()` in `src/profile-popover.js`), and Previous/Next, visit chips and Side Quest links in the marker window now scroll the panel to the card (`goTo` in `src/poi-ui.js`). Tests: `stops`, `friends`; full `npm test` passed (443 s). Not deployed yet.
 - Earlier phase notes below are history.
@@ -87,3 +94,8 @@ Efficiency follow-ups are listed in `docs/EFFICIENCY.md` ("Still to do"); the pr
 
 ## Relevant Files
 `Project_context/docs/PROGRESSION.md`, `supabase/migrations/20261114*.sql`, `supabase/functions/steam-*`, `supabase/functions/_shared/steam.js`, `src/progression*.js`, `src/sessions*.js`, `src/steam*.js`, `src/livemap.js` (rank ring), `src/account-ui.js` (account pane: Progression, Steam), `src/friends-ui.js` (Sessions card), `src/profile-popover.js`, `tests/db-progression*-unit.mjs`, `tests/db-sessions-unit.mjs`, `tests/db-steam-unit.mjs`, `tests/{progression,sessions,steam}.mjs`
+
+## Future backlogs — planning only (2026-11-13)
+- **HTML and `main.js` refactor:** `docs/HTML_MAIN_REFACTOR_BACKLOG.md`. Build-time HTML fragments, focused JS startup modules, component ownership map, and regression gates. **Not implemented.**
+- **Community Flying Areas:** `docs/COMMUNITY_FLYING_AREAS_PLAN.md`. Private local polygons/rectangles, authenticated submission, admin moderation, anonymous public approved areas, reviewed revisions and anonymized retention on account deletion. **Not implemented.**
+- **Order:** complete and verify HTML/main.js refactor first; then reconcile the Community Flying Areas file paths. Neither backlog authorizes implementation, migrations or deployment.

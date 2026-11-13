@@ -111,6 +111,19 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     const cb2 = el('input'); cb2.type = 'checkbox'; cb2.id = 'fr-online'; cb2.checked = profile.show_online !== false;
     cb2.addEventListener('change', () => act(async () => { profile = await social.setShowOnline(cb2.checked); }));
     sho.append(sp2, cb2); me.append(sho);
+    const fs = cloud.party?.friendShare;
+    if (fs) {
+      const shl = el('label', 'switch'); const sp3 = el('span', '', 'Share my location with friends');
+      sp3.append(el('small', '', 'Only while this page is open: all your friends see where you are on their map, marked as a friend. With automatic sharing on (privacy settings) it starts by itself when a friend is online; switching it off here keeps it off until you switch it on again. It stops when you close the page or sign out.'));
+      const cb3 = el('input'); cb3.type = 'checkbox'; cb3.id = 'fr-share'; cb3.checked = fs.sharing();
+      cb3.addEventListener('change', () => { if (!fs.setSharing(cb3.checked)) cb3.checked = false; });
+      shl.append(sp3, cb3); me.append(shl);
+      const shm = el('label', 'switch'); const sp4 = el('span', '', 'Show friends on the map');
+      sp4.append(el('small', '', 'Pins for friends who are sharing their location with you: a rounded square with the word Friend, so they are not mistaken for your party.'));
+      const cb4 = el('input'); cb4.type = 'checkbox'; cb4.id = 'fr-map'; cb4.checked = fs.shown();
+      cb4.addEventListener('change', () => fs.setShown(cb4.checked));
+      shm.append(sp4, cb4); me.append(shm);
+    }
     me.append(el('p', 'hint', 'Share your code only with people you know. Someone with it can send you a request, which you can accept, decline or block.'));
     pane.append(me);
 
@@ -175,6 +188,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
     dc.append(del); pane.append(dc);
   }
 
+  cloud.party?.friendShare?.onChange(() => { const c = document.getElementById('fr-share'); if (c) c.checked = cloud.party.friendShare.sharing(); }); // the Stop button or an automatic stop changes it too
   cloud.friends = { incoming: 0, invites: 0, open: () => panel.open('friends'), editProfile: () => profileDialog.open(), reload: () => load({ withProfile: true }), recount: () => { publish(); render(); } };
   handle.onChange(() => { if (signedIn() && loadedFor !== handle.sync.status().session.email) load(); else if (!signedIn() && loadedFor) load(); });
   panel.onChange(() => { if (shown() && signedIn()) load({ withProfile: true }); else if (shown()) render(); });
