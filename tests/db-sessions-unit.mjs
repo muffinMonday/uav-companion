@@ -161,11 +161,17 @@ const aidC = (await rsvps(B, open)).find((x) => x.display_name === 'Cam').attend
 await one(A, 'public.revoke_attendance($1, $2, $3)', [open, aidC, 'Test']);
 ok(await total(C) === 200 && (await unlocked(C)).includes('regular-flyer') && (await unlocked(C)).includes('first-meetup'), 'a full reversal lowers XP by 50 and keeps every achievement');
 
-// ---------- leaving: deleting a profile withdraws RSVPs and keeps attendance; deleting an account removes both
+// ---------- leaving: deleting a profile withdraws RSVPs and wipes XP, achievements and attendance; deleting an account removes everything
 await one(B, 'public.ensure_profile($1)', ['Bea']);
 const sx = await mk(A, 1, 3, 'RSVP later'); await one(C, 'public.rsvp_session($1)', [sx]);
+const had = async (t, u) => (await sql(`select count(*)::int as n from public.${t} where user_id = $1`, [u]))[0].n;
+ok(await had('session_attendance', C) >= 5 && await had('xp_ledger', C) > 0 && await total(C) === 200 && await had('user_achievements', C) > 0, 'before deleting the profile Cam has attendance, XP and achievements');
 await one(C, 'public.delete_profile()');
-ok((await sql('select count(*)::int as n from public.session_rsvps where user_id = $1', [C]))[0].n === 0 && (await sql('select count(*)::int as n from public.session_attendance where user_id = $1', [C]))[0].n >= 5, "deleting a profile withdraws the person's RSVPs and keeps what they attended");
+ok(await had('session_rsvps', C) === 0 && await had('session_attendance', C) === 0 && await had('xp_ledger', C) === 0 && await had('user_xp', C) === 0 && await had('user_achievements', C) === 0 && await had('featured_achievements', C) === 0 && await had('user_counters', C) === 0 && await total(C) === 0, "deleting a profile withdraws the person's RSVPs and wipes their XP, achievements, counters and attendance");
+const other2 = (await sql('select user_id from public.xp_ledger limit 1'))[0]?.user_id, ledgerBefore = (await sql('select count(*)::int as n from public.xp_ledger'))[0].n;
+ok(other2 && other2 !== C && await had('session_attendance', D) === 1, "and nobody else's (another person still has XP, and Dee still has her attendance)");
+await db.exec("set role authenticated"); const guard = await db.query("select set_config('uavzones.wipe_user', $1, true)", [other2]).then(() => db.query('delete from public.xp_ledger where user_id = $1', [other2])).then(() => null, (e) => String(e.message)); await db.exec('reset role');
+ok(/permission denied|append-only/.test(guard ?? '') && (await sql('select count(*)::int as n from public.xp_ledger'))[0].n === ledgerBefore, 'a signed-in client cannot delete ledger rows, even after setting the marker itself');
 await db.exec(`delete from auth.users where id = '${C}'`);
 ok((await sql('select count(*)::int as n from public.session_attendance where user_id = $1', [C]))[0].n === 0 && (await sql('select count(*)::int as n from public.xp_ledger where user_id = $1', [C]))[0].n === 0, "deleting the account removes their attendance and XP");
 ok((await sql('select count(*)::int as n from public.session_attendance where user_id = $1', [D]))[0].n === 1, "and nobody else's");

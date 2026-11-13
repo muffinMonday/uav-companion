@@ -37,7 +37,7 @@ Tests: `db-progression-unit`, `db-progression-read-unit`, `db-sessions-unit`, `d
 2. Switch Steam on: set secrets `STEAM_API_KEY`, `STEAM_STATE_SECRET`, `STEAM_CRON_SECRET`, `STEAM_RETURN_ORIGINS`, then set `steam_enabled` to 1. The functions are already deployed.
 3. Schedule the daily call to `steam-sync-all` (pg_cron + pg_net or a scheduled GitHub Actions workflow; snippets in `supabase/README.md`).
 4. First live check against real Steam with a chosen account (never done: built and tested only against fakes).
-5. Decide whether `delete_profile` should also wipe XP (today only deleting the account does).
+5. (DONE 2026-11-16) `delete_profile` now wipes XP, achievements, counters, attendance and the Steam link; roles and `steam_credited` stay.
 
 ## Known gaps and risks
 - Real-world flying achievements (Maiden Flight, Back in the Air, Weekend Warrior, Frequent Flyer) are not defined: nothing records a flight yet (check-ins are local, live positions have no history). Needs a flight-logging feature (phase 7, not started).

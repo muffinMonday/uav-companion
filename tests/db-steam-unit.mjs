@@ -154,6 +154,17 @@ ok((await lrow(D)).state_steam_id === ID_D && (await lrow(D)).sim_minutes === 13
 await one(D, 'public.unlink_steam()');
 ok((await sql('select count(*)::int as n from public.steam_credited where steam_id = $1', [ID_D]))[0].n === 2 && (await sql('select minutes from public.steam_credited where steam_id = $1 and app_id = $2', [ID_D, LIFT]))[0].minutes === 1100, 'the credited total for a Steam account only goes up (1,100 minutes of Liftoff; two games)');
 
+// ---------- deleting a profile wipes the Steam link and the XP, but a Steam account's history is still paid out once
+await link(D, ID_D, { [LIFT]: 1100, [DRL]: 200 });
+ok(await total(D) === 230 && (await lrow(D)), 'before deleting the profile Dee has the XP and a link');
+await one(D, 'public.delete_profile()');
+ok(!(await lrow(D)) && Object.keys(await state(D)).length === 0 && await total(D) === 0 && (await hoursRows(D)).length === 0 && (await unlocked(D)).length === 0, 'deleting the profile removes the Steam link, the stored totals, the XP and the achievements');
+ok((await sql('select count(*)::int as n from public.steam_credited where steam_id = $1', [ID_D]))[0].n === 2, 'but what was counted for that Steam account stays');
+await one(D, 'public.ensure_profile($1)', ['Dee']);
+r = await link(D, ID_D, { [LIFT]: 1100, [DRL]: 200 });
+ok(r.status === 'linked' && await total(D) === 0 && (await lrow(D)).sim_minutes === 0, 'linking the same Steam account again as a new profile credits only new play (nothing here)');
+await one(D, 'public.unlink_steam()');
+
 // ---------- unlinking keeps what was earned, and relinking the same account counts only new play
 const awardedBefore = (await lrow(A)).hours_awarded, xpBefore = await total(A), minsBefore = (await lrow(A)).sim_minutes;
 ok((await one(A, 'public.unlink_steam()')).status === 'unlinked', 'a person unlinks');

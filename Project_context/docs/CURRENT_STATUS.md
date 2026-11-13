@@ -3,10 +3,17 @@
 Updated: 2026-11-16
 Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Phases 1 to 6 are built, tested, committed, pushed and deployed; the work is finished apart from the owner's set-up steps below.** Standing rule from the owner: after each finished, tested phase commit, push and deploy (hosted `db push`, function deploy, `deploy:live`) and move on without asking again (memory `commit-deploy-each-phase`); it does not cover unrelated work, live checks that create real users, or secrets.
 
-## Latest work: Steam credits existing hours (built and tested, NOT yet pushed or deployed)
+## Latest work: delete_profile wipes progression (built, full npm test passed 423 s; NOT committed, pushed or deployed: needs owner approval, then commit, push, db push --remote --yes, deploy:live)
+- Owner decision 2026-11-16. Migration `20261116110000_delete_profile_wipes_progression.sql`: `delete_profile` also deletes XP ledger and total, achievements, featured, counters, attendance, Steam link and totals; roles and `steam_credited` stay. Ledger and achievement guards allow it through the transaction-local setting `uavzones.wipe_user` (honoured only when the calling role is not anon/authenticated/service_role). Confirm text in `src/friends-ui.js` now says XP etc. are wiped. Tests: `db-sessions-unit`, `db-steam-unit` extended. Docs updated.
+- Owner state: first administrator row was crafted (user c9c57639-...), not confirmed run. Release checklist (to-do 6: second project, closed sign-ups, email confirmation, mail sender) is ON HOLD (owner, 2026-11-16).
+
+## Next: dark/light/system theme (planned, NOT approved, nothing edited)
+- Full plan and hand-over: `C:/Users/cy071/.claude/plans/i-want-to-finish-wondrous-globe.md` (outside the repo; read it first). The owner rejected the plan approval without a reason: ask what to change. Decided: initial System; System/Light/Dark; local-first plus Supabase sync stored inside the user_data document; basemap follows the resolved theme via a CSS filter on the base tile layer (no PMTiles basemap exists; OSM has no dark style), with a seam to swap in a dark tile source later.
+
+## Earlier: Steam credits existing hours (done: commit 3ac7eb6 pushed, migration pushed, deploy:live run, 2026-11-16)
 - Owner decision 2026-11-13: hours played before linking count (full, no cap beyond the 500 h per sync pace), paid out once per Steam account: unlink keeps the stored totals, and the new table `steam_credited` keeps the highest total ever counted per Steam account and game. Migration `20261116100000_steam_existing_hours.sql` (new column `steam_links.state_steam_id`, new table `steam_credited`; for existing links with nothing earned the stored totals are deleted so the next sync credits everything), card text in `src/steam-ui.js`, tests `db-steam-unit` (102) and browser `steam` (23) pass, docs updated (PROGRESSION, PROJECT F51, DECISIONS, DATABASE, supabase/README).
 - Steam is live on the hosted project: four secrets set, `steam_enabled` on, workflow `.github/workflows/steam-daily.yml` (daily 03:00 UTC, needs repo secret STEAM_CRON_SECRET, added) pushed in `b2e86a9`. The owner linked their account on prod (baseline, 0 hours); after the migration is pushed their next Sync now should credit about 265 h (2,650 XP).
-- To do: owner approval, then commit, `db push --remote --yes`, `deploy:live`; press Sync now; run the workflow once by hand (Actions, Run workflow). Full `npm test` not run (only unit + steam/progression).
+- Full `npm test`: all passed except `sessions` (RSVP present, a race that also failed on the old code; fixed with a wait-for, passes alone). Owner to do: press Sync now on the Steam card (cooldown on the row was cleared by SQL) and check about 265 h / 2,650 XP are credited, then run the workflow once by hand (Actions, Run workflow; expect HTTP 200). Not verified yet: the first real sync, the migration's seeding of steam_credited for existing links (only the owner exists, with nothing earned).
 
 ## Latest work: six small fixes (done; full npm test passed, 422 s)
 - No keyboard on open for touch screens (`src/touch.js`: `focusField`, `showModalQuiet`; Edit profile, account pane, name/delete dialogs, splash). Edit profile: no Clear buttons, Save profile under Preview and Cancel. Preview now uses the popover body (`profileContent`), no XP history. Swipe down dismisses the profile, achievements, account and name/delete dialogs (`onDialogSwipe`, `swipe.js`). Launch fix now draws the blip (`locate.showFix`, no tracking; first button press starts tracking). No blue tap rectangle on panel tabs and the rail (CSS).
@@ -28,11 +35,11 @@ Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Ph
 
 ## Owner to-do (blocks real use; nothing here is done)
 1. Insert the first administrator row (SQL in `supabase/README.md`); until then nobody can create sessions, grant roles or adjust XP.
-2. Steam: set secrets `STEAM_API_KEY`, `STEAM_STATE_SECRET`, `STEAM_CRON_SECRET`, `STEAM_RETURN_ORIGINS` (`npx supabase secrets set ... --project-ref tgptrtcuaryyyfzhrffm`), then `update public.progression_settings set value = 1 where key = 'steam_enabled';`.
-3. Schedule the daily call to `steam-sync-all` with header `x-cron-secret` (pg_cron + pg_net, or a scheduled GitHub Actions workflow; snippets in `supabase/README.md`).
-4. First live Steam check with a chosen account (ask before running; it creates a real link).
-5. Decide: should `delete_profile` also wipe XP? (today only account deletion does).
-6. Release checklist before real users (unchanged): second Supabase project for production, closed sign-ups, email confirmation, outside email sender (`DEVELOPMENT.md`).
+2. (DONE 2026-11-13) Steam: set secrets `STEAM_API_KEY`, `STEAM_STATE_SECRET`, `STEAM_CRON_SECRET`, `STEAM_RETURN_ORIGINS` (`npx supabase secrets set ... --project-ref tgptrtcuaryyyfzhrffm`), then `update public.progression_settings set value = 1 where key = 'steam_enabled';`.
+3. (DONE: workflow steam-daily.yml, b2e86a9; run it once by hand) Schedule the daily call to `steam-sync-all` with header `x-cron-secret` (pg_cron + pg_net, or a scheduled GitHub Actions workflow; snippets in `supabase/README.md`).
+4. (Linked on prod 2026-11-13; first credit pending Sync now) First live Steam check with a chosen account (ask before running; it creates a real link).
+5. (DONE 2026-11-16) `delete_profile` wipes XP too.
+6. ON HOLD (owner, 2026-11-16) Release checklist before real users (unchanged): second Supabase project for production, closed sign-ups, email confirmation, outside email sender (`DEVELOPMENT.md`).
 
 ## Not built / ideas
 - **ON HOLD (owner, efficiency review): retention job with pg_cron.** Purge stale `live_locations` (rows are only purged inside `share_location`, so they stay when nobody sends), `user_data_versions` and `shared_trip_versions` older than 30 days (pruned only on write, so inactive users keep 20 versions), and then drop the purge from `share_location`. Not started: revisit with real users or a second Supabase project. Interim: the `share_location` purge is indexed and runs about 1 call in 20.
