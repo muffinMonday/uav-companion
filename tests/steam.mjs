@@ -25,7 +25,7 @@ const serial = (fn) => { const r = lock.then(fn, fn); lock = r.catch(() => {}); 
 const SETOF = new Set(['list_friends', 'list_blocked', 'list_sessions', 'list_steam_apps']);
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
 const ID = { [A]: '76561198000000001', [B]: '76561198000000001', [C]: '76561198000000003', [D]: '76561198000000004' }; // A and B are the same Steam account on purpose
-const fake = { totals: { 410340: 1000 }, down: false, privateProfile: false };
+const fake = { totals: { 410340: 0 }, down: false, privateProfile: false };
 const sqlArgs = (names, args) => names.map((n) => (args[n] !== null && typeof args[n] === 'object' ? JSON.stringify(args[n]) : args[n]));
 const svc = async (fn, args) => { // the service role, for the edge function's calls
   const names = Object.keys(args);
@@ -110,7 +110,7 @@ await db.exec(`update public.progression_settings set value = 1 where key = 'ste
 ({ ctx, p } = await open('a'));
 await goProfile(p);
 await p.waitForSelector(card + '[data-state=unlinked]', { timeout: 5000 });
-ok(/10 XP for every completed hour/.test(await txt(p, card)) && /Game details/.test(await txt(p, card)) && /Only playtime after you link counts/.test(await txt(p, card)) && /never shown to anyone/.test(await txt(p, card)), 'the card explains the rate, the public Game details requirement, no retroactive XP and privacy');
+ok(/10 XP for every completed hour/.test(await txt(p, card)) && /Game details/.test(await txt(p, card)) && /Hours you played before linking count/.test(await txt(p, card)) && /never shown to anyone/.test(await txt(p, card)), 'the card explains the rate, the public Game details requirement, earlier hours counting and privacy');
 await p.click(card + ' .steam-apps summary');
 const apps = await p.$$eval(card + ' .steam-apps li', (ls) => ls.map((l) => l.textContent));
 ok(apps.length === 6 && apps.some((a) => /Liftoff.*FPV Drone Racing/.test(a)) && apps.some((a) => /FPV LOGIC/.test(a)) && apps.some((a) => /TRYP/.test(a)), 'the six approved simulators are listed');
@@ -125,13 +125,13 @@ await goProfile(p);
 await p.waitForSelector(card + '[data-state=linked]', { timeout: 6000 });
 ok(/Steam account linked/.test(await txt(p, card)) && /0 hours credited/.test(await txt(p, card)) && /0 min towards the next hour/.test(await txt(p, card)), 'the card shows the account linked, with nothing credited yet');
 const link = (await sql('select * from public.steam_links where user_id = $1', [A]))[0];
-ok(link && link.steam_id === ID[A] && (await sql('select last_total_minutes as m from public.steam_app_state where user_id = $1', [A]))[0].m === 1000 && (await sql('select count(*)::int as n from public.xp_ledger where user_id = $1', [A]))[0].n === 0, 'a baseline was recorded and no XP was given for the 1,000 minutes played before');
+ok(link && link.steam_id === ID[A] && (await sql('select last_total_minutes as m from public.steam_app_state where user_id = $1', [A]))[0].m === 0 && (await sql('select count(*)::int as n from public.xp_ledger where user_id = $1', [A]))[0].n === 0, 'the approved game was stored (no playtime yet, so no XP)');
 ok(await p.locator('#account-pop #pane-progression [data-act=collection]').textContent().then((t) => /Achievements 1\/16/.test(t)), 'First Connection unlocked');
 const pageText = await p.evaluate(() => document.body.innerText + document.documentElement.innerHTML + JSON.stringify({ ...localStorage }));
 ok(!pageText.includes('76561198'), 'the Steam id appears nowhere on the page');
 
 // ---------- Sync now
-fake.totals = { 410340: 1090 };
+fake.totals = { 410340: 90 };
 await p.click(card + ' [data-act=sync]');
 await p.waitForSelector(card + ' .steam-message', { timeout: 6000 });
 ok(/1 new hour credited/.test(await txt(p, card + ' .steam-message')) && /1 hour credited/.test(await txt(p, card)) && /30 min towards the next hour/.test(await txt(p, card)), 'Sync now credits the completed hour and keeps the 30 minutes: ' + (await txt(p, card + ' .steam-message')));
@@ -172,11 +172,12 @@ await ctx.close();
 ({ ctx, p } = await open('d'));
 await goProfile(p);
 await p.waitForSelector(card + '[data-state=unlinked]', { timeout: 5000 });
+fake.totals = { 410340: 0 };
 await p.click(card + ' [data-act=link]');
 await p.waitForTimeout(2500);
 await goProfile(p);
 await p.waitForSelector(card + '[data-state=linked]', { timeout: 6000 });
-fake.down = true; fake.totals = { 410340: 1120 };
+fake.down = true; fake.totals = { 410340: 30 };
 await p.click(card + ' [data-act=sync]');
 await p.waitForSelector(card + ' .steam-message', { timeout: 6000 });
 ok(/Steam did not answer/.test(await txt(p, card + ' .steam-message')) && await p.locator(card + ' [data-act=sync]').isEnabled(), 'if Steam does not answer the person is told and can try again at once');

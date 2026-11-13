@@ -123,6 +123,7 @@ await p.waitForSelector(card + ' .ses-person', { timeout: 5000 });
 ok(await p.locator(card + ' .ses-person').count() === 1 && /Cam/.test(await txt(p, card + ' .ses-person')) && /Said they will come/.test(await txt(p, card + ' .ses-person')), 'Manage lists who said they will come');
 await rowOf(p, 'Field day').locator('.ses-person [data-act=mark]').click();
 await p.waitForSelector(card + ' .ses-person:has-text("Present")', { timeout: 5000 });
+await p.waitForFunction((sel) => /Cam: marked present/.test(document.querySelector(sel)?.textContent ?? ''), card + ' .ses-message', { timeout: 5000 });
 ok(/Cam: marked present/.test(await txt(p, card + ' .ses-message')) && (await sql(`select total from public.user_xp where user_id = $1`, [C]))[0].total === 50, 'marking an RSVP present awards the 50 XP');
 ok(await rowOf(p, 'Field day').locator('.ses-person [data-act=mark]').count() === 0, 'and the Mark button is gone for them');
 await p.fill(card + ' .ses-walkin input', cD.toUpperCase().slice(0, 5) + '-' + cD.toUpperCase().slice(5));

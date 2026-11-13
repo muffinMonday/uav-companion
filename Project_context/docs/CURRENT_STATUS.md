@@ -1,7 +1,12 @@
 # Session Checkpoint
 
-Updated: 2026-11-15
+Updated: 2026-11-16
 Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Phases 1 to 6 are built, tested, committed, pushed and deployed; the work is finished apart from the owner's set-up steps below.** Standing rule from the owner: after each finished, tested phase commit, push and deploy (hosted `db push`, function deploy, `deploy:live`) and move on without asking again (memory `commit-deploy-each-phase`); it does not cover unrelated work, live checks that create real users, or secrets.
+
+## Latest work: Steam credits existing hours (built and tested, NOT yet pushed or deployed)
+- Owner decision 2026-11-13: hours played before linking count (full, no cap beyond the 500 h per sync pace), paid out once per Steam account: unlink keeps the stored totals, and the new table `steam_credited` keeps the highest total ever counted per Steam account and game. Migration `20261116100000_steam_existing_hours.sql` (new column `steam_links.state_steam_id`, new table `steam_credited`; for existing links with nothing earned the stored totals are deleted so the next sync credits everything), card text in `src/steam-ui.js`, tests `db-steam-unit` (102) and browser `steam` (23) pass, docs updated (PROGRESSION, PROJECT F51, DECISIONS, DATABASE, supabase/README).
+- Steam is live on the hosted project: four secrets set, `steam_enabled` on, workflow `.github/workflows/steam-daily.yml` (daily 03:00 UTC, needs repo secret STEAM_CRON_SECRET, added) pushed in `b2e86a9`. The owner linked their account on prod (baseline, 0 hours); after the migration is pushed their next Sync now should credit about 265 h (2,650 XP).
+- To do: owner approval, then commit, `db push --remote --yes`, `deploy:live`; press Sync now; run the workflow once by hand (Actions, Run workflow). Full `npm test` not run (only unit + steam/progression).
 
 ## Latest work: six small fixes (done; full npm test passed, 422 s)
 - No keyboard on open for touch screens (`src/touch.js`: `focusField`, `showModalQuiet`; Edit profile, account pane, name/delete dialogs, splash). Edit profile: no Clear buttons, Save profile under Preview and Cancel. Preview now uses the popover body (`profileContent`), no XP history. Swipe down dismisses the profile, achievements, account and name/delete dialogs (`onDialogSwipe`, `swipe.js`). Launch fix now draws the blip (`locate.showFix`, no tracking; first button press starts tracking). No blue tap rectangle on panel tabs and the rail (CSS).

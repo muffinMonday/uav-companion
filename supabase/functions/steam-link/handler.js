@@ -1,6 +1,6 @@
 // The logic of the steam-link edge function (linking a Steam account), free of Deno and Supabase so Node tests can run it (tests/steam-unit.mjs).
 // POST with the person's session: returns the Steam sign-in address. GET is Steam sending the browser back: the state proves who started it, Steam confirms the SteamID,
-// the owned games are read once for the baseline (a player whose game details are private is told to make them public), and the link is recorded with the service role.
+// the owned games are read once and credited (hours played before linking count) (a player whose game details are private is told to make them public), and the link is recorded with the service role.
 // `deps`: getUser(authorization) -> { id } or null; rpc(fn, args) -> data (service role; throws on error); fetchFn; env: { secret, key, callbackUrl, origins, appIds }; now().
 import { SteamError, signState, verifyState, allowedReturn, withResult, authUrl, verifyAssertion, fetchOwnedGames } from '../_shared/steam.js';
 

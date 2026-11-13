@@ -50,7 +50,7 @@ export function createSteamCard({ client, onChange = () => {} }) {
       c.dataset.state = 'unlinked';
       c.append(el('p', '', `Link your Steam account to earn ${info.xpPerHour} XP for every completed hour in an approved simulator.`));
       const ul = el('ul', 'steam-rules');
-      for (const t of ['Your Steam profile’s Game details must be Public (Steam, Edit Profile, Privacy Settings, Game details). Otherwise nothing can be read.', 'Only playtime after you link counts; what you played before earns nothing.', 'Your Steam ID is never shown to anyone, and only the approved simulators count.']) ul.append(el('li', '', t));
+      for (const t of ['Your Steam profile’s Game details must be Public (Steam, Edit Profile, Privacy Settings, Game details). Otherwise nothing can be read.', 'Hours you played before linking count too, once per Steam account, and so does everything you play later.', 'Your Steam ID is never shown to anyone, and only the approved simulators count.']) ul.append(el('li', '', t));
       c.append(ul);
       if (state.apps.length) { const d = el('details', 'steam-apps'); d.append(el('summary', '', `Approved simulators (${state.apps.length})`)); const l = el('ul'); for (const a of state.apps) l.append(el('li', '', a.name)); d.append(l); c.append(d); }
       const b = btn(busy ? 'Opening Steam…' : 'Link Steam account', 'btn small primary'); b.dataset.act = 'link'; b.disabled = busy;
