@@ -15,7 +15,7 @@ A static front end (GitHub Pages) that works fully without a server, plus an **o
 ## Front end
 - Local-first: `poi.js` store (markers, trips) persists to `localStorage` and notifies listeners; the UI re-renders from it. Signed-out users never touch the network except basemaps and opted-in services.
 - Pure logic modules (no DOM) are unit-tested in Node; `*-ui.js` modules hold DOM. Module map: `MODULES.md`.
-- Startup (`main.js`): map, panel, POI/trips/AI/dashboard, then data manifests and zones; `initSyncUI` runs last and, only if configured and signed in, starts presence, party (shared trips, live locations) and friends.
+- Startup (`main.js`, with `src/app/` modules): theme and preferences, map, panel, POI/trips/AI/dashboard; `initSyncUI` starts without being awaited (only if configured and signed in does it start presence, party and friends) while the region data, country menu, pins, zones and legend load concurrently.
 
 ## Backend integration
 - **Gating:** `sync/supabase.js` `configured()` requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` at build time. `.env.development.local` supplies them to `npm run dev` only; `npm run build`/`deploy` omit them unless set in the shell, so the live site shows no sign-in by default. `@supabase/supabase-js` is a dynamic import, never downloaded when unconfigured.

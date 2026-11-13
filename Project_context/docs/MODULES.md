@@ -95,6 +95,29 @@ Canonical plan and validation: `HTML_MAIN_REFACTOR_BACKLOG.md`. Static HTML frag
 `src/components/search.html`, `dock.html`, `panel.html`, `map-config.html`,
 `trips-panel.html`, `poi-panel.html`, `privacy-panel.html`, `dashboard.html`.
 
-`index.html` is the shell; `scripts/html-components.js` assembles these files through the Vite plugin in `vite.config.js`, in dev and production. `panel.html` includes its three tab sections and Privacy. Startup/wiring: `src/main.js` with `src/app/` (above). `tests/html-components-unit.mjs` and `tests/html-dom.mjs` cover assembly and DOM/reload behavior. Setup and include rules: `DEVELOPMENT.md`. The full HTML → JS → CSS → tests ownership map is Phase 3.
+`index.html` is the shell; `scripts/html-components.js` assembles these files through the Vite plugin in `vite.config.js`, in dev and production. `panel.html` includes its three tab sections and Privacy. Startup/wiring: `src/main.js` with `src/app/` (above). `tests/html-components-unit.mjs` and `tests/html-dom.mjs` cover assembly and DOM/reload behavior. Setup and include rules: `DEVELOPMENT.md`.
+
+### Component ownership map (UI feature -> HTML -> JS -> CSS -> tests)
+
+All CSS is in `src/styles.css` (tokens and rules: `DESIGN.md`); find a feature's rules by its root id or class. Fragments are under `src/components/`; "dynamic" means built by the JS owner with `el()`, with no static fragment.
+
+| Feature | HTML | JS owner | CSS root | Suites |
+|---|---|---|---|---|
+| Search box | `search.html` (`#search`) | `search.js` | `.search`, `.results` | `search`, `shell`, `mapsel` |
+| Panel rail | `dock.html` (`#dock`) | `panel.js`; account button from `account-ui.js` | `.dock` | `shell`, `swipe`, `tabpill`, `friends` |
+| Side panel shell, tabs, phone sheet | `panel.html` (`aside#panel`, includes the four below) | `panel.js`, `swipe.js` | `.sp-`, `.tabs`, `.pbody` | `shell`, `ui`, `paneltall`, `swipe`, `tabpill` |
+| Map Configs (basemap, opacity, country, units, map app, wind limit, Appearance) | `map-config.html` (`#pane-config`) | `app/map-settings.js`, `app/region-ui.js`, `theme.js`, `weather.js`, `poi-ui.js` (status lines) | `.switch`, `.radio`, `.status` | `prefs`, `layers`, `opacity`, `mapsel`, `theme`, `dashboard`, `mw` |
+| Trips and Plan with AI | `trips-panel.html` (`#pane-trips`) | `trips-ui.js`, `ai-ui.js` | `.trip-card`, `.plan-name` | `trip`, `trips`, `tripplan`, `ai`, `sidelist`, `sidedrag` |
+| Points of Interest | `poi-panel.html` (`#pane-poi`) | `poi-ui.js`, `reorder-ui.js` | `.poi-list`, `.poi-item` | `poi1`, `poi2`, `bulk`, `edit`, `stops`, `days`, `cardsel`, `side` |
+| Privacy and Diagnostics | `privacy-panel.html` (`#privacy`) | `privacy-ui.js`, `panel.js`; cloud card from `sync-ui.js` | `.pv-`, `.switch` | `priv`, `mw`, `rain`, `diag`, `autoshare`, `cloud` |
+| Dashboard and quick setup | `dashboard.html` (`#dash`, `#dash-peek`, `#dash-tab`) | `dashboard.js`, `splash.js` | `.dash`, `.dash-card`, `.dash-peek`, `.splash` | `dashboard`, `dashtall`, `dayroute`, `splash`, `swipe` |
+| Point-check popup, hold/click check | dynamic | `app/point-check.js`, `pointcheck.js`, `holdcheck.js` | `.pop`, `.leaflet-popup` | `hold`, `popswipe`, `search`, `side` |
+| Marker windows, name tags, pins | dynamic | `poi-ui.js`, `livemap.js` | `.poi-pin`, `.name-tag`, `.live-pin` | `poi1`, `poi2`, `popswipe`, `live` |
+| Legend, coverage note, zone layers | `map-config.html` nodes moved by `dashboard.js` | `app/region-ui.js` (`renderRegionInfo`), `map.js` | `.legend` | `dashboard`, `prefs`, `smoke` |
+| Locate, compass, rotation | dynamic Leaflet controls | `locate.js`, `maprotate.js` | `.locate-btn` | `launchloc`, `locatemode`, `maprotate` |
+| Friends, party, sessions, account pane, progression, Steam | dynamic | `friends-ui.js`, `party-ui.js`, `sessions-ui.js`, `account-ui.js`, `progression-ui.js`, `steam-ui.js` | `.fr-`, `.ses-`, `.account-pop`, `.profile-dialog` | `friends`, `party`, `live`, `sessions`, `progression`, `steam`, `autoshare` |
+| Toast, banner, weather card | `index.html` (`#toast`, `#banner`, `#weather`) | `main.js` (toast), `weather.js`, `whatsnew.js` | `.toast`, `.wx` | `smoke`, `mw`, `rain` |
+
+The two weather/elevation status lines are `#mw-status` (Map Configs) and `#pv-mw-status` (Privacy); `poi-ui.js` writes both.
 
 Future Community Flying Areas plan: `COMMUNITY_FLYING_AREAS_PLAN.md`.
