@@ -33,6 +33,7 @@ import { lookupElevation } from './elevation.js';
 import { tile, statsGrid } from './cards.js';
 import { dataUrl, localUrl, mayHaveLocalData } from './config.js';
 import { loadPrefs, savePrefs } from './prefs.js';
+import { initTheme, setTheme, currentPref } from './theme.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -58,6 +59,14 @@ async function loadJson(path) {
 
 // Remembered from the last visit: basemap, country choice, map position (all kept in this browser only)
 const prefs = loadPrefs();
+initTheme();
+{ // Appearance card: System / Light / Dark
+  const cur = currentPref();
+  document.querySelectorAll('#theme-radios input').forEach((r) => {
+    r.checked = r.value === cur;
+    r.addEventListener('change', () => { if (r.checked) setTheme(r.value); });
+  });
+}
 const { map, switchBase, setScaleUnits } = createMap(prefs);
 onDistanceSettings((s) => setScaleUnits(s.units)); // the scale bar follows the distance units chosen in Points of Interest
 const panel = initPanel();

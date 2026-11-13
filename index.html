@@ -6,6 +6,8 @@
 <title>UAV Companion</title>
 <meta name="description" content="Open-source map of suitable-flight (适飞) drone zones, starting with Hubei, China. Not flight advice: check UOM before every flight.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%232aa6b8'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#ffffff">
+<script>/* theme before first paint: same rule as resolveTheme in src/theme.js */try{var t=JSON.parse(localStorage.getItem('uavzones.v1.prefs')||'{}').theme;document.documentElement.dataset.theme=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}catch(e){}</script>
 <script type="module" src="/src/main.js"></script>
 </head>
 <body>
@@ -89,6 +91,17 @@
             <option value="topo">OpenTopoMap (OSM data, terrain)</option>
           </select>
         </label>
+      </div>
+
+      <div class="card">
+        <h2>Appearance</h2>
+        <fieldset class="radios" id="theme-radios">
+          <legend>Theme</legend>
+          <label class="radio"><input type="radio" name="theme" value="system"><span>System <small>Follows your device</small></span></label>
+          <label class="radio"><input type="radio" name="theme" value="light"><span>Light</span></label>
+          <label class="radio"><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+        </fieldset>
+        <p class="hint">Saved in this browser only.</p>
       </div>
 
       <div class="card">

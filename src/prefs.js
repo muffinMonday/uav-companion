@@ -1,4 +1,4 @@
-// Remembered settings (last basemap, country choice, map position, zone opacity, privacy choices), kept in this browser only.
+// Remembered settings (last basemap, country choice, map position, zone opacity, colour theme, privacy choices), kept in this browser only.
 // Everything read back is validated, so a damaged or hand-edited entry falls back to the defaults.
 const KEY = 'uavzones.v1.prefs';
 
@@ -35,6 +35,10 @@ function sanitize(raw) {
   if (raw.locateOnLaunch === false) out.locateOnLaunch = false; // on launch the map is not centred on the visitor (on unless switched off)
   if (['auto', 'amap', 'google'].includes(raw.mapApp)) out.mapApp = raw.mapApp; // which map app the Open / Navigate buttons use
   if (['drive', 'transit', 'walk', 'bike'].includes(raw.mapMode)) out.mapMode = raw.mapMode; // the usual way of travelling
+  if (['system', 'light', 'dark'].includes(raw.theme)) { // unset = never chosen = follows the device
+    out.theme = raw.theme;
+    if (Number.isFinite(raw.themeAt) && raw.themeAt > 0) out.themeAt = raw.themeAt; // when it was chosen (for syncing between devices)
+  }
   const v = raw.view;
   if (v && Number.isFinite(v.lat) && Number.isFinite(v.lon) && Number.isFinite(v.zoom)
     && Math.abs(v.lat) <= 85 && Math.abs(v.lon) <= 180 && v.zoom >= 0 && v.zoom <= MAX_ZOOM) {
