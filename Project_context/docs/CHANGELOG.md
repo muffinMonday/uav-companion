@@ -2,6 +2,9 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-13 (colour theme, F52)
+- System / Light / Dark: selector in Map Configs, before-first-paint script, one dark block in the stylesheet (`a1170e1`). Dark basemap by CSS filter on the base layer, `baseTiles()` seam, rank-9 contrast fix (`9e679b6`). Theme stored in the `user_data` document, last choice wins, no chooser, `baseSig` (`9e679b6`; no migration). Tests: `theme-unit`, `theme`, `sync-settings-unit`, `cloud`.
+
 ## 2026-11-14 (profile pane)
 - Progression and Steam moved from Friends into the account pane; Edit profile gets grouping, validation and an unsaved-changes guard. Tests updated (progression, steam, sessions, friends).
 

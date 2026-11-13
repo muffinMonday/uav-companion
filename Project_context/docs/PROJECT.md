@@ -312,7 +312,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 **F5. Side panel (built)**
 - One hide-able side panel with three tabs: **Map Configs** (country shortcut, zone visibility and opacity, basemap, wind limit, legend, coverage and disclaimer), **Trips** and **Points of Interest**.
 - While the panel is collapsed, a rail of icons ("Map Configs", "Trips", "Points of Interest", with a **<** button first) opens it on the chosen tab. On phones the panel is a bottom sheet that starts collapsed and collapses itself when the map needs to be seen.
-- Tabs are keyboard-operable (arrow keys); light and dark themes follow the system setting.
+- Tabs are keyboard-operable (arrow keys); the theme is System, Light or Dark (F52).
 
 **F45. Side Quests**
 - A **Side Quest** is an optional stop near a main stop. A marker is a Side Quest or a main stop; a Home point, Hotel or Home marker is always a main stop. A Side Quest has no stop number, is not part of Previous/Next, the day's route arrows or the day's length, has no "without a date" warning, and is counted apart in "visited". It keeps its distance to the nearest hotel and home point, and is never one of those bases.
@@ -354,13 +354,19 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - When linked it shows hours credited, minutes towards the next hour, when it was last checked (about once a day, by a scheduled run), **Sync now** (cooldown 60 minutes, shown on the button; a Steam outage or a private profile gives the cooldown back) and **Unlink** (credited hours and the stored totals stay; relinking the same Steam account, or linking it from another app account, credits only what was played since it was last counted). Linking unlocks First Connection; hours unlock the simulator achievements and add XP.
 - Rules: the app never sends minutes; the edge functions read Steam with the project's key and the database counts (`supabase/migrations/20261114140000_steam.sql`, `supabase/README.md` has the setup). Code: `src/steam.js`, `steam-ui.js`; `supabase/functions/steam-link`, `steam-sync`, `steam-sync-all`, `_shared/steam.js`. Tests: `tests/db-steam-unit.mjs`, `steam-unit.mjs`, `steamui-unit.mjs`, `steam.mjs`.
 
+**F52. Colour theme: System, Light, Dark (built)**
+- The **Appearance** card in Map Configs has three choices: System (the first-visit default, follows the device and changes live), Light, Dark. The choice is kept in this browser (`theme`, `themeAt` in the prefs) and applied before the first paint, so there is no flash (`src/theme.js`, a short script in `index.html`, `styles.css` `:root[data-theme="dark"]`). A choice made in another tab is followed.
+- The map follows the theme with no separate setting: in dark the base tiles are darkened by a CSS filter (`.base-tiles`). Zones, markers and routes are not filtered. Changing theme reloads no tiles and leaves the view, markers and open windows alone. `baseTiles()` in `src/map.js` is where a real dark tile source would go.
+- Signed in: the choice is stored inside the cloud copy and follows the account; the last choice made on any device wins, and it never opens the both-sides-changed question (`DATABASE.md`, `DECISIONS.md`). Signed out, it stays in this browser.
+- Not done: filter cost on weak phones and a rotated map is unmeasured; cross-device sync is tested against a mock, not yet on the hosted project.
+
 ## 5. Non-functional requirements
 
 - **Static delivery:** the app must run from static files with no server of our own; GitHub Pages or a similar static host must work. Accounts are optional (Supabase, section 9) and absent from a build without a project address.
 - **Offline behaviour:** the target is that zones and offline search work without internet, with only basemap tiles and online search needing it. Not met yet: it needs a service worker caching the tiles.
 - **Responsive:** usable on a phone and a desktop browser. Checked at 390 px and 1200 px wide in Edge; not on real devices.
 - **Performance:** zones are served as vector tiles (PMTiles, range requests), so only the tiles in view are fetched. Not yet measured on mid-range phones.
-- **Accessibility:** controls are keyboard-operable, have labels, and respect light and dark system themes.
+- **Accessibility:** controls are keyboard-operable, have labels, and offer System, Light and Dark themes (F52).
 - **Privacy:** without signing in, the app sends no user data to any service other than the basemap provider, the geocoder for online search, and Open-Meteo, only when the user presses "Show weather here" (that point) or turns on automatic weather for markers (every marker's location on placement, move and refresh, rounded to about 1 km unless the user chooses precise), or turns on ground elevation (the exact location of a marker or point when its window or popup opens). or turns on name lookup for AI imports (the names or addresses of places that came without coordinates, to Photon and then Nominatim, when Add is pressed). All of these are off by default and controlled in the privacy settings. The wind limit and the saved markers never leave the browser (they are only written to local storage, or to a file when the user exports). If a future module ingests user files (for example flight logs), those files stay in the browser unless the user explicitly uploads them. Signed-in users additionally send their markers and trips (cloud copy), and what they choose to share (friends, shared trips, live location, online status) to Supabase; check-ins, weather caches and privacy choices are never uploaded, and Home markers are never shared with others.
 - **Licensing and attribution:** respect OpenStreetMap (and OpenStreetMap France's Humanitarian and CyclOSM hosting), OpenTopoMap, Leaflet (BSD-2 Clause), and echarts/china-map-geojson licences where their data is used. Record each in `docs/ATTRIBUTIONS.md` when the project is set up.
 
