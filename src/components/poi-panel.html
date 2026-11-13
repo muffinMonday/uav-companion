@@ -1,0 +1,40 @@
+    <section role="tabpanel" id="pane-poi" aria-labelledby="tab-poi" hidden>
+      <div class="card">
+        <h2>Add a marker</h2>
+        <div class="type-grid" id="poi-types" role="radiogroup" aria-label="Marker type"></div>
+        <label class="field" id="poi-trip-field"><span>Trip for new markers</span><select id="poi-trip"></select></label>
+        <div class="btn-row">
+          <button type="button" class="btn primary" id="poi-place">Place on map</button>
+          <button type="button" class="btn" id="poi-center">At map centre</button>
+          <button type="button" class="btn" id="poi-here">At my location</button>
+        </div>
+        <label class="switch"><span>Edit mode <small>locks the map; press and hold a pin, then drag</small></span><input type="checkbox" id="poi-edit"></label>
+        <label class="switch"><span>Show markers on map</span><input type="checkbox" id="poi-show" checked></label>
+        <label class="switch"><span>Show all Side Quests on the map <small>off: a Side Quest shows only while its main stop is open</small></span><input type="checkbox" id="poi-showside"></label>
+        <label class="switch"><span>Open details when I click a marker <small>off: a click only selects it and shows its links</small></span><input type="checkbox" id="poi-details" checked></label>
+      </div>
+
+      <div class="card">
+        <h2>Saved places <span class="count" id="poi-count"></span></h2>
+        <label class="field" id="poi-trip-filter-field" hidden><span>Trip</span><select id="poi-trip-filter"></select></label>
+        <div class="chips" id="poi-filter" role="group" aria-label="Filter by type"></div>
+        <div class="btn-row" id="poi-select-row" hidden><button type="button" class="btn small" id="poi-select">Select markers…</button></div>
+        <div class="select-bar" id="poi-selbar" hidden>
+          <div class="btn-row"><button type="button" class="btn small" id="sel-all">All shown</button><button type="button" class="btn small" id="sel-none">None</button></div>
+          <div class="two">
+            <label class="field"><span>Add a trip</span><select id="sel-trip"></select></label>
+            <label class="field"><span>Add a type</span><select id="sel-type"></select></label>
+          </div>
+          <div class="btn-row"><button type="button" class="btn small" id="sel-side" disabled>Make Side Quests</button><button type="button" class="btn small" id="sel-main" disabled>Make main stops</button></div>
+          <div class="btn-row"><button type="button" class="btn small danger" id="sel-delete" disabled>Delete selected (0)</button><button type="button" class="btn small" id="sel-done">Done</button></div>
+          <div class="sel-confirm" id="sel-confirm" role="alertdialog" aria-labelledby="sel-confirm-text" hidden>
+            <p id="sel-confirm-text"></p>
+            <div class="btn-row"><button type="button" class="btn small" id="sel-export">Export first</button><button type="button" class="btn small" id="sel-cancel">Cancel</button><button type="button" class="btn small danger" id="sel-confirm-delete">Delete</button></div>
+          </div>
+        </div>
+        <ul class="poi-list" id="poi-list"></ul>
+        <p class="hint" id="poi-drag-hint" hidden>Press and hold a place for 1 second, then drag it to another day or stop. Alt + ↑ / ↓ moves it from the keyboard.</p>
+        <p class="hint" id="poi-empty">No markers yet. Choose a type above, then tap Place on map.</p>
+      </div>
+
+    </section>

@@ -1,0 +1,38 @@
+    <section role="tabpanel" id="pane-trips" aria-labelledby="tab-trips" hidden>
+      <div class="card">
+        <h2>Your trips <span class="count" id="trips-count"></span></h2>
+        <p class="hint" id="trips-intro">A trip groups markers. A waypoint's distance to a hotel or home point only looks within its own trip. Your Home marker belongs to no trip.</p>
+        <ul class="trip-list" id="trips-list"></ul>
+        <p class="hint" id="trips-empty">No trips yet. Create one, then choose it for new markers or tag existing ones.</p>
+        <details class="past-trips" id="trips-past" hidden><summary id="trips-past-title">Past trips</summary><ul class="trip-list" id="trips-past-list"></ul></details>
+        <div class="btn-row"><button type="button" class="btn primary" id="trip-new">New trip</button></div>
+      </div>
+
+      <div class="card" id="trip-detail" hidden></div>
+
+      <div class="card" id="trip-form-card" hidden>
+        <h2 id="trip-form-title">New trip</h2>
+        <form id="trip-form" class="trip-form" novalidate>
+          <label class="field"><span>Name</span><input type="text" id="trip-name" maxlength="80" autocomplete="off" placeholder="e.g. Wuhan weekend"></label>
+          <label class="field"><span>Country <small>(optional)</small></span><input type="text" id="trip-country" list="country-list" autocomplete="off" placeholder="Start typing a country"></label>
+          <datalist id="country-list"></datalist>
+          <div class="two">
+            <label class="field"><span>Start date</span><input type="date" id="trip-start" required min="2000-01-01" max="2100-12-31"></label>
+            <label class="field"><span>End date <small>(same as the start for one day)</small></span><input type="date" id="trip-end" required max="2100-12-31"></label>
+          </div>
+          <p class="hint" id="trip-length"></p>
+          <label class="field"><span>Description <small>(optional)</small></span><textarea id="trip-desc" rows="3" maxlength="500" placeholder="What is this trip for?"></textarea></label>
+          <p class="form-error" id="trip-error" role="alert" hidden></p>
+          <div class="btn-row"><button type="submit" class="btn primary" id="trip-save">Save trip</button><button type="button" class="btn" id="trip-cancel">Cancel</button></div>
+        </form>
+      </div>
+
+      <div class="card" id="ai-card">
+        <h2>Plan with an AI</h2>
+        <p class="hint">Ask any AI assistant to turn your itinerary into markers: copy the prompt, add your itinerary after it, then paste the answer here. You see a preview first, and nothing is added until you confirm.</p>
+        <div class="btn-row"><button type="button" class="btn" id="ai-copy">Copy AI prompt</button></div>
+        <label class="field"><span>Paste the AI's answer</span><textarea id="ai-text" rows="5" spellcheck="false" placeholder='{"type":"FeatureCollection","features":[ … ]}'></textarea></label>
+        <div class="btn-row"><button type="button" class="btn primary" id="ai-preview-btn">Preview…</button></div>
+        <div class="preview" id="ai-preview" hidden></div>
+      </div>
+    </section>

@@ -79,12 +79,12 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `tests/` (`run.mjs`, `lib*.mjs`) | Suites; see `DEVELOPMENT.md` |
 | `docs/` | `AI.md`, `ATTRIBUTIONS.md`, `regions/` |
 
-## Planned UI component refactor (not yet implemented)
+## HTML components (Phase 1; startup refactor remains planned)
 
-Canonical plan: `HTML_MAIN_REFACTOR_BACKLOG.md`. Proposed future HTML fragments:
+Canonical plan and validation: `HTML_MAIN_REFACTOR_BACKLOG.md`. Static HTML fragments:
 `src/components/search.html`, `dock.html`, `panel.html`, `map-config.html`,
 `trips-panel.html`, `poi-panel.html`, `privacy-panel.html`, `dashboard.html`.
 
-These paths **do not exist yet**. Until the refactor is implemented, static markup remains in root `index.html`, and startup/wiring remains in `src/main.js`. After refactoring, replace this section with an accurate HTML → JS → CSS → tests ownership map.
+`index.html` is the shell; `scripts/html-components.js` assembles these files through the Vite plugin in `vite.config.js`, in dev and production. `panel.html` includes its three tab sections and Privacy. Startup/wiring remains in `src/main.js`; no JS responsibility extraction yet. `tests/html-components-unit.mjs` and `tests/html-dom.mjs` cover assembly and DOM/reload behavior. Setup and include rules: `DEVELOPMENT.md`. The full HTML → JS → CSS → tests ownership map is Phase 3.
 
 Future Community Flying Areas plan: `COMMUNITY_FLYING_AREAS_PLAN.md`.

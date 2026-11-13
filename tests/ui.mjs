@@ -37,7 +37,7 @@ ok(!(await vis(p, 'h2:has-text("Weather and elevation")')) && !(await vis(p, 'h2
 await open(p, 'poi');
 ok(!(await vis(p, 'h2:has-text("Weather and elevation")')) && !(await vis(p, 'h2:has-text("Backup")')) && !(await vis(p, '#ai-card')), 'Points of Interest shows no backup (it is on the dashboard now), and no weather card or AI card');
 const struct = await p.evaluate(() => ({
-  weatherInPoi: !document.querySelector('#pane-poi #mw-status') && !!document.querySelector('#privacy #mw-status'),
+  weatherInPoi: !document.querySelector('#pane-poi #mw-status, #pane-poi #pv-mw-status') && !!document.querySelector('#pane-config #mw-status') && !!document.querySelector('#privacy #pv-mw-status'),
   backupInPoi: !document.querySelector('#pane-poi #poi-export') && !document.querySelector('#pane-poi .aux') && !!document.querySelector('#dash-body #poi-export, #datastore #poi-export'),
   aiInTrips: !!document.querySelector('#pane-trips #ai-card #ai-preview'),
   bodyChildren: [...document.querySelector('#panel > .sp-body').children].map((c) => c.id).join(','),

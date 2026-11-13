@@ -14,6 +14,13 @@ npm run dev            # http://localhost:5173 (the tests expect this port)
 Without raw data, use published data: `VITE_DATA_BASE_URL=https://<user>.github.io/uav-companion/data/ npm run dev`.
 Geolocation needs https or localhost.
 
+### HTML components
+`index.html` is the document shell. `scripts/html-components.js`, enabled by `vite.config.js`, expands standalone `<!-- include: name.html -->` lines before Vite processes HTML in both dev and build. The eight registered files live in `src/components/`; `panel.html` includes its tab sections and Privacy. Keep includes on their own lines. Register a new filename in `COMPONENT_NAMES`; filesystem paths, unknown names, malformed directives and include cycles fail with a useful include chain. No runtime HTML fetch or additional build/deploy command.
+
+Editing, deleting or recreating a registered fragment sends a full page reload. Transforms read the current files, so missing fragments produce an error and restored ones work without restarting Vite. Keep the early theme script and `/src/main.js` entry in the shell. Dynamic UI remains with its existing JS owners; `main.js` startup extraction is a later phase.
+
+`node tests/run.mjs html-` runs assembly checks and DOM/reload integration checks. `tests/fixtures/html-dom-baseline.json` was frozen from the corrected full HTML before extraction: it pins the full source digest (LF) and element ancestry/attributes/text. Only intentional, reviewed markup changes should update this fixture. Integration tests use disposable Vite projects, private caches, dynamic ports and temporary builds; they never modify the live app's fragments or `dist/`.
+
 ## Environment variables and secrets
 | Name | Where | Purpose |
 |---|---|---|
@@ -30,13 +37,13 @@ Never commit or print the service-role key, DB password or access token.
 
 ## Tests (`tests/`)
 ```
-npm run test:unit                 # the 38 Node-only suites (UNIT in tests/run.mjs), about 20 s
+npm run test:unit                 # the 48 Node-only suites (UNIT in tests/run.mjs)
 npm test                          # all suites (about 7 minutes at 4 at once); needs the app on :5173
 node tests/run.mjs trips ai       # only suites whose name contains these words
 node tests/run.mjs --jobs 1        # one suite at a time (default is 4 at once; --jobs auto picks from the CPU count)
 node tests/trips.mjs              # one suite directly; prints PASS/FAIL lines
 ```
-- Suites: the lists `UNIT` (38, logic and database rules on in-memory Postgres) and `BROWSER` (54) in `tests/run.mjs` are the authoritative inventory; a suite's subject is in its file header and name (`*-unit`, `db-*-unit`, `*-live` need no browser or the hosted dev project). Last full browser run: see `CURRENT_STATUS.md`.
+- Suites: the lists `UNIT` (48, logic and database rules on in-memory Postgres) and `BROWSER` (58) in `tests/run.mjs` are the authoritative inventory; a suite's subject is in its file header and name (`*-unit`, `db-*-unit`, `*-live` need no browser or the hosted dev project). Last full browser run: see `CURRENT_STATUS.md`.
 - Browser suites mock Open-Meteo, Photon and Nominatim; screenshots go to `tests/out/` (git-ignored). `lib.mjs` supplies paths, the browser channel and a `chromium` wrapper that tucks the dashboard behind its tab in every new context (import `chromium` from `./lib.mjs`). It also emulates reduced motion in every context, so nothing is moving when a test clicks; pass `reducedMotion: 'no-preference'` to a context that needs the animations (see `motion.mjs`).
 - The runner counts lines starting with `PASS`/`FAIL`; `smoke` prints none, so it shows 0 pass and passes if it does not crash or log console errors.
 

@@ -1,0 +1,31 @@
+<aside class="sidepanel" id="panel" aria-label="Map panel" hidden>
+  <div class="sp-grab"><button type="button" class="icon-btn" id="panel-expand" aria-label="Expand the panel" aria-pressed="false" title="Expand the panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11l5-5 5 5M7 18l5-5 5 5"/></svg></button></div>
+  <header class="sp-head">
+    <div class="tabs" role="tablist" aria-label="Panel sections">
+      <button type="button" role="tab" id="tab-config" aria-controls="pane-config" aria-selected="true" data-tab="config"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span class="tab-label">Map Configs</span></button>
+      <button type="button" role="tab" id="tab-trips" aria-controls="pane-trips" aria-selected="false" tabindex="-1" data-tab="trips"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 13h16"/></svg><span class="tab-label">Trips</span></button>
+      <button type="button" role="tab" id="tab-poi" aria-controls="pane-poi" aria-selected="false" tabindex="-1" data-tab="poi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg><span class="tab-label">Points of Interest</span></button>
+    </div>
+    <button type="button" class="icon-btn" id="privacy-btn" aria-label="Privacy settings" aria-controls="privacy" aria-expanded="false" title="Privacy settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+    </button>
+    <button type="button" class="icon-btn" id="panel-close" aria-label="Collapse the panel" title="Collapse the panel">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+  </header>
+
+  <div class="sp-body">
+    <!-- Map Configs -->
+    <!-- include: map-config.html -->
+
+    <!-- Trips -->
+    <!-- include: trips-panel.html -->
+
+    <!-- Points of Interest -->
+    <!-- include: poi-panel.html -->
+  </div>
+
+  <!-- Privacy settings: slides over the panel -->
+
+  <!-- include: privacy-panel.html -->
+</aside>

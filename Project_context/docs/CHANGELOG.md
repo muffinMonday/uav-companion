@@ -2,6 +2,12 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-14 (HTML refactor Phase 1)
+- Root `index.html` is a 41-line shell with eight build-time HTML components. A local Vite plugin assembles nested includes during dev/build and reloads on fragment edits/additions/deletions; no runtime fetch or new dependency/command. Frozen pre-extraction DOM/source fixture plus compiler and real Vite/browser reload tests. Build and all 48 unit / 106 total suites passed; all 298 screenshots byte-identical to the corrected baseline. `main.js`, runtime JS, CSS and dependencies unchanged in this phase. Full validation: `HTML_MAIN_REFACTOR_BACKLOG.md` section 11. Phase 2 has not started.
+
+## 2026-11-14 (duplicate weather-status IDs)
+- Privacy now uses `pv-mw-status`, while Map Configs retains `mw-status`; both receive the same weather/elevation status. Previously the duplicate ID left Privacy's line blank. Browser checks cover unique IDs, matching status through refresh/error/cache states, and saved elevation status. Build passed; unrestricted full `npm test` passed all 104 suites (471 s), and unit-impact passed all 47 suites. Corrected DOM/screenshot baseline and execution-locale notes: `HTML_MAIN_REFACTOR_BACKLOG.md` section 10. HTML/main.js refactor Phase 1 has not started.
+
 ## 2026-11-13 (automatic location sharing with friends)
 - Sharing no longer has to be switched on each time: after a one-time yes (or the privacy switch), `autoshare.js` starts sharing with a trip's party when another member is online and with all friends when a friend is online, and stops when they are gone; a by-hand stop sticks. New migration `20261117100000` (friend positions, `online_others`). Friends' pins are rounded squares labelled "Friend"; the Friends tab has two switches. Tests: `autoshare-unit`, `autoshare` (browser), additions to `db-live-unit`.
 

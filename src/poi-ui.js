@@ -72,7 +72,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const mw = createMarkerWeather({ getItems: () => store.items(), onChange: () => { renderWxStatus(); wxLine?.render(); } });
   const elev = createMarkerElevation({ getItems: () => store.items(), onChange: () => { renderWxStatus(); wxLine?.render(); } });
   { const live = store.items().map((i) => i.id); mw.prune(live); elev.prune(live); } // forget weather and elevation for markers that are gone
-  const mwStatus = $('mw-status');
+  const mwStatusEls = [$('mw-status'), $('pv-mw-status')];
 
   const typesEl = $('poi-types'), listEl = $('poi-list'), filterEl = $('poi-filter'), countEl = $('poi-count');
   const emptyEl = $('poi-empty'), noteEl = $('poi-note'), editSwitch = $('poi-edit'), showSwitch = $('poi-show');
@@ -491,7 +491,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
 
   // ---------- weather summary ----------
-  /** The status line in the Points of Interest tab: automatic weather and altitude, and where to change them. */
+  /** The shared automatic-weather and altitude status in Map Configs and Privacy. */
   function renderWxStatus() {
     const p = getPrivacy(), s = mw.status();
     const lines = [];
@@ -506,7 +506,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       lines.push(parts.join(' · ') + '.');
     }
     lines.push(p.fetchAltitude ? 'Ground elevation is on (exact location).' : 'Ground elevation is off.');
-    mwStatus.textContent = lines.join(' ');
+    const text = lines.join(' ');
+    for (const el of mwStatusEls) el.textContent = text;
   }
 
   /** Straight-line distance to the nearest home point and the nearest hotel whose dates fit, in a marker window. */

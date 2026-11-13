@@ -56,11 +56,17 @@ const num = (t, re) => parseFloat(t.match(re)[1]);
 const setAuto = async (p, on) => { await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); await (on ? p.check('#pv-auto') : p.uncheck('#pv-auto')); await p.click('#privacy-back'); };
 const isAuto = async (p) => { await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); const v = await p.isChecked('#pv-auto'); await p.click('#privacy-back'); return v; };
 const closePopup = (p) => p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+const statusMatches = async (p, pattern) => {
+  const lines = await p.locator('#pane-config #mw-status, #privacy #pv-mw-status').allTextContents();
+  return lines.length === 2 && lines[0] === lines[1] && pattern.test(lines[0]);
+};
 
 // ============ A. default: off, nothing sent
 let S = await session();
 ok(S.reqs.length === 0, 'A: page load with markers and the toggle off sends no weather request');
-ok(!(await isAuto(S.page)) && /Automatic weather is off\./.test(await S.page.textContent('#mw-status')), 'A: toggle is off by default and the status says nothing is sent');
+const ids = await S.page.locator('[id]').evaluateAll((els) => els.map((el) => el.id));
+ok(ids.length === new Set(ids).size, 'A: all rendered element IDs are unique');
+ok(!(await isAuto(S.page)) && await statusMatches(S.page, /Automatic weather is off\./), 'A: toggle is off by default and both settings panels show the same weather status');
 await openMarker(S.page, 'Seed A');
 ok(!(await S.page.locator('.poi-pop .stats-wrap').isVisible()), 'A: popup shows no weather summary while off');
 await closePopup(S.page);
@@ -78,7 +84,7 @@ const allCoords = [...u.searchParams.get('latitude').split(','), ...u.searchPara
 ok(allCoords.every((c) => /^-?\d+\.\d{2}$/.test(c)), 'B: coordinates are rounded to 2 decimals: ' + allCoords.slice(0, 3).join(' '));
 ok(u.searchParams.get('latitude') === '30.50,30.51,30.53', 'B: seed (30.500123, ...) sent as 30.50 etc.');
 console.log('     status:', await S.page.textContent('#mw-status'));
-ok(/Weather last refreshed: \d{2}:\d{2}/.test(await S.page.textContent('#mw-status')), 'B: "Last refreshed" timestamp shown');
+ok(await statusMatches(S.page, /Weather last refreshed: \d{2}:\d{2}/), 'B: both settings panels show the same "Last refreshed" timestamp');
 ok((await lsGet(S.page, 'uavzones.v1.prefs')).autoWeather === true, 'B: the on/off choice is remembered');
 const seeds = items(3);
 await openMarker(S.page, 'Seed B');
@@ -113,6 +119,7 @@ S.reqs.length = 0;
 await S.page.reload({ waitUntil: 'networkidle' }); await S.page.waitForTimeout(1200); await S.page.click('#tab-poi');
 ok(S.reqs.length === 0, 'D: reload within 30 minutes sends no request');
 ok(await isAuto(S.page), 'D: toggle still on after reload');
+ok(await statusMatches(S.page, /Weather last refreshed:/), 'D: both status lines restore the cached refresh time after reload');
 await openMarker(S.page, 'Seed A'); t = await wxText(S.page);
 ok(/updated \d{2}:\d{2}/i.test(t) && /°C/.test(t), 'D: cached values and their time are shown without a new request');
 await closePopup(S.page);
@@ -141,7 +148,7 @@ await S.page.evaluate(([v]) => { const d = JSON.parse(localStorage.getItem('uavz
 S.fail = true; S.reqs.length = 0;
 await S.page.reload({ waitUntil: 'networkidle' }); await S.page.waitForTimeout(1500); await S.page.click('#tab-poi');
 console.log('     status:', await S.page.textContent('#mw-status'));
-ok(/latest refresh failed, showing earlier values/.test(await S.page.textContent('#mw-status')), 'G: status says the refresh failed and earlier values are shown');
+ok(await statusMatches(S.page, /latest refresh failed, showing earlier values/), 'G: both status lines say the refresh failed and earlier values are shown');
 await openMarker(S.page, 'Seed A'); t = await wxText(S.page);
 ok(/-?[\d.]+ °C/.test(t) && /latest refresh failed/.test(t), 'G: popup still shows the earlier values, labelled as from a failed refresh');
 ok((await lsGet(S.page, 'uavzones.v1.wxcache')).lastBulk === oldBulk, 'G: a failed bulk refresh does not count, so the next load tries again');
@@ -153,7 +160,7 @@ ok(S.reqs.length === 1 && nLocs(S.reqs[0]) === 4, 'G: the next load retries the 
 // ============ H. turning it off: forgets the data, sends nothing
 await S.page.click('#tab-poi'); await setAuto(S.page, false); await S.page.waitForTimeout(400);
 ok(Object.keys((await lsGet(S.page, 'uavzones.v1.wxcache')).items).length === 0, 'H: turning off clears the cached weather');
-ok(/Automatic weather is off\./.test(await S.page.textContent('#mw-status')), 'H: status says off');
+ok(await statusMatches(S.page, /Automatic weather is off\./), 'H: both status lines say off');
 await openMarker(S.page, 'Seed A'); ok(!(await S.page.locator('.poi-pop .stats-wrap').isVisible()), 'H: popup summary hidden'); await closePopup(S.page);
 S.reqs.length = 0; await S.page.click('#poi-center'); await S.page.waitForSelector('.poi-pop form'); await S.page.waitForTimeout(500);
 await S.page.reload({ waitUntil: 'networkidle' }); await S.page.waitForTimeout(1000);
@@ -163,7 +170,7 @@ await S.ctx.close();
 // ============ I. first fetch fails with no earlier data
 S = await session({ fail: true });
 await setAuto(S.page, true); await S.page.waitForTimeout(1500);
-ok(/Could not fetch weather yet/.test(await S.page.textContent('#mw-status')), 'I: no data and a failure: status says so');
+ok(await statusMatches(S.page, /Could not fetch weather yet/), 'I: no data and a failure: both status lines say so');
 await openMarker(S.page, 'Seed A'); ok(/Weather unavailable right now/.test(await wxText(S.page)), 'I: popup says weather is unavailable, not a made-up value');
 await S.ctx.close();
 
@@ -207,7 +214,9 @@ await S.ctx.close();
 
 // ============ N. popup updates in place when data arrives while it is open
 S = await session({ delay: 2500 });
-await setAuto(S.page, true); await S.page.waitForTimeout(300);
+await setAuto(S.page, true);
+ok(await statusMatches(S.page, /Weather: refreshing…/), 'N: both status lines show a refresh in progress');
+await S.page.waitForTimeout(300);
 await openMarker(S.page, 'Seed A');
 ok(/…/.test(await wxText(S.page)), 'N: popup shows "loading" while the request is in flight');
 await S.page.waitForFunction(() => /°C/.test(document.querySelector('.poi-pop .stats-wrap')?.textContent || ''), null, { timeout: 8000 });

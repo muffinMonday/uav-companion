@@ -1,0 +1,81 @@
+  <div class="subpanel" id="privacy" role="region" aria-label="Privacy settings" hidden>
+    <header class="sp-head">
+      <button type="button" class="icon-btn" id="privacy-back" aria-label="Back to the panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <h2 class="sub-title">Privacy settings</h2>
+      <button type="button" class="icon-btn" id="privacy-close" aria-label="Collapse the panel" title="Collapse the panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </header>
+    <div class="sp-body">
+      <p class="lead">Everything here is off or minimal by default. Your markers, notes and settings stay in this browser. These switches only control what is sent to Open-Meteo.com for weather and elevation.</p>
+
+      <div class="card">
+        <h2>Weather</h2>
+        <p class="hint" id="pv-mw-status"></p>
+        <label class="switch"><span>Fetch weather for markers automatically <small>Shows the next 5 hours in each marker window. Sent when you place a marker and when the page loads (at most every 30 minutes).</small></span><input type="checkbox" id="pv-auto"></label>
+        <fieldset class="radios">
+          <legend>Location sent for weather</legend>
+          <label class="radio"><input type="radio" name="pv-prec" value="estimated"><span>Estimated <small>Rounded to about 1 km. The forecast is the same, because its grid is 10 to 25 km. Recommended.</small></span></label>
+          <label class="radio"><input type="radio" name="pv-prec" value="precise"><span>Precise <small>About 10 m. Shares the exact spot for no gain in forecast accuracy.</small></span></label>
+        </fieldset>
+        <p class="hint">This applies to the "Show weather here" button as well.</p>
+      </div>
+
+      <div class="card">
+        <h2>Altitude</h2>
+        <label class="switch"><span>Fetch ground elevation <small>Shown in marker windows and when you check a point. Always sends the exact location (about 10 m), whatever the weather setting: at 1 km the ground can differ by hundreds of metres in the mountains.</small></span><input type="checkbox" id="pv-alt"></label>
+      </div>
+
+      <div class="card">
+        <h2>Place lookup</h2>
+        <label class="switch"><span>Look up places by name when importing <small>For itineraries from an AI: a place that came without coordinates is searched by its name or address. Those names are sent to Photon (Komoot), or Nominatim (OpenStreetMap) if Photon fails, only when you press Add on an import. Looked-up places are marked unverified.</small></span><input type="checkbox" id="pv-geo"></label>
+      </div>
+
+      <div class="card">
+        <h2>Location at launch</h2>
+        <label class="switch"><span>Centre the map on me when the app opens <small>The browser asks for your location when the app opens. If you allow it for this site, the map opens on where you are; if you do not, it opens where you left off. Your position is only used on this device and is never sent anywhere.</small></span><input type="checkbox" id="pv-locate"></label>
+      </div>
+
+      <div class="card">
+        <h2>Share my location automatically</h2>
+        <label class="switch"><span>Start sharing by itself <small>When you are signed in and someone in a trip's party, or a friend, is online, your location is shared with them without switching anything on, only while this page is open. Nothing is sent otherwise. The Stop button on the map ends it, and a switch you turn off by hand stays off until you turn it on again. Off: sharing starts only when you switch it on.</small></span><input type="checkbox" id="pv-autoshare"></label>
+        <label class="switch"><span>Include friends <small>Friends who are online see you on their map, marked as a friend. Off: only trip parties are included.</small></span><input type="checkbox" id="pv-autoshare-friends"></label>
+      </div>
+
+      <div class="card">
+        <h2>Check-in</h2>
+        <label class="switch"><span>Check in at markers <small>Uses your position to enable a Check in button on a marker when you are within 300 m of it. Your position is read only while the panel shows markers and is never sent anywhere. A check-in saves your coordinates and the time with the marker, in this browser.</small></span><input type="checkbox" id="pv-checkin"></label>
+      </div>
+
+      <div class="card" id="dist-card">
+        <h2>Distances</h2>
+        <label class="field"><span>Units</span>
+          <select id="dist-units"><option value="metric">Kilometres and metres</option><option value="imperial">Miles and feet</option></select>
+        </label>
+        <label class="field"><span>Max range <small>(optional)</small></span>
+          <span class="inline-input"><input type="number" id="dist-max" min="0.1" step="0.1" placeholder="off" inputmode="decimal"><span id="dist-max-unit">km</span></span>
+        </label>
+        <p class="hint">Every marker shows its straight-line distance to your nearest Home. A waypoint also shows its nearest Home point and Hotel, only from its own trip and only those whose dates overlap its own (one with no dates counts for every date). If a waypoint is farther than the max range from every such Home point and Hotel, it is shown in red; your Home does not count toward the range. Units also set the map's scale bar. Elevation and height limits stay in metres.</p>
+      </div>
+
+      <div class="card" id="diag-card">
+        <h2>Diagnostics</h2>
+        <p class="hint">A short log of problems (failed requests, errors) is kept in this browser only: at most 500 entries, 200 KB and 7 days. It holds no positions, marker names, notes, tokens or account details, and nothing is sent anywhere. Download it if someone is helping you with a problem.</p>
+        <p class="hint" id="diag-stats" aria-live="polite">Checking…</p>
+        <div class="btn-row"><button type="button" class="btn small" id="diag-download" disabled>Download diagnostics</button><button type="button" class="btn small" id="diag-clear" disabled>Clear log</button></div>
+      </div>
+
+      <div class="card">
+        <h2>What leaves your browser</h2>
+        <ul class="plain">
+          <li><b>Map tiles:</b> the basemap you pick is loaded from OpenStreetMap, OpenStreetMap France (the Humanitarian and CyclOSM styles) or OpenTopoMap, which see which area you view.</li>
+          <li><b>Place search and lookup:</b> online search sends your query to Photon or Nominatim, only when you search. Name lookup on import does the same with the names in the import, only if you turn it on above.</li>
+          <li><b>Check-in:</b> your position is read by the browser only while check-in is on and the panel shows markers. It is saved with the marker in this browser, included in an export, and left out of share links.</li>
+          <li><b>Weather and elevation:</b> Open-Meteo.com, only as set above.</li>
+          <li><b>Never sent:</b> marker names and notes, your saved markers, the wind limit, and these settings. Your location is read by the browser when you press the location button and, unless you turn it off above, once when the app opens; it stays on this device.</li>
+        </ul>
+      </div>
+    </div>
+  </div>

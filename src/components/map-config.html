@@ -1,0 +1,68 @@
+    <section role="tabpanel" id="pane-config" aria-labelledby="tab-config">
+      <div class="card">
+        <h2>Navigate</h2>
+        <div class="field">
+          <label for="country">Go to</label>
+          <div class="select-row">
+            <select id="country"><option value="">Choose a country…</option></select>
+            <button type="button" class="btn" id="country-go" title="Centre the map on the chosen country">Centre</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Layers</h2>
+        <label class="switch"><span>Show zones</span><input type="checkbox" id="show" checked></label>
+        <label class="field"><span>Zone opacity</span><input type="range" id="op" min="0.1" max="0.9" step="0.05" value="0.45"></label>
+        <label class="field"><span>Marker window opacity <small>(lower lets the map show through)</small></span><input type="range" id="pop-op" min="0.5" max="1" step="0.05" value="0.8"></label>
+        <label class="field"><span>Basemap</span>
+          <select id="base">
+            <option value="osm" selected>OpenStreetMap</option>
+            <option value="hot">Humanitarian (OSM, clear roads and paths)</option>
+            <option value="cyclosm">CyclOSM (OSM, outdoors and cycling)</option>
+            <option value="topo">OpenTopoMap (OSM data, terrain)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>Appearance</h2>
+        <fieldset class="radios" id="theme-radios">
+          <legend>Theme</legend>
+          <label class="radio"><input type="radio" name="theme" value="system"><span>System <small>Follows your device</small></span></label>
+          <label class="radio"><input type="radio" name="theme" value="light"><span>Light</span></label>
+          <label class="radio"><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+        </fieldset>
+        <p class="hint">Saved in this browser only.</p>
+      </div>
+
+      <div class="card">
+        <h2>Maps</h2>
+        <label class="field"><span>Map app for Open and Navigate</span>
+          <select id="map-app">
+            <option value="auto">Automatic (Amap in China, Google Maps elsewhere)</option>
+            <option value="amap">Amap in China (Google Maps elsewhere)</option>
+            <option value="google">Google Maps</option>
+          </select>
+        </label>
+        <label class="field"><span>Usual way of travelling</span>
+          <select id="map-mode"></select>
+        </label>
+        <p class="hint">Amap only covers China, so Google Maps is used anywhere else. The Open and Navigate icons share the place's coordinates with the map app, only when you tap one. Saved in this browser only.</p>
+      </div>
+
+      <div class="card">
+        <h2>Weather</h2>
+        <p class="hint" id="mw-status"></p>
+        <label class="field"><span>Wind limit <small>(m/s, optional)</small></span>
+          <input type="number" id="wlimit" min="1" max="40" step="0.5" placeholder="off">
+        </label>
+        <p class="hint">Hours above this limit are shown in red in the weather card. Saved in this browser only.</p>
+      </div>
+
+      <div class="card">
+        <h2>Help</h2>
+        <div class="btn-row"><button type="button" class="btn" id="help-open">How it works</button><button type="button" class="btn" id="setup-open">Quick setup</button></div>
+        <label class="switch"><span>Show the dashboard when the app starts <small>Off keeps it tucked behind the ^ tab at the bottom of the map.</small></span><input type="checkbox" id="dash-start" checked></label>
+      </div>
+    </section>

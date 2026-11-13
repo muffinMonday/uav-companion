@@ -71,7 +71,7 @@ ok(!(await p.isChecked('#pv-auto')) && !(await p.isChecked('#pv-alt')) && (await
 ok(/Open-Meteo/.test(await p.textContent('#privacy')) && /Never sent/.test(await p.textContent('#privacy')), '1: explains what leaves the browser');
 await p.click('#privacy-back'); ok(!(await p.isVisible('#privacy')), '1: Back closes it');
 await p.click('#privacy-btn'); await p.keyboard.press('Escape'); ok(!(await p.isVisible('#privacy')), '1: Escape closes it');
-await p.click('#tab-poi'); ok(!(await p.locator('#poi-privacy').count()) && !(await p.locator('#pane-poi #mw-status').count()), '1: the Points of Interest tab no longer has a weather and privacy card (privacy is one shield button away)'); await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); await p.waitForTimeout(400); ok(await p.isVisible('#privacy') && /Automatic weather is off/.test(await p.textContent('#mw-status')), '1: the privacy panel opens from the shield and shows the weather status line');
+await p.click('#tab-poi'); ok(!(await p.locator('#poi-privacy').count()) && !(await p.locator('#pane-poi #mw-status, #pane-poi #pv-mw-status').count()), '1: the Points of Interest tab no longer has a weather and privacy card (privacy is one shield button away)'); await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); await p.waitForTimeout(400); ok(await p.isVisible('#privacy #pv-mw-status') && /Automatic weather is off/.test(await p.textContent('#privacy #pv-mw-status')), '1: the privacy panel opens from the shield and shows its own weather status line');
 await p.click('#privacy-close'); ok(!(await p.isVisible('#panel')) && await p.isVisible('#dock'), '1: the sub-panel has its own close button that hides the panel'); await p.click('#dock [data-tab=poi]'); ok(!(await p.isVisible('#privacy')), '1: reopening the panel starts from the tab, not the sub-panel');
 await S.ctx.close();
 
@@ -180,7 +180,8 @@ S = await session({ prefs: { autoWeather: true, weatherPrecision: 'precise', fet
 await S.page.click('#privacy-btn');
 ok((await S.page.isChecked('#pv-auto')) && (await S.page.isChecked('#pv-alt')) && (await S.page.isChecked('input[name=pv-prec][value=precise]')), '4: saved privacy choices are restored in the sub-panel');
 await S.page.click('#privacy-back');
-ok(/Ground elevation is on/.test(await S.page.textContent('#mw-status').catch(() => '')) || true, '4: (status line)');
+const configStatus = await S.page.textContent('#pane-config #mw-status');
+ok(/Ground elevation is on/.test(configStatus) && configStatus === await S.page.textContent('#privacy #pv-mw-status'), '4: both status lines restore the saved elevation choice');
 await S.ctx.close();
 
 // ================= 5. elevation lookup fails
