@@ -9,7 +9,7 @@ Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Ph
 
 ## Dark/light/system theme (done: phases 1 to 5 committed, pushed, deployed; commits a1170e1, 9e679b6; full npm test passed 433 s)
 - Built as planned (plan file `C:/Users/cy071/.claude/plans/i-want-to-finish-wondrous-globe.md`): `src/theme.js`, Appearance card, one dark CSS block, `baseTiles()` + CSS filter on the base layer, theme in the `user_data` document (last choice wins, `baseSig`, no chooser). Docs: PROJECT F52, DATABASE, DECISIONS, MODULES, CHANGELOG.
-- Not verified: the real `settings:doc->settings` select and cross-device sync on the hosted project (two browsers, signs in a real user: ask first); filter cost on a weak phone or rotated map; signed-in account/friends panes in dark (no screenshot). While a question is open nothing about the theme syncs.
+- Verified on the hosted project (2026-11-13, `node tests/cloud-live.mjs`, throwaway user): the `settings:doc->settings` select and that `save_user_data` keeps `settings`. The two-device engine flow is tested against the in-memory cloud only. Not verified: filter cost on a weak phone or rotated map; signed-in account/friends panes in dark (no screenshot). While a question is open nothing about the theme syncs.
 - Owner state: first-administrator row and the release checklist as before.
 
 ## Earlier: Steam credits existing hours (done: commit 3ac7eb6 pushed, migration pushed, deploy:live run, 2026-11-16)

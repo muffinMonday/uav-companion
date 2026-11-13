@@ -28,10 +28,10 @@ try {
   ok((await adapter.info()) === null && (await adapter.fetch()) === null, 'before the first save there is no cloud copy');
   let r = await adapter.save(doc(2), null, 'live test', false);
   ok(r.status === 'ok' && r.rev === 1 && r.markers === 2, 'first save: revision 1');
-  r = await adapter.save(doc(3), 1, 'live test', false);
+  r = await adapter.save(doc(3), 1, 'live phone', false); // another device: a save by the same device within 2 minutes keeps no version of the one it replaces
   ok(r.status === 'ok' && r.rev === 2, 'second save from revision 1: revision 2');
   r = await adapter.save(doc(9), 1, 'other', false);
-  ok(r.status === 'conflict' && r.rev === 2 && r.device === 'live test', 'a stale save is a conflict that names the device');
+  ok(r.status === 'conflict' && r.rev === 2 && r.device === 'live phone', 'a stale save is a conflict that names the device');
   const info = await adapter.info();
   ok(info.rev === 2 && typeof info.rev === 'number' && info.markers === 3 && !('doc' in info), 'info reads the current revision (a number) and counts, not the document');
   const full = await adapter.fetch();
@@ -55,6 +55,13 @@ try {
   ok(!!an.error || an.data.length === 0, 'an anonymous visitor reads nothing');
   const an2 = await anon.rpc('save_user_data', { p_doc: doc(1) });
   ok(!!an2.error, 'and cannot save: ' + an2.error?.message);
+  // the synced theme: info() reads settings out of the document (settings:doc->settings); a document without them gives null
+  ok((await adapter.info()).settings === null, 'info: a document without settings reads settings as null');
+  const cur = (await adapter.info()).rev;
+  r = await adapter.save({ ...doc(2), settings: { theme: 'dark', themeAt: 1700000000000 } }, cur, 'live test', false);
+  const i2 = await adapter.info();
+  ok(r.status === 'ok' && i2.settings?.theme === 'dark' && i2.settings.themeAt === 1700000000000 && !('doc' in i2), 'info reads the theme out of the document, without the document');
+  ok((await adapter.fetch()).doc.settings.theme === 'dark', 'and the whole document carries it');
   await adapter.remove();
   ok((await adapter.info()) === null, 'delete_user_data removes the cloud copy');
 } finally {

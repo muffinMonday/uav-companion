@@ -358,7 +358,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - The **Appearance** card in Map Configs has three choices: System (the first-visit default, follows the device and changes live), Light, Dark. The choice is kept in this browser (`theme`, `themeAt` in the prefs) and applied before the first paint, so there is no flash (`src/theme.js`, a short script in `index.html`, `styles.css` `:root[data-theme="dark"]`). A choice made in another tab is followed.
 - The map follows the theme with no separate setting: in dark the base tiles are darkened by a CSS filter (`.base-tiles`). Zones, markers and routes are not filtered. Changing theme reloads no tiles and leaves the view, markers and open windows alone. `baseTiles()` in `src/map.js` is where a real dark tile source would go.
 - Signed in: the choice is stored inside the cloud copy and follows the account; the last choice made on any device wins, and it never opens the both-sides-changed question (`DATABASE.md`, `DECISIONS.md`). Signed out, it stays in this browser.
-- Not done: filter cost on weak phones and a rotated map is unmeasured; cross-device sync is tested against a mock, not yet on the hosted project.
+- Not done: filter cost on weak phones and a rotated map is unmeasured; the hosted project is checked for reading and storing the setting (`tests/cloud-live.mjs`); the two-device flow is tested against an in-memory cloud.
 
 ## 5. Non-functional requirements
 
