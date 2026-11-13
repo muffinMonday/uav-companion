@@ -43,3 +43,10 @@ ok(!/background:var\(--danger\)[^}]*color:#fff/.test(css), 'no white text on var
 // scale guards (phase 2): page layers and the shared radii come from tokens
 ok(!/z-index:\d{3,}/.test(css), 'every z-index of 100 or more is a --z-* token (only the local 1 and 5 inside a parent stay numbers)');
 ok(!/border-radius:(14|18|999)px(?![\d ])/.test(css), 'border-radius 14 / 18 / 999 px are --radius, --radius-lg, --radius-pill');
+
+// type guards (phase 3): sizes and weights come from the scale; the few literal sizes are glyphs and map badges (DESIGN.md section 3)
+const lit = [...css.matchAll(/font(?:-size)?:(?:[0-9]{3} )?([0-9.]+)px/g)].map((m) => m[1]);
+const OK_LITERAL = new Set(['9', '10', '15', '20', '22']);
+const bad = [...new Set(lit.filter((v) => !OK_LITERAL.has(v)))];
+ok(bad.length === 0, 'font sizes are --fs-* tokens (literals allowed only for glyphs and map badges: 9, 10, 15, 20, 22 px)' + (bad.length ? ': ' + bad.join(', ') : ''));
+ok(!/font-weight:\d/.test(css) && !/font:\d{3} /.test(css), 'font weights are --fw-* tokens');

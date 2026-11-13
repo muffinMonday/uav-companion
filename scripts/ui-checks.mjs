@@ -32,6 +32,7 @@ const measure = () => {
     if (r.width <= 2 || r.height <= 2) continue; // screen-reader-only
     if (e.tagName === 'A' && getComputedStyle(e).display === 'inline' && e.closest('p, li, small, span, div')?.textContent.trim().length > e.textContent.trim().length + 8) continue; // a link inside a sentence is exempt
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2, own = (t) => t && (t === e || e.contains(t));
+    if (!own(document.elementFromPoint(cx, cy))) continue; // covered by something else right now (another window is on top): not measurable here
     const reach = (dx, dy) => { let n = 0; for (let k = 1; k <= 30; k++) { const x = cx + dx * k, y = cy + dy * k; if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) break; if (!own(document.elementFromPoint(x, y))) break; n = k; } return n; };
     const w = reach(-1, 0) + reach(1, 0), h = reach(0, -1) + reach(0, 1);
     if (Math.min(w, h) < 44) hits.push({ el: desc(e), w: Math.round(Math.max(w, 0)), h: Math.round(Math.max(h, 0)), box: [Math.round(r.width), Math.round(r.height)], text: (e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 24) });

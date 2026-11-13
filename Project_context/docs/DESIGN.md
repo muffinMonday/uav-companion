@@ -33,20 +33,19 @@ Terms: **current** = in `styles.css` today; **planned (Pn)** = decided, to be ad
 | Elevation | `--shadow-2` (panels, popups), `--shadow-1` (small floating controls); `--shadow`, `--shadow-sm` remain as aliases | P2 |
 | Scrim | `--scrim` (dialog backdrop) | P2 |
 | Layers | `--z-crosshair 450, --z-hold 700, --z-panel 1000, --z-dock 1001, --z-search 1002, --z-live-chip 1003, --z-dash 1004, --z-card 1050, --z-banner 1060, --z-sheet 1070, --z-popover 1080, --z-toast 1100, --z-drag 3000` | P2; section 5 |
-| Type | `--font` | system stack with `Noto Sans SC`; no size tokens yet |
+| Type | `--font`; `--fs-micro 11, --fs-meta 12, --fs-small 13, --fs-body 14, --fs-title 16, --fs-head 18, --fs-display 24`; `--fw-light 250, --fw-regular 400, --fw-medium 500, --fw-semibold 600, --fw-bold 700`; `--lh-tight 1.2, --lh-meta 1.35, --lh-body 1.45` | P3 (section 3) |
 | Motion | `--dur-fast .12s --dur .2s --dur-slow .28s --ease` | motion block is wrapped in `prefers-reduced-motion:no-preference` |
 | Popup | `--pop-alpha` (0.5 to 1) | set from the opacity slider; glass effect |
 | Rank / rarity | `--rank-1..10 --rar-common/rare/epic/legendary` | identity; `--rank-9` has a dark override |
 | Layout vars set by code | `--panel-w --dash-lift --cols --h --hold-ms --rot --rank --rb --c` | written from JS with `style.setProperty`; keep |
 
-### Planned tokens (P2 unless stated; names are the contract, values may be tuned in review)
-- **Type scale (P3):** `--fs-micro:11px --fs-meta:12px --fs-small:13px --fs-body:14px --fs-title:16px --fs-head:18px --fs-display:24px`; weights `--fw-regular:400 --fw-medium:500 --fw-semibold:600 --fw-bold:700` (550/650 fold into 600, 750/800 into 700; 250 stays only for the dashboard greeting as `--fw-light`); line heights `--lh-tight:1.2 --lh-meta:1.35 --lh-body:1.45`.
+### Planned tokens (names are the contract, values may be tuned in review)
 - **Space:** 2 px and 6 px stay allowed in dense rows (the 4-px scale is in section 2).
 - **Control size (P4/P5):** `--control-h` (about 36 px), `--control-h-sm` (about 30 px), `--tap:44px` (touch only), icon `--icon:18px --icon-sm:16px --icon-lg:22px`, stroke 2. Different control categories keep different sizes (owner decision): buttons, inputs, icon buttons, tabs, map controls.
 - **Elevation:** `--shadow-pin` (not added in P2: the pin drop-shadow has one use, so by rule 3 it stays a literal).
 - **Colour:** `--info` (replaces `#1a73e8` for the location dot and accuracy ring), `--focus`. (`--danger-solid`, `--on-danger`, `--control-border`, `--rank-edge`, `--disabled-opacity` were added in P1: see section 2.)
 
-## 3. Typography (rules; the scale is planned for P3)
+## 3. Typography (built in P3)
 | Role | Size / weight | Used for |
 |---|---|---|
 | Display | 24, light | dashboard greeting, hero numbers |
@@ -56,8 +55,8 @@ Terms: **current** = in `styles.css` today; **planned (Pn)** = decided, to be ad
 | Small | 13 | secondary lines, buttons (small) |
 | Meta | 12, muted | captions, counts, timestamps |
 | Micro / eyebrow | 11, uppercase, 600-700, tracked | **secondary labels and metadata only**: sub-group labels, stat keys, day heads, badges. Never a primary heading |
-Numbers: `font-variant-numeric:tabular-nums` for counts, distances, times, XP. Minimum readable text: 12 px on phones (11 px only for badges and map labels).
-Current state: 17 distinct sizes (9 to 25 px, half-pixel steps), 9 weights; `P3` maps them onto the scale above.
+Numbers: `font-variant-numeric:tabular-nums` for counts, distances, times, XP. Minimum readable text: 12 px on phones. **Clarification made in P3 (the first draft of this file said both "eyebrow 11" and "12 minimum"):** 11 px is allowed only for all-caps labels (eyebrows, stat keys, day heads), badges and map labels; sentence-case text is 12 px or more.
+How it was applied (P3): every `font-size` and `font-weight` is a token; half-pixel sizes were snapped (10.5 to 11, 11.5 to 12, 12.5 to 13, 13.5 and 14.5 to 14, 25 to 24, 17 and 19 to 18); weights 550/650 became 600 and 750/800 became 700 (Windows renders 650 as bold, so some labels are now a step lighter). `.card h2`, `.dash-head h2`, `.account-pop h2` and the cloud/account dialogs are Section titles (16, bold, normal case); `.splash h2` is Head (18); `.ach-group h3`, `.ses-manage h3`, `.route-box h3` are eyebrows. `.section-title` and `.eyebrow` classes exist for new markup. **Literal sizes that remain on purpose** (enforced by `tests/contrast-unit.mjs`): 9 and 10 px (rank mini-badge, pin badges on the map), 15 px (check mark, info glyph), 20 px (close glyph, avatar letter, friend code), 22 px (achievement emoji). The phone greeting is `--fs-display` minus 2 px.
 
 ## 4. Spacing and layout (rules, planned values)
 4-px rhythm. Card padding 12/16 (`--sp-3` `--sp-4`); gap between cards 12; stack gap inside a card 8; popup padding 16; dialog padding 24 (today 18; owner approved roomier dialogs); `.btn-row` margin symmetric. Related items closer than unrelated ones. Current state: gaps 2/3/4/5/6/8/10/12, margin-top 2/3/4/6/8/10/12/18 chosen by feel.
@@ -156,7 +155,7 @@ Popups (frosted glass via `--pop-alpha`), scale, attribution and Leaflet bar but
 | 0 | Baseline screenshots, this file, doc fixes | no | **done** |
 | 1 | Contrast and state fixes (`--danger-solid`, rank outline, `--control-border`, disabled, hover gating, contrast test) | small | **done** (validated 2026-11-13: after-p1 screenshots, contrast test, full npm test) |
 | 2 | Token layer, pixel-identical (diff must be empty); duplicate rules removed | none | **done** (258 screenshots identical to after-p1) |
-| 3 | Typography and hierarchy (scale, section title vs eyebrow, weights) | yes | not started |
+| 3 | Typography and hierarchy (scale, section title vs eyebrow, weights) | yes | **done** (after-p3 screenshots, 298 incl. stress content; targeted suites pass) |
 | 4 | Controls and proportions (+2-3 px, roomier dialogs, per-category sizes) | yes | not started |
 | 5 | Mobile ergonomics (44 px targets, 16 px inputs, safe areas) | phones | not started |
 | 6 | Hierarchy of dashboard, profile, progression, sessions, friends | yes | not started |

@@ -135,6 +135,20 @@ const TRIPS = [
   { id: 't4', name: 'Autumn in Hangzhou (past)', startDate: iso(-30), endDate: iso(-28), description: '', color: '#3949ab', created: '2026-10-01T00:00:00.000Z' },
 ];
 
+// stress content: long and CJK names, many markers and trips, a long note (the stress-* screens)
+const LONG = 'The Very Long Named Place of the Old Eastern Lake Pavilion and Its Surrounding Gardens';
+const STRESS_POIS = [
+  mk('s1', 'photo', '武汉东湖听涛景区磨山樱园观景台（春季限定）', 30.575, 114.360, { tripId: 's1', date: iso(5), order: 1, note: '清晨日出前到达，注意无人机限飞区边界。' + String.fromCharCode(10) + 'A long note that keeps going so the window has to scroll and wrap: ' + 'the quick brown fox jumps over the lazy dog. '.repeat(8) }),
+  mk('s2', 'hotel', LONG, 30.590, 114.335, { tripId: 's1', date: iso(5), order: 2 }),
+  mk('s3', 'takeoff', '黄鹤楼', 30.545, 114.345, { tripId: 's1', date: iso(6), order: 1 }),
+  ...Array.from({ length: 14 }, (_, i) => mk('s' + (i + 4), ['photo', 'train', 'airport', 'hazard', 'other'][i % 5], (i % 3 ? 'Spot ' : LONG.slice(0, 40) + ' ') + (i + 4), 30.52 + (i % 5) * 0.012, 114.28 + Math.floor(i / 5) * 0.015, { tripId: i % 2 ? 's2' : 's1', date: iso(5 + (i % 4)), order: i + 4 })),
+];
+const STRESS_TRIPS = [
+  { id: 's1', name: '2027年春季湖北武汉周边航拍行程（含东湖、磨山、汉口江滩）', country: 'CN', startDate: iso(5), endDate: iso(12), description: LONG + '. ' + 'More description text. '.repeat(10), color: '#e91e63', created: '2026-11-01T00:00:00.000Z', checklist: Array.from({ length: 6 }, (_, i) => ({ text: i % 2 ? 'Charge every battery before leaving the hotel in the morning, ' + i : '检查桨叶', done: i % 3 === 0 })) },
+  { id: 's2', name: LONG, startDate: iso(-1), endDate: iso(1), description: '', color: '#00897b', created: '2026-11-02T00:00:00.000Z' },
+  ...['#3949ab', '#fb8c00', '#6d4c41', '#7cb342'].map((c, i) => ({ id: 's' + (i + 3), name: 'Trip ' + (i + 3), startDate: iso(20 + i * 5), endDate: iso(22 + i * 5), description: '', color: c, created: '2026-11-0' + (i + 3) + 'T00:00:00.000Z' })),
+];
+
 // ---------- signed-in screens: the real Supabase client against a mocked server running the real SQL on PGlite (same approach as tests/progression.mjs)
 let acct = null;
 async function account() {
@@ -211,12 +225,12 @@ async function newContext(vpName, theme) {
   return ctx;
 }
 
-async function openPage(ctx, theme, { signed = false, dash = { showOnStart: false, welcomed: true, seen: LATEST_SEEN }, data = true, prefs = {}, vpName } = {}) {
+async function openPage(ctx, theme, { stress = false, signed = false, dash = { showOnStart: false, welcomed: true, seen: LATEST_SEEN }, data = true, prefs = {}, vpName } = {}) {
   const a = signed ? await account() : null;
   if (a) await ctx.route(new RegExp('^' + a.URL_.replace(/[.]/g, '\\.') + '/'), a.mock);
   const p = await ctx.newPage();
   p.on('request', (q) => { if (q.url().includes("/deps/leaflet.js")) p.leafletUrl = q.url(); }); // the app's own Leaflet module, for screens that draw on a map of their own
-  await p.addInitScript(seedInit, [a?.REF, a?.sess ?? null, { dash, prefs: { theme, themeAt: 1, ...prefs }, data: data && !signed, pois: POIS, trips: TRIPS }]);
+  await p.addInitScript(seedInit, [a?.REF, a?.sess ?? null, { dash, prefs: { theme, themeAt: 1, ...prefs }, data: data && !signed, pois: stress ? STRESS_POIS : POIS, trips: stress ? STRESS_TRIPS : TRIPS }]);
   await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
   await p.waitForTimeout(1300);
   if (signed) await p.locator('#name-dlg-skip').click({ timeout: 2500 }).catch(() => {});
@@ -283,6 +297,10 @@ const SCREENS = [
     }, [VIEWPORTS[vp].w <= 520, p.leafletUrl]);
     await p.waitForTimeout(1200);
   } },
+  { id: 'stress-poi-list', open: { stress: true }, run: async (p) => { await tab(p, 'poi'); await p.waitForTimeout(600); } },
+  { id: 'stress-trips', open: { stress: true }, run: async (p) => { await tab(p, 'trips'); await p.waitForTimeout(600); } },
+  { id: 'stress-popup', open: { stress: true, prefs: { windowExpanded: true } }, run: async (p) => { await tab(p, 'poi'); await p.locator('#poi-list .poi-item', { hasText: '听涛' }).first().click(); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(800); } },
+  { id: 'stress-dash', open: { stress: true, dash: { showOnStart: true, welcomed: true, seen: '9999' } }, run: async (p) => { await p.waitForSelector('#dash:not([hidden])'); await p.waitForTimeout(400); } },
 ];
 
 // ---------- run
