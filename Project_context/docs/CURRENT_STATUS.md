@@ -3,7 +3,7 @@
 Updated: 2026-11-16
 Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Phases 1 to 6 are built, tested, committed, pushed and deployed; the work is finished apart from the owner's set-up steps below.** Standing rule from the owner: after each finished, tested phase commit, push and deploy (hosted `db push`, function deploy, `deploy:live`) and move on without asking again (memory `commit-deploy-each-phase`); it does not cover unrelated work, live checks that create real users, or secrets.
 
-## Latest work: delete_profile wipes progression (built, full npm test passed 423 s; NOT committed, pushed or deployed: needs owner approval, then commit, push, db push --remote --yes, deploy:live)
+## Latest work: delete_profile wipes progression (done: commit 82067c6 pushed, migration 20261116110000 applied to the hosted project, deploy:live run, 2026-11-16; full npm test passed 423 s before the commit; not yet run against a real account)
 - Owner decision 2026-11-16. Migration `20261116110000_delete_profile_wipes_progression.sql`: `delete_profile` also deletes XP ledger and total, achievements, featured, counters, attendance, Steam link and totals; roles and `steam_credited` stay. Ledger and achievement guards allow it through the transaction-local setting `uavzones.wipe_user` (honoured only when the calling role is not anon/authenticated/service_role). Confirm text in `src/friends-ui.js` now says XP etc. are wiped. Tests: `db-sessions-unit`, `db-steam-unit` extended. Docs updated.
 - Owner state: first administrator row was crafted (user c9c57639-...), not confirmed run. Release checklist (to-do 6: second project, closed sign-ups, email confirmation, mail sender) is ON HOLD (owner, 2026-11-16).
 
