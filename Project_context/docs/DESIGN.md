@@ -34,6 +34,7 @@ Terms: **current** = in `styles.css` today; **planned (Pn)** = decided, to be ad
 | Scrim | `--scrim` (dialog backdrop) | P2 |
 | Layers | `--z-crosshair 450, --z-hold 700, --z-panel 1000, --z-dock 1001, --z-search 1002, --z-live-chip 1003, --z-dash 1004, --z-card 1050, --z-banner 1060, --z-sheet 1070, --z-popover 1080, --z-toast 1100, --z-drag 3000` | P2; section 5 |
 | Type | `--font`; `--fs-micro 11, --fs-meta 12, --fs-small 13, --fs-body 14, --fs-title 16, --fs-head 18, --fs-display 24`; `--fw-light 250, --fw-regular 400, --fw-medium 500, --fw-semibold 600, --fw-bold 700`; `--lh-tight 1.2, --lh-meta 1.35, --lh-body 1.45` | P3 (section 3) |
+| Controls | `--control-h 36px, --control-h-sm 30px`; `--icon 18px, --icon-sm 16px, --icon-lg 22px` | P4. Buttons reach these heights through padding (no `min-height`: fixed-size icon buttons keep their own size) |
 | Motion | `--dur-fast .12s --dur .2s --dur-slow .28s --ease` | motion block is wrapped in `prefers-reduced-motion:no-preference` |
 | Popup | `--pop-alpha` (0.5 to 1) | set from the opacity slider; glass effect |
 | Rank / rarity | `--rank-1..10 --rar-common/rare/epic/legendary` | identity; `--rank-9` has a dark override |
@@ -41,7 +42,7 @@ Terms: **current** = in `styles.css` today; **planned (Pn)** = decided, to be ad
 
 ### Planned tokens (names are the contract, values may be tuned in review)
 - **Space:** 2 px and 6 px stay allowed in dense rows (the 4-px scale is in section 2).
-- **Control size (P4/P5):** `--control-h` (about 36 px), `--control-h-sm` (about 30 px), `--tap:44px` (touch only), icon `--icon:18px --icon-sm:16px --icon-lg:22px`, stroke 2. Different control categories keep different sizes (owner decision): buttons, inputs, icon buttons, tabs, map controls.
+- **Control size:** `--tap:44px` (touch only, P5). Different control categories keep different sizes (owner decision): buttons 36 (small 30), inputs 38, icon buttons 36 (34 in the panel header, which is full), tabs 34 on desktop, map controls 30.
 - **Elevation:** `--shadow-pin` (not added in P2: the pin drop-shadow has one use, so by rule 3 it stays a literal).
 - **Colour:** `--info` (replaces `#1a73e8` for the location dot and accuracy ring), `--focus`. (`--danger-solid`, `--on-danger`, `--control-border`, `--rank-edge`, `--disabled-opacity` were added in P1: see section 2.)
 
@@ -156,7 +157,7 @@ Popups (frosted glass via `--pop-alpha`), scale, attribution and Leaflet bar but
 | 1 | Contrast and state fixes (`--danger-solid`, rank outline, `--control-border`, disabled, hover gating, contrast test) | small | **done** (validated 2026-11-13: after-p1 screenshots, contrast test, full npm test) |
 | 2 | Token layer, pixel-identical (diff must be empty); duplicate rules removed | none | **done** (258 screenshots identical to after-p1) |
 | 3 | Typography and hierarchy (scale, section title vs eyebrow, weights) | yes | **done** (after-p3 screenshots, 298 incl. stress content; targeted suites pass) |
-| 4 | Controls and proportions (+2-3 px, roomier dialogs, per-category sizes) | yes | not started |
+| 4 | Controls and proportions (+2-3 px, roomier dialogs, per-category sizes) | yes | **done**: `.btn` 33 to 36 px, `.btn.small` 27 to 29, `.icon-btn` 34 to 36 (34 in the panel header), tabs +2 px, number-field buttons 38 (match the input), card padding 12/14 to 12/16, dialogs 18 to 24, popovers 14 to 16, section summaries 8/10 to 10/12, popup radius 20 to 18, rail radius to pill (identical), icons 14/17/19 onto 16/18. Found by the full suite: P3's tab font 12.5 to 13 pushed the panel's close button out of the header (`tests/shell.mjs`); tabs are now 12 px |
 | 5 | Mobile ergonomics (44 px targets, 16 px inputs, safe areas) | phones | not started |
 | 6 | Hierarchy of dashboard, profile, progression, sessions, friends | yes | not started |
 | 7 | Consolidation (pills, fields, dialog shell, messages, identity-colour registry) | minimal | not started |

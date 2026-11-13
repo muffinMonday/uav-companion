@@ -14,6 +14,8 @@
   /* type (DESIGN.md section 3): one size and weight per role */
   --fs-micro:11px; --fs-meta:12px; --fs-small:13px; --fs-body:14px; --fs-title:16px; --fs-head:18px; --fs-display:24px;
   --fw-light:250; --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700;
+  --control-h:36px; --control-h-sm:30px; /* buttons: the height they now reach (min-height is not used: fixed-size icon buttons keep their own size) */
+  --icon:18px; --icon-sm:16px; --icon-lg:22px;
   --lh-tight:1.2; --lh-meta:1.35; --lh-body:1.45;
   --z-crosshair:450; --z-hold:700; --z-panel:1000; --z-dock:1001; --z-search:1002; --z-live-chip:1003; --z-dash:1004; --z-card:1050; --z-banner:1060; --z-sheet:1070; --z-popover:1080; --z-toast:1100; --z-drag:3000;
   --ok:#0a7a4b; --ok-bg:#e3f4ec; --no:#b3261e; --no-bg:#fdebe9; --unk:#8a5a00; --unk-bg:#fff2d3;
@@ -40,16 +42,16 @@ button,input,select,textarea{font:inherit;color:inherit}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 
 /* ---------- shared controls ---------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;font-weight:var(--fw-semibold);line-height:1.1;transition:background .12s,border-color .12s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;font-weight:var(--fw-semibold);line-height:1.15;transition:background .12s,border-color .12s}
 @media (hover:hover){.btn:hover{border-color:var(--accent);background:var(--accent-soft)}}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 @media (hover:hover){.btn.primary:hover{filter:brightness(1.08)}}
-.btn.small{padding:5px 10px;font-size:var(--fs-small)}
+.btn.small{padding:6px 10px;font-size:var(--fs-small)}
 .btn.danger{color:var(--danger)}
 .btn:disabled{opacity:var(--disabled-opacity);cursor:not-allowed}
-.icon-btn{display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:50%;background:transparent;cursor:pointer;flex:none}
+.icon-btn{display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:50%;background:transparent;cursor:pointer;flex:none}
 @media (hover:hover){.icon-btn:hover{background:var(--surface-2)}}
-.icon-btn svg,.dock svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn svg,.dock svg{width:var(--icon);height:var(--icon);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
 .btn-row .btn{flex:1 1 auto}
 
@@ -88,7 +90,7 @@ textarea{resize:vertical;min-height:60px}
 .results .online{color:var(--accent);margin-top:2px;border-top:1px solid var(--line);border-radius:0 0 var(--radius-sm) var(--radius-sm)}
 
 /* ---------- the rail (panel collapsed): a < button and one icon per tab, down the right edge ---------- */
-.dock{position:absolute;z-index:var(--z-dock);top:12px;right:12px;display:flex;flex-direction:column;gap:2px;padding:4px;background:var(--surface);border-radius:24px;box-shadow:var(--shadow-1);animation:rail-in .18s ease-out}
+.dock{position:absolute;z-index:var(--z-dock);top:12px;right:12px;display:flex;flex-direction:column;gap:2px;padding:4px;background:var(--surface);border-radius:var(--radius-pill);box-shadow:var(--shadow-1);animation:rail-in .18s ease-out}
 @keyframes rail-in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.dock{animation:none}}
 .dock[hidden]{display:none}
@@ -102,10 +104,11 @@ textarea{resize:vertical;min-height:60px}
 .sidepanel[hidden]{display:none}
 @keyframes slide-in{from{opacity:0;transform:translateX(48px)}to{opacity:1;transform:none}}
 .sp-head{display:flex;align-items:center;gap:8px;padding:10px 10px 8px 12px;border-bottom:1px solid var(--line)}
+.sp-head .icon-btn{width:34px;height:34px} /* the header is full: four tabs, account, privacy and close fit in 380 px only with 34 px buttons (tests/shell.mjs) */
 .tabs{flex:1;display:flex;gap:2px;padding:3px;background:var(--surface-2);border-radius:var(--radius-pill)}
-.tabs button{position:relative;flex:0 0 36px;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 0;border:0;border-radius:var(--radius-pill);background:transparent;color:var(--muted);cursor:pointer;font-weight:var(--fw-semibold);font-size:var(--fs-small);white-space:nowrap;min-width:0}
-.tabs button svg{flex:none;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.tabs button[aria-selected=true]{flex:1 1 0;padding:7px 12px;color:var(--fg)} /* the selected tab takes all the room the icon tabs leave, so its name is not cut */
+.tabs button{position:relative;flex:0 0 36px;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 0;border:0;border-radius:var(--radius-pill);background:transparent;color:var(--muted);cursor:pointer;font-weight:var(--fw-semibold);font-size:var(--fs-small);white-space:nowrap;min-width:0}
+.tabs button svg{flex:none;width:var(--icon);height:var(--icon);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-selected=true]{flex:1 1 0;padding:8px 12px;color:var(--fg)} /* the selected tab takes all the room the icon tabs leave, so its name is not cut */
 .tabs .tab-label{overflow:hidden;text-overflow:ellipsis}
 .tabs button[aria-selected=false] .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)} /* only the selected tab shows its name; the others are icons (named for screen readers) */
 .tab-badge{position:absolute;top:1px;right:1px;min-width:16px;height:16px;padding:0 4px;border-radius:var(--radius-pill);background:var(--danger-solid);color:var(--on-danger);font-size:var(--fs-micro);font-weight:var(--fw-bold);line-height:16px;text-align:center}
@@ -119,7 +122,7 @@ textarea{resize:vertical;min-height:60px}
 @media (prefers-reduced-motion:reduce){.tab-pill.glide,.tabs button{transition:none}}
 .sp-body{flex:1;overflow-y:auto;padding:12px;background:var(--surface-2)}
 .sp-body [role=tabpanel][hidden]{display:none}
-.card{background:var(--surface);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,30,45,.08)}
+.card{background:var(--surface);border-radius:var(--radius);padding:var(--sp-3) var(--sp-4);margin-bottom:12px;box-shadow:0 1px 2px rgba(15,30,45,.08)}
 .section-title,.card h2{margin:0 0 var(--sp-2);font-size:var(--fs-title);line-height:var(--lh-tight);font-weight:var(--fw-bold);color:var(--fg)}
 .eyebrow{font-size:var(--fs-micro);font-weight:var(--fw-bold);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .count{color:var(--accent);font-weight:var(--fw-bold);letter-spacing:0}
@@ -154,7 +157,7 @@ textarea{resize:vertical;min-height:60px}
 .is-editing .leaflet-grab{cursor:default}
 
 /* popups: the marker window and the point check share one card style, in the current theme */
-.leaflet-popup-content-wrapper{background:var(--surface);color:var(--fg);border-radius:20px;box-shadow:var(--shadow-2);padding:0}
+.leaflet-popup-content-wrapper{background:var(--surface);color:var(--fg);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);padding:0}
 .leaflet-popup-content{margin:0!important}
 .leaflet-popup-tip{background:var(--surface);box-shadow:none}
 .leaflet-container a.leaflet-popup-close-button{top:10px;right:10px;width:28px;height:28px;border-radius:50%;font:20px/26px var(--font);color:var(--muted);text-align:center}
@@ -348,7 +351,7 @@ textarea{resize:vertical;min-height:60px}
 .pop .form-hint.warn{color:var(--unk);font-weight:var(--fw-semibold)}
 .trip-pick-note{color:var(--muted);font-size:var(--fs-meta)}
 /* three tabs: keep them on one row, also in the phone sheet */
-.tabs button{padding-left:6px;padding-right:6px;font-size:var(--fs-small);overflow:hidden;text-overflow:ellipsis}
+.tabs button{padding-left:6px;padding-right:6px;font-size:var(--fs-meta);overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- selecting markers to delete ---------- */
 .select-bar{display:grid;gap:8px;margin:0 0 10px;padding:10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface)}
@@ -381,8 +384,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 .num-field,.date-field{display:flex;align-items:center;position:relative;min-width:0;flex:1}
 .num-field input{border-radius:0;border-left:0;border-right:0;min-width:0;text-align:center}
-.ctl-btn{display:grid;place-items:center;flex:none;width:34px;height:36px;padding:0;border:1px solid var(--control-border);background:var(--surface);color:var(--muted);cursor:pointer;transition:background .12s,color .12s}
-.ctl-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.ctl-btn{display:grid;place-items:center;flex:none;width:34px;height:38px;padding:0;border:1px solid var(--control-border);background:var(--surface);color:var(--muted);cursor:pointer;transition:background .12s,color .12s}
+.ctl-btn svg{width:var(--icon-sm);height:var(--icon-sm);fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 @media (hover:hover){.ctl-btn:hover{background:var(--accent-soft);color:var(--accent)}}
 .ctl-btn.dec{border-radius:var(--radius-sm) 0 0 var(--radius-sm)}
 .ctl-btn.inc{border-radius:0 var(--radius-sm) var(--radius-sm) 0}
@@ -450,13 +453,13 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .pop-head{padding-right:62px}
 .pop-toggle{position:absolute;top:10px;right:40px;display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
 @media (hover:hover){.pop-toggle:hover{background:var(--surface-2);color:var(--fg)}}
-.pop-toggle svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.pop-toggle svg{width:var(--icon-sm);height:var(--icon-sm);fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .leaflet-popup.is-expanded .leaflet-popup-tip-container{display:none}
 .leaflet-popup.is-expanded .leaflet-popup-content-wrapper{transform:translateY(calc(50% + 36px))}
 .leaflet-popup.is-expanded > a.leaflet-popup-close-button{display:none} /* the window's own close (.pop-close) takes its place */
 .pop-close{position:absolute;top:10px;right:10px;display:none;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
 @media (hover:hover){.pop-close:hover{background:var(--surface-2);color:var(--fg)}}
-.pop-close svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.pop-close svg{width:var(--icon-sm);height:var(--icon-sm);fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .leaflet-popup.is-expanded .pop-close{display:grid}
 .pop-toggle[aria-expanded=true] .ic-down,.pop-toggle[aria-expanded=false] .ic-up{display:none}
 
@@ -512,7 +515,7 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .ai-trip-dates .hint{margin:0 0 4px}
 
 /* ---------- previous / next stop ---------- */
-.pop-seq{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px -16px -14px;padding:8px 16px;border-top:1px solid var(--line);border-radius:0 0 20px 20px;background:color-mix(in srgb,var(--surface) calc(var(--pop-alpha) * 100%),transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.pop-seq{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px -16px -14px;padding:8px 16px;border-top:1px solid var(--line);border-radius:0 0 var(--radius-lg) var(--radius-lg);background:color-mix(in srgb,var(--surface) calc(var(--pop-alpha) * 100%),transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .pop-seq-pos{font-size:var(--fs-meta);font-weight:var(--fw-semibold);color:var(--muted);font-variant-numeric:tabular-nums}
 .pop-seq-btn{padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface);color:var(--fg);font-weight:var(--fw-semibold);font-size:var(--fs-small);cursor:pointer}
 @media (hover:hover){.pop-seq-btn:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}}
@@ -541,7 +544,7 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .btn.tool{position:relative;display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
 @media (hover:hover){.btn.tool:hover{background:var(--surface-2);color:var(--fg)}}
 @media (hover:hover){.btn.tool.danger:hover{color:var(--danger)}}
-.btn.tool svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn.tool svg{width:var(--icon);height:var(--icon);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tool-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .btn.tool.armed{width:auto;padding:0 10px;border-radius:var(--radius);background:var(--danger-solid);color:var(--on-danger);font-size:var(--fs-meta);font-weight:var(--fw-semibold)}
 .btn.tool.armed svg{display:none}
@@ -626,7 +629,7 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 /* ---------- the search box folds into a magnifying glass ---------- */
 .search{position:absolute}
 .search-btn{position:absolute;left:0;top:0;z-index:1;display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
-.search-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.search-btn svg{width:var(--icon);height:var(--icon);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .search input{padding-left:42px}
 .search.collapsed{width:40px}
 .search.collapsed .results{display:none}
@@ -730,7 +733,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .poi-list li.with-checkin .poi-card{flex:1;min-width:0}
 .checkin{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:46%}
 .checkin-btn{position:relative;width:28px;height:28px;color:var(--muted);border:1px solid transparent}
-.checkin-btn svg{width:16px;height:16px}
+.checkin-btn svg{width:var(--icon-sm);height:var(--icon-sm)}
 .checkin-btn::after{content:"";position:absolute;inset:-8px} /* a larger touch target than the icon */
 .checkin-btn:disabled{opacity:var(--disabled-opacity);cursor:not-allowed;background:transparent}
 .checkin-btn.near{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
@@ -843,11 +846,11 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .cloud-versions{margin-top:10px;display:flex;flex-direction:column;gap:6px}
 .cloud-version{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:var(--fs-small)}
 #cloud-card .btn.danger{margin-top:10px}
-.cloud-dialog,.account-dialog,.splash{max-width:min(440px,calc(100vw - 32px));border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-2);padding:18px}
+.cloud-dialog,.account-dialog,.splash{max-width:min(440px,calc(100vw - 32px));border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-2);padding:var(--sp-5)}
 .cloud-dialog::backdrop,.account-dialog::backdrop,.splash::backdrop{background:var(--scrim)}
 .splash{max-height:calc(100dvh - 32px);overflow-y:auto}
 .splash-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
-.splash-choice{display:grid;gap:4px;align-content:start;padding:14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);color:var(--fg);font:inherit;text-align:left;cursor:pointer}
+.splash-choice{display:grid;gap:4px;align-content:start;padding:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);color:var(--fg);font:inherit;text-align:left;cursor:pointer}
 .splash-choice:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
 @media (hover:hover){.splash-choice:hover{border-color:var(--accent);background:var(--accent-soft)}}
 .splash-choice b{font-size:var(--fs-title);color:var(--accent)}
@@ -940,7 +943,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .avatar{flex:none;overflow:hidden;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font:var(--fw-bold) var(--fs-small)/1 var(--font)}
 .avatar.big{width:44px;height:44px;font-size:20px;flex:none}
 .dock button.account-btn .avatar{position:static;width:28px;height:28px;overflow:visible;clip:auto;white-space:normal}
-.account-pop{position:fixed;z-index:var(--z-popover);top:56px;right:12px;width:min(380px,calc(100vw - 16px));max-height:calc(100vh - 24px);overflow-y:auto;padding:14px;background:var(--surface);color:var(--fg);border-radius:var(--radius);box-shadow:var(--shadow-2);border:1px solid var(--line)}
+.account-pop{position:fixed;z-index:var(--z-popover);top:56px;right:12px;width:min(380px,calc(100vw - 16px));max-height:calc(100vh - 24px);overflow-y:auto;padding:var(--sp-4);background:var(--surface);color:var(--fg);border-radius:var(--radius);box-shadow:var(--shadow-2);border:1px solid var(--line)}
 .account-pop[hidden]{display:none}
 .account-pop h2{margin:0 28px 6px 0;font-size:var(--fs-title)}
 .account-pop .account-close{position:absolute;top:6px;right:6px}
@@ -950,11 +953,11 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .account-pop .btn-row{margin:8px 0}
 .account-pop .btn.danger{margin-top:2px}
 .pane-sec{margin:8px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
-.pane-sec>summary{cursor:pointer;padding:8px 10px;font-weight:var(--fw-semibold);font-size:var(--fs-body)}
-.pane-sec .pane-body{padding:0 10px 10px}
+.pane-sec>summary{cursor:pointer;padding:10px 12px;font-weight:var(--fw-semibold);font-size:var(--fs-body)}
+.pane-sec .pane-body{padding:0 12px 12px}
 .link-btn{display:block;margin-top:10px;padding:0;border:0;background:none;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer}
 @media (max-width:520px){
-  .account-pop{left:0!important;right:0!important;top:auto!important;bottom:0;width:auto;max-height:85vh;border-radius:18px 18px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .account-pop{left:0!important;right:0!important;top:auto!important;bottom:0;width:auto;max-height:85vh;border-radius:18px 18px 0 0;padding-bottom:calc(var(--sp-4) + env(safe-area-inset-bottom,0px))}
 }
 @media (max-width:520px){
   .sp-head{gap:4px;padding-right:6px}
