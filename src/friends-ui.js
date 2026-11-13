@@ -24,7 +24,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
   const pane = el('section'); pane.id = 'pane-friends';
   const tab = panel.addTab({ key: 'friends', label: 'Friends', icon: ICON, pane });
   let profile = null, list = [], blocked = [], message = '', busy = false, loadedFor = null;
-  const profileDialog = createProfileDialog({ social, toast, onSaved: (p) => { profile = p; render(); handle.account?.reload?.(); } });
+  const profileDialog = createProfileDialog({ social, progression, toast, onSaved: (p) => { profile = p; render(); handle.account?.reload?.(); } });
   const signedIn = () => !!handle.sync.status().session;
   const shown = () => panel.isOpen() && panel.getTab() === 'friends';
 

@@ -16,7 +16,7 @@ async function open({ geo = true, prefs = {}, noApi = false } = {}) {
     localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.6, lon: 114.3, zoom: 11 }, basemap: 'osm', ...pr }));
     window.__geoCalls = 0;
     if (none) { try { Object.defineProperty(navigator, 'geolocation', { value: undefined, configurable: true }); } catch { /* ignore */ } }
-    else { const g = navigator.geolocation, orig = g.getCurrentPosition.bind(g); g.getCurrentPosition = (...a) => { window.__geoCalls++; return orig(...a); }; }
+    else { const g = navigator.geolocation, orig = g.getCurrentPosition.bind(g); g.getCurrentPosition = (...a) => { window.__geoCalls++; return orig(...a); }; window.__watchCalls = 0; const ow = g.watchPosition.bind(g); g.watchPosition = (...a) => { window.__watchCalls++; return ow(...a); }; }
   }, [prefs, noApi]);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
@@ -32,7 +32,13 @@ let { ctx, p } = await open();
 let v = await saved(p);
 ok(near(v, HERE.latitude, HERE.longitude) && v.zoom >= 15, 'permission granted: the map opens centred on the visitor at street level ' + JSON.stringify(v));
 const calls = await p.evaluate(() => window.__geoCalls), dots = await p.locator('.you-dot').count();
-ok(dots === 0 && calls === 1, 'one fix only: no marker and no tracking (dots ' + dots + ', calls ' + calls + ')');
+const watches = await p.evaluate(() => window.__watchCalls);
+ok(dots === 1 && calls === 1 && watches === 0, 'one fix only: the blip is drawn on it, but nothing is tracked (dots ' + dots + ', calls ' + calls + ', watches ' + watches + ')');
+ok(await p.locator('.leaflet-interactive').count() >= 1, 'with its accuracy ring');
+await p.click('.locate-btn'); await p.waitForTimeout(1200);
+ok(await p.evaluate(() => window.__watchCalls) === 1 && await p.locator('.you-dot').count() === 1 && await p.locator('.locate-btn.following').count() === 0, 'the first press of the locate button starts tracking and keeps the one blip');
+await p.click('.locate-btn'); await p.waitForTimeout(600);
+ok(await p.locator('.locate-btn.following').count() === 1, 'the second press follows');
 await ctx.close();
 
 ({ ctx, p } = await open({ geo: false }));

@@ -159,7 +159,9 @@ let launchCentred = false, userMoved = false;
 if (getPrivacy().locateOnLaunch) {
   for (const ev of ['mousedown', 'touchstart', 'wheel']) map.getContainer().addEventListener(ev, () => { userMoved = true; }, { once: true, passive: true });
   launchFix().then((f) => {
-    if (!f || userMoved) return; // no position, or the visitor already took the map somewhere
+    if (!f) return; // no position
+    locate.showFix(f); // the blip, whether or not the map is centred on it
+    if (userMoved) return; // the visitor already took the map somewhere
     launchCentred = true;
     map.setView([f.lat, f.lon], Math.max(map.getZoom(), 15), { animate: false });
   });

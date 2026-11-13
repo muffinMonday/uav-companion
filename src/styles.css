@@ -23,6 +23,7 @@ body{font:14px/1.45 var(--font);color:var(--fg);background:var(--bg);-webkit-tex
 #map{position:absolute;inset:0}
 button,input,select,textarea{font:inherit;color:inherit}
 :is(button,input,select,textarea,summary,a,[tabindex]):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tabs button,.dock button{-webkit-tap-highlight-color:transparent} /* no blue tap rectangle on the panel tabs and the collapsed rail (keyboard focus keeps its ring) */
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 
 /* ---------- shared controls ---------- */
@@ -975,6 +976,7 @@ input[type=email]:focus{border-color:var(--accent)}
 .pf-pick:hover{background:var(--accent-soft)}
 .profile-card textarea,.profile-card input[type=text]{width:100%;box-sizing:border-box}
 .pf-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 6px}
+.pf-foot{margin:6px 0 4px}.pf-foot .btn{width:100%}.pf-foot .pf-msg{margin:6px 0 0}
 .pf-count{color:var(--muted);font-size:12px}
 .pf-tags{display:flex;flex-wrap:wrap;gap:6px}
 .profile-card .switch{margin-top:10px}

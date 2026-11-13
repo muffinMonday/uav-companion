@@ -7,6 +7,7 @@ import { el } from './cards.js';
 import { buildTripPrompt, buildLinkPrompt, checkUrl, LIMITS } from './aiprompt.js';
 import { save as saveDash, load as loadDash } from './dashstate.js';
 import { savePrefs } from './prefs.js';
+import { focusField, showModalQuiet } from './touch.js';
 
 export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud = {} }) {
   const dlg = document.createElement('dialog');
@@ -42,7 +43,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
     acctBox.append(row, el('p', 'hint', chosen ? 'You are a guest: everything stays in this browser. Sign in any time from the account button.' : 'A profile keeps your markers and trips on other devices and lets you add friends. It is optional.'));
   }
 
-  function show(...nodes) { dlg.replaceChildren(...nodes); if (!dlg.open) dlg.showModal(); }
+  function show(...nodes) { dlg.replaceChildren(...nodes); showModalQuiet(dlg); }
 
   // ---------- the first question ----------
   function choose() {
@@ -88,7 +89,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
     }, 'btn primary'); go.id = 'splash-copy-trip';
     const row = el('div', 'btn-row'); row.append(go, back(tripMenu));
     show(heading('Plan it for me'), field('Destination', dest), field('Dates, or how many days (optional)', when), field('Interests (optional)', ints), msg, row);
-    dest.focus();
+    focusField(dest);
   }
 
   function linkForm() {
@@ -104,7 +105,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
     const row = el('div', 'btn-row'); row.append(go, back(tripMenu));
     show(heading('Turn an itinerary link into markers'), field('Link to the itinerary', url), field('A note for the AI (optional)', note),
       el('p', 'hint', 'The link is not opened here. It only goes into the prompt, for the AI assistant to read.'), msg, row);
-    url.focus();
+    focusField(url);
   }
 
   function pasteStep(prompt, copied) {
@@ -129,7 +130,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
     const row = el('div', 'btn-row'); row.append(go, later);
     nodes.push(row);
     show(...nodes);
-    (copied ? ans : dlg.querySelector('#splash-prompt')).focus();
+    focusField(copied ? ans : dlg.querySelector('#splash-prompt'));
   }
 
   // ---------- plan a flight ----------

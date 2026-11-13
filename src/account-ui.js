@@ -9,6 +9,8 @@ import { profileBits } from './profile-ui.js';
 import { getProgression } from './progression-api.js';
 import { mountProgression } from './progression-ui.js';
 import { createSteamCard, announceSteamReturn } from './steam-ui.js';
+import { onSwipe, onDialogSwipe, atTop } from './swipe.js';
+import { coarse, focusField, showModalQuiet } from './touch.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const PERSON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5"/></svg>';
@@ -46,7 +48,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   }
 
   // ---- the popover
-  const pop = el('div', 'account-pop'); pop.id = 'account-pop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Account');
+  const pop = el('div', 'account-pop'); pop.id = 'account-pop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Account'); pop.tabIndex = -1;
   document.body.append(pop);
 
   function render() {
@@ -125,7 +127,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     });
     const row = el('div', 'btn-row'); row.append(go, no);
     dlg.append(h, list, back, lab, word, msg, row);
-    dlg.showModal(); word.focus();
+    showModalQuiet(dlg); focusField(word);
   }
 
   // ---- the first time someone signs in (profile.named is false) they are asked for a display name; Skip keeps the default and does not ask again
@@ -157,7 +159,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     skip.addEventListener('click', () => finish(null));
     skipName = () => finish(null);
     nameDlg.append(h, p, lab, input, msg, row);
-    nameDlg.showModal(); input.focus();
+    showModalQuiet(nameDlg); focusField(input);
   }
 
   async function loadProfile({ force = false } = {}) {
@@ -183,7 +185,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     if (session()) steam.reload();
     render(); pop.hidden = false; place();
     for (const b of [headBtn, dockBtn]) b.setAttribute('aria-expanded', String(b === trigger));
-    (pop.querySelector('input, button:not(.account-close)') || pop).focus?.();
+    (coarse() ? pop : pop.querySelector('input, button:not(.account-close)') || pop).focus?.(); // on a touch screen the sign-in field is not focused: that would raise the keyboard
     loadProfile({ force: true });
   }
   function hide(focus = true) {
@@ -193,6 +195,8 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     if (focus && trigger && trigger.offsetParent !== null) trigger.focus();
   }
   for (const b of [headBtn, dockBtn]) b.addEventListener('click', () => (pop.hidden ? show(b) : hide()));
+  onSwipe(pop, { direction: 'down', enabled: () => isPhone() && !pop.hidden, canStart: (t) => pop.scrollTop <= 0 && atTop(t, pop), onDismiss: () => hide() }); // the bottom sheet on a phone
+  onDialogSwipe(dlg); onDialogSwipe(nameDlg, { close: () => skipName?.() }); // a swipe down is Cancel, and Skip for the name
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) hide(); });
   document.addEventListener('pointerdown', (e) => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest?.('dialog') && !headBtn.contains(e.target) && !dockBtn.contains(e.target)) hide(false); });
   window.addEventListener('resize', () => { if (!pop.hidden) place(); });

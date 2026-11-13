@@ -1,6 +1,7 @@
 // Progression on screen: the rank badge, the progression card (own profile and other people's profiles), the achievement collection and the XP history.
 // One set of components with a `mode` ('self' or 'other') so every screen draws the same thing from the same data (see progression.js). Plain DOM, textContent only.
 import { RARITY_LABEL, glyphOf, rankProgress, groupAchievements, featuredOf, describeHistory, xpText } from './progression.js';
+import { onDialogSwipe } from './swipe.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const btn = (label, cls = 'btn small') => { const b = el('button', cls, label); b.type = 'button'; return b; };
@@ -120,7 +121,7 @@ export function mountProgression(host, { load, peek = null, mode = 'other', api 
 
 let dlg = null;
 function dialog() {
-  if (!dlg) { dlg = el('dialog', 'account-dialog prog-dialog'); dlg.id = 'prog-dialog'; dlg.setAttribute('aria-labelledby', 'prog-dialog-title'); document.body.append(dlg); }
+  if (!dlg) { dlg = el('dialog', 'account-dialog prog-dialog'); dlg.id = 'prog-dialog'; dlg.setAttribute('aria-labelledby', 'prog-dialog-title'); document.body.append(dlg); onDialogSwipe(dlg); }
   return dlg;
 }
 function frame(title) {

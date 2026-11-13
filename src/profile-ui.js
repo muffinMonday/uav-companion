@@ -30,12 +30,12 @@ export function profileView(row) {
 /**
  * The editor. `save(patch)` sends a patch to update_profile and resolves { ok: true } or { ok: false, error }, after the caller holds the new profile;
  * `rerender()` redraws the dialog; `toast` shows a line; `saved()` is called after a full save; `getName()` gives a changed display name to send with it (or undefined).
- * The draft lives here, not in the card, so redrawing the card (after a Clear, or switching to the preview and back) does not lose what is being typed.
+ * The draft lives here, not in the card, so redrawing the card (after a save, or switching to the preview and back) does not lose what is being typed.
  */
 export function createProfileEditor({ save, toast, rerender, saved, getName }) {
   const d = { dirty: false, avatar: null, bio: '', location: '', interests: [], share: true };
   const take = (p) => { if (d.dirty) return; Object.assign(d, { avatar: p.avatar ?? null, bio: p.bio ?? '', location: p.location ?? '', interests: [...(p.interests ?? [])], share: p.share_profile !== false }); };
-  let note = '';
+  let note = '', foot = null; // foot: the Save button and its message, drawn by the dialog below its own buttons
 
   function card(profile) {
     take(profile);
@@ -47,14 +47,12 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
 
     const group = (title, hint) => { const h = el('div', 'pf-group'); h.append(el('h3', '', title)); if (hint) h.append(el('small', '', hint)); return h; };
     const optional = (label, text) => { label.append(' ', el('small', 'pf-opt', '(optional)')); return label; };
-    c.append(group('Photo', 'Pick one, or leave it as the default.'));
+    c.append(group('Photo', 'Pick one, or tap it again to go back to the default.'));
     // ---- avatar
     const head = el('div', 'pf-head');
     const preview = el('span', 'pf-preview'); const paint = () => preview.replaceChildren(avatarEl(d.avatar, profile.display_name, 44));
     paint();
     head.append(preview, el('b', '', 'Avatar'));
-    const clearAv = el('button', 'btn small', 'Clear'); clearAv.type = 'button'; clearAv.addEventListener('click', () => clearField('avatar', null));
-    head.append(clearAv);
     const grid = el('div', 'pf-avatars'); grid.setAttribute('role', 'group'); grid.setAttribute('aria-label', 'Choose an avatar');
     const picks = [];
     for (const a of AVATARS) {
@@ -66,21 +64,19 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
     c.append(head, grid);
 
     // ---- bio
-    c.append(group('About you', 'Everything here is optional. Clear a field to remove it.'));
+    c.append(group('About you', 'Everything here is optional. Empty a field to remove it.'));
     const bl = optional(el('label', 'fr-label', 'Bio')); bl.setAttribute('for', 'pf-bio');
     const bio = el('textarea'); bio.id = 'pf-bio'; bio.rows = 2; bio.maxLength = MAX_BIO; bio.value = d.bio; bio.placeholder = 'A line about you and your flying';
     const count = el('small', 'pf-count', `${d.bio.length}/${MAX_BIO}`);
     bio.addEventListener('input', () => { d.bio = bio.value; count.textContent = `${bio.value.length}/${MAX_BIO}`; touch(); });
-    const bioRow = el('div', 'pf-row'); const clearBio = el('button', 'btn small', 'Clear'); clearBio.type = 'button'; clearBio.addEventListener('click', () => clearField('bio', null));
-    bioRow.append(count, clearBio);
+    const bioRow = el('div', 'pf-row'); bioRow.append(count);
     c.append(bl, bio, bioRow);
 
     // ---- location (typed text; the app never reads a position for it)
     const ll = optional(el('label', 'fr-label', 'Location')); ll.setAttribute('for', 'pf-location');
     const loc = el('input'); loc.type = 'text'; loc.id = 'pf-location'; loc.maxLength = MAX_LOCATION; loc.value = d.location; loc.placeholder = 'For example Wuhan, China'; loc.autocomplete = 'off';
     loc.addEventListener('input', () => { d.location = loc.value; touch(); });
-    const locRow = el('div', 'pf-row'); locRow.append(el('small', 'pf-count', 'Typed by you; your position is never used.')); const clearLoc = el('button', 'btn small', 'Clear'); clearLoc.type = 'button'; clearLoc.addEventListener('click', () => clearField('location', null));
-    locRow.append(clearLoc);
+    const locRow = el('div', 'pf-row'); locRow.append(el('small', 'pf-count', 'Typed by you; your position is never used.'));
     c.append(ll, loc, locRow);
 
     // ---- interests
@@ -96,9 +92,7 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
       });
       tags.append(b);
     }
-    const intRow = el('div', 'pf-row'); const clearInt = el('button', 'btn small', 'Clear'); clearInt.type = 'button'; clearInt.addEventListener('click', () => clearField('interests', []));
-    intRow.append(el('span'), clearInt);
-    c.append(il, tags, intRow);
+    c.append(il, tags);
 
     // ---- who sees the bio, location and interests
     c.append(group('Visibility'));
@@ -117,15 +111,8 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
       go.disabled = false; go.textContent = 'Save profile'; c.removeAttribute('aria-busy');
       if (r.ok) { d.dirty = false; note = ''; rerender(); toast('Profile saved.'); saved?.(); } else say(r.error);
     });
-    c.append(go, msg);
-
-    async function clearField(key, value) {
-      const r = await save({ [key]: value });
-      if (!r.ok) { say(r.error); return; }
-      if (d.dirty) d[key] = key === 'interests' ? [] : key === 'avatar' ? null : ''; // other edits are still pending: keep them, drop this one; otherwise the card takes the server's profile
-      rerender(); toast('Cleared.');
-    }
+    foot = el('div', 'pf-foot'); foot.append(go, msg);
     return c;
   }
-  return { card, draft: () => ({ avatar: d.avatar, bio: d.bio, location: d.location, interests: [...d.interests], share: d.share }), reset: () => { d.dirty = false; note = ''; }, isDirty: () => d.dirty };
+  return { card, foot: () => foot, draft: () => ({ avatar: d.avatar, bio: d.bio, location: d.location, interests: [...d.interests], share: d.share }), reset: () => { d.dirty = false; note = ''; }, isDirty: () => d.dirty };
 }

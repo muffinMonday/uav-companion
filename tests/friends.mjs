@@ -134,15 +134,18 @@ await p.fill('#pf-bio', 'Draft kept through the preview');
 await p.click('#pf-preview-btn'); await p.waitForSelector('#pf-preview');
 const pv = await p.textContent('#pf-preview');
 ok(/Alex/.test(pv) && /Draft kept through the preview/.test(pv) && /Wuhan, China/.test(pv) && /Hiking/.test(pv) && await p.locator('#pf-preview .avatar[data-avatar=fpv-cinewhoop]').count() === 1, 'the preview shows the draft as others see it: name, avatar, location, interests, bio');
+await p.waitForSelector('#pf-preview .prog-card:not([data-status=loading])');
+ok(await p.locator('#pf-preview [data-act=collection]').count() === 1 && await p.locator('#pf-preview [data-act=history]').count() === 0, 'the preview is the profile popover body: the progression card with Achievements, without XP history');
 await p.click('#pf-preview-back'); await p.waitForSelector('#pf-card');
 ok(await p.inputValue('#pf-bio') === 'Draft kept through the preview' && await p.getAttribute('#pf-card [data-pick=fpv-cinewhoop]', 'aria-pressed') === 'true', 'going back from the preview keeps the unsaved draft');
 await p.click('#pf-share'); await p.click('#pf-preview-btn'); await p.waitForSelector('#pf-preview');
 ok(!/Wuhan|Draft kept/.test(await p.textContent('#pf-preview')) && /No more details/.test(await p.textContent('#pf-preview')), 'with sharing off the preview shows only the name and avatar');
+ok(await p.locator('#pf-preview .prog-card').count() === 0, 'with sharing off the preview shows no progression card');
 await p.click('#pf-preview-back'); await p.waitForSelector('#pf-card'); await p.click('#pf-share');
 await p.fill('#pf-bio', 'Cinewhoop and chill');
 for (const k of ['food', 'history', 'wildlife']) await p.click(`#pf-card [data-interest=${k}]`);
 await p.click('#pf-card [data-interest=cycling]');
-ok(/up to 5/.test(await p.textContent('#pf-card .pf-msg')) && await p.getAttribute('#pf-card [data-interest=cycling]', 'aria-pressed') === 'false', 'a sixth interest is refused with a message');
+ok(/up to 5/.test(await p.textContent('#profile-dialog .pf-msg')) && await p.getAttribute('#pf-card [data-interest=cycling]', 'aria-pressed') === 'false', 'a sixth interest is refused with a message');
 await p.click('#pf-card [data-interest=food]'); await p.click('#pf-card [data-interest=history]'); await p.click('#pf-card [data-interest=wildlife]');
 await p.click('#pf-save'); await p.waitForSelector('#profile-dialog', { state: 'hidden' }); await p.waitForTimeout(500);
 let row = await prof();
@@ -169,10 +172,12 @@ ok(!/Wuhan|Cinewhoop and chill|Hiking/.test(await bea.p.textContent('#profile-po
 await bea.p.keyboard.press('Escape');
 await editProfile(p); await p.click('#pf-share'); await p.click('#pf-save'); await p.waitForSelector('#profile-dialog', { state: 'hidden' }); await p.waitForTimeout(500);
 await editProfile(p);
-await p.click('#pf-card .pf-row >> nth=0 >> text=Clear'); await p.waitForTimeout(700);
-ok((await prof()).bio === null && (await prof()).location === 'Wuhan, China', 'Clear on the bio empties only the bio');
-await p.click('#pf-card .pf-head >> text=Clear'); await p.waitForTimeout(700);
-ok((await prof()).avatar === null && await p.locator('#pf-card .pf-pick[aria-pressed=true]').count() === 0, 'Clear on the avatar removes it');
+ok(await p.locator('#profile-dialog button:text-is("Clear")').count() === 0, 'the editor has no Clear buttons');
+{ const pb = await p.locator('#pf-preview-btn').boundingBox(), cb = await p.locator('#profile-dialog .btn-row .btn >> text=Cancel').boundingBox(), sb = await p.locator('#pf-save').boundingBox();
+  ok(sb.y > pb.y + pb.height - 1 && sb.y > cb.y + cb.height - 1, 'Save profile sits below Preview and Cancel'); }
+await p.locator('#pf-card .pf-pick[aria-pressed=true]').click(); await p.click('#pf-save'); await p.waitForSelector('#profile-dialog', { state: 'hidden' }); await p.waitForTimeout(700);
+ok((await prof()).avatar === null, 'tapping the chosen avatar again removes it');
+await editProfile(p);
 await p.keyboard.press('Escape'); await p.waitForSelector('#profile-dialog', { state: 'hidden' });
 await p.click('#account-btn'); await p.waitForSelector('#account-pop:not([hidden])'); await p.click('#account-pop >> text=Edit profile');
 await p.waitForSelector('#profile-dialog[open] #pf-card');
@@ -181,7 +186,7 @@ await p.keyboard.press('Escape');
 // ---------- the editor: validation, unsaved changes, account pane contents
 await editProfile(p);
 await p.fill('#pf-name', '   '); await p.click('#pf-save');
-ok(await p.locator('#pf-name[aria-invalid=true]').count() === 1 && /cannot be empty/.test(await p.textContent('#pf-card .pf-msg')) && await p.locator('#profile-dialog[open]').count() === 1, 'an empty display name is refused in the editor, with the field marked invalid');
+ok(await p.locator('#pf-name[aria-invalid=true]').count() === 1 && /cannot be empty/.test(await p.textContent('#profile-dialog .pf-msg')) && await p.locator('#profile-dialog[open]').count() === 1, 'an empty display name is refused in the editor, with the field marked invalid');
 ok(await p.locator('#pf-card .pf-group').count() === 3 && await p.locator('#pf-card .pf-opt').count() === 3, 'the editor is grouped, and the optional fields say so');
 await p.fill('#pf-name', 'Alex'); await p.fill('#pf-bio', 'unsaved words');
 p.removeAllListeners('dialog'); p.once('dialog', (d) => d.dismiss()); await p.click('#profile-dialog .btn-row >> text=Cancel'); await p.waitForTimeout(300);
@@ -238,6 +243,25 @@ await p.tap('#dock button[data-tab=friends]'); await p.waitForSelector('#pane-fr
 const fit = await p.$eval('#panel .tabs', (t) => ({ sw: t.scrollWidth, cw: t.clientWidth }));
 const head = await p.$eval('#panel .sp-head', (h) => { const r = h.getBoundingClientRect(); const c = document.getElementById('panel-close').getBoundingClientRect(); return { right: r.right, close: c.right }; });
 ok(fit.sw <= fit.cw + 1 && head.close <= head.right, 'on a 360 px phone the four tabs fit and the > button is still in the header (' + fit.sw + ' of ' + fit.cw + ' px)');
+// on a phone: Edit profile opens without the keyboard (no text field is focused) and a swipe down dismisses it
+{
+  const cdp = await ctx.newCDPSession(p);
+  const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
+  const swipeDown = async (x, y0, y1) => { await touch('touchStart', x, y0); for (let i = 1; i <= 8; i++) { await touch('touchMove', x, y0 + ((y1 - y0) * i) / 8); await p.waitForTimeout(12); } await touch('touchEnd'); await p.waitForTimeout(500); };
+  const focusedField = () => p.evaluate(() => /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || ''));
+  await p.evaluate(() => document.getElementById('fr-edit-profile').click()); await p.waitForSelector('#profile-dialog[open] #pf-card');
+  ok(!(await focusedField()), 'on a touch screen Edit profile does not focus the name field (no keyboard)');
+  const r = await p.$eval('#profile-dialog h2', (h) => { const b = h.getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; });
+  await swipeDown(r.x, r.y, r.y + 260);
+  ok(await p.locator('#profile-dialog[open]').count() === 0, 'a swipe down on the Edit profile title dismisses it');
+  await p.evaluate(() => document.getElementById('fr-edit-profile').click()); await p.waitForSelector('#profile-dialog[open] #pf-card');
+  ok(await p.evaluate(() => document.getElementById('profile-dialog').style.transform === ''), 'the dialog is back in place when it reopens');
+  await p.fill('#pf-name', 'Alexander'); // the page accepts the "Discard changes?" question
+  await p.click('#pf-preview-btn'); await p.waitForSelector('#pf-preview');
+  const r2 = await p.$eval('#profile-dialog h2', (h) => { const b = h.getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; });
+  await swipeDown(r2.x, r2.y, r2.y + 260);
+  ok(await p.locator('#profile-dialog[open]').count() === 0, 'a swipe down on the preview dismisses the dialog too');
+}
 await ctx.close();
 
 ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));

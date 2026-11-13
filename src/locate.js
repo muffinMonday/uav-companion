@@ -16,7 +16,7 @@ const DOT = '<div class="you-wrap"><svg class="you-arrow" viewBox="0 0 44 44" ar
  * `rotation` is the map turner (maprotate.js); `onNotice(text)` carries things worth telling the user; `onFollow()` is called when following starts.
  */
 export function addLocateControl(map, { onError, onNotice = onError, onFollow, rotation = null, headingSensor = null, wakeLock = () => globalThis.navigator?.wakeLock }) {
-  let dot = null, ring = null, last = null, active = false;
+  let dot = null, ring = null, last = null, active = false, watching = false; // watching: map.locate is running (the launch fix draws the blip without it)
   let mode = 'off', manual = false, ownMove = 0, zooming = false, compass = false, compassFailed = false, compassTold = false, lock = null, btn = null;
   let compassHeading = null, travel = { heading: null, speed: null };
 
@@ -36,6 +36,17 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
     },
   });
   const control = new Control().addTo(map);
+
+  function startWatch() { if (watching) return; watching = true; map.locate({ watch: true, enableHighAccuracy: true, setView: false, maximumAge: 10000, timeout: 20000 }); }
+  /** Draws (or moves) the blip and its accuracy ring. */
+  function drawBlip(latlng, accuracy) {
+    if (dot) { dot.setLatLng(latlng); ring.setLatLng(latlng).setRadius(accuracy); return; }
+    ring = L.circle(latlng, { radius: accuracy, weight: 1, color: '#1a73e8', fillOpacity: 0.12, interactive: false }).addTo(map);
+    dot = L.marker(latlng, {
+      icon: L.divIcon({ className: '', html: DOT, iconSize: [14, 14] }),
+      zIndexOffset: 1000, title: 'You are here',
+    }).addTo(map);
+  }
 
   /** The button's name says what pressing it does now. */
   function label() {
@@ -111,7 +122,7 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
     if (!recentre) { // asked for by something else ("check my spot", "place at my location"): get a position, change nothing else
       if (last) return true;
       if (!navigator.geolocation) { onError('This browser does not support location.'); return false; }
-      map.locate({ watch: true, enableHighAccuracy: true, setView: false, maximumAge: 10000, timeout: 20000 });
+      startWatch();
       return true;
     }
     if (mode === 'following') { exitFollow(); return true; }
@@ -121,7 +132,7 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
     if (!last && !navigator.geolocation) { onError('This browser does not support location.'); return false; }
     mode = 'located'; label();
     if (last) own(() => map.setView(last, Math.max(map.getZoom(), 15)));
-    else map.locate({ watch: true, enableHighAccuracy: true, setView: false, maximumAge: 10000, timeout: 20000 });
+    startWatch();
     return true;
   }
 
@@ -142,17 +153,8 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
     const first = !last;
     last = e.latlng;
     travel = { heading: Number.isFinite(e.heading) ? e.heading : null, speed: Number.isFinite(e.speed) ? e.speed : null };
-    if (!dot) {
-      ring = L.circle(e.latlng, { radius: e.accuracy, weight: 1, color: '#1a73e8', fillOpacity: 0.12, interactive: false }).addTo(map);
-      dot = L.marker(e.latlng, {
-        icon: L.divIcon({ className: '', html: DOT, iconSize: [14, 14] }),
-        zIndexOffset: 1000, title: 'You are here',
-      }).addTo(map);
-      active = true;
-      control._a.classList.add('active');
-    } else {
-      own(() => { dot.setLatLng(e.latlng); ring.setLatLng(e.latlng).setRadius(e.accuracy); }); // (a popup bound to the marker re-pans when it moves: that is not the user moving the map)
-    }
+    own(() => drawBlip(e.latlng, e.accuracy)); // (a popup bound to the marker re-pans when it moves: that is not the user moving the map)
+    if (!active) { active = true; control._a.classList.add('active'); }
     showArrow();
     if (first) own(() => map.setView(e.latlng, Math.max(map.getZoom(), 15)));
     else if (mode === 'following') own(() => map.panTo(e.latlng, { animate: true, duration: 0.4, easeLinearity: 1, noMoveStart: true }));
@@ -160,7 +162,7 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
 
   map.on('locationerror', (e) => {
     if (active && last) return; // keep the last fix on a transient error
-    map.stopLocate();
+    map.stopLocate(); watching = false;
     mode = 'off'; label(); sensor.stop();
     const denied = e.code === 1;
     onError(denied ? 'Location permission was denied. Allow it in the browser settings and try again.' : 'Could not get your location. Check that location services are on.');
@@ -176,10 +178,15 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
         const done = () => { map.off('locationfound', ok); map.off('locationerror', fail); };
         const ok = () => { done(); resolve(true); };
         const fail = () => { done(); resolve(false); };
-        if (last && dot) { own(() => map.setView(last, Math.max(map.getZoom(), 15))); resolve(true); return; }
+        if (last && dot && watching) { own(() => map.setView(last, Math.max(map.getZoom(), 15))); resolve(true); return; }
         map.on('locationfound', ok); map.on('locationerror', fail);
         if (mode === 'off' && !press()) { done(); resolve(false); }
       });
+    },
+    /** The one fix taken at launch: draws the blip and its accuracy ring and remembers the position, without tracking. The first press of the button starts tracking. */
+    showFix({ lat, lon, accuracy }) {
+      if (dot) return;
+      last = L.latLng(lat, lon); drawBlip(last, Number.isFinite(accuracy) ? accuracy : 50); showArrow();
     },
     mode: () => mode,
     isManual: () => manual,
@@ -188,8 +195,8 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
 }
 
 /**
- * One position fix for the moment the app opens: asks the browser (this is what shows the permission question) and resolves { lat, lon } or null
- * (denied, dismissed, not supported, no secure page, timed out). Nothing is tracked and nothing is drawn; the caller decides what to do with it.
+ * One position fix for the moment the app opens: asks the browser (this is what shows the permission question) and resolves { lat, lon, accuracy } or null
+ * (denied, dismissed, not supported, no secure page, timed out). Nothing is tracked; the caller decides what to do with it (main.js draws the blip with showFix and centres the map).
  * A page cannot tell "always allow" from "allow this time": a permission kept by the browser answers at once on later launches, a one-time one asks again.
  */
 export async function launchFix({ geo = globalThis.navigator?.geolocation, perms = globalThis.navigator?.permissions, secure = globalThis.isSecureContext || globalThis.location?.hostname === 'localhost' } = {}) {
@@ -198,7 +205,7 @@ export async function launchFix({ geo = globalThis.navigator?.geolocation, perms
   return new Promise((resolve) => {
     try {
       geo.getCurrentPosition(
-        (p) => resolve(Number.isFinite(p?.coords?.latitude) && Number.isFinite(p?.coords?.longitude) ? { lat: p.coords.latitude, lon: p.coords.longitude } : null),
+        (p) => resolve(Number.isFinite(p?.coords?.latitude) && Number.isFinite(p?.coords?.longitude) ? { lat: p.coords.latitude, lon: p.coords.longitude, accuracy: p.coords.accuracy } : null),
         () => resolve(null),
         { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 },
       );

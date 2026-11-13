@@ -3,7 +3,11 @@
 Updated: 2026-11-14 (late)
 Task: Progression system (XP, ranks, achievements, flight sessions, Steam). **Phases 1 to 6 are built, tested, committed, pushed and deployed; the work is finished apart from the owner's set-up steps below.** Standing rule from the owner: after each finished, tested phase commit, push and deploy (hosted `db push`, function deploy, `deploy:live`) and move on without asking again (memory `commit-deploy-each-phase`); it does not cover unrelated work, live checks that create real users, or secrets.
 
-## Latest work: profile pane (done, pushed, deployed)
+## Latest work: six small fixes (done; full npm test passed, 422 s)
+- No keyboard on open for touch screens (`src/touch.js`: `focusField`, `showModalQuiet`; Edit profile, account pane, name/delete dialogs, splash). Edit profile: no Clear buttons, Save profile under Preview and Cancel. Preview now uses the popover body (`profileContent`), no XP history. Swipe down dismisses the profile, achievements, account and name/delete dialogs (`onDialogSwipe`, `swipe.js`). Launch fix now draws the blip (`locate.showFix`, no tracking; first button press starts tracking). No blue tap rectangle on panel tabs and the rail (CSS).
+- Tests changed: `friends` (no Clear, Save position, preview body, phone keyboard and swipe), `launchloc` (blip, then tracking on press), `locatemode`. Not tested on a real phone (keyboard, finger swipes, tap highlight).
+
+## Earlier work: profile pane (done, pushed, deployed)
 - Progression and Steam cards moved from the Friends tab into the account pane (avatar popover, `account-ui.js`: collapsible sections, no email shown). Friends keeps friend code, Sessions card, requests, lists. Edit profile dialog: grouped fields, optional labels, empty-name validation, saving state, unsaved-changes confirm on Cancel/Escape. No server change.
 - Commits on `main`: pane move, then editor polish; `deploy:live` run after each. Full `npm test` passed after the first; after the second only `sessions` failed once ("marking an RSVP present" reads `.ses-message` too early under load) and passed alone: a flake, worth a wait-for in that test.
 - Not done: avatar upload (none exists, presets only); a unit-level test for the pane lifecycle.

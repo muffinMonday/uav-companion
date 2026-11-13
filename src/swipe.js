@@ -109,3 +109,11 @@ export function onPopupSwipe(root, { close, enabled = () => true, borders }) {
   for (const direction of ['left', 'right']) onSwipe(root, { ...opts, direction });
   for (const direction of ['up', 'down']) onSwipe(root, { ...opts, direction, canStart: (t) => borders(t, root) });
 }
+
+/**
+ * A modal <dialog> on a phone: a downward swipe from the top of its content dismisses it (not while its own content can still scroll up). `close` is called after the
+ * dialog has moved away, and should do what its Cancel button does (the Edit profile dialog asks before discarding changes). The dialog is reused, so its position is reset first.
+ */
+export function onDialogSwipe(dlg, { close = () => dlg.close(), phone = () => window.matchMedia('(max-width: 520px)').matches } = {}) {
+  onSwipe(dlg, { direction: 'down', enabled: () => dlg.open && phone(), canStart: (t) => dlg.scrollTop <= 0 && atTop(t, dlg), onDismiss: close });
+}
