@@ -2,6 +2,11 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-14 (HTML/main.js refactor Phases 2-5)
+- `main.js` (327 -> 171 lines) delegates to `src/app/point-check.js`, `map-settings.js`, `region-loader.js`, `region-ui.js`; startup order, concurrent cloud/data loading, launch flags and error handling unchanged. New `region-loader-unit`; `launchloc` gained slow-data checks. Commit `7cb0347`, published with `deploy:live`.
+- `MODULES.md` has the component ownership map; `AGENTS.md` points to it. Docs-only commits for Phases 3 and 4. No database change.
+- Screenshot note: the Phase 1 image set no longer matches unmodified HEAD on this machine (date text comma); the refactor is 298/298 identical to same-day HEAD.
+
 ## 2026-11-14 (HTML refactor Phase 1)
 - Root `index.html` is a 41-line shell with eight build-time HTML components. A local Vite plugin assembles nested includes during dev/build and reloads on fragment edits/additions/deletions; no runtime fetch or new dependency/command. Frozen pre-extraction DOM/source fixture plus compiler and real Vite/browser reload tests. Build and all 48 unit / 106 total suites passed; all 298 screenshots byte-identical to the corrected baseline. `main.js`, runtime JS, CSS and dependencies unchanged in this phase. Full validation: `HTML_MAIN_REFACTOR_BACKLOG.md` section 11. Phase 2 has not started.
 - Released as `97d6df7`, pushed and published through `deploy:live` (`gh-pages` `dc4e2a7`, accounts enabled). Public HTML and referenced JS/CSS match the built files; guest coverage/sign-in UI/status/ID checks pass with no page exceptions. Publication and continuation: backlog section 12. No database changes.

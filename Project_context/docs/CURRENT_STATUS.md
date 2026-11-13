@@ -1,9 +1,10 @@
 # Session Checkpoint
 
-## Latest: HTML/main.js refactor Phase 2 (2026-11-14; tested; commit/push/deploy under the owner's overnight authorization)
-- Owner authorized phases 2-5 unattended: commit, push and `deploy:live` after each phase, no database change, stop without release on a real failure, shut the PC down at the end. Details and results: backlog section 13.
-- Extracted `src/app/{point-check,map-settings,region-loader,region-ui}.js`; `main.js` 327 -> 171 lines. New `region-loader-unit` (12), `launchloc` +3. Full `npm test`: 107 suites passed. Screenshots 298/298 identical to same-day unmodified HEAD (the Phase 1 image set drifted in date text on this machine; use `refactor-phase2b-20261114`).
-- Next: Phase 3 (ownership map in MODULES.md), Phase 4 (AGENTS.md pointer), Phase 5 (final regression, CHANGELOG, handoff).
+## Latest: HTML/main.js refactor Phases 2-5 complete (2026-11-14; committed, pushed; Phase 2 deployed)
+- Commits: `7cb0347` (Phase 2, deployed with `deploy:live`, live bundle `index-Bz0SQplN.js` verified), `7046ad5` (ownership map in `MODULES.md`), `4617476` (`AGENTS.md` pointer), plus the final handoff commit. No database change.
+- Results and caveats: backlog sections 13-14. Full `npm test` green (107) before commit; the repeat after docs-only commits had one `autoshare` load flake (3/3 alone). Screenshots 298/298 identical to same-day HEAD; the Phase 1 image set is stale (date comma drift), use `refactor-phase2b-20261114`.
+- Owner to do: real-device pass (touch, rotation, dark theme, keyboard). Next feature, only on owner go-ahead: Community Flying Areas (reconcile its paths first).
+- The overnight authorization (commit/push/deploy per phase, shutdown at the end) was for this run only.
 
 ## Latest: HTML component extraction, Phase 1 (2026-11-14; committed, pushed, deployed and live-checked)
 - Owner explicitly authorized Phase 1 only. Added the eight approved `src/components/*.html` fragments and a 41-line `index.html` shell. Preserved the head/theme script, `/src/main.js`, shared stores, weather/banner/toast nodes, nesting and order. Expansion exactly reproduces the corrected pre-extraction HTML after LF normalization. `src/main.js` and the previously verified duplicate-ID correction are preserved; Phase 2 has not started.

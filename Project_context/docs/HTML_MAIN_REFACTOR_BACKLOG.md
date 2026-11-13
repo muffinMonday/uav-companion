@@ -300,3 +300,12 @@ Implemented (one extraction at a time, affected suites after each): `src/app/poi
 Tests: new `region-loader-unit` (12 checks: public load, concurrency, local merge, local failures tolerated, public failures reject); `launchloc` +3 checks (slow zone data: map stays on the visitor; legend and coverage appear after load). The cloud start code in `main.js` is unchanged, so no new cloud test. Full `npm test`: all 107 suites passed (470 s). One unit run of `live-engine-unit` failed once under load ("the next position recovers") and passed 4/4 alone, also on unmodified code.
 
 Screenshots: the Phase 1 set is no longer a valid reference on this machine. Unmodified HEAD captured today differs from it in the same 70 images (date text "Thu, 12 Nov" became "Thu 12 Nov", en-GB). Cause not traced (same Edge version string and locale setting in the tool). The refactored tree against that same-day HEAD capture: **298/298 identical**. Evidence: `tests/out/refactor-phase2-20261114/`; captures `refactor-headcheck2-20261114` (HEAD) and `refactor-phase2b-20261114` (refactor) in `%TEMP%/UAV_UI_Screenshots/`. Use `refactor-phase2b-20261114` as the visual reference from now on.
+
+## 14. Phases 3-5 and handoff (2026-11-14)
+
+- Phase 3 (`7046ad5`): component ownership map in `MODULES.md` (CSS roots checked against `styles.css`); `ARCHITECTURE.md` and `DEVELOPMENT.md` startup notes updated. Phase 4 (`4617476`): `AGENTS.md` points to the map and this backlog. Both docs-only; pushed, no deploy needed.
+- Phase 2 code (`7cb0347`) was pushed and published with `npm run deploy:live` (log in the ignored evidence directory); the live site serves `index-Bz0SQplN.js`, the bundle of the local deployed build. No database change.
+- Phase 5 regression on the final tree: build passed. First full `npm test` (before commit): all 107 suites passed (470 s). Second full run after the docs commits (code unchanged): 106 passed, `autoshare` failed one check ("Cam, who is only a friend, sees a friend pin for Alex", a polling-time check under load); `autoshare` passed 3 of 3 alone (23 checks). Treated as the known load flake, not a refactor regression.
+- Screenshots: 298/298 identical to same-day unmodified HEAD (section 13).
+- Not done: real-device review (touch, rotation, dark theme, keyboard) remains the owner's check; no live signed-in check was run. Phase 1 reference images are stale (section 13).
+- **Refactor Phases 0-5 complete.** Next feature: Community Flying Areas (update its planned paths to the component convention first; needs owner go-ahead).
