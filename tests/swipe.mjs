@@ -46,7 +46,8 @@ await openSheet(p); sh = await box(p, '#panel');
 await swipe([sh.cx, sh.y + 55], [sh.cx, sh.y + 190]);
 ok(!(await visible(p, '#panel')), 'swiping down from the header does the same');
 await openSheet(p); sh = await box(p, '#panel');
-await swipe([sh.cx, sh.y + 220], [sh.cx, sh.y + 360]);
+const hd = await box(p, '#pane-config .card h2'); // the first card's title: plain text, with no field nearby for the browser's touch adjustment to pick instead (a fixed offset landed beside the country box once fields grew)
+await swipe([hd.cx, hd.cy], [hd.cx, hd.cy + 140]);
 ok(!(await visible(p, '#panel')), 'swiping down in the body, which is at its top, does the same');
 ok(await view(p) === v0, 'and the map underneath does not move');
 

@@ -1075,3 +1075,28 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .profile-dialog .profile-card[aria-busy=true]{opacity:.7}
 /* numbers that change are set in tabular figures so they do not jitter */
 .prog-xp b,.dash-count,.trip-countdown,.steam-hours,.count,.dist-v,.plan-n,.sel-num{font-variant-numeric:tabular-nums}
+
+/* ---------- touch screens (DESIGN.md section 9): the tap target grows past the drawn control (::after), 16 px text in fields stops the iOS focus zoom, map buttons are bigger ---------- */
+@media (pointer:coarse){
+  :where(.btn:not(.tool),.icon-btn,.route-btn,.pop-seq-btn,.checkin-clear,.flip-btn,.chip,.visit-chip,.pop-side-btn){position:relative} /* :where has no weight, so a control that is already positioned (.dash-tab, .pop-toggle ...) keeps its own */
+  .btn:not(.tool):not(.small)::after{content:"";position:absolute;inset:-4px 0}
+  .btn.small::after,.route-btn::after,.pop-seq-btn::after,.chip::after,.visit-chip::after,.pop-side-btn::after,.side-chip::after{content:"";position:absolute;inset:-8px 0}
+  .btn.tool::after,.pop-toggle::after,.pop-close::after,.checkin-clear::after,.flip-btn::after{content:"";position:absolute;inset:-8px -1px}
+  .icon-btn::after{content:"";position:absolute;inset:-4px}
+  a.leaflet-popup-close-button::after{content:"";position:absolute;inset:-8px}
+  .tabs button{min-height:40px}
+  .sel-box{width:24px;height:24px}
+  .flip-dot{width:28px;height:28px}
+  input[type=range]{height:28px}
+  /* the map's own buttons: 36 px (Leaflet's touch size is 30). Not 40: the stack must stay mostly above the phone sheet, and its left edge (6 px margin) must not hide the start of a marker window's title */
+  .leaflet-touch .leaflet-bar a,.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn{width:36px;height:36px;line-height:36px}
+  .leaflet-left .leaflet-control{margin-left:6px}
+  /* 16 px in every field: below that iOS Safari zooms the page when one is focused */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea,#ai-text,.maplinks-mode{font-size:max(16px,var(--fs-body))}
+}
+@media (max-width:520px){
+  .sidepanel{bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+}
+@media (pointer:coarse) and (max-width:520px){
+  .sp-grab .icon-btn{width:48px;height:32px}
+}
