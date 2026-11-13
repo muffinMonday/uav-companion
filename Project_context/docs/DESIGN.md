@@ -28,8 +28,11 @@ Terms: **current** = in `styles.css` today; **planned (Pn)** = decided, to be ad
 | | `--disabled-opacity` | .5 for every disabled control |
 | | `--ok --ok-bg --no --no-bg --unk --unk-bg` | status pairs (text on tinted background) |
 | | `--zone` | zone teal (identity) |
-| Shape | `--radius:14px --radius-sm:9px` | everything else is a literal today (6/8/10/11/12/16/18/20/24/999) |
-| Elevation | `--shadow --shadow-sm` | panels/popups vs small floating controls |
+| Shape | `--radius-xs:6px --radius-sm:9px --radius:14px --radius-lg:18px --radius-pill:999px` | P2. Other radii (8/10/11/12/16/20/24) are still literals until P4 |
+| Space | `--sp-1:4px --sp-2:8px --sp-3:12px --sp-4:16px --sp-5:24px` | P2: defined for new code; existing margins and gaps were **not** rewritten (rule: adopt in new and changed CSS) |
+| Elevation | `--shadow-2` (panels, popups), `--shadow-1` (small floating controls); `--shadow`, `--shadow-sm` remain as aliases | P2 |
+| Scrim | `--scrim` (dialog backdrop) | P2 |
+| Layers | `--z-crosshair 450, --z-hold 700, --z-panel 1000, --z-dock 1001, --z-search 1002, --z-live-chip 1003, --z-dash 1004, --z-card 1050, --z-banner 1060, --z-sheet 1070, --z-popover 1080, --z-toast 1100, --z-drag 3000` | P2; section 5 |
 | Type | `--font` | system stack with `Noto Sans SC`; no size tokens yet |
 | Motion | `--dur-fast .12s --dur .2s --dur-slow .28s --ease` | motion block is wrapped in `prefers-reduced-motion:no-preference` |
 | Popup | `--pop-alpha` (0.5 to 1) | set from the opacity slider; glass effect |
@@ -38,12 +41,10 @@ Terms: **current** = in `styles.css` today; **planned (Pn)** = decided, to be ad
 
 ### Planned tokens (P2 unless stated; names are the contract, values may be tuned in review)
 - **Type scale (P3):** `--fs-micro:11px --fs-meta:12px --fs-small:13px --fs-body:14px --fs-title:16px --fs-head:18px --fs-display:24px`; weights `--fw-regular:400 --fw-medium:500 --fw-semibold:600 --fw-bold:700` (550/650 fold into 600, 750/800 into 700; 250 stays only for the dashboard greeting as `--fw-light`); line heights `--lh-tight:1.2 --lh-meta:1.35 --lh-body:1.45`.
-- **Space:** `--sp-1:4px --sp-2:8px --sp-3:12px --sp-4:16px --sp-5:24px`, with 2 px and 6 px allowed only in dense rows.
-- **Radius:** `--radius-xs:6px --radius-sm:9px --radius:14px --radius-lg:18px --radius-pill:999px`.
+- **Space:** 2 px and 6 px stay allowed in dense rows (the 4-px scale is in section 2).
 - **Control size (P4/P5):** `--control-h` (about 36 px), `--control-h-sm` (about 30 px), `--tap:44px` (touch only), icon `--icon:18px --icon-sm:16px --icon-lg:22px`, stroke 2. Different control categories keep different sizes (owner decision): buttons, inputs, icon buttons, tabs, map controls.
-- **Elevation:** `--shadow-1`, `--shadow-2` (aliases of today's two), `--shadow-pin`, `--scrim`.
+- **Elevation:** `--shadow-pin` (not added in P2: the pin drop-shadow has one use, so by rule 3 it stays a literal).
 - **Colour:** `--info` (replaces `#1a73e8` for the location dot and accuracy ring), `--focus`. (`--danger-solid`, `--on-danger`, `--control-border`, `--rank-edge`, `--disabled-opacity` were added in P1: see section 2.)
-- **Layers:** `--z-*` names for the numbers in section 5.
 
 ## 3. Typography (rules; the scale is planned for P3)
 | Role | Size / weight | Used for |
@@ -94,7 +95,7 @@ Layers. `#map` has no `z-index`, so there is no stacking context around the whol
 | 1080 | `.account-pop` | |
 | 1100 | `.toast` | |
 | 3000 | `.drag-ghost` | |
-Native `<dialog>`s use the browser's top layer (above all of this). The 1 and 5 are local orderings inside a parent that already forms a stacking context, so they are not layers and need no token; the planned `--z-*` names cover the 1000 to 3000 application layers and `450`/`700`. New overlays take an existing layer or ask.
+Native `<dialog>`s use the browser's top layer (above all of this). The 1 and 5 are local orderings inside a parent that already forms a stacking context, so they are not layers and stay numbers; every application layer from 450 up is a `--z-*` token (P2; `tests/contrast-unit.mjs` fails on a raw number of 100 or more). New overlays take an existing layer or ask.
 Motion: short, transform/opacity only, always inside `prefers-reduced-motion:no-preference` (or killed by the global `reduce` rule). Do not add continuous animations.
 
 ## 6. Components and states
@@ -154,7 +155,7 @@ Popups (frosted glass via `--pop-alpha`), scale, attribution and Leaflet bar but
 |---|---|---|---|
 | 0 | Baseline screenshots, this file, doc fixes | no | **done** |
 | 1 | Contrast and state fixes (`--danger-solid`, rank outline, `--control-border`, disabled, hover gating, contrast test) | small | **done** (validated 2026-11-13: after-p1 screenshots, contrast test, full npm test) |
-| 2 | Token layer, pixel-identical (diff must be empty); duplicate rules removed | none | not started |
+| 2 | Token layer, pixel-identical (diff must be empty); duplicate rules removed | none | **done** (258 screenshots identical to after-p1) |
 | 3 | Typography and hierarchy (scale, section title vs eyebrow, weights) | yes | not started |
 | 4 | Controls and proportions (+2-3 px, roomier dialogs, per-category sizes) | yes | not started |
 | 5 | Mobile ergonomics (44 px targets, 16 px inputs, safe areas) | phones | not started |

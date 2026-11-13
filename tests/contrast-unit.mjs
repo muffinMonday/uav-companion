@@ -39,3 +39,7 @@ const gate = css.split('\n').filter((l) => /:hover/.test(l) && !l.startsWith('@m
 ok(gate.length === 0, 'every :hover rule sits inside @media (hover:hover)' + (gate.length ? ': ' + gate[0].slice(0, 60) : ''));
 ok(!/var\(--[a-z-]+,\s*#/.test(css), 'no colour token has a hex fallback (the fallbacks were dead code and disagreed)');
 ok(!/background:var\(--danger\)[^}]*color:#fff/.test(css), 'no white text on var(--danger) (use --danger-solid and --on-danger)');
+
+// scale guards (phase 2): page layers and the shared radii come from tokens
+ok(!/z-index:\d{3,}/.test(css), 'every z-index of 100 or more is a --z-* token (only the local 1 and 5 inside a parent stay numbers)');
+ok(!/border-radius:(14|18|999)px(?![\d ])/.test(css), 'border-radius 14 / 18 / 999 px are --radius, --radius-lg, --radius-pill');
