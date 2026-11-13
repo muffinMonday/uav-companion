@@ -48,7 +48,7 @@ async function cleanup() {
   }
   return removed;
 }
-if (arg('cleanup', false) === true) { console.log('removed ' + await cleanup() + ' test users'); process.exit(0); }
+if (arg('cleanup', false) === true) { console.log('removed ' + await cleanup() + ' test users'); await sleep(200); process.exit(0); } // (the pause lets Windows close its handles before exit)
 
 // ---------- measurements
 const stats = new Map(); // name -> { n, errors, ms: [] }
@@ -117,7 +117,8 @@ try {
   const loop = (u) => (async () => {
     await sleep(Math.random() * 5000); // start spread over a few seconds
     let quiet = 0, tickN = 0, liveActive = null, sig = '';
-    const every = (ms, fn) => (async () => { await sleep(Math.random() * ms); while (Date.now() < endAt) { const t0 = Date.now(); await fn(); await sleep(Math.max(0, ms - (Date.now() - t0))); } })();
+    const nap = (ms) => sleep(Math.max(0, Math.min(ms, endAt - Date.now()))); // never sleeps past the end of the run
+    const every = (ms, fn) => (async () => { await nap(Math.random() * Math.min(ms, 5000)); while (Date.now() < endAt) { const t0 = Date.now(); await fn(); await nap(ms - (Date.now() - t0)); } })();
     await Promise.all([
       every(10000, async () => { // the shared-trip poll
         if (ADAPTIVE) { const f = quiet >= 18 ? 3 : quiet >= 6 ? 2 : 1; if (++tickN % f) return; }
@@ -159,4 +160,5 @@ try {
   if (!KEEP) { console.log('removing the test users ...'); await removeAll(); console.log('done. Anything left over: node scripts/loadtest.mjs --yes --cleanup'); }
   else console.log('--keep: the test users stay (remove them with --cleanup).');
 }
+await sleep(200);
 process.exit(exitCode);
