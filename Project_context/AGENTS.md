@@ -16,3 +16,9 @@ Vite + Leaflet JS app; static hosting plus optional Supabase (accounts, friends,
 - Ask before commit, push or `npm run deploy`.
 
 **Context:** update `CURRENT_STATUS.md` at each milestone and before stopping or clearing; say "saved" only after editing it. At about 65% context, finish the step and checkpoint; above 75%, no new large work. Claude cannot run `/clear`: checkpoint, then tell the user to run `/clear` (auto-compaction is fine; the checkpoint is the recovery source). Finished history goes to CHANGELOG, decisions to DECISIONS. Final message of a session: done, state, remaining, blockers, files, test results, next action.
+
+
+## Future backlogs (documentation only)
+- `docs/HTML_MAIN_REFACTOR_BACKLOG.md`: refactor source `index.html` into build-time fragments and simplify `src/main.js`; prioritize before Community Flying Areas.
+- `docs/COMMUNITY_FLYING_AREAS_PLAN.md`: approved product specification for locally saved, admin-reviewed community polygons.
+Both are **planned, not implemented**. Read only when relevant. Do not start implementation, commit, push or deploy without owner authorization. For UI edits, consult the component ownership map in `docs/MODULES.md`.
