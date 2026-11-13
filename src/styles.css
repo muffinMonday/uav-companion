@@ -1100,3 +1100,21 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 @media (pointer:coarse) and (max-width:520px){
   .sp-grab .icon-btn{width:48px;height:32px}
 }
+
+/* ---------- hierarchy of the major screens (DESIGN.md phase 6): what matters leads, the rest steps back ---------- */
+/* progression: the rank is the prominent thing in the account pane; Steam steps back */
+.prog-rank{font-size:var(--fs-head)}
+.prog-bar{height:10px}
+#pane-progression>summary{font-size:var(--fs-title);font-weight:var(--fw-bold)}
+#pane-steam>summary{font-weight:var(--fw-medium);color:var(--muted)}
+/* dashboard: the trip card is the main card */
+.dash-trip{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:inset 0 3px 0 var(--accent)}
+/* sessions: the next action leads, Manage steps back */
+.ses-title{font-weight:var(--fw-semibold)}
+.ses-row [data-act=manage]{background:transparent;border-color:transparent;color:var(--muted)}
+/* friends and account rows: one comfortable row height */
+.fr-row{padding:10px 0;min-height:52px}
+.fr-who b{font-weight:var(--fw-semibold)}
+/* destructive actions read as destructive before they are pressed */
+.btn.danger{border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}
+@media (hover:hover){.btn.danger:hover{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent)}}
