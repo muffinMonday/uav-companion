@@ -1,0 +1,29 @@
+name: Steam daily sync
+
+# Calls the steam-sync-all edge function once a day. Needs the repository secret STEAM_CRON_SECRET
+# (same value as the Supabase secret). Triggers: schedule and manual only, never pull requests.
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call steam-sync-all
+        env:
+          CRON_SECRET: ${{ secrets.STEAM_CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "STEAM_CRON_SECRET is not set"; exit 1; fi
+          code=$(curl -sS -o body.json -w '%{http_code}' --max-time 150 -X POST \
+            -H "x-cron-secret: $CRON_SECRET" \
+            https://tgptrtcuaryyyfzhrffm.supabase.co/functions/v1/steam-sync-all)
+          echo "HTTP $code"
+          # counts only (due, ok, private, error, skipped, left); no user data is in the response
+          if [ "$code" = "200" ]; then cat body.json; echo; fi
+          # fails the run on a non-2xx status
+          case "$code" in 2??) ;; *) exit 1 ;; esac
