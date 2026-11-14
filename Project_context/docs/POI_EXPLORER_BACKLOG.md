@@ -1,6 +1,6 @@
 # UAV Companion — POI Explorer & Marker Taxonomy Backlog
 
-**Status:** APPROVED PRODUCT SPECIFICATION — IMPLEMENTED LOCALLY, READY FOR REVIEW (local commits only, not pushed or deployed; see section 12)  
+**Status:** APPROVED PRODUCT SPECIFICATION — IMPLEMENTED AND DEPLOYED 2026-11-14 (see section 12)  
 **Prepared:** 2026-11-14  
 **Repository:** `muffinMonday/uav-companion`  
 **Canonical destination:** `Project_context/docs/POI_EXPLORER_BACKLOG.md`  
@@ -314,3 +314,7 @@ Owner authorization (2026-11-14): implement all approved phases autonomously; lo
 - **Not verified:** a real phone, foldable or tablet, iOS Safari and Android Chrome, a screen reader, real keyboard on a phone, reduced motion on a real device (suites use emulated touch and `reducedMotion`), the AI import notice in a browser (code path only), hosted/signed-in shared trips with a real older app version.
 - **Rollback:** each phase is its own commit (`git revert` in reverse order). No data migration: stored ids, `uavzones.v1.pois` and `uavzones.v1.trips` are unchanged; the only new stored keys are `tripHidden` and `unassignedHidden` in `uavzones.v1.prefs` (ignored by older versions).
 - **Release gate (owner):** (1) decide on the old-client downcast risk (section 12, Phases 1 and 2): an older build re-saves a newer type as Other on its next poll; no server guard exists and none was authorized; (2) review; (3) separate approval to push and `deploy:live`. Nothing was pushed, deployed or migrated.
+
+### Release (2026-11-14)
+- Owner approved push and `deploy:live`. `origin/main` had 11 newer commits (airspace data PRs; docs, scripts and tests only), merged in `0e706d8` (only conflict: the status file, both blocks kept); build and unit suites passed after the merge. Pushed `a854ce8..0e706d8`; one `npm run deploy:live`; no database change.
+- Live check: JS and CSS byte-identical to the local build, published schema and `llms.txt` updated, guest smoke without errors. The full browser suite was not re-run after the merge (the merged changes do not touch the app).
