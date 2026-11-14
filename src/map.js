@@ -95,7 +95,7 @@ export function createZones(map, regions) {
       if (!regions.length) return;
       // the opening view shows the first region (Hubei); the others are reached with the country menu, since one view over
       // regions thousands of kilometres apart would show none of them
-      const all = toLatLngBounds(regions[0].bounds);
+      const all = toLatLngBounds((regions.find(r => r.id === 'cn-hubei') ?? regions[0]).bounds);
       map.fitBounds(all, options);
     },
     setVisible(v) {

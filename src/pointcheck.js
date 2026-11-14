@@ -68,11 +68,21 @@ export async function checkPoint(lat, lon) {
     const b = r.coverageBounds || r.bounds;
     return lon >= b[0] && lon <= b[2] && lat >= b[1] && lat <= b[3];
   });
-  for (const r of near) {
-    const zones = await zonesInArchive(archive(r), r.maxZoom, lat, lon);
-    if (zones.length) return { status: 'inside', region: r, zones };
+  const selected = r => r.coverageMode === 'positive-only' || r.sourceConfidence?.mode === 'selected-source';
+  // Resolve existing official-region coverage first, including its negative verdicts.
+  // A new mirror polygon must never override Hubei or Singapore in an overlap.
+  for (const group of [near.filter(r => !selected(r)), near.filter(selected)]) {
+    for (const r of group) {
+      try {
+        const zones = await zonesInArchive(archive(r), r.maxZoom, lat, lon);
+        if (zones.length) return { status: 'inside', region: r, zones };
+      } catch (e) {
+        if (!selected(r)) throw e;
+        // An unavailable selected snapshot cannot establish a negative verdict.
+      }
+    }
+    for (const r of group) if (!selected(r) && await inCoverage(r, lat, lon)) return { status: 'outside', region: r, zones: [] };
   }
-  for (const r of near) if (await inCoverage(r, lat, lon)) return { status: 'outside', region: r, zones: [] };
   return { status: 'nodata', zones: [] };
 }
 
@@ -89,6 +99,11 @@ function wording(res) {
   const r = res.region;
   if (res.status === 'nodata') {
     return ['unk', 'No data for this area', 'This map does not cover this location yet. It says nothing about whether flying is allowed.'];
+  }
+  if (r.sourceConfidence?.mode === 'selected-source') {
+    return res.status === 'inside'
+      ? ['ok', 'Suitable-flight zone (selected source)', `Mapped by ${r.source.authority}; snapshot ${r.source.snapshotAt?.slice(0, 10) || 'unknown'}, effective date ${r.source.effective || 'unknown'}. Current flight permission, completeness and independent alignment are unverified. Check UOM before flying.`]
+      : ['unk', 'Unknown airspace coverage', 'No suitable-flight polygon is mapped here in the selected source. This does not establish controlled airspace or permission to fly.'];
   }
   const source = `${r.name} data (${r.source.authority}, effective ${r.source.effective})`;
   if (r.semantics === 'allow') {

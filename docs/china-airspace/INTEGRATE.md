@@ -164,3 +164,28 @@ commit and data artifact hashes; retain the previous complete release locally. F
 
 Local candidate cleanup needs no production change. Preserve source/evidence archives; remove
 only the specific ignored output directory after checking its absolute path.
+
+## Selected operational source candidates
+
+The owner's pragmatic publication policy has an explicit separate command:
+
+```powershell
+node scripts/airspace/integrate.mjs select planning/rollout/selected-jilin/config.json planning/rollout/selected-hunan/config.json planning/rollout/selected-ningxia/config.json planning/rollout/selected-guangdong/config.json --out planning/rollout/reviewed-selected-batch
+```
+
+It still writes only a complete local registration candidate under planning/. It requires
+checksum-bound original response snapshots, the exact full acquired feature union, source-declared
+WGS84, explicit rights and semantics evidence bound to the subject, original geometry/ring
+preservation and independent full GEOS validation including overlap/equivalence checks. It builds
+PMTiles and runs source-versus-tile points and real browser rendering.
+
+Selected-source metadata must explicitly request positive-only coverage. Null legal effective
+dates are supported without substituting publication or capture dates. Conservative contact and
+work-budget findings remain in the report; only an explicit full-source independent GEOS review
+can resolve those findings for this mode. Invalid geometry, other findings and missing records
+still reject the batch. This does not modify conservative predicates or grant six-gate approval.
+
+The candidate contains selection.json instead of approval.json. Existing stage/build/promote
+behavior and six-gate requirements are retained; select cannot be combined with --approved.
+See [the selected-source release](SELECTED_SOURCE_RELEASE.md) for the actual batch, source
+limitations, owner-attested rights, packaging, application behavior and rollback.

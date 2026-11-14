@@ -43,7 +43,10 @@ export function makePlan(config, configDir, { archivedPlan = null } = {}) {
 function permission(config, count) {
   const p = config.access;
   if (p?.status !== 'permitted' || !p.evidence || !p.checkedOn || !Number.isInteger(p.maxRequests) || count > p.maxRequests || p.maxRequests > 64) throw new Error('Live acquisition blocked: documented access permission and an explicit request budget (<=64) are required; use localFiles instead');
-  if (config.responsePolicy?.pagination !== 'none' || config.responsePolicy?.wholeFeatures !== true || !config.responsePolicy?.evidence) throw new Error('Live acquisition blocked: unverified pagination/whole-feature contract; use local response files');
+  // Authorized observations can investigate an undocumented contract. They retain
+  // unknown coverage; the ordinary acquisition contract and approval path stay strict.
+  if (config.acquisitionMode !== undefined && config.acquisitionMode !== 'bounded-observation') throw new Error('Unknown acquisition mode');
+  if (config.acquisitionMode !== 'bounded-observation' && (config.responsePolicy?.pagination !== 'none' || config.responsePolicy?.wholeFeatures !== true || !config.responsePolicy?.evidence)) throw new Error('Live acquisition blocked: unverified pagination/whole-feature contract; use local response files');
 }
 async function limitedBody(response, maxBytes) {
   if (Number(response.headers.get('content-length')) > maxBytes) { await response.body?.cancel(); throw new Error('response-size-limit'); }
@@ -151,7 +154,10 @@ export async function acquire(config, configDir, outDir, { dryRun = false, valid
     }
     const outOfBounds = result.geojson.features.filter(f => !intersectsBox(f.geometry, config.bbox)).map(f => f.id ?? sha256(stringify(f.geometry)));
     const report = { schemaVersion: 1, region: config.id, fingerprint: plan.fingerprint, outputSha256: result.sha256, queryBounds: plan.requests.map(x => x.bbox).filter(Boolean), technical: result.report, acquisition: { expected: plan.requests.length, archived: entries.length, networkRequests: state.networkRequests ?? 0, acquiredDates: [...new Set(entries.map(x => x.entry.acquiredAt.slice(0, 10)))].sort(), failed, atFeatureLimit: atLimit, outOfBounds, allPlannedResponsesPresent: !failed.length && entries.length === plan.requests.length, consistency, provincialCompleteness: 'unverified', boundary: plan.boundarySha256 ? 'query-filter-only' : 'approximate-bbox-only', clippingBehavior: config.responsePolicy?.wholeFeatures === true ? 'declared-whole-features' : 'unknown' }, quality: config.quality ?? 'unverified-reference', provenance: config.provenance ?? {}, regulatoryValidity: 'unverified', integrationReady: false, blockers: [] };
+    report.acquisition.mode = config.acquisitionMode ?? 'documented-contract';
+    report.acquisition.responseContractVerified = config.responsePolicy?.pagination === 'none' && config.responsePolicy?.wholeFeatures === true && !!config.responsePolicy?.evidence;
     report.blockers = [
+      ...(!report.acquisition.responseContractVerified ? ['response-contract-unverified'] : []),
       ...(!result.report.valid ? ['technical-validation-failed'] : []),
       ...(failed.length ? ['missing-or-invalid-responses'] : []), ...(atLimit.length ? ['possible-response-truncation'] : []), ...(outOfBounds.length ? ['unexpected-geography'] : []),
       ...(consistency.some(x => x.status !== 'consistent-sample') ? ['overlap-reproducibility-unproven'] : []),
