@@ -4,6 +4,8 @@ Checked 2026-11-14. Both pilots have advanced to **technically validated referen
 
 ## Supplied originals
 
+**Do not integrate the Node-normalized subsets (89/756). Complete references contain 101/777.** The [integration gates](INTEGRATION_GATES.md) specify the identity guard, loss counts, full winding procedure and required source investigations. Neither artifact is production-approved.
+
 The expected 55/79-feature Shenzhen responses and 777-feature Chongqing response were found in the main checkout's ignored staging directories. An additional Guangzhou capture has 80 features; it is not a replacement for the expected 79-feature response. All four were copied byte-for-byte into the isolated worktree's content-addressed archive.
 
 | Original response | Features / unique IDs | Positions | Holes | Extent `[west,south,east,north]` |

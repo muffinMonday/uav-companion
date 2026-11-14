@@ -1,6 +1,7 @@
 # Session Checkpoint
 
 ## China airspace data staging (2026-11-14; isolated branch, no merge/deploy)
+- Final PR #2 review safeguards: complete-reference count/hash guard rejects diagnostic subsets and altered same-count inputs; generated selection/warning files prominently identify 101/777 complete references versus 89/756 subsets. `../../docs/china-airspace/INTEGRATION_GATES.md` documents winding with holes/contacts preserved and the source evidence checklist. Original hashes and policies unchanged; no UI/production/Claude-owned code changes. Focused 42 + GEOS 3 and app build pass; ready-for-review transition follows final impacted checks. Only this existing branch checkpoint receives a handoff note.
 - Review: follow-up draft PR https://github.com/muffinMonday/uav-companion/pull/2 opened with implementation commit `07075b8` on the same isolated branch. Initial PR #1 was merged upstream outside this session (`origin/main` now `eab4b6f`); no merge/deploy by this session.
 - Branch/worktree: `feature/china-airspace-data`, `.worktrees/china-airspace-data`, base `e0a6d64`; Claude's active UX checkout untouched. Audit, run instructions, sources, 31-division inventory and validation: `../../docs/china-airspace/README.md`.
 - Added independent serial/local acquisition, checksum archives, resumable checkpoints, cumulative request budgets, geometry/CRS validation, exact deduplication, overlapping-query comparison and offline previews. No production region, application, package, test registry or existing build changes.

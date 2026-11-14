@@ -1,6 +1,7 @@
 // Standalone to avoid modifying tests/run.mjs while the UX test registry is in use.
 // node --test tests/china-airspace.test.mjs
 import test from 'node:test';
+import { assertCompleteReference } from '../scripts/china-airspace/artifact-contract.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -22,6 +23,14 @@ const root = path.resolve(import.meta.dirname, '..');
 const rect = (w = 110, s = 30, e = 110.01, n = 30.01, id = 'a', properties = {}) => ({ type: 'Feature', id, properties, geometry: bboxGeometry([w, s, e, n]) });
 const fc = (...features) => ({ type: 'FeatureCollection', features });
 const options = { crs: 'wgs84' };
+test('complete-reference guard rejects filtered subsets and same-count altered geometry', () => {
+  const full=fc(rect(),rect(111,30,112,31,'b'));
+  const report={uniqueGeometries:2,completeReference:{emitted:true,features:2,contentSha256:sha256(stringify(full))}};
+  assert(assertCompleteReference(full,report));
+  assert.throws(()=>assertCompleteReference(fc(full.features[0]),report),/never substitute/);
+  const altered=structuredClone(full);altered.features[1].geometry.coordinates[0][0][0]+=0.01;
+  assert.throws(()=>assertCompleteReference(altered,report),/identity/);
+});
 const config = () => ({ id: 'cn-test', bbox: [109, 29, 111, 31], endpoint: 'https://example.com/public?province=test', partition: { columns: 2, rows: 1, overlap: 0.1 }, access: { status: 'permitted', evidence: 'Local test server contract', checkedOn: '2026-11-14', maxRequests: 6 }, responsePolicy: { pagination: 'none', wholeFeatures: true, evidence: 'test' }, validation: options });
 function temp(t) { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'china-airspace-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true })); return dir; }
 const write = (dir, name, v) => { const f = path.join(dir, name); fs.writeFileSync(f, JSON.stringify(v)); return f; };

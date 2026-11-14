@@ -4,6 +4,8 @@ This workflow prepares evidence and reproducible local datasets for UAV Companio
 
 ## Run
 
+**Integration warning:** `normalized.geojson` is a diagnostic subset: Guangdong **89 of 101**, Chongqing **756 of 777**. Never substitute it for the complete `deduplicated-reference.geojson`. Both remain unapproved for production. Read the [mandatory artifact identity guard, winding procedure and investigation checklist](INTEGRATION_GATES.md) first.
+
 Use Node 24 and the repository's existing dependencies (`npm ci` in a clean checkout). Commands below run from the feature worktree root. No new dependencies or package scripts are needed.
 
 ```powershell

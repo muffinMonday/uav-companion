@@ -1315,5 +1315,20 @@
   ],
   "provincialCompleteness": "unverified",
   "regulatoryValidity": "unverified",
-  "integrationReady": false
+  "integrationReady": false,
+  "artifactSelection": {
+    "completeReference": {
+      "file": "deduplicated-reference.geojson",
+      "features": 101,
+      "identityGuard": "assertCompleteReference(collection, report)",
+      "productionApproved": false
+    },
+    "conservativeSubset": {
+      "file": "normalized.geojson",
+      "features": 89,
+      "omittedFeatures": 12,
+      "integrationCandidate": false,
+      "warning": "DIAGNOSTIC SUBSET ONLY. Never use as the complete region dataset."
+    }
+  }
 }
