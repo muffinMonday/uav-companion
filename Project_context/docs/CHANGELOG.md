@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-11-14 (Chongqing airspace release)
+- PR #8 / source 3fb4f1a, production 8018ea0: all 777 original polygons preserved using regional z14 MVT precision. GEOS, exhaustive presence, point and desktop/mobile checks pass; previous regions unchanged. Chengdu captures retain 57 valid unique polygons locally, withheld pending a reviewed city coverage mask. [Release and rollback](../../docs/china-airspace/EXPRESS_CHONGQING_CHENGDU.md).
+
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
 ## 2026-11-15 (Wave 2: social, account, sessions and AI import cards)

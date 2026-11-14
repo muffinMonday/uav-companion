@@ -185,6 +185,14 @@ work-budget findings remain in the report; only an explicit full-source independ
 can resolve those findings for this mode. Invalid geometry, other findings and missing records
 still reject the batch. This does not modify conservative predicates or grant six-gate approval.
 
+For a demonstrated sub-metre feature loss only, regional metadata may opt into
+`tilePrecision: { "maxZoomExtent": 65536 }`. This changes the standard MVT extent
+at z14 only; the default and all lower zooms remain 4096. The existing renderer and
+point reader use the encoded extent. Full-source GEOS, every-feature presence,
+inside/outside and rendering checks remain mandatory. See the
+[Chongqing follow-up](EXPRESS_CHONGQING_CHENGDU.md). This option does not provide
+an administrative coverage mask for whole features returned by a city-envelope query.
+
 The candidate contains selection.json instead of approval.json. Existing stage/build/promote
 behavior and six-gate requirements are retained; select cannot be combined with --approved.
 See [the selected-source release](SELECTED_SOURCE_RELEASE.md) for the actual batch, source

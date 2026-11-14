@@ -1,5 +1,15 @@
 # Selected operational airspace source release
 
+**Published and verified:** [PR #6](https://github.com/muffinMonday/uav-companion/pull/6),
+source commit `face62b33d7cc0d01365ced8654d2861d3faa7d6`, production commit
+`ceffda1254bf8a1d39db92373686e28fe052b1da`.
+[Live site](https://muffinmonday.github.io/uav-companion/).
+[Publication checks](evidence/selected-source-publication.json): all 18 referenced
+files checked against the build, all four layers visibly paint, eight selected-source
+positive/unknown checks and two original Hubei verdict checks pass. The Singapore
+manifest differs only in line endings; its parsed content is identical. Immutable
+PMTiles/boundary files match exact SHA-256 values.
+
 2026-11-14. Four Chinese API-reference datasets are registered separately from the
 existing high-confidence approval workflow. The owner selected KDji as the fallback
 source and affirmed joint-project permission for bounded retrieval and public PMTiles
@@ -20,7 +30,9 @@ publication and September 22 snapshots; exact timestamps and raw hashes are in t
 null. The directly acquired government shapefiles are preserved locally and are not
 published by this release. Jilin's official-site permission condition was not bypassed.
 
-Chongqing is withheld: its complete 777-feature source is GEOS-valid, but one approximately 20 by 30 cm polygon is absent at the current tile precision. No diagnostic subset or repaired geometry is substituted. The whole source and failed presence-check evidence remain local for a later precision fix.
+Chongqing's subsequent 777-feature precision fix and release status are recorded in
+[the express follow-up](EXPRESS_CHONGQING_CHENGDU.md). The original four-region
+release evidence below remains historical; it is not the rollback baseline for that follow-up.
 
 ## Application behavior
 
@@ -102,6 +114,20 @@ A complete static rollback snapshot is preserved at
 `adef35d164c2570eb38ca3b4f767b0ccedd03e30b2935ad9666472a294d2de5e`.
 The release evidence records unchanged Hubei/Singapore tile and boundary hashes.
 Refresh this baseline if another release occurs before deployment.
+
+For this published release, the source rollback is `git revert -m 1 face62b33d7cc0d01365ced8654d2861d3faa7d6`
+on a fresh branch from current main, through the normal reviewed workflow. In a fresh
+worktree, expand the verified rollback ZIP to an ignored planning directory and copy
+its complete `data/` directory to the previously absent `public/data/`; do not copy its
+old application assets over current UX. Restore the existing public account build
+configuration, run the relevant regressions and build, then `npm run deploy:live`.
+On Windows the deep default gh-pages cache exceeded the path limit; the successful
+release used this supported process-local setting before the same deploy command:
+
+```powershell
+$env:CACHE_DIR = Join-Path ([System.IO.Path]::GetTempPath()) 'uav-airspace-release-20261114'
+npm run deploy:live
+```
 
 Before publication, revert the dedicated registration/runtime change; production is
 unaffected. After publication, revert those changes through the reviewed workflow,
