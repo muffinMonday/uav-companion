@@ -2,9 +2,10 @@
 
 ## Latest: POI Explorer + Marker Taxonomy (2026-11-14; owner authorized autonomous implementation, LOCAL commits only: no push, PR, deploy, migration)
 - Spec and status log: `POI_EXPLORER_BACKLOG.md` section 12 (per-phase records, deviations, risks). Plan: `C:/Users/cy071/.claude/plans/pasted-content-id-94a6-uav-companion-silly-grove.md`.
-- Done and committed locally: Phases 1+2 `a32388a` (16 types, Accommodation wording, frozen share order, AI contract, drift tests, old-client test), Phase 3 `fc8c085` (folded Add a marker, grouped picker, Side Quest type switch).
+- - Done and committed locally (all 8 phases): 1+2 `a32388a` (16 types, Accommodation wording, frozen share order, AI contract), 3 `fc8c085` (folded Add a marker, grouped picker, Side Quest type switch), 4 `3238744` (folding trips and days, `poi-model.js`), 5 `024225e` (search), 6 `727f2eb` (per-trip and Unassigned map visibility), 7 `db00049` (hints, Help shortcuts, older-version notice). Phase 8 record and checkpoint: this commit.
 - **Old-client risk (measured): an older build receiving a new type saves the downcast `other` back on its next poll, with no edit.** Owner decision needed before any deploy.
-- Next: Phase 4 hierarchy (pure `src/poi-model.js`), 5 search, 6 per-trip visibility, 7 hints, 8 validation and screenshots. Test helpers: `pickType()` and `addFolded` in `tests/lib.mjs`; fixture regenerate script is in the session scratchpad (diff by tag/attrs/text, write indent 1 + CRLF), recreate if lost.
+- Results: full `npm test` green after phases 4, 6, 7; build passes; screenshots 298 vs 298 (`poi-before-20261114`, `poi-after-20261114`): 208 identical, 90 differ, only POI, Trips, marker-window and placing screens. Not verified: real phone or foldable, Safari, screen reader, AI import notice in a browser.
+- **Next (owner):** decide on the old-client risk, review, then separately approve push and `deploy:live`. No migration is needed.
 - Left alone: the uncommitted `.gitignore` change.
 
 ## Latest: UX & Discoverability (2026-11-14; owner authorized commit/push/deploy:live for this feature only)

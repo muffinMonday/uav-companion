@@ -1,6 +1,6 @@
 # UAV Companion — POI Explorer & Marker Taxonomy Backlog
 
-**Status:** APPROVED PRODUCT SPECIFICATION — IMPLEMENTATION IN PROGRESS (local commits only; see section 12)  
+**Status:** APPROVED PRODUCT SPECIFICATION — IMPLEMENTED LOCALLY, READY FOR REVIEW (local commits only, not pushed or deployed; see section 12)  
 **Prepared:** 2026-11-14  
 **Repository:** `muffinMonday/uav-companion`  
 **Canonical destination:** `Project_context/docs/POI_EXPLORER_BACKLOG.md`  
@@ -307,3 +307,10 @@ Owner authorization (2026-11-14): implement all approved phases autonomously; lo
 - **Accommodation naming** is in the picker hint (inline), not an extra popup.
 - **Tests:** `help-unit` (43), new browser suite `helppoi` (about 30 checks: reworded hint keeps history, picker and visibility hints once, held back while placing, editing, selecting and dragging, the notice waits for the marker window and must be dismissed, no notice for a private trip or an older type, dashboard shortcuts and Tips replay leave the seen list unchanged, phone). `discover` updated only by keeping the first three shortcuts in their order. Full `npm test` all suites passed (662 s).
 - **Known limitation:** the older-version notice also fires after a local cloud restore (`replaceAll`, which has no change kind) if that brings a newer type into a shared trip; it is informational and shown once.
+
+### Phase 8: validation (2026-11-14, local commit)
+- **Build:** `npm run build` passes. **Tests:** full `npm test` all suites passed after Phases 4, 6 and 7 (630 to 662 s); unit suites 56 pass. New suites: `poi-types-unit`, `poi-model-unit`, `visibility-unit`, browser `picker`, `hierarchy`, `poisearch`, `visibility`, `helppoi`. Flakes seen and handled: `helppoi` first check once failed under parallel load (a window that is not in front can skip an automatic hint); the test now leaves and returns to the tab, 3 of 3 runs then passed.
+- **Screenshots** (`~/UAV_UI_Screenshots/poi-before-20261114`, original code from `23c80e8` with the same harness, against `poi-after-20261114`): 298 and 298, 208 identical, 90 differ. Differing screens are only 06 panel-trips, 07 panel-poi, 09 panel-tall, 11 trip-detail, 12 to 14 marker windows, 16 placing banner, 28 to 30 stress screens, at the five viewports and both themes; all other screens (map, dashboard, config, privacy, friends, sessions, profile, toast, splash) are identical. Viewed: desktop light POI panel (folded card replaced by the open picker in the harness, group buttons, chosen line, search box) and phone dark marker window. Not every one of the 90 was viewed; the cause for each class is known (Accommodation wording in distance lines, the picker and search box, trip sections and counts, folded list). Report: `~/UAV_UI_Screenshots/compare_poi-before-20261114_vs_poi-after-20261114/index.html`.
+- **Not verified:** a real phone, foldable or tablet, iOS Safari and Android Chrome, a screen reader, real keyboard on a phone, reduced motion on a real device (suites use emulated touch and `reducedMotion`), the AI import notice in a browser (code path only), hosted/signed-in shared trips with a real older app version.
+- **Rollback:** each phase is its own commit (`git revert` in reverse order). No data migration: stored ids, `uavzones.v1.pois` and `uavzones.v1.trips` are unchanged; the only new stored keys are `tripHidden` and `unassignedHidden` in `uavzones.v1.prefs` (ignored by older versions).
+- **Release gate (owner):** (1) decide on the old-client downcast risk (section 12, Phases 1 and 2): an older build re-saves a newer type as Other on its next poll; no server guard exists and none was authorized; (2) review; (3) separate approval to push and `deploy:live`. Nothing was pushed, deployed or migrated.
