@@ -1398,3 +1398,21 @@ body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}
 .mean-body p{margin:0}
 .mean-row{display:flex;align-items:flex-start;gap:8px;color:var(--fg)}
 .mean-swatch{flex:none;width:14px;height:14px;margin-top:1px;border-radius:3px;border:1px solid var(--line)}
+
+/* ---------- Wave 2, slice 1: trips and itinerary (DESIGN.md section 21). Presentation only; no markup or behaviour change ---------- */
+/* one primary action per card: Open stays filled, the other actions are soft (no outline), Delete keeps its red outline */
+.trip-acts .btn:not(.primary):not(.danger){border-color:transparent;background:var(--surface-2)}
+@media (hover:hover){.trip-acts .btn:not(.primary):not(.danger):hover{border-color:var(--accent)}}
+/* the shared-trip members box sits flat inside the detail card (hairline, not a second outlined box) */
+#trip-detail .trip-party{margin:12px 0 0;padding:10px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent}
+/* checklist and notes headings use the same section-heading role as the rest of the detail */
+.trip-notes,.trip-checklist{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+
+/* ---------- Wave 2, slice 4: shared panel header. With the Friends tab present, "Points of Interest" pushed the collapse button 18 px past the panel edge above 520 px wide (the phone rules only apply below it) ---------- */
+@media (min-width:521px){ /* the same compact header as the phone sheet, so all four tabs and three buttons fit in 380 px */
+  .sp-head{gap:4px;padding-right:6px}
+  .sp-head .icon-btn{width:30px;height:30px}
+  .sp-head .tabs{min-width:0}
+  .tabs button[aria-selected=true]{min-width:0;padding-left:8px;padding-right:8px}
+  .tabs button[aria-selected=false]{flex-basis:30px}
+}

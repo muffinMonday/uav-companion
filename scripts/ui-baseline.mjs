@@ -85,9 +85,14 @@ const VIEWPORTS = {
   tabport: { w: 768, h: 1024, touch: true },
   phone: { w: 390, h: 844, touch: true, priority: true },
   phones: { w: 360, h: 640, touch: true },
+  // Wave 2 additions (named so file names stay stable): large phone, two narrow tablets, short landscape phone
+  p412: { w: 412, h: 915, touch: true },
+  w700: { w: 700, h: 850, touch: true },
+  w850: { w: 850, h: 700, touch: true },
+  land: { w: 844, h: 390, touch: true },
 };
 const pick = (name, all) => { const v = arg(name, ''); return v ? v.split(',') : all; };
-const VPS = pick('vp', Object.keys(VIEWPORTS));
+const VPS = pick('vp', ['desk', 'tabland', 'tabport', 'phone', 'phones']); // the Wave 2 viewports are opt-in: --vp p412,w700,w850,land
 const THEMES = pick('theme', ['light', 'dark']);
 const ONLY = arg('only', '') ? arg('only', '').split(',') : null;
 const JOBS = Math.max(1, parseInt(arg('jobs', '3'), 10));
@@ -303,6 +308,10 @@ const SCREENS = [
   { id: 'stress-trips', open: { stress: true }, run: async (p) => { await tab(p, 'trips'); await p.waitForTimeout(600); } },
   { id: 'stress-popup', open: { stress: true, prefs: { windowExpanded: true } }, run: async (p) => { await tab(p, 'poi'); await p.locator('#poi-list .poi-item', { hasText: '听涛' }).first().click(); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(800); } },
   { id: 'stress-dash', open: { stress: true, dash: { showOnStart: true, welcomed: true, seen: '9999' } }, run: async (p) => { await p.waitForSelector('#dash:not([hidden])'); await p.waitForTimeout(400); } },
+  { id: 'stress-trip-detail', open: { stress: true }, run: async (p) => { await tab(p, 'trips'); await p.locator('.trip-card .btn.primary').first().click(); await p.waitForTimeout(800); } }, // Wave 2: itinerary with long and CJK names
+  { id: 'config-open', run: async (p) => { await tab(p, 'config'); await p.evaluate(() => document.querySelectorAll('#panel details').forEach((d) => { d.open = true; })); await p.waitForTimeout(500); } }, // Wave 2: Map Config with every section unfolded
+  { id: 'trip-open', run: async (p) => { await tab(p, 'trips'); await p.locator('.trip-card .btn.primary').nth(1).click(); await p.waitForTimeout(800); } }, // Wave 2: itinerary of the trip with days, warnings and a checklist
+  { id: 'poi-saved', run: async (p) => { await tab(p, 'poi'); await p.waitForTimeout(400); await p.evaluate(() => { document.querySelectorAll('#panel .sec-toggle[aria-expanded=false]').forEach((b) => b.click()); document.getElementById('poi-list').scrollIntoView({ block: 'start' }); }); await p.waitForTimeout(500); } }, // Wave 2: the saved list, all groups unfolded
 ];
 
 // ---------- run
