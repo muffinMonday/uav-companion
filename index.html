@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UAV Companion</title>
+<meta name="description" content="Open-source map of suitable-flight (适飞) drone zones, starting with Hubei, China. Not flight advice: check UOM before every flight.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%232aa6b8'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#ffffff">
+<script>/* theme before first paint: same rule as resolveTheme in src/theme.js */try{var t=JSON.parse(localStorage.getItem('uavzones.v1.prefs')||'{}').theme;document.documentElement.dataset.theme=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}catch(e){}</script>
+  <script type="module" crossorigin src="./assets/index-CEHfz7wS.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/core-C-k915lv.js">
+  <link rel="modulepreload" crossorigin href="./assets/supabase-CyqhLg5p.js">
+  <link rel="stylesheet" crossorigin href="./assets/index-D52mrFS9.css">
+</head>
+<body>
+<div id="map"></div>
+
+<div class="search collapsed" id="search">
+  <button type="button" class="search-btn" id="search-toggle" aria-label="Search" aria-expanded="false" aria-controls="q" title="Search (press / )">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+  </button>
+  <input id="q" type="search" placeholder="Search places or coordinates (e.g. 宜昌, 30.59, 114.30)" autocomplete="off" aria-label="Search places" role="combobox" aria-expanded="false" aria-controls="results">
+  <ul class="results" id="results" role="listbox" hidden></ul>
+</div>
+
+<!-- the rail shown while the panel is collapsed: < brings the panel back, each icon opens it on that tab -->
+<div class="dock" id="dock" role="group" aria-label="Open panel" hidden>
+  <div class="dock-icons" id="dock-icons"><div class="dock-inner" id="dock-inner">
+  <button type="button" id="dock-expand" aria-controls="panel" aria-expanded="false" aria-label="Expand the panel" title="Expand the panel">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+  </button>
+  <button type="button" data-tab="config" aria-controls="panel" aria-expanded="false" aria-label="Map Configs" title="Map Configs">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+    <span>Map Configs</span>
+  </button>
+  <button type="button" data-tab="trips" aria-controls="panel" aria-expanded="false" aria-label="Trips" title="Trips">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 13h16"/></svg>
+    <span>Trips</span>
+  </button>
+  <button type="button" data-tab="poi" aria-controls="panel" aria-expanded="false" aria-label="Points of Interest" title="Points of Interest">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
+    <span>Points of Interest</span>
+  </button>
+  <button type="button" id="dock-fold" aria-controls="dock-icons" aria-expanded="true" aria-label="Fold the icons away" title="Fold the icons away">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+  </button>
+  </div></div>
+  <button type="button" id="dock-circle" aria-controls="dock-icons" aria-expanded="false" aria-label="Show the panel buttons" title="Show the panel buttons" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></svg><span class="tab-badge" hidden></span>
+  </button>
+</div>
+
+<aside class="sidepanel" id="panel" aria-label="Map panel" hidden>
+  <div class="sp-grab"><button type="button" class="icon-btn" id="panel-expand" aria-label="Expand the panel" aria-pressed="false" title="Expand the panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11l5-5 5 5M7 18l5-5 5 5"/></svg></button></div>
+  <header class="sp-head">
+    <div class="tabs" role="tablist" aria-label="Panel sections">
+      <button type="button" role="tab" id="tab-config" aria-controls="pane-config" aria-selected="true" data-tab="config"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span class="tab-label">Map Configs</span></button>
+      <button type="button" role="tab" id="tab-trips" aria-controls="pane-trips" aria-selected="false" tabindex="-1" data-tab="trips"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 13h16"/></svg><span class="tab-label">Trips</span></button>
+      <button type="button" role="tab" id="tab-poi" aria-controls="pane-poi" aria-selected="false" tabindex="-1" data-tab="poi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg><span class="tab-label">Points of Interest</span></button>
+    </div>
+    <button type="button" class="icon-btn" id="privacy-btn" aria-label="Privacy settings" aria-controls="privacy" aria-expanded="false" title="Privacy settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+    </button>
+    <button type="button" class="icon-btn" id="panel-close" aria-label="Collapse the panel" title="Collapse the panel">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+  </header>
+
+  <div class="sp-body">
+    <!-- Map Configs -->
+    <section role="tabpanel" id="pane-config" aria-labelledby="tab-config">
+      <div class="card">
+        <h2>Navigate</h2>
+        <div class="field">
+          <label for="country">Go to</label>
+          <div class="select-row">
+            <select id="country"><option value="">Choose a country…</option></select>
+            <button type="button" class="btn" id="country-go" title="Centre the map on the chosen country">Centre</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Layers</h2>
+        <label class="switch"><span>Show zones</span><input type="checkbox" id="show" checked></label>
+        <label class="field"><span>Zone opacity</span><input type="range" id="op" min="0.1" max="0.9" step="0.05" value="0.45"></label>
+        <label class="field"><span>Marker window opacity <small>(lower lets the map show through)</small></span><input type="range" id="pop-op" min="0.5" max="1" step="0.05" value="0.8"></label>
+        <label class="field"><span>Basemap</span>
+          <select id="base">
+            <option value="osm" selected>OpenStreetMap</option>
+            <option value="hot">Humanitarian (OSM, clear roads and paths)</option>
+            <option value="cyclosm">CyclOSM (OSM, outdoors and cycling)</option>
+            <option value="topo">OpenTopoMap (OSM data, terrain)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>Appearance</h2>
+        <fieldset class="radios" id="theme-radios">
+          <legend>Theme</legend>
+          <label class="radio"><input type="radio" name="theme" value="system"><span>System <small>Follows your device</small></span></label>
+          <label class="radio"><input type="radio" name="theme" value="light"><span>Light</span></label>
+          <label class="radio"><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+        </fieldset>
+        <p class="hint">Saved in this browser only.</p>
+      </div>
+
+      <div class="card">
+        <h2>Maps</h2>
+        <label class="field"><span>Map app for Open and Navigate</span>
+          <select id="map-app">
+            <option value="auto">Automatic (Amap in China, Google Maps elsewhere)</option>
+            <option value="amap">Amap in China (Google Maps elsewhere)</option>
+            <option value="google">Google Maps</option>
+          </select>
+        </label>
+        <label class="field"><span>Usual way of travelling</span>
+          <select id="map-mode"></select>
+        </label>
+        <p class="hint">Amap only covers China, so Google Maps is used anywhere else. The Open and Navigate icons share the place's coordinates with the map app, only when you tap one. Saved in this browser only.</p>
+      </div>
+
+      <div class="card">
+        <h2>Weather</h2>
+        <p class="hint" id="mw-status"></p>
+        <label class="field"><span>Wind limit <small>(m/s, optional)</small></span>
+          <input type="number" id="wlimit" min="1" max="40" step="0.5" placeholder="off">
+        </label>
+        <p class="hint">Hours above this limit are shown in red in the weather card. Saved in this browser only.</p>
+      </div>
+
+      <div class="card">
+        <h2>Help</h2>
+        <div class="btn-row"><button type="button" class="btn" id="help-open">How it works</button><button type="button" class="btn" id="setup-open">Quick setup</button></div>
+        <label class="switch"><span>Show the dashboard when the app starts <small>Off keeps it tucked behind the ^ tab at the bottom of the map.</small></span><input type="checkbox" id="dash-start" checked></label>
+      </div>
+    </section>
+
+    <!-- Trips -->
+    <section role="tabpanel" id="pane-trips" aria-labelledby="tab-trips" hidden>
+      <div class="card">
+        <h2>Your trips <span class="count" id="trips-count"></span></h2>
+        <p class="hint" id="trips-intro">A trip groups markers. A waypoint's distance to accommodation or a home point only looks within its own trip. Your Home marker belongs to no trip.</p>
+        <ul class="trip-list" id="trips-list"></ul>
+        <p class="hint" id="trips-empty">No trips yet. Create one, then choose it for new markers or tag existing ones.</p>
+        <details class="past-trips" id="trips-past" hidden><summary id="trips-past-title">Past trips</summary><ul class="trip-list" id="trips-past-list"></ul></details>
+        <div class="btn-row"><button type="button" class="btn primary" id="trip-new">New trip</button></div>
+      </div>
+
+      <div class="card" id="trip-detail" hidden></div>
+
+      <div class="card" id="trip-form-card" hidden>
+        <h2 id="trip-form-title">New trip</h2>
+        <form id="trip-form" class="trip-form" novalidate>
+          <label class="field"><span>Name</span><input type="text" id="trip-name" maxlength="80" autocomplete="off" placeholder="e.g. Wuhan weekend"></label>
+          <label class="field"><span>Country <small>(optional)</small></span><input type="text" id="trip-country" list="country-list" autocomplete="off" placeholder="Start typing a country"></label>
+          <datalist id="country-list"></datalist>
+          <div class="two">
+            <label class="field"><span>Start date</span><input type="date" id="trip-start" required min="2000-01-01" max="2100-12-31"></label>
+            <label class="field"><span>End date <small>(same as the start for one day)</small></span><input type="date" id="trip-end" required max="2100-12-31"></label>
+          </div>
+          <p class="hint" id="trip-length"></p>
+          <label class="field"><span>Description <small>(optional)</small></span><textarea id="trip-desc" rows="3" maxlength="500" placeholder="What is this trip for?"></textarea></label>
+          <p class="form-error" id="trip-error" role="alert" hidden></p>
+          <div class="btn-row"><button type="submit" class="btn primary" id="trip-save">Save trip</button><button type="button" class="btn" id="trip-cancel">Cancel</button></div>
+        </form>
+      </div>
+
+      <div class="card" id="ai-card">
+        <h2>Plan with an AI</h2>
+        <p class="hint">Ask any AI assistant to turn your itinerary into markers: copy the prompt, add your itinerary after it, then paste the answer here. You see a preview first, and nothing is added until you confirm.</p>
+        <div class="btn-row"><button type="button" class="btn" id="ai-copy">Copy AI prompt</button></div>
+        <label class="field"><span>Paste the AI's answer</span><textarea id="ai-text" rows="5" spellcheck="false" placeholder='{"type":"FeatureCollection","features":[ … ]}'></textarea></label>
+        <div class="btn-row"><button type="button" class="btn primary" id="ai-preview-btn">Preview…</button></div>
+        <div class="preview" id="ai-preview" hidden></div>
+      </div>
+    </section>
+
+    <!-- Points of Interest -->
+    <section role="tabpanel" id="pane-poi" aria-labelledby="tab-poi" hidden>
+      <details class="card add-card" id="poi-add">
+        <summary><h2>Add a marker</h2><span class="add-sub">Tap to choose a type and place it on the map</span></summary>
+        <div class="add-body">
+        <div class="type-grid" id="poi-types" role="radiogroup" aria-label="Marker type"></div>
+        <label class="field" id="poi-trip-field"><span>Trip for new markers</span><select id="poi-trip"></select></label>
+        <div class="btn-row">
+          <button type="button" class="btn primary" id="poi-place">Place on map</button>
+          <button type="button" class="btn" id="poi-center">At map centre</button>
+          <button type="button" class="btn" id="poi-here">At my location</button>
+        </div>
+        <label class="switch"><span>Edit mode <small>locks the map; press and hold a pin, then drag</small></span><input type="checkbox" id="poi-edit"></label>
+        <label class="switch"><span>Show markers on map</span><input type="checkbox" id="poi-show" checked></label>
+        <label class="switch"><span>Show all Side Quests on the map <small>off: a Side Quest shows only while its main stop is open</small></span><input type="checkbox" id="poi-showside"></label>
+        <label class="switch"><span>Show completed trips on the map <small>off: trips that ended before today leave the map; a trip you open in Trips still shows</small></span><input type="checkbox" id="poi-showcompleted"></label>
+        <label class="switch"><span>Open details when I click a marker <small>off: a click only selects it and shows its links</small></span><input type="checkbox" id="poi-details" checked></label>
+        </div>
+      </details>
+
+      <div class="card">
+        <h2>Saved places <span class="count" id="poi-count"></span></h2>
+        <div class="search-row"><input type="search" id="poi-search" class="poi-search" placeholder="Search name, note, type or trip" aria-label="Search saved places" autocomplete="off" maxlength="80"><button type="button" class="btn small" id="poi-filters-clear" hidden>Clear filters</button></div>
+        <p class="hint search-count" id="poi-search-count" role="status" hidden></p>
+        <label class="field" id="poi-trip-filter-field" hidden><span>Trip</span><select id="poi-trip-filter"></select></label>
+        <div class="chips" id="poi-filter" role="group" aria-label="Filter by type"></div>
+        <div class="btn-row" id="poi-select-row" hidden><button type="button" class="btn small" id="poi-select">Select markers…</button></div>
+        <div class="select-bar" id="poi-selbar" hidden>
+          <div class="btn-row"><button type="button" class="btn small" id="sel-all">All shown</button><button type="button" class="btn small" id="sel-none">None</button></div>
+          <div class="two">
+            <label class="field"><span>Add a trip</span><select id="sel-trip"></select></label>
+            <label class="field"><span>Add a type</span><select id="sel-type"></select></label>
+          </div>
+          <div class="btn-row"><button type="button" class="btn small" id="sel-side" disabled>Make Side Quests</button><button type="button" class="btn small" id="sel-main" disabled>Make main stops</button></div>
+          <div class="btn-row"><button type="button" class="btn small danger" id="sel-delete" disabled>Delete selected (0)</button><button type="button" class="btn small" id="sel-done">Done</button></div>
+          <div class="sel-confirm" id="sel-confirm" role="alertdialog" aria-labelledby="sel-confirm-text" hidden>
+            <p id="sel-confirm-text"></p>
+            <div class="btn-row"><button type="button" class="btn small" id="sel-export">Export first</button><button type="button" class="btn small" id="sel-cancel">Cancel</button><button type="button" class="btn small danger" id="sel-confirm-delete">Delete</button></div>
+          </div>
+        </div>
+        <ul class="poi-list" id="poi-list"></ul>
+        <p class="hint" id="poi-drag-hint" hidden>Press and hold a place for 1 second, then drag it to another day or stop. Alt + ↑ / ↓ moves it from the keyboard.</p>
+        <p class="hint" id="poi-empty">No markers yet. Choose a type above, then tap Place on map.</p>
+      </div>
+
+    </section>
+  </div>
+
+  <!-- Privacy settings: slides over the panel -->
+
+  <div class="subpanel" id="privacy" role="region" aria-label="Privacy settings" hidden>
+    <header class="sp-head">
+      <button type="button" class="icon-btn" id="privacy-back" aria-label="Back to the panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <h2 class="sub-title">Privacy settings</h2>
+      <button type="button" class="icon-btn" id="privacy-close" aria-label="Collapse the panel" title="Collapse the panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </header>
+    <div class="sp-body">
+      <p class="lead">Everything here is off or minimal by default. Your markers, notes and settings stay in this browser. These switches only control what is sent to Open-Meteo.com for weather and elevation.</p>
+
+      <div class="card">
+        <h2>Weather</h2>
+        <p class="hint" id="pv-mw-status"></p>
+        <label class="switch"><span>Fetch weather for markers automatically <small>Shows the next 5 hours in each marker window. Sent when you place a marker and when the page loads (at most every 30 minutes).</small></span><input type="checkbox" id="pv-auto"></label>
+        <fieldset class="radios">
+          <legend>Location sent for weather</legend>
+          <label class="radio"><input type="radio" name="pv-prec" value="estimated"><span>Estimated <small>Rounded to about 1 km. The forecast is the same, because its grid is 10 to 25 km. Recommended.</small></span></label>
+          <label class="radio"><input type="radio" name="pv-prec" value="precise"><span>Precise <small>About 10 m. Shares the exact spot for no gain in forecast accuracy.</small></span></label>
+        </fieldset>
+        <p class="hint">This applies to the "Show weather here" button as well.</p>
+      </div>
+
+      <div class="card">
+        <h2>Altitude</h2>
+        <label class="switch"><span>Fetch ground elevation <small>Shown in marker windows and when you check a point. Always sends the exact location (about 10 m), whatever the weather setting: at 1 km the ground can differ by hundreds of metres in the mountains.</small></span><input type="checkbox" id="pv-alt"></label>
+      </div>
+
+      <div class="card">
+        <h2>Place lookup</h2>
+        <label class="switch"><span>Look up places by name when importing <small>For itineraries from an AI: a place that came without coordinates is searched by its name or address. Those names are sent to Photon (Komoot), or Nominatim (OpenStreetMap) if Photon fails, only when you press Add on an import. Looked-up places are marked unverified.</small></span><input type="checkbox" id="pv-geo"></label>
+      </div>
+
+      <div class="card">
+        <h2>Location at launch</h2>
+        <label class="switch"><span>Centre the map on me when the app opens <small>The browser asks for your location when the app opens. If you allow it for this site, the map opens on where you are; if you do not, it opens where you left off. Your position is only used on this device and is never sent anywhere.</small></span><input type="checkbox" id="pv-locate"></label>
+      </div>
+
+      <div class="card">
+        <h2>Share my location automatically</h2>
+        <label class="switch"><span>Start sharing by itself <small>When you are signed in and someone in a trip's party, or a friend, is online, your location is shared with them without switching anything on, only while this page is open. Nothing is sent otherwise. The Stop button on the map ends it, and a switch you turn off by hand stays off until you turn it on again. Off: sharing starts only when you switch it on.</small></span><input type="checkbox" id="pv-autoshare"></label>
+        <label class="switch"><span>Include friends <small>Friends who are online see you on their map, marked as a friend. Off: only trip parties are included.</small></span><input type="checkbox" id="pv-autoshare-friends"></label>
+      </div>
+
+      <div class="card">
+        <h2>Check-in</h2>
+        <label class="switch"><span>Check in at markers <small>Uses your position to enable a Check in button on a marker when you are within 300 m of it. Your position is read only while the panel shows markers and is never sent anywhere. A check-in saves your coordinates and the time with the marker, in this browser.</small></span><input type="checkbox" id="pv-checkin"></label>
+      </div>
+
+      <div class="card" id="dist-card">
+        <h2>Distances</h2>
+        <label class="field"><span>Units</span>
+          <select id="dist-units"><option value="metric">Kilometres and metres</option><option value="imperial">Miles and feet</option></select>
+        </label>
+        <label class="field"><span>Max range <small>(optional)</small></span>
+          <span class="inline-input"><input type="number" id="dist-max" min="0.1" step="0.1" placeholder="off" inputmode="decimal"><span id="dist-max-unit">km</span></span>
+        </label>
+        <p class="hint">Every marker shows its straight-line distance to your nearest Home. A waypoint also shows its nearest Home point and Accommodation, only from its own trip and only those whose dates overlap its own (one with no dates counts for every date). If a waypoint is farther than the max range from every such Home point and Accommodation, it is shown in red; your Home does not count toward the range. Units also set the map's scale bar. Elevation and height limits stay in metres.</p>
+      </div>
+
+      <div class="card" id="diag-card">
+        <h2>Diagnostics</h2>
+        <p class="hint">A short log of problems (failed requests, errors) is kept in this browser only: at most 500 entries, 200 KB and 7 days. It holds no positions, marker names, notes, tokens or account details, and nothing is sent anywhere. Download it if someone is helping you with a problem.</p>
+        <p class="hint" id="diag-stats" aria-live="polite">Checking…</p>
+        <div class="btn-row"><button type="button" class="btn small" id="diag-download" disabled>Download diagnostics</button><button type="button" class="btn small" id="diag-clear" disabled>Clear log</button></div>
+      </div>
+
+      <div class="card">
+        <h2>What leaves your browser</h2>
+        <ul class="plain">
+          <li><b>Map tiles:</b> the basemap you pick is loaded from OpenStreetMap, OpenStreetMap France (the Humanitarian and CyclOSM styles) or OpenTopoMap, which see which area you view.</li>
+          <li><b>Place search and lookup:</b> online search sends your query to Photon or Nominatim, only when you search. Name lookup on import does the same with the names in the import, only if you turn it on above.</li>
+          <li><b>Check-in:</b> your position is read by the browser only while check-in is on and the panel shows markers. It is saved with the marker in this browser, included in an export, and left out of share links.</li>
+          <li><b>Weather and elevation:</b> Open-Meteo.com, only as set above.</li>
+          <li><b>Never sent:</b> marker names and notes, your saved markers, the wind limit, and these settings. Your location is read by the browser when you press the location button and, unless you turn it off above, once when the app opens; it stays on this device.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- parts that the dashboard shows while it is open; they wait here otherwise -->
+<div id="keystore" hidden>
+  <div id="regions-note" class="hint">Loading regions…</div>
+  <div id="legend" class="legend"></div>
+</div>
+<div id="datastore" hidden>
+  <button type="button" class="btn" id="poi-export">Export GeoJSON</button>
+  <button type="button" class="btn" id="poi-import">Import…</button>
+  <button type="button" class="btn" id="poi-share" title="Copy a link that carries your markers, to open on another device">Copy share link</button>
+  <input type="file" id="poi-file" accept=".geojson,.json,application/geo+json,application/json" hidden>
+  <p class="hint" id="poi-note"></p>
+</div>
+<div class="wx" id="weather" hidden aria-live="polite"></div>
+<div class="banner" id="banner" hidden role="status"><span id="banner-text"></span><button type="button" class="btn small" id="banner-review" hidden>Review</button><button type="button" class="btn small" id="banner-action">Cancel</button></div>
+<section class="dash" id="dash" role="region" aria-label="Dashboard" hidden>
+  <header class="dash-head">
+    <h2>Dashboard</h2>
+    <div class="dash-tools">
+      <button type="button" class="icon-btn" id="dash-help" aria-label="How it works" aria-pressed="false" title="How it works"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 114 2c-.9.6-1.6 1.1-1.6 2.2M12 16.8v.1"/></svg></button>
+      <button type="button" class="icon-btn dash-expand" id="dash-expand" aria-label="Expand the dashboard" aria-pressed="false" title="Expand the dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11l5-5 5 5M7 18l5-5 5 5"/></svg></button>
+      <button type="button" class="icon-btn" id="dash-collapse" aria-label="Collapse the dashboard" title="Collapse"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button type="button" class="icon-btn" id="dash-close" aria-label="Close the dashboard" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </header>
+  <div class="dash-body" id="dash-body"></div>
+  <footer class="dash-foot"><small class="dash-reminder">A planning aid, not flight advice.</small><button type="button" class="btn small" id="dash-snooze">Do not show for today</button></footer>
+</section>
+<button type="button" class="dash-peek" id="dash-peek" hidden aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><span id="dash-peek-text">Dashboard</span></button>
+<button type="button" class="icon-btn dash-tab" id="dash-tab" hidden aria-label="Open the dashboard" title="Open the dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

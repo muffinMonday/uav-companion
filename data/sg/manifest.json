@@ -1,0 +1,152 @@
+{
+  "country": {
+    "id": "sg",
+    "name": "Singapore",
+    "nameZh": "新加坡"
+  },
+  "generated": "2026-11-11T04:20:12.309Z",
+  "regions": [
+    {
+      "id": "sg-nofly",
+      "country": "sg",
+      "name": "Singapore no-fly zones",
+      "nameZh": "新加坡禁飞区",
+      "file": "sg/sg-nofly.52266140.pmtiles",
+      "boundary": "sg/sg-nofly.boundary.8621758d.json",
+      "bounds": [
+        103.618674596359,
+        1.149678,
+        104.086528737123,
+        1.47379689318473
+      ],
+      "coverageBounds": [
+        103.618674596359,
+        1.149678,
+        104.086528737123,
+        1.47379689318473
+      ],
+      "cells": 314,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "restrict",
+      "maxHeightM": null,
+      "source": {
+        "authority": "CAAS, MHA and NParks, as published on OneMap",
+        "effective": "2026-09-02",
+        "attachment": "OneMap theme responses (boundary_5km, danger_areas, prohibited_areas, restricted_areaspoly, mha_uav_2015, drone_no_fly, caas_uafa_*)"
+      },
+      "license": "unknown",
+      "crs": "wgs84",
+      "crsVerified": true,
+      "classes": [
+        {
+          "id": "nparks",
+          "label": "NParks park or nature reserve",
+          "color": "#795548",
+          "severity": 6,
+          "points": false,
+          "summary": "Drones are not allowed in this park or nature reserve (NParks).",
+          "owner": "NATIONAL PARKS BOARD",
+          "updated": "2026-05-11",
+          "published": "2022-03-31",
+          "count": 131
+        },
+        {
+          "id": "aerodrome",
+          "label": "Within 5 km of an aerodrome",
+          "color": "#1976d2",
+          "severity": 5,
+          "points": false,
+          "summary": "Within 5 km of an aerodrome: a no-fly zone for unmanned aircraft without a CAAS permit.",
+          "owner": "CIVIL AVIATION AUTHORITY OF SINGAPORE",
+          "updated": "2026-09-02",
+          "published": "2016-01-20",
+          "count": 5,
+          "description": "Areas within 5km of aerodromes. Conduct of other aerial activities is not allowed unless permit has been obtained from CAAS."
+        },
+        {
+          "id": "protected",
+          "label": "Protected area (Air Navigation Act)",
+          "color": "#7b1fa2",
+          "severity": 4,
+          "points": false,
+          "summary": "Protected area under the Air Navigation Act: a no-fly zone for unmanned aircraft without a CAAS permit.",
+          "owner": "MINISTRY OF HOME AFFAIRS",
+          "updated": "2024-04-23",
+          "published": "2015-06-02",
+          "count": 166,
+          "description": "Protected Areas under Air Navigation Act"
+        },
+        {
+          "id": "danger",
+          "label": "Danger area",
+          "color": "#ef6c00",
+          "severity": 3,
+          "points": false,
+          "summary": "Danger area: flying unmanned aircraft is not allowed without a CAAS permit.",
+          "owner": "CIVIL AVIATION AUTHORITY OF SINGAPORE",
+          "updated": "2022-08-10",
+          "published": "2016-01-20",
+          "count": 5,
+          "description": "Flying of unmanned aircraft not allowed unless permit has been obtained from CAAS. Conduct of other aerial activities is not allowed."
+        },
+        {
+          "id": "restricted",
+          "label": "Restricted area",
+          "color": "#e53935",
+          "severity": 2,
+          "points": false,
+          "summary": "Restricted area: unauthorised aerial activity is not allowed (see the height limit).",
+          "owner": "CIVIL AVIATION AUTHORITY OF SINGAPORE",
+          "updated": "2024-12-24",
+          "published": "2016-07-18",
+          "count": 5
+        },
+        {
+          "id": "prohibited",
+          "label": "Prohibited area",
+          "color": "#b71c1c",
+          "severity": 1,
+          "points": false,
+          "summary": "Prohibited area: flying unmanned aircraft is not allowed.",
+          "owner": "CIVIL AVIATION AUTHORITY OF SINGAPORE",
+          "updated": "2022-03-21",
+          "published": "2016-01-20",
+          "count": 2,
+          "description": "Flying of unmanned aircraft is not allowed.  Conduct of other aerial activities is not allowed."
+        },
+        {
+          "id": "uafa_open",
+          "label": "UA flying area (open use)",
+          "color": "#2e7d32",
+          "severity": 9,
+          "points": true,
+          "summary": "A CAAS unmanned aircraft flying area, where flying is allowed under the area's rules.",
+          "owner": "CIVIL AVIATION AUTHORITY OF SINGAPORE",
+          "updated": "2024-07-31",
+          "published": "2024-08-08",
+          "count": 2
+        },
+        {
+          "id": "uafa_community",
+          "label": "UA flying area (community-led)",
+          "color": "#2e7d32",
+          "severity": 9,
+          "points": true,
+          "summary": "A community-led CAAS unmanned aircraft flying area: contact the club before flying.",
+          "owner": "CIVIL AVIATION AUTHORITY OF SINGAPORE",
+          "updated": "2025-10-16",
+          "published": "2022-01-26",
+          "count": 1,
+          "description": "RMS"
+        }
+      ],
+      "points": "sg/sg-nofly.points.c137b1a4.json",
+      "officialMap": {
+        "label": "OneMap Drone Query (official)",
+        "url": "https://www.onemap.gov.sg/droneQuery"
+      },
+      "coverageMarginM": 1500
+    }
+  ]
+}

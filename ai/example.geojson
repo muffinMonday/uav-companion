@@ -1,0 +1,31 @@
+{
+  "type": "FeatureCollection",
+  "trip": { "name": "Wuhan weekend", "country": "China", "startDate": "2026-11-12", "endDate": "2026-11-14", "description": "Three days of filming along the Yangtze." },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [114.3055, 30.5928] },
+      "properties": { "name": "Riverside Hotel", "type": "hotel", "note": "Check-in after 14:00", "date": "2026-11-12", "endDate": "2026-11-14", "day": 1, "order": 1 }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": { "name": "Yellow Crane Tower", "type": "photo", "query": "Yellow Crane Tower, Wuchang District, Wuhan, China", "date": "2026-11-13", "day": 2, "order": 1 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [114.2098, 30.7838] },
+      "properties": { "name": "Tianhe Airport", "type": "hazard", "note": "Airport: keep well clear", "day": 2, "order": 2 }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": { "name": "东湖绿道 viewpoint", "type": "takeoff", "query": "East Lake Greenway, Wuhan, China", "queryLocal": "东湖绿道, 武汉, 中国" }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": { "name": "Hubu Alley snack street", "type": "food", "query": "Hubuxiang, Wuchang District, Wuhan, China", "date": "2026-11-13", "sideQuest": true, "near": "Yellow Crane Tower" }
+    }
+  ]
+}

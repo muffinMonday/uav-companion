@@ -1,0 +1,1 @@
+export{t as configured,n as createSupabaseAdapter}from"./supabase-CyqhLg5p.js";
