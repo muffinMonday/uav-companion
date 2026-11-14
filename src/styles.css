@@ -134,6 +134,18 @@ textarea{resize:vertical;min-height:60px}
 .type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:8px;margin-top:6px}
 .type-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 7px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:var(--fs-meta);font-weight:var(--fw-semibold);line-height:1.15;text-align:center}
 .type-btn svg{width:24px;height:32px}
+.type-btn[hidden]{display:none}
+.add-card>summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;cursor:pointer;list-style:none}
+.add-card>summary::-webkit-details-marker{display:none}
+.add-card>summary h2{margin:0}
+.add-card>summary .add-sub{color:var(--muted);font-size:var(--fs-meta)}
+.add-card>summary::after{content:"+";margin-left:auto;font-size:22px;line-height:1;color:var(--accent);font-weight:var(--fw-semibold)}
+.add-card[open]>summary::after{content:"\2212"}
+.add-card[open]>summary .add-sub{display:none}
+.add-card>.add-body{margin-top:10px}
+.type-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.type-tabs .chip[data-has-selected=true]:not([aria-pressed=true])::before{content:"";display:inline-block;width:6px;height:6px;margin-right:5px;border-radius:50%;background:var(--accent);vertical-align:middle}
+.type-now{margin:6px 0 0}
 @media (hover:hover){.type-btn:hover{border-color:var(--accent)}}
 .type-btn[aria-checked=true]{border-color:var(--accent);background:var(--accent-soft)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}

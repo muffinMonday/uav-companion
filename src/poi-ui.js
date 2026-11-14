@@ -1,7 +1,7 @@
 // Points of interest on the map: placing, listing, editing, moving, backup. Data and storage live in poi.js.
 import { log } from './log.js';
 import L from 'leaflet';
-import { KEY, TRIPS_KEY, TYPES, typeOf, pinSvg, createStore, toGeoJSON, parseGeoJSON, sortForList, posInt, isoDate, listMode, groupLabel, dateLabel, isMain, isSub, stopNo, NOT_SUB } from './poi.js';
+import { KEY, TRIPS_KEY, TYPES, TYPE_GROUPS, groupOf, typeOf, pinSvg, createStore, toGeoJSON, parseGeoJSON, sortForList, posInt, isoDate, listMode, groupLabel, dateLabel, isMain, isSub, stopNo, NOT_SUB } from './poi.js';
 import { createMarkerWeather, formatWhen, rainOutlook } from './markerweather.js';
 import { createMarkerElevation } from './elevation.js';
 import { getPrivacy, onPrivacyChange } from './privacy.js';
@@ -45,7 +45,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const layer = L.layerGroup().addTo(map);
   const markers = new Map(); // id -> L.Marker
   const container = map.getContainer();
-  let selectedType = TYPES[0].id;
+  let selectedType = 'hotel'; // the picker opens on Accommodation, in Travel & Places; it is page state, never stored
+  let activeGroup = groupOf(selectedType);
   let mode = null; // null | 'place' | 'edit'
   let filter = 'all';         // marker type filter
   let tripFilter = 'all';     // 'all' | 'none' | a trip id
@@ -74,6 +75,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   { const live = store.items().map((i) => i.id); mw.prune(live); elev.prune(live); } // forget weather and elevation for markers that are gone
   const mwStatusEls = [$('mw-status'), $('pv-mw-status')];
 
+  const addCard = $('poi-add');
   const typesEl = $('poi-types'), listEl = $('poi-list'), filterEl = $('poi-filter'), countEl = $('poi-count');
   const emptyEl = $('poi-empty'), noteEl = $('poi-note'), editSwitch = $('poi-edit'), showSwitch = $('poi-show');
   const banner = $('banner'), bannerText = $('banner-text'), bannerAction = $('banner-action'), bannerReview = $('banner-review');
@@ -102,9 +104,38 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   tripFilterSel.addEventListener('change', () => { tripFilter = tripFilterSel.value; renderList(); });
 
   // ---------- type picker ----------
+  const tabsEl = el('div', 'type-tabs'); tabsEl.id = 'poi-type-tabs'; tabsEl.setAttribute('role', 'group'); tabsEl.setAttribute('aria-label', 'Marker type groups'); // buttons with aria-pressed, like the filter chips (role=tab is the panel's own tabs)
+  const typeNow = el('p', 'hint type-now'); typeNow.id = 'poi-type-now'; typeNow.setAttribute('aria-live', 'polite');
+  typesEl.before(tabsEl); typesEl.after(typeNow);
+  /** Shows the buttons of the open group, marks the chosen one, and says which type is chosen (it may be in another group). */
+  function paintPicker() {
+    for (const b of tabsEl.children) {
+      const on = b.dataset.group === activeGroup;
+      b.setAttribute('aria-pressed', String(on));
+      b.dataset.hasSelected = String(groupOf(selectedType) === b.dataset.group);
+    }
+    for (const b of typesEl.children) { b.hidden = groupOf(b.dataset.type) !== activeGroup; b.setAttribute('aria-checked', String(b.dataset.type === selectedType)); }
+    typeNow.textContent = `Chosen: ${typeOf(selectedType).label}`;
+  }
+  /** The one place the chosen type changes (a click, or a Side Quest that cannot keep an Accommodation, Home point or Home type). */
+  function setSelectedType(id) {
+    if (!TYPES.some((t) => t.id === id)) return false;
+    selectedType = id; activeGroup = groupOf(id);
+    paintPicker();
+    tripField.hidden = store.trips().length === 0 || selectedType === 'residence';
+    if (mode === 'place') updateBanner();
+    return true;
+  }
   function renderTypes() {
-    typesEl.replaceChildren();
-    for (const t of TYPES) {
+    tabsEl.replaceChildren(); typesEl.replaceChildren();
+    for (const g of TYPE_GROUPS) {
+      const tab = el('button', 'chip', g.label);
+      tab.type = 'button'; tab.id = 'type-tab-' + g.id; tab.dataset.group = g.id;
+      tab.setAttribute('aria-controls', 'poi-types');
+      tab.addEventListener('click', () => { activeGroup = g.id; paintPicker(); });
+      tabsEl.append(tab);
+    }
+    for (const t of TYPE_GROUPS.flatMap((g) => g.types.map((id) => typeOf(id)))) {
       const b = el('button', 'type-btn');
       b.type = 'button';
       b.setAttribute('role', 'radio');
@@ -113,14 +144,10 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       b.title = t.hint; // "Home point" and "Home" are easy to mix up, so each type explains itself
       b.innerHTML = pinSvg(t.id); // built from constants only
       b.append(el('span', '', t.label));
-      b.addEventListener('click', () => {
-        selectedType = t.id;
-        for (const x of typesEl.children) x.setAttribute('aria-checked', String(x.dataset.type === selectedType));
-        tripField.hidden = store.trips().length === 0 || selectedType === 'residence';
-        if (mode === 'place') updateBanner();
-      });
+      b.addEventListener('click', () => setSelectedType(t.id));
       typesEl.append(b);
     }
+    paintPicker();
   }
 
   // ---------- list ----------
@@ -1077,7 +1104,11 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const form = el('form');
       const name = el('input'); name.type = 'text'; name.maxLength = 80; name.value = it.name; name.required = true;
       const type = el('select');
-      for (const t of TYPES) { const o = el('option', '', t.label); o.value = t.id; o.selected = t.id === it.type; type.append(o); }
+      for (const g of TYPE_GROUPS) {
+        const og = el('optgroup'); og.label = g.label;
+        for (const tid of g.types) { const o = el('option', '', typeOf(tid).label); o.value = tid; o.selected = tid === it.type; og.append(o); }
+        type.append(og);
+      }
       const note = el('textarea'); note.maxLength = 500; note.value = it.note; note.rows = 3;
       // The stop is optional. The day is not typed in: it follows from the date and the trip's start date.
       const order = el('input'); order.type = 'number'; order.min = '1'; order.max = '999'; order.step = '1'; order.placeholder = 'optional'; order.value = it.order ?? '';
@@ -1126,7 +1157,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         }
         nearPick.value = [...nearPick.options].some((o) => o.value === keep) ? keep : '';
       };
+      const subLost = el('small', 'hint'); subLost.textContent = "Side Quests can't be Home point, Accommodation or Home (residence): saving as this type makes it a main stop."; subLost.hidden = true;
       const syncSub = () => {
+        subLost.hidden = !(isSub(it) && NOT_SUB.has(type.value));
         subLab.hidden = NOT_SUB.has(type.value);
         const on = subBox.checked && !subLab.hidden;
         nearLab.hidden = !on;
@@ -1168,7 +1201,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const cancel = el('button', 'btn small', 'Cancel'); cancel.type = 'button';
       cancel.addEventListener('click', () => setTimeout(view, 0)); // deferred for the same reason as Edit
       acts.append(save, cancel);
-      form.append(lab('Name', name), lab('Type', type), subLab, tripLab, nearLab, when, dayLine, trip, hint, el('small', 'form-hint', 'Trip, dates and stop are all optional. Use an end date for a stay of several days.'), lab('Note', note), acts);
+      form.append(lab('Name', name), lab('Type', type), subLost, subLab, tripLab, nearLab, when, dayLine, trip, hint, el('small', 'form-hint', 'Trip, dates and stop are all optional. Use an end date for a stay of several days.'), lab('Note', note), acts);
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const sub = subBox.checked && !NOT_SUB.has(type.value);
@@ -1257,14 +1290,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   /** Saves a marker at a spot, of the chosen type and in the chosen trip, and opens its form. `name` defaults to the type's name. */
   function addAt(latlng, name, opts = {}) {
     const ll = latlng.wrap ? latlng.wrap() : L.latLng(latlng.lat, latlng.lng).wrap();
-    const sub = opts.sub === true; // a Side Quest: never a Home point, Hotel or Home marker, so those chosen types become Other
-    const t = typeOf(sub && NOT_SUB.has(selectedType) ? 'other' : selectedType);
+    const sub = opts.sub === true; // a Side Quest: never a Home point, Accommodation or Home marker
+    let switched = false;
+    if (sub && NOT_SUB.has(selectedType)) { setSelectedType('other'); switched = true; } // the picker shows the change and keeps it until the person changes it
+    const t = typeOf(selectedType);
     // new markers go into the chosen "current trip"; a Home marker is never in one
     const tripId = t.id === 'residence' ? undefined : currentTripId ?? undefined;
     const parent = sub ? defaultParent({ lat: ll.lat, lon: ll.lng, tripId }, store.items()) : null; // the nearest main stop of that trip
     const res = store.add({ type: t.id, name: (name || t.label).slice(0, 80), note: '', lat: ll.lat, lon: ll.lng, tripId, ...(sub && { isSub: true, parentId: parent?.id, date: parent?.date }) });
     if (!res.item) { toast('Could not add that marker.'); return; }
     if (!res.ok) toast('Added for now, but the browser would not store it. Export your markers to keep them.');
+    else if (switched) toast("Side Quests can't be Home point, Accommodation or Home (residence), so the type is now Other.", 6000);
     ensureVisible();
     addMarker(res.item);
     markers.get(res.item.id)?.getElement()?.classList.add('drop'); // the new pin drops onto the map
@@ -1309,7 +1345,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (mode === 'edit') { map.dragging.enable(); container.classList.remove('is-editing'); }
     if (mode === 'place') container.classList.remove('is-placing');
     mode = next;
-    if (mode) { map.closePopup(); clearSelection(); panel.closeIfPhone(); ensureVisible(); }
+    if (mode) { map.closePopup(); clearSelection(); panel.closeIfPhone(); ensureVisible(); addCard.open = true; } // the controls that end a mode are never hidden by a folded card
     if (mode === 'edit') { map.dragging.disable(); container.classList.add('is-editing'); }
     if (mode === 'place') container.classList.add('is-placing');
     editSwitch.checked = mode === 'edit';
@@ -1509,6 +1545,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     route: routeApi,
     checkin: cin,
     showTrip, fitTrip,
+    /** Changes the type chosen in the Add a marker picker (and opens the group it is in). */
+    setSelectedType,
+    getSelectedType: () => selectedType,
     /** Flies to a marker and opens its window (the Trips tab's day list uses it). */
     openMarker: (id) => flyToItem(id),
     /** Draws the route of one day of a trip (thin) while the trip screen shows it; showDay(null) clears it. */

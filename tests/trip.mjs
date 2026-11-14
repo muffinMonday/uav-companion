@@ -3,7 +3,7 @@ import { chromium } from './lib.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { dashClick } from './lib.mjs';
+import { dashClick, pickType } from './lib.mjs';
 const dist = await import(pathToFileURL(path.join(ROOT, 'src/distance.js')).href);
 const aiimp = await import(pathToFileURL(path.join(ROOT, 'src/aiimport.js')).href);
 // the Distances settings live in the privacy settings: open them, act, and come back to the list
@@ -74,14 +74,14 @@ const lines = (p) => p.evaluate(() => ({ dashed: document.querySelectorAll('.lea
 let S = await session();
 let p = S.page;
 const types = await p.$$eval('#poi-types .type-btn', (bs) => bs.map((x) => ({ t: x.dataset.type, label: x.textContent.trim(), title: x.title, svg: x.innerHTML })));
-ok(types.length === 16 && types.map((t) => t.t).join() === 'home,hotel,takeoff,landing,photo,train,airport,hazard,residence,other,food,attraction,shopping,nature,transport,meeting', '1: sixteen types in the picker');
+ok(types.length === 16 && types.map((t) => t.t).join() === 'hotel,food,attraction,shopping,nature,meeting,train,airport,transport,home,takeoff,landing,photo,hazard,residence,other', '1: sixteen types in the picker, in their four groups');
 const th = types.find((t) => t.t === 'home'), tr = types.find((t) => t.t === 'residence');
 ok(th.label === 'Home point' && tr.label === 'Home', '1: "Home point" and "Home" are separate buttons');
 ok(th.title !== tr.title && /drone/i.test(th.title) && /residence/i.test(tr.title) && /not the drone/i.test(tr.title), '1: each has a tooltip that says which is which: ' + JSON.stringify([th.title, tr.title]));
 ok(th.svg !== tr.svg, '1: and a different icon');
 await p.screenshot({ path: SP + '/trip-types.png' });
 // place a Home marker from the picker
-await p.click('#poi-types [data-type=residence]'); await p.click('#poi-center'); await p.waitForSelector('.poi-pop form');
+await pickType(p, 'residence'); await p.click('#poi-center'); await p.waitForSelector('.poi-pop form');
 await p.click('.poi-pop button[type=submit]'); await p.waitForSelector('.poi-pop h3');
 const placed = (await store(p)).find((i) => i.type === 'residence' && i.id !== 'res');
 ok(placed && placed.name === 'Home', '1: a Home marker is placed with the default name "Home"');

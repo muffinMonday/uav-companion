@@ -1,7 +1,7 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
 import fs from 'node:fs';
-import { dashClick } from './lib.mjs';
+import { dashClick, pickType } from './lib.mjs';
 const openSearch = (p) => p.evaluate(() => { if (document.getElementById('search').classList.contains('collapsed')) document.getElementById('search-toggle').click(); }); // the search box starts folded into a magnifying glass
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const b = await chromium.launch({ channel: CHANNEL });
@@ -28,7 +28,7 @@ await openSearch(p); await p.fill('#q', '武汉'); await p.keyboard.press('Enter
 await p.keyboard.press('Escape');
 
 // ---- place a Hotel by tapping the map
-await p.click('#poi-types [data-type=hotel]');
+await pickType(p, 'hotel');
 await p.click('#poi-place');
 ok(await p.isVisible('#banner') && /Accommodation/.test(await p.textContent('#banner-text')), 'place mode banner names the type');
 await p.mouse.click(500, 420);
@@ -45,10 +45,10 @@ await p.screenshot({ path: SP + '/ui-marker-popup.png' });
 await p.keyboard.press('Escape');
 
 // ---- Home point at map centre, Hazard at my location
-await p.click('#poi-types [data-type=home]'); await p.click('#poi-center'); await p.waitForSelector('.poi-pop form'); await p.click('.poi-pop button[type=submit]');
+await pickType(p, 'home'); await p.click('#poi-center'); await p.waitForSelector('.poi-pop form'); await p.click('.poi-pop button[type=submit]');
 await p.waitForSelector('.poi-pop h3'); ok((await p.textContent('.poi-pop h3')) === 'Home point', 'centre placement gets the type name by default');
 await p.keyboard.press('Escape');
-await p.click('#poi-types [data-type=hazard]'); await p.click('#poi-here'); await p.waitForSelector('.poi-pop form', { timeout: 10000 });
+await pickType(p, 'hazard'); await p.click('#poi-here'); await p.waitForSelector('.poi-pop form', { timeout: 10000 });
 await p.click('.poi-pop .btn:has-text("Cancel")');
 await p.keyboard.press('Escape');
 ok((await p.locator('.poi-pin').count()) === 3, '3 pins on the map');

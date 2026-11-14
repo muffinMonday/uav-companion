@@ -33,7 +33,7 @@ const check = async (page, html, label) => {
   assert.deepEqual(actual, expected, label);
   const ids = actual.filter((e) => e.attrs.id).map((e) => e.attrs.id);
   assert.equal(new Set(ids).size, ids.length);
-  pass(`${label}: original ancestry, ordering, attributes, text and 139 unique IDs`);
+  pass(`${label}: original ancestry, ordering, attributes, text and unique IDs`);
 };
 const until = async (condition) => {
   const deadline = Date.now() + 10000;
