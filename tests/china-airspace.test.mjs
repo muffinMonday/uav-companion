@@ -7,7 +7,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { normalize, partition, validateCollection, stringify, compareResponses, sha256 } from '../scripts/china-airspace/core.js';
-import { geometryErrors, bboxGeometry, intersectsBox } from '../scripts/china-airspace/geometry.js';
+import { geometryErrors, bboxGeometry, intersectsBox, budget, segmentIntersection, edges } from '../scripts/china-airspace/geometry.js';
+import { fixtureEvidence,compareEvidence,deduplicateEvidence,knownUniverseFiltering } from '../scripts/china-airspace/fixture-evidence.js';
 import { acquire, makePlan } from '../scripts/china-airspace/acquire.js';
 import { stagingDirectory } from '../scripts/china-airspace/cli.mjs';
 import { previewHTML } from '../scripts/china-airspace/preview.js';
@@ -107,6 +108,40 @@ test('adjacent cells pass; overlapping cells and containment block', () => {
 test('topology budget exhaustion is explicit and invalid', () => {
   const r = normalize([fc(rect())], { ...options, topologyBudget: 0 });
   assert(!r.report.valid); assert(r.report.errors.some(x => x.includes('budget-exhausted')));
+});
+test('long source rings are checked within a bounded spatial candidate budget', () => {
+  const ring = Array.from({length:4000},(_,i)=>[110+Math.cos(i*2*Math.PI/4000),30+Math.sin(i*2*Math.PI/4000)]); ring.push(ring[0]);
+  assert.deepEqual(geometryErrors({type:'Polygon',coordinates:[ring]},budget(200000)),[]);
+});
+test('explicit coordinateSystem declarations must agree with configured CRS', () => {
+  assert.equal(validateCollection({...fc(rect()),coordinateSystem:'GCJ-02'},options).valid,false);
+  assert.equal(validateCollection({...fc(rect()),coordinateSystem:'WGS84'},options).valid,true);
+});
+test('spatial self-intersection pruning matches exhaustive segment checks', () => {
+  let seed=13; const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/2**32;};
+  for(let sample=0;sample<50;sample++) {
+    const ring=Array.from({length:12},()=>[110+random(),30+random()]);ring.push(ring[0]);const es=edges(ring);let brute=false;
+    for(let i=0;i<es.length;i++)for(let j=i+2;j<es.length;j++)if(!(i===0&&j===es.length-1)&&segmentIntersection(...es[i],...es[j]))brute=true;
+    assert.equal(geometryErrors({type:'Polygon',coordinates:[ring]}).includes('self-intersection'),brute);
+  }
+});
+test('local fixture summaries use properties IDs and preserve exact source evidence', () => {
+  const a=rect();delete a.id;a.properties.id='source-1';const collection={...fc(a),bounds:{west:109,south:29,east:111,north:31},coordinateSystem:'WGS84'};
+  const before=stringify(collection),result=fixtureEvidence(collection);
+  assert.equal(result.summary.uniqueIds,1);assert.equal(result.summary.positions,5);assert.deepEqual(result.summary.extent,[110,30,110.01,30.01]);assert.equal(result.summary.coordinateRangeValid,true);assert.equal(stringify(collection),before);
+  assert.equal(result.summary.sourceWinding.clockwiseShells,0);const reversed=structuredClone(collection);reversed.features[0].geometry.coordinates[0].reverse();assert.equal(fixtureEvidence(reversed).summary.sourceWinding.clockwiseShells,1);
+  assert.equal(fixtureEvidence(fc({...a,geometry:{type:'Polygon',coordinates:[]}})).summary.structuralIssues.length,1);
+});
+test('fixture deduplication is deterministic and exposes ID/geometry disagreement', () => {
+  const a=fixtureEvidence(fc(rect())),b=fixtureEvidence(fc(rect(),rect(110.1,30,110.2,30.1,'b')));
+  const x=deduplicateEvidence([a,b]),y=deduplicateEvidence([b,a]);assert.equal(x.duplicates,1);assert.equal(x.uniqueIds,2);assert.equal(stringify(x),stringify(y));
+  assert.equal(compareEvidence(a,b).identicalSharedGeometry,1);
+  assert.deepEqual(deduplicateEvidence([a,fixtureEvidence(fc(rect(111,30,112,31)))]).conflicts,['a']);
+});
+test('observed bbox filtering is distinct from polygon intersection and completeness', () => {
+  const a=rect(110,30,114,34);a.geometry.coordinates.push(bboxGeometry([111,31,113,33]).coordinates[0]);
+  const collection={...fc(a),bounds:{west:111.2,south:31.2,east:111.4,north:31.4}};const e=fixtureEvidence(collection),result=knownUniverseFiltering(e,e.items);
+  assert.equal(e.summary.bboxIntersectionMatches,1);assert.deepEqual(e.summary.geometryNonIntersectionIds,['a']);assert(result.exactSampleMatch);assert(result.scope.includes('does not'));
 });
 test('overlap comparisons expose clipping/missing cells; same response never proves completeness', () => {
   const a = fc(rect()); const boxes = [[109,29,110.5,31], [109.5,29,111,31]];

@@ -36,8 +36,9 @@
     "maxBytes": 25000000
   },
   "validation": {
-    "crs": "unknown",
-    "topologyBudget": 2000000
+    "crs": "wgs84",
+    "topologyBudget": 2000000,
+    "idProperty": "id"
   },
   "quality": "unverified-reference",
   "provenance": {
@@ -48,10 +49,43 @@
     "snapshotMonthClaim": "2026-09",
     "effectiveDate": null,
     "semantics": "unknown",
-    "crsDeclared": null,
+    "crsDeclared": "WGS84",
     "crsClientInference": "Client transforms incoming longitude/latitude to GCJ-02 for display; WGS84 is an unverified inference.",
     "redistribution": "unknown",
-    "fixtureStatus": "User reports successful GeoJSON response; saved file not located locally.",
-    "crsProviderClaim": "Client code comment describes WGS84 data; polygon declaration and alignment not verified."
-  }
+    "fixtureStatus": "Supplied original local responses; SHA-256 identities in ../fixture-manifest.json",
+    "crsProviderClaim": "Client code comment describes WGS84 data; polygon declaration and alignment not verified.",
+    "sourceSnapshotFetchedAtClaims": [
+      "2026-09-22T05:48:55.817Z"
+    ],
+    "httpCaptureTime": null
+  },
+  "localFiles": [
+    {
+      "file": "../../../planning/china-airspace/fixtures/bd7476e83aed9d44f5a5a1533984aa6c613228a8ce3d67c7ffcbcc7be3e4c1f1/guangdong-guangzhou.geojson",
+      "bbox": [
+        112.9,
+        22.5,
+        114.1,
+        23.95
+      ]
+    },
+    {
+      "file": "../../../planning/china-airspace/fixtures/582f0ea46fec212021dc284a5dd7b90b7251ed1dea36d82939aa79c4ce2fd157/guangdong-shenzhen-a.geojson",
+      "bbox": [
+        113.93331,
+        22.54032,
+        114.23889,
+        22.74925
+      ]
+    },
+    {
+      "file": "../../../planning/china-airspace/fixtures/b1ecfc2a15404c7ff51f10690999e3c7a20a83395e25ff6cd846fea7b7ab8ee2/guangdong-shenzhen-b.geojson",
+      "bbox": [
+        113.85737,
+        22.44768,
+        114.23991,
+        22.84037
+      ]
+    }
+  ]
 }

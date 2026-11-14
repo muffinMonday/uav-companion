@@ -1,6 +1,6 @@
 # Source and API investigation
 
-Checked 2026-11-14. Findings distinguish direct observations, provider claims, inference, and unknowns. [Inventory](INVENTORY.md) records every mainland division. No government correspondence is required.
+Checked 2026-11-14. Findings distinguish direct observations, provider claims, inference, and unknowns. [Inventory](INVENTORY.md) records every mainland division. [Supplied-fixture results](PILOTS.md) now supplement the initial public-client investigation. No government correspondence is required.
 
 ## Reference provider: KDji
 
@@ -22,16 +22,16 @@ The static index lists 30 province IDs; Beijing is absent. All listed entries cl
 
 | Question | Evidence / remaining work |
 |---|---|
-| Bounding box semantics | Client sends geographic west/south/east/north, converting its map view to WGS84 first. Server intersection, containment and clipping rules untested. |
+| Bounding box semantics | Client sends geographic west/south/east/north. All three supplied Guangdong ID lists match feature-bbox filtering of their observed union; one polygon does not itself intersect its query. Universal server behavior remains unverified. |
 | Maximum area / feature count | Unknown. No probing or nationwide geometry requests. |
-| Clipping / whole features | Unknown. Need paired overlapping responses; pipeline compares full canonical geometries without unioning disagreements away. |
-| Stable feature IDs | Unknown; no geometry response archived. Client rendering does not use a stable ID. |
+| Clipping / whole features | Shared Guangdong geometry is identical and extends beyond query windows: no capture-specific clipping observed. This is sampled evidence, not a universal contract or comparison to official originals. |
+| Stable feature IDs | Supplied `properties.id` values are unique within all four captures. Guangdong shared IDs have identical geometry/properties; stability across revisions and Chongqing repeat requests remains untested. |
 | Pagination / truncation | No pagination loop observed in the client; this does not prove unlimited or complete results. |
-| Dates | Provider claims May release / September extraction. No exact polygon snapshot/effective dates verified. May snapshots may predate official revisions. |
+| Dates | Responses claim May publication and snapshot timestamps on 2026-09-22. These are source metadata, not established HTTP capture or legal effective dates. |
 | Access terms | No explicit automated acquisition permission or documented API quota established. robots.txt is not an API licence. Collection disabled. |
 | Redistribution | Unknown. No raw third-party geometry, screenshots, script copies or generated tiles committed. |
 
-The user supplied a Chongqing endpoint with envelope `[105.20,28.10,110.30,32.30]` and reported a successful Guangdong response. These are leads, not independently reproduced datasets. No prior fixture was found by filename search in the repository and Downloads. Private accounts, credentials and caches outside that scope were not searched.
+The user supplied the original responses after the initial filename search found none. The expected 55/79/777 counts match, plus an additional 80-feature Guangzhou capture. The [manifest](../../data/china-airspace/fixture-manifest.json) binds their bytes and embedded query/source metadata. No live geometry requests were needed. Receipt checksums cannot authenticate historical uploads or prove regulatory provenance.
 
 Four public research resources were retrieved serially, without invoking the geometry API. Local originals are ignored under `planning/china-airspace/research/`; recorded SHA-256:
 
@@ -42,7 +42,9 @@ Four public research resources were retrieved serially, without invoking the geo
 | client JavaScript | `09caf16c8e7dbabf9e2c27da901505c769f3663c981e6f9d63b3519052143a18` |
 | static index | `ad098a00c5e74b3fc052bf0710e44d11d589def71d0daf138e2f482628bf1ef7` |
 
-Source pages change; a future retrieval may have a different checksum. None of these resource snapshots is a polygon dataset.
+Source pages change; a future retrieval may have a different checksum. These four initial research resources are distinct from the subsequently supplied polygon-response archives.
+
+Independent topology cross-check uses [Shapely validity reasons](https://shapely.readthedocs.io/en/stable/reference/shapely.is_valid_reason.html) and its [STRtree](https://shapely.readthedocs.io/en/stable/strtree.html) for candidate overlap checks. The optional environment is pinned separately from application dependencies. Geometry validity is a planar technical result, not a coordinate alignment or airspace-authority determination.
 
 ## Official priorities
 

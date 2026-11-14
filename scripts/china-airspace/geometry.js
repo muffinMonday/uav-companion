@@ -48,10 +48,34 @@ export function intersectsBox(g, box) {
 }
 export function budget(limit = 2_000_000) {
   let remaining = limit;
-  return () => { if (--remaining < 0) throw new Error('topology-budget-exhausted'); };
+  const tick = () => { if (--remaining < 0) throw new Error('topology-budget-exhausted'); };
+  tick.indexes = new WeakMap(); // rings are immutable within one validation budget
+  return tick;
+}
+// Bounded AABB tree: preserve exact segment predicates, prune disjoint candidates.
+function ringIndex(ring, tick) {
+  const cache = tick.indexes ??= new WeakMap();
+  if (cache.has(ring)) return cache.get(ring);
+  const items = edges(ring).map(([a,b], i) => { tick(); return { a,b,i,box:[Math.min(a[0],b[0]),Math.min(a[1],b[1]),Math.max(a[0],b[0]),Math.max(a[1],b[1])] }; });
+  function build(entries) {
+    const box = [Infinity,Infinity,-Infinity,-Infinity];
+    for (const e of entries) { box[0]=Math.min(box[0],e.box[0]); box[1]=Math.min(box[1],e.box[1]); box[2]=Math.max(box[2],e.box[2]); box[3]=Math.max(box[3],e.box[3]); }
+    if (entries.length <= 8) return {box,entries};
+    const axis=box[2]-box[0] >= box[3]-box[1] ? 0 : 1;
+    entries.sort((a,b)=>(a.box[axis]+a.box[axis+2])-(b.box[axis]+b.box[axis+2]) || a.i-b.i);
+    const mid=Math.floor(entries.length/2);
+    return {box,left:build(entries.slice(0,mid)),right:build(entries.slice(mid))};
+  }
+  const index = {items,tree:build([...items])}; cache.set(ring,index); return index;
+}
+function* candidates(node, box, tick) {
+  tick(); if (!bboxIntersects(node.box,box)) return;
+  if (node.entries) { for(const e of node.entries) { tick(); if(bboxIntersects(e.box,box)) yield e; } }
+  else { yield* candidates(node.left,box,tick); yield* candidates(node.right,box,tick); }
 }
 function ringsIntersect(a, b, tick, strict = false) {
-  for (const [p, q] of edges(a)) for (const [r, s] of edges(b)) { tick(); if (segmentIntersection(p, q, r, s, strict)) return true; }
+  const [small,large] = a.length <= b.length ? [ringIndex(a,tick),ringIndex(b,tick)] : [ringIndex(b,tick),ringIndex(a,tick)];
+  for (const e of small.items) for (const f of candidates(large.tree,e.box,tick)) if (segmentIntersection(e.a,e.b,f.a,f.b,strict)) return true;
   return false;
 }
 export function polygonOverlap(a, b, tick) {
@@ -80,20 +104,20 @@ export function geometryErrors(g, tick = budget()) {
       if (!Array.isArray(r) || r.length < 4 || r.some(c => !Array.isArray(c) || c.length !== 2 || !c.every(Number.isFinite) || Math.abs(c[0]) > 180 || Math.abs(c[1]) > 90)) { issues.push('invalid-ring-or-coordinate-range'); structured = false; continue; }
       if (!equal(r[0], r.at(-1))) { issues.push('unclosed-ring'); structured = false; continue; }
       if (Math.abs(area(r)) < 1e-14) issues.push('zero-area-ring');
-      const es = edges(r);
-      for (let i = 0; i < es.length; i++) {
-        if (equal(...es[i])) issues.push('zero-length-edge');
-        for (let j = i + 1; j < es.length; j++) {
-          tick();
-          if (j === i + 1 || (i === 0 && j === es.length - 1)) {
+      const index = ringIndex(r,tick);
+      for (const e of index.items) {
+        if (equal(e.a,e.b)) issues.push('zero-length-edge');
+        for (const f of candidates(index.tree,e.box,tick)) {
+          const i=e.i,j=f.i; if(j<=i) continue;
+          if (j === i + 1 || (i === 0 && j === index.items.length - 1)) {
             // Adjacent edges may share one endpoint, but may not reverse/overlap.
-            const [a, b] = es[i], [c, d] = es[j];
+            const a=e.a,b=e.b,c=f.a,d=f.b;
             const common = equal(b, c) ? b : a;
             const x = equal(common, a) ? b : a, y = equal(common, c) ? d : c;
             if (cross(x, common, y) === 0 && ((x[0] - common[0]) * (y[0] - common[0]) + (x[1] - common[1]) * (y[1] - common[1])) > 0) issues.push('adjacent-edge-overlap');
             continue;
           }
-          if (segmentIntersection(...es[i], ...es[j])) issues.push('self-intersection');
+          if (segmentIntersection(e.a,e.b,f.a,f.b)) issues.push('self-intersection');
         }
       }
     }

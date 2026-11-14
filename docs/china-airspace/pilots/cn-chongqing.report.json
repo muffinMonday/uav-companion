@@ -1,92 +1,374 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "region": "cn-chongqing",
   "checkedOn": "2026-11-14",
-  "status": "blocked-no-source-fixture",
+  "status": "technically-validated-reference-staging-with-policy-warnings",
   "quality": "unverified-reference",
-  "provenance": {
-    "sourceType": "third-party-reference",
-    "mapUrl": "https://kdji.cn/support/nfz-map.html",
-    "governmentContextUrl": "https://www.cq.gov.cn/zwgk/zfxxgkml/szfwj/zfgz/zfgz/202312/t20231205_12655876.html",
-    "publicationMonthClaim": "2026-05",
-    "snapshotMonthClaim": "2026-09",
-    "effectiveDate": null,
-    "semantics": "unknown",
-    "crsDeclared": null,
-    "crsClientInference": "Client transforms incoming longitude/latitude to GCJ-02 for display; WGS84 is an unverified inference.",
-    "redistribution": "unknown",
-    "fixtureStatus": "User-supplied endpoint lead; saved response file not located locally.",
-    "crsProviderClaim": "Client code comment describes WGS84 data; polygon declaration and alignment not verified."
+  "networkRequests": 0,
+  "sourceOccurrences": 777,
+  "uniqueIds": 777,
+  "uniqueGeometries": 777,
+  "deduplicatedOccurrences": 0,
+  "idOrPropertyConflicts": [],
+  "extent": [
+    105.293158,
+    28.166218,
+    110.191549,
+    32.203522
+  ],
+  "fixtures": [
+    {
+      "file": "chongqing-full.geojson",
+      "sha256": "78f86e54c762c008b78effc89e7ee0aa561b9d1405f7ba20587f80ab74c510a3",
+      "bytes": 1612832,
+      "features": 777,
+      "uniqueIds": 777,
+      "missingIds": 0,
+      "duplicateIds": [],
+      "duplicateGeometryGroups": [],
+      "geometryTypes": [
+        "Polygon"
+      ],
+      "extent": [
+        105.293158,
+        28.166218,
+        110.191549,
+        32.203522
+      ],
+      "positions": 65401,
+      "rings": 1751,
+      "holes": 974,
+      "sourceWinding": {
+        "clockwiseShells": 777,
+        "counterclockwiseHoles": 974,
+        "preservedUnmodified": true
+      },
+      "structuralIssues": [],
+      "query": [
+        105.2,
+        28.1,
+        110.3,
+        32.3
+      ],
+      "sourceDeclaresCrs": "WGS84",
+      "coordinateRangeValid": true,
+      "bboxIntersectionMatches": 777,
+      "geometryNonIntersectionIds": [],
+      "featuresExtendingBeyondQuery": 0,
+      "metadataClaims": {
+        "type": "FeatureCollection",
+        "province": "重庆",
+        "provinceId": "chongqing",
+        "publishDate": "2026年5月",
+        "snapshotFetchedAt": "2026-09-22T05:48:52.820Z",
+        "source": "用户小程序随包数据 / uav-tools 第三方 UOM 整理镜像",
+        "mode": "snapshot",
+        "coordinateSystem": "WGS84",
+        "bounds": {
+          "west": 105.2,
+          "south": 28.1,
+          "east": 110.3,
+          "north": 32.3
+        },
+        "notice": "第三方镜像的随包参考快照；实际空域请核查 UOM 官方平台。"
+      },
+      "geos": {
+        "file": "chongqing-full.geojson",
+        "sourceSha256": "78f86e54c762c008b78effc89e7ee0aa561b9d1405f7ba20587f80ab74c510a3",
+        "features": 777,
+        "validFeatures": 777,
+        "invalidFeatures": [],
+        "queryGeometryNonIntersections": [],
+        "featuresExtendingBeyondQuery": 0,
+        "overlaps": {
+          "complete": true,
+          "positiveAreaPairs": [],
+          "boundaryTouchPairCount": 166,
+          "errors": []
+        }
+      },
+      "strictPolicy": {
+        "valid": false,
+        "acceptedSubset": 756,
+        "budgetExhausted": false,
+        "reviewFeatures": [
+          {
+            "index": 7,
+            "id": "chongqing-7-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 27,
+            "id": "chongqing-27-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 68,
+            "id": "chongqing-68-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 105,
+            "id": "chongqing-105-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 110,
+            "id": "chongqing-110-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 114,
+            "id": "chongqing-114-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 157,
+            "id": "chongqing-157-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 165,
+            "id": "chongqing-165-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 177,
+            "id": "chongqing-177-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 224,
+            "id": "chongqing-224-0",
+            "reasons": [
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 257,
+            "id": "chongqing-257-0",
+            "reasons": [
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 313,
+            "id": "chongqing-313-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 321,
+            "id": "chongqing-321-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 349,
+            "id": "chongqing-349-0",
+            "reasons": [
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 524,
+            "id": "chongqing-524-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 544,
+            "id": "chongqing-544-0",
+            "reasons": [
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 562,
+            "id": "chongqing-562-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 699,
+            "id": "chongqing-699-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 719,
+            "id": "chongqing-719-0",
+            "reasons": [
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 723,
+            "id": "chongqing-723-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 776,
+            "id": "chongqing-776-0",
+            "reasons": [
+              "overlapping-or-nested-holes"
+            ]
+          }
+        ],
+        "collectionErrors": []
+      },
+      "knownUniverseFiltering": {
+        "knownUniverseFeatures": 777,
+        "received": 777,
+        "predictedByBoundingBox": 777,
+        "missing": [],
+        "unexpected": [],
+        "exactSampleMatch": true,
+        "scope": "Observed fixture union only; does not test unknown/missing source features or prove a universal API contract."
+      }
+    }
+  ],
+  "comparisons": [],
+  "independentAudit": {
+    "sha256": "a956d69ef7c176ad79a948bf924a7a9e764ca71e5204d7baad46d5e383b9381b",
+    "engine": {
+      "shapely": "2.2.0",
+      "geos": "3.14.1",
+      "numpy": "2.5.3"
+    },
+    "region": {
+      "region": "cn-chongqing",
+      "uniqueIds": 777,
+      "idConflicts": [],
+      "overlaps": {
+        "complete": true,
+        "positiveAreaPairs": [],
+        "boundaryTouchPairCount": 166,
+        "errors": []
+      }
+    }
   },
+  "strictPipeline": {
+    "valid": false,
+    "inputResponses": 1,
+    "inputFeatures": 777,
+    "uniqueFeatures": 756,
+    "duplicateCount": 0,
+    "duplicates": [],
+    "conflicts": [],
+    "overlaps": [],
+    "overlapCheckComplete": true,
+    "errors": [
+      "response-0:feature-7:hole-outside-or-touching-shell",
+      "response-0:feature-27:hole-outside-or-touching-shell",
+      "response-0:feature-68:hole-outside-or-touching-shell",
+      "response-0:feature-105:hole-outside-or-touching-shell",
+      "response-0:feature-110:hole-outside-or-touching-shell",
+      "response-0:feature-114:hole-outside-or-touching-shell",
+      "response-0:feature-157:hole-outside-or-touching-shell",
+      "response-0:feature-157:overlapping-or-nested-holes",
+      "response-0:feature-165:hole-outside-or-touching-shell",
+      "response-0:feature-177:hole-outside-or-touching-shell",
+      "response-0:feature-224:overlapping-or-nested-holes",
+      "response-0:feature-257:overlapping-or-nested-holes",
+      "response-0:feature-313:hole-outside-or-touching-shell",
+      "response-0:feature-313:overlapping-or-nested-holes",
+      "response-0:feature-321:hole-outside-or-touching-shell",
+      "response-0:feature-349:overlapping-or-nested-holes",
+      "response-0:feature-524:hole-outside-or-touching-shell",
+      "response-0:feature-544:overlapping-or-nested-holes",
+      "response-0:feature-562:hole-outside-or-touching-shell",
+      "response-0:feature-699:hole-outside-or-touching-shell",
+      "response-0:feature-699:overlapping-or-nested-holes",
+      "response-0:feature-719:overlapping-or-nested-holes",
+      "response-0:feature-723:hole-outside-or-touching-shell",
+      "response-0:feature-723:overlapping-or-nested-holes",
+      "response-0:feature-776:overlapping-or-nested-holes"
+    ],
+    "errorCount": 25,
+    "crs": "wgs84",
+    "crsAlignment": "unverified",
+    "semantics": "unknown",
+    "regulatoryValidity": "unverified",
+    "integrationReady": false,
+    "note": "Conservative shell/hole contact policy; its normalized.geojson is a filtered subset, not the full reference dataset."
+  },
+  "completeReference": {
+    "file": "planning/china-airspace/local-pilots/cn-chongqing/deduplicated-reference.geojson",
+    "emitted": true,
+    "contentSha256": "fe74a3a59558df666907c7af40a28a03b6ae121dac75f7fad515bb34044e9f89",
+    "features": 777,
+    "geometryPolicy": "Original geometry unchanged; exact duplicates removed only. No repair, clipping, union, reprojection or PMTiles.",
+    "winding": "Source ring order preserved; full RFC 7946 winding normalization remains a separate reviewed derivative."
+  },
+  "pmtilesReaderCompatibility": {
+    "supported": true,
+    "features": 777,
+    "bounds": [
+      105.293158,
+      28.166218,
+      110.191549,
+      32.203522
+    ],
+    "pmtilesGenerated": false
+  },
+  "resolvedBlockers": [
+    "original-local-fixtures-available-and-checksummed",
+    "source-declares-wgs84",
+    "source-snapshot-timestamp-claim-available",
+    "all-source-geometries-checked-by-geos",
+    "ids-unique-within-captures",
+    "source-union-overlaps-and-duplicates-checked"
+  ],
+  "remainingBlockers": [
+    "api-access-and-request-limits-unverified",
+    "universal-pagination-filtering-and-clipping-contract-unverified",
+    "crs-landmark-alignment-unverified",
+    "polygon-airspace-semantics-not-authoritatively-confirmed",
+    "province-wide-completeness-unproven",
+    "effective-date-and-current-validity-unverified",
+    "redistribution-not-cleared",
+    "conservative-pipeline-contact-policy-requires-review",
+    "complete-reference-winding-normalization-requires-review"
+  ],
   "queryBounds": [
     [
       105.2,
       28.1,
-      106.985,
-      29.57
-    ],
-    [
-      106.81500000000001,
-      28.1,
-      108.68499999999999,
-      29.57
-    ],
-    [
-      108.515,
-      28.1,
-      110.3,
-      29.57
-    ],
-    [
-      105.2,
-      29.43,
-      106.985,
-      30.97
-    ],
-    [
-      106.81500000000001,
-      29.43,
-      108.68499999999999,
-      30.97
-    ],
-    [
-      108.515,
-      29.43,
-      110.3,
-      30.97
-    ],
-    [
-      105.2,
-      30.83,
-      106.985,
-      32.3
-    ],
-    [
-      106.81500000000001,
-      30.83,
-      108.68499999999999,
-      32.3
-    ],
-    [
-      108.515,
-      30.83,
       110.3,
       32.3
     ]
   ],
-  "technical": {
-    "valid": null,
-    "geometry": "not-tested",
-    "crsAlignment": "unverified"
-  },
-  "overlapReproduction": "not-tested",
   "provincialCompleteness": "unverified",
   "regulatoryValidity": "unverified",
-  "integrationReady": false,
-  "blockers": [
-    "No previously obtained GeoJSON located in repository or Downloads",
-    "Live API permission/limits are unverified; automated acquisition disabled",
-    "Semantics, CRS alignment, geometry and provincial completeness require source evidence",
-    "Redistribution and effective date not established"
-  ]
+  "integrationReady": false
 }

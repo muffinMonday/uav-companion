@@ -22,10 +22,10 @@ Checked 2026-11-14. Machine-readable details: [inventory.json](../../data/china-
 | Henan | CN-41 | [candidate-unverified](https://fgw.henan.gov.cn/2026/05-15/3354631.html) | notice/map reported | Unknown | blocked |
 | Hubei | CN-42 | [existing-official-vector](https://fgw.hubei.gov.cn/fbjd/zc/zcwj/gg/202605/t20260512_5934799.shtml) | ESRI shapefile | 2026-05-12 | existing-production-unchanged-not-new-approval |
 | Hunan | CN-43 | [official-notice](https://fgw.hunan.gov.cn/fgw/xxgk_70899/gzdtf/gzdt/202605/t20260513_33975865.html) | notice/interactive-map | 2026-05-13 | blocked |
-| Guangdong | CN-44 | [official-context-only](https://www.jiangmen.gov.cn/home/bmdt/content/post_3495659.html) | third-party GeoJSON reported | 2026-05-25 | blocked |
+| Guangdong | CN-44 | [official-context-only](https://www.jiangmen.gov.cn/home/bmdt/content/post_3495659.html) | GeoJSON Polygon FeatureCollections | 2026-05-25 | blocked |
 | Guangxi | CN-45 | [candidate-unverified](https://jtt.gxzf.gov.cn/zfxxgk/fdzdgk/tzgg/t27550208.shtml) | unknown | Unknown | blocked |
 | Hainan | CN-46 | unavailable | unknown | Unknown | blocked |
-| Chongqing | CN-50 | reference-only | third-party GeoJSON reported | Unknown | blocked |
+| Chongqing | CN-50 | reference-only | GeoJSON Polygon FeatureCollections | Unknown | blocked |
 | Sichuan | CN-51 | [candidate-fetch-failed](https://www.sc.gov.cn/10462/10778/10876/2026/5/12/ee71fce56e6c4c5abf9a59258bedafcc.shtml) | unknown | Unknown | blocked |
 | Guizhou | CN-52 | unavailable | unknown | Unknown | blocked |
 | Yunnan | CN-53 | [official-city-notice](https://lincang.gov.cn/artview/3/351049.html) | notice/map | 2026-05-18 | blocked |
