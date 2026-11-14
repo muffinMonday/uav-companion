@@ -6,7 +6,7 @@
 // grouping (listMode / groupKey), so the model and the list can never disagree about where a marker belongs.
 import { listMode, isSub, typeOf } from './poi.js';
 import { groupKey } from './reorder.js';
-import { outsideTrip, sideQuestMap } from './trips.js';
+import { outsideTrip, sideQuestMap, tripPhase } from './trips.js';
 
 export const SCOPE_NONE = 'none', SCOPE_HOME = 'home';
 /** The section a marker belongs to. The Home marker (a residence) is never in a trip, whatever its record says. */
@@ -109,3 +109,23 @@ export function matches(item, terms, tripName = '') {
   const hay = fold(`${item.name} ${item.note ?? ''} ${typeOf(item.type).label} ${item.type === 'residence' ? '' : tripName}`);
   return terms.every((t) => hay.includes(t));
 }
+
+// ---------- what is drawn on the map ----------
+
+/**
+ * Why a marker is off the map, first match only, or null when it is drawn. The Home marker is always drawn. While a trip is being viewed
+ * (`viewId`, in memory only) just that trip is drawn, whatever the saved switches say; otherwise: the global trip switch, the trip's own
+ * switch, completed trips (unless `showCompleted`), and for a marker with no trip the Unassigned switch.
+ * `s` = { viewId, hideTrips, tripHidden (Set), unassignedHidden, showCompleted, getTrip(id), today }. Nothing is changed.
+ */
+export function mapHiddenReason(it, s) {
+  if (!it || it.type === 'residence') return null;
+  if (s.viewId) return it.tripId === s.viewId ? null : 'view';
+  if (!it.tripId) return s.unassignedHidden ? 'unassigned' : null;
+  if (s.hideTrips) return 'hideTrips';
+  if (s.tripHidden.has(it.tripId)) return 'tripHidden';
+  if (!s.showCompleted && tripPhase(s.getTrip(it.tripId), s.today) === 'completed') return 'completed';
+  return null;
+}
+/** The accessible name of a pin: the marker's name, then its trip's name (nothing when it has no trip). */
+export const markerLabel = (name, tripName) => (tripName ? `${name}, ${tripName}` : name);

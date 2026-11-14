@@ -114,6 +114,17 @@ export function isPastTrip(trip, today) {
   return !!end && end < today;
 }
 
+/**
+ * The phase of a trip on `today` (a local calendar date): 'completed' (ended before today; a trip ending today is still active),
+ * 'active', 'upcoming' or 'undated' (no start date and not over). Same rules as tripStatus and isPastTrip, so a trip with only a start date is a one-day trip.
+ */
+export function tripPhase(trip, today) {
+  if (!trip) return 'undated';
+  if (isPastTrip(trip, today)) return 'completed';
+  const s = tripStatus(trip, today);
+  return !s ? 'undated' : s.state === 'upcoming' ? 'upcoming' : 'active';
+}
+
 const byStop = (a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || String(a.created).localeCompare(String(b.created));
 
 /**

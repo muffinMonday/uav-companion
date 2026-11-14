@@ -245,3 +245,12 @@ const seqItems = [sq('c', { date: '2026-11-13', order: 2 }), sq('a', { date: '20
 ok(trips.tripSequence(seqItems, 'tr').map((x) => x.id).join('') === 'habcd', 'sequence: by date then stop, hotel included, a marker with no stop last in its day, undated and other trips left out');
 ok(trips.tripSequence(seqItems, 'nope').length === 0 && trips.tripSequence([], 'tr').length === 0, 'sequence: a trip with no stops, or none at all, is empty');
 ok(trips.tripSequence([sq('o1', { day: 2, order: 1 }), sq('o2', { day: 1, order: 1 })], 'tr').map((x) => x.id).join('') === 'o2o1', 'sequence: old markers with only a day are ordered by day');
+
+// ---------- trip phase (map visibility of completed trips)
+{
+  const tp = (t, d) => trips.tripPhase(t, d);
+  const T = { startDate: '2026-11-10', endDate: '2026-11-12' };
+  ok(tp(T, '2026-11-09') === 'upcoming' && tp(T, '2026-11-10') === 'active' && tp(T, '2026-11-12') === 'active' && tp(T, '2026-11-13') === 'completed', 'phase: upcoming the day before, active from the start through the end date, completed the day after');
+  ok(tp({ startDate: '2026-11-10' }, '2026-11-10') === 'active' && tp({ startDate: '2026-11-10' }, '2026-11-11') === 'completed', 'phase: a trip with only a start date is a one-day trip');
+  ok(tp({}, '2026-11-10') === 'undated' && tp(null, '2026-11-10') === 'undated', 'phase: no dates, or no trip, is undated');
+}

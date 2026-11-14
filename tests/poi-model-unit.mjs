@@ -100,3 +100,21 @@ ok(T.sideQuestMap([...lone]).orphans.length === 3, 'the model agrees with the Tr
   ok(m(mk('c', { name: '黄鹤楼' }), '黄鹤') && m(mk('e', { name: 'Café' }), 'café'), 'non-ASCII text matches');
   ok(M.queryTerms('a b c d e f g h i j k').length === 8, 'a query is capped at eight words');
 }
+
+// ---------- what is drawn on the map (mapHiddenReason, markerLabel)
+{
+  const trs = { done: { startDate: '2026-11-01', endDate: '2026-11-03' }, now: { startDate: '2026-11-14', endDate: '2026-11-16' }, soon: { startDate: '2026-12-01', endDate: '2026-12-02' }, nodate: {} };
+  const st = (o = {}) => ({ viewId: null, hideTrips: false, tripHidden: new Set(), unassignedHidden: false, showCompleted: false, getTrip: (id) => trs[id], today: '2026-11-15', ...o });
+  const it = (tripId, o = {}) => ({ id: 'x', type: 'other', tripId, ...o });
+  const R = (i, o) => M.mapHiddenReason(i, st(o));
+  ok(R(it('now')) === null && R(it('soon')) === null && R(it('nodate')) === null && R(it(undefined)) === null, 'map: active, upcoming, undated trips and unassigned markers are drawn by default');
+  ok(R(it('done')) === 'completed' && R(it('done'), { showCompleted: true }) === null, 'map: a completed trip is off the map unless Show completed trips is on');
+  ok(R(it('now'), { hideTrips: true }) === 'hideTrips' && R(it('now'), { tripHidden: new Set(['now']) }) === 'tripHidden' && R(it(undefined), { unassignedHidden: true }) === 'unassigned', 'map: the saved switches keep their meaning and reasons');
+  ok(R(it('done'), { hideTrips: true }) === 'hideTrips' && R(it('done'), { tripHidden: new Set(['done']) }) === 'tripHidden', 'map: precedence is hideTrips, then the trip switch, then completed');
+  ok(R({ type: 'residence' }, { hideTrips: true, unassignedHidden: true, viewId: 'now' }) === null && R(null) === null, 'map: the Home marker is always drawn');
+  ok(R(it('done'), { viewId: 'done', hideTrips: true, tripHidden: new Set(['done']) }) === null, 'map: a viewed trip is drawn whatever the switches and its phase (completed, hidden, global off)');
+  ok(R(it('now'), { viewId: 'done' }) === 'view' && R(it(undefined), { viewId: 'done' }) === 'view', 'map: while a trip is viewed other trips and unassigned markers are off the map');
+  const s = st({ viewId: 'done' }); R(it('now'), s);
+  ok(s.hideTrips === false && s.tripHidden.size === 0 && !s.unassignedHidden, 'map: the rule changes nothing it is given');
+  ok(M.markerLabel('Takeoff', 'Wuhan Weekend') === 'Takeoff, Wuhan Weekend' && M.markerLabel('Takeoff', '') === 'Takeoff' && M.markerLabel('Takeoff', undefined) === 'Takeoff', 'label: the trip name follows the marker name and an empty one adds nothing');
+}

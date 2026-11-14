@@ -59,3 +59,10 @@ const calls = (name) => /ensureVisible\(\)/.test(fnBody(name));
 ok(calls('addAt') && calls('setMode') && calls('flyToItem'), 'creating one marker, place or edit mode and flying to a marker still reveal the POI layer');
 ok(!calls('addMany') && !calls('rebuildMarkers') && !calls('applyMarkerVisibility') && !calls('setTripShown') && !calls('setHideTrips'), 'an import, a rebuild, a trip switch and the global switch never do');
 ok((src.match(/ensureVisible\(\)/g) ?? []).length === 3, 'and there is no other caller (only the three above): ' + (src.match(/ensureVisible\(\)/g) ?? []).length);
+
+// the completed-trips switch
+P.savePrefs({ showCompleted: true });
+ok(P.loadPrefs().showCompleted === true, 'show completed trips is saved and read back');
+P.savePrefs({ showCompleted: null });
+ok(P.loadPrefs().showCompleted === undefined && !store.get(KEY).includes('showCompleted'), 'clearing it removes the key (completed trips are hidden by default)');
+put({ showCompleted: 'yes' }); ok(P.loadPrefs().showCompleted === undefined, 'a wrong type is dropped');
