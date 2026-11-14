@@ -1,5 +1,12 @@
 # Session Checkpoint
 
+## Latest: POI Explorer + Marker Taxonomy (2026-11-14; owner authorized autonomous implementation, LOCAL commits only: no push, PR, deploy, migration)
+- Spec and status log: `POI_EXPLORER_BACKLOG.md` section 12 (per-phase records, deviations, risks). Plan: `C:/Users/cy071/.claude/plans/pasted-content-id-94a6-uav-companion-silly-grove.md`.
+- Done and committed locally: Phases 1+2 `a32388a` (16 types, Accommodation wording, frozen share order, AI contract, drift tests, old-client test), Phase 3 `fc8c085` (folded Add a marker, grouped picker, Side Quest type switch).
+- **Old-client risk (measured): an older build receiving a new type saves the downcast `other` back on its next poll, with no edit.** Owner decision needed before any deploy.
+- Next: Phase 4 hierarchy (pure `src/poi-model.js`), 5 search, 6 per-trip visibility, 7 hints, 8 validation and screenshots. Test helpers: `pickType()` and `addFolded` in `tests/lib.mjs`; fixture regenerate script is in the session scratchpad (diff by tag/attrs/text, write indent 1 + CRLF), recreate if lost.
+- Left alone: the uncommitted `.gitignore` change.
+
 ## Latest: UX & Discoverability (2026-11-14; owner authorized commit/push/deploy:live for this feature only)
 - Spec and status: `UX_DISCOVERABILITY_BACKLOG.md` (registered in `AGENTS.md`; section 14 lists the inventory, deviations and the progressive-disclosure audit). Design: `DESIGN.md` section 18. Frontend only: no migration, RLS or flag change.
 - Built: tag button + labels for the left map buttons (`map-toolbar-help.js`, `map-tool-labels.js`, `data-tool` on each control; collapsed after reload, nothing stored); optional 3-step *Learn the map* in Quick Setup (`splash.js`); once-per-feature hints (`help-content/state/ui/wire.js`, key `uavzones.v1.help`, one at a time, marked seen after 1.5 s or dismissal, replay from the dashboard); task shortcuts and a Tips list in the dashboard Help card (`dashboard.js`).
