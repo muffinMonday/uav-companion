@@ -1,7 +1,7 @@
 // The Sessions map explorer: a non-modal dock beside the map (a left panel on a wide screen, a bottom sheet on a narrow one) that lists sessions as compact cards
 // while the Leaflet map stays interactive. Tapping a card selects that occurrence and puts its marker in the middle of the part of the map the dock does not cover.
 // The hub (sessions-hub.js) owns the data: this module only draws what `getItems()` returns and never keeps a second copy that could outlive a sign-out.
-// Plain DOM, textContent only (titles and places are untrusted text). Spec and decisions: Project_context/docs/FLIGHT_SESSIONS_MAP_EXPLORER.md.
+// Plain DOM, textContent only (titles and places are untrusted text). Spec and decisions: Project_context/docs/backlogs/completed/FLIGHT_SESSIONS_MAP_EXPLORER.md.
 import L from 'leaflet';
 import { whenText, capacityText, seriesText } from './sessions.js';
 import { sessionMapActions, hasPoint } from './maplinks-ui.js';

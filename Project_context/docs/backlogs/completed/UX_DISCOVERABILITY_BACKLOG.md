@@ -3,7 +3,7 @@
 **Status:** IMPLEMENTED AND RELEASED 2026-11-14 (see section 14)  
 **Prepared:** 2026-11-14  
 **Repository:** `muffinMonday/uav-companion`  
-**Canonical destination:** `Project_context/docs/UX_DISCOVERABILITY_BACKLOG.md`  
+**Canonical destination:** `Project_context/docs/backlogs/completed/UX_DISCOVERABILITY_BACKLOG.md`  
 **Scope:** Frontend UX discoverability, map toolbar labels, optional onboarding, contextual help, task-oriented navigation and selective progressive disclosure. No database or production changes are authorized by this document alone.
 
 ## 1. Purpose and success criteria

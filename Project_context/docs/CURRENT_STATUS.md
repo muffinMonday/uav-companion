@@ -87,7 +87,8 @@
 - Results: unit 53/53; full `npm test` all 112 suites passed (498 s); build passes; screenshots of the trip/panel/poi screens (83) byte-identical to unmodified HEAD (one HEAD capture failed to complete, so 83 of 84 compared). Not verified: a real phone (iOS Safari, Android Chrome). Observed, not changed: with the map already on a stop, the popup opens after the 700 ms fallback timer in `flyToItem`, which feels slow.
 - **Released 2026-11-14:** commit `f72c03b` pushed to `origin/main`; one `npm run deploy:live` (accounts enabled, no database change); live bundle `index-BoKZ2TG8.js` and CSS `index-B4pq33Bk.css` are byte-identical to the local build and contain the fix (GitHub Pages took a few minutes to switch). Live smoke (throwaway touch-emulated profile with local seed data, no account, no backend writes): account button present, the Side Quest stop is hit by its own row, a tap opens its marker, no page errors.
 
-## Latest: Flight Sessions 2.0 in progress (2026-11-14; owner authorized autonomous commit/push/additive migrations/final deploy:live for this feature only)
+## Latest: Flight Sessions 2.0 released (2026-11-14; was in progress under a feature-only authorization, now expired)
+- **Released:** backend `adb918a`, `bb78261`; front end `a387936`; release recorded `0d4257b`; public sessions switched on `7690262`. The constraints below were the release gates for that work.
 - Decisions: `DECISIONS.md` ("Flight Sessions 2.0"). Plan: `FLIGHT_SESSIONS_2_PLAN.md`. Owner constraints: hosted target `tgptrtcuaryyyfzhrffm` (verify the linked project first); dry run + data backup before any hosted migration; public discovery stays off until phase 6 checks pass; ONE final `npm run deploy:live`; never create/delete real users in live checks. Migrations are pushed once, at release, together with the deploy (the old client calls the old `create_session`/`list_sessions` signatures, which the migration replaces).
 - **Phase 1 (backend safety) done and tested:** `20261118100000_sessions_v2_core.sql`; `db-sessions-v2-unit` (114 checks) + updated `db-sessions-unit`; unit suites 50/50 pass. Source `src/sessions.js`/`sessions-ui.js` still use the old RPC shapes: phase 2 updates them (create needs a map point). An uncommitted `.gitignore` change (`.env*`) was already in the tree and is not part of this work.
 - Decision recorded: an organiser verifies attendance only at sessions they host (admins anywhere); ordinary hosts never.
@@ -237,15 +238,15 @@ Efficiency follow-ups are listed in `docs/EFFICIENCY.md` ("Still to do"); the pr
 `Project_context/docs/PROGRESSION.md`, `supabase/migrations/20261114*.sql`, `supabase/functions/steam-*`, `supabase/functions/_shared/steam.js`, `src/progression*.js`, `src/sessions*.js`, `src/steam*.js`, `src/livemap.js` (rank ring), `src/account-ui.js` (account pane: Progression, Steam), `src/friends-ui.js` (Sessions card), `src/profile-popover.js`, `tests/db-progression*-unit.mjs`, `tests/db-sessions-unit.mjs`, `tests/db-steam-unit.mjs`, `tests/{progression,sessions,steam}.mjs`
 
 ## Future backlogs — planning only (2026-11-13)
-- **HTML and `main.js` refactor:** `docs/HTML_MAIN_REFACTOR_BACKLOG.md`. Build-time HTML fragments, focused JS startup modules, component ownership map, and regression gates. **Not implemented.**
+- **HTML and `main.js` refactor:** `docs/backlogs/completed/HTML_MAIN_REFACTOR_BACKLOG.md`. Build-time HTML fragments, focused JS startup modules, component ownership map, and regression gates. **Not implemented.**
 - **Community Flying Areas:** `docs/COMMUNITY_FLYING_AREAS_PLAN.md`. Private local polygons/rectangles, authenticated submission, admin moderation, anonymous public approved areas, reviewed revisions and anonymized retention on account deletion. **Not implemented.**
 - **Order:** complete and verify HTML/main.js refactor first; then reconcile the Community Flying Areas file paths. Neither backlog authorizes implementation, migrations or deployment.
 
 ## Backlog registered: Flight Sessions Map Explorer (2026-11-14)
-- `docs/FLIGHT_SESSIONS_MAP_EXPLORER.md`: implemented (first entry above); status section at the end of that file.
+- `docs/backlogs/completed/FLIGHT_SESSIONS_MAP_EXPLORER.md`: implemented (first entry above); status section at the end of that file.
 
-## Future backlog: Flight Sessions 2.0 (2026-11-14; planning only)
-- Plan: `docs/FLIGHT_SESSIONS_2_PLAN.md`; autonomous agent handoff: `docs/FLIGHT_SESSIONS_2_AGENT_HANDOFF.md`.
+## Completed backlog: Flight Sessions 2.0 (released 2026-11-14)
+- Plan: `docs/backlogs/completed/FLIGHT_SESSIONS_2_PLAN.md`; archived autonomous handoff: `docs/handoffs/archived/FLIGHT_SESSIONS_2_AGENT_HANDOFF.md`.
 - Public/private exact-location sessions, map picker, hub from dashboard/map, 10 km discovery, five active host slots, 300 m same-host conflict checks, recurrence (weekly Saturday end-by-count preset), private invitations and links.
 - **Not implemented.** Claude must clarify remaining policy/security decisions and receive explicit authorization before code, migrations, commits or deployments.
 

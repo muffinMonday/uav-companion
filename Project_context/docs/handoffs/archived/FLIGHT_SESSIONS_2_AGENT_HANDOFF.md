@@ -1,6 +1,8 @@
 # Flight Sessions 2.0 — Claude Autonomous Execution Handoff
 
-**READ FIRST:** `FLIGHT_SESSIONS_2_PLAN.md`. This file is not permission to start. Follow repository `CLAUDE.md`, `Project_context/AGENTS.md`, `docs/CURRENT_STATUS.md`, `docs/SMALL_FIXES.md` and relevant skills. Inspect `git status` and `git log -3`. Preserve all uncommitted work.
+**Status: ARCHIVED (2026-11-14).** Completed: Flight Sessions 2.0 was implemented, released and switched on. Evidence: commits `a387936` (front end), `0d4257b` (release recorded), `7690262` (public sessions on). Related backlog: [`backlogs/completed/FLIGHT_SESSIONS_2_PLAN.md`](../../backlogs/completed/FLIGHT_SESSIONS_2_PLAN.md). The one-time authorization below is expired and does not apply to any later work. Kept for history only.
+
+**Original READ FIRST (historical):** `FLIGHT_SESSIONS_2_PLAN.md` in `docs/backlogs/completed/`. This file was never permission to start. Follow repository `CLAUDE.md`, `Project_context/AGENTS.md`, `docs/CURRENT_STATUS.md`, `docs/SMALL_FIXES.md` and relevant skills. Inspect `git status` and `git log -3`. Preserve all uncommitted work.
 
 ## First response: ask, then wait
 

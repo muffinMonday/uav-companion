@@ -1,6 +1,6 @@
 # Flight Sessions 2.0 — Product and Implementation Backlog
 
-**Status: IN PROGRESS (owner authorized autonomous implementation 2026-11-14; answers to section 2 are in `DECISIONS.md`; phase status is in `CURRENT_STATUS.md`).** Prepared 2026-11-14. The owner wants Claude to clarify unresolved policies before starting, then (only after explicit approval) implement, test, commit, push and deploy autonomously. See `FLIGHT_SESSIONS_2_AGENT_HANDOFF.md` for the authorization boundary.
+**Status: COMPLETED AND RELEASED (2026-11-14).** Implemented and released: backend `adb918a`, `bb78261`; front end `a387936`; release recorded `0d4257b`; public sessions switched on `7690262`. Answers to section 2 are in `DECISIONS.md`; phase status and residual risks are in `CURRENT_STATUS.md`. Prepared 2026-11-14. The autonomous-execution handoff is archived at `../../handoffs/archived/FLIGHT_SESSIONS_2_AGENT_HANDOFF.md`; its authorization was for this feature only and has expired.
 
 ## 1. Confirmed requirements
 

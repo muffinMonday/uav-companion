@@ -2,7 +2,7 @@
 
 **Status:** Planned; implementation authorized only by the owner's separate execution prompt.  
 **Repository:** `muffinMonday/uav-companion`  
-**Canonical path:** `Project_context/docs/FLIGHT_SESSIONS_MAP_EXPLORER.md`  
+**Canonical path:** `Project_context/docs/backlogs/completed/FLIGHT_SESSIONS_MAP_EXPLORER.md`  
 **Scope:** Frontend, tests, documentation and controlled deployment. No database, permissions or session business-rule changes.
 
 ## Approved decisions

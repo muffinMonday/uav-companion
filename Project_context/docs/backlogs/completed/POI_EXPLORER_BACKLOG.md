@@ -3,7 +3,7 @@
 **Status:** APPROVED PRODUCT SPECIFICATION — IMPLEMENTED AND DEPLOYED 2026-11-14 (see section 12)  
 **Prepared:** 2026-11-14  
 **Repository:** `muffinMonday/uav-companion`  
-**Canonical destination:** `Project_context/docs/POI_EXPLORER_BACKLOG.md`  
+**Canonical destination:** `Project_context/docs/backlogs/completed/POI_EXPLORER_BACKLOG.md`  
 **Review baseline:** `main` at `23c80e8` (verify HEAD again before implementation)  
 **Scope:** Frontend POI explorer, marker taxonomy, AI contract, contextual help, tests and documentation. No database migration planned.  
 **Authority:** This file describes the agreed product decisions; current code and repository-wide instructions govern how they are implemented. Record any conflict rather than silently altering product behavior.

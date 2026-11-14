@@ -3,7 +3,7 @@
 **Status:** OWNER-APPROVED TWO-WAVE DESIGN; RECONCILED WITH POI EXPLORER IMPLEMENTATION; UI IMPLEMENTATION NOT YET AUTHORIZED  
 **Prepared:** 2026-11-14  
 **Repository:** `muffinMonday/uav-companion`  
-**Destination:** `Project_context/docs/DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md`  
+**Destination:** `Project_context/docs/backlogs/completed/DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md`  
 **Scope:** Wave 1 approved frontend presentation and navigation; Wave 2 separately scoped visual backlog (NOT authorized for implementation in Wave 1). No changes to application code, commits, push, or deployment are authorized by this document alone.
 
 ## 1. Objective and non-negotiables
@@ -172,7 +172,7 @@ Use the provided spec as final product decisions. Avoid broad exploratory redesi
 
 ## 14. Post-POI Explorer integration reconciliation (2026-11-14; binding override)
 
-**Source inspection:** GitHub default-branch `Project_context/docs/POI_EXPLORER_BACKLOG.md`, `CURRENT_STATUS.md`, `src/poi.js`, `src/help-content.js` were re-read after the POI work. The current source includes the six added marker types and the new help entries. The status document reports eight implementation phases, local commits `a32388a`, `fc8c085`, `3238744`, `024225e`, `727f2eb`, `db00049`, successful full tests/build and screenshot comparison. **The status explicitly says local commits only, not pushed or deployed.** The handoff must verify its own local HEAD, working tree, branch and exact changes before editing; GitHub visibility is not evidence of production rollout.
+**Source inspection:** GitHub default-branch `Project_context/docs/backlogs/completed/POI_EXPLORER_BACKLOG.md`, `CURRENT_STATUS.md`, `src/poi.js`, `src/help-content.js` were re-read after the POI work. The current source includes the six added marker types and the new help entries. The status document reports eight implementation phases, local commits `a32388a`, `fc8c085`, `3238744`, `024225e`, `727f2eb`, `db00049`, successful full tests/build and screenshot comparison. **The status explicitly says local commits only, not pushed or deployed.** The handoff must verify its own local HEAD, working tree, branch and exact changes before editing; GitHub visibility is not evidence of production rollout.
 
 ### Source-of-truth precedence
 
