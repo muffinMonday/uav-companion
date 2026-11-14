@@ -1,0 +1,231 @@
+{
+  "checkedAt": "2026-11-14T14:21:18.505Z",
+  "sourceCommit": "face62b33d7cc0d01365ced8654d2861d3faa7d6",
+  "deploymentCommit": "ceffda1254bf8a1d39db92373686e28fe052b1da",
+  "files": [
+    {
+      "file": "index.html",
+      "sha256": "6e11cb2cba341094eed2622c1431c19473dc9f2929760a77659c35149e4f8a71",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "assets/index-WZNmql0H.js",
+      "sha256": "310b888017f3ceb566a4207d01088909f4a4550d7637ce1accd124ffe030f86f",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "assets/core-C-k915lv.js",
+      "sha256": "44453e826a03b9234908a434627c3a4cd255d8215c41207b595ace56b949b153",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "assets/supabase-CyqhLg5p.js",
+      "sha256": "f8265e28ec39ba71450add67a59eb8983e9292e1d355d40026d81c5ef7ffede0",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "assets/index-BBSfGxoo.css",
+      "sha256": "cac9862ad8945fb2a28125fb46b19842db32e8af8baed886894f707d327ff0a7",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/index.json",
+      "sha256": "56df04e76d85255438ca966ea04d43549720f751eed4caf5015da778ee12f5f5",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/cn/manifest.json",
+      "sha256": "54394df79bc417fc2997120067487c68f7befe9c1ba7511bca7167630edabe18",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/cn/cn-guangdong.550bc53c.pmtiles",
+      "sha256": "550bc53c423dc86ea38f1b99ee2e71b2f56307289e989ff73f052c203c8a512d",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/cn/cn-hubei.566a4850.pmtiles",
+      "sha256": "566a485009c6d44e9b234ecdcbce2858b840f2040e59de204d7de0c286f12ec5",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/cn/cn-hubei.boundary.d51de41d.json",
+      "sha256": "d51de41db7ce7f2ad8eb5b00cc5ea42c9444710961ca210e47b84ef4713feaab",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/cn/cn-hunan.b0935b4d.pmtiles",
+      "sha256": "b0935b4d7c0846832bb63839048d435f0668cd2212e8c58388f2aaf28f96dc81",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/cn/cn-jilin.f11867c2.pmtiles",
+      "sha256": "f11867c2b6a59fce26290b4e7d8ebf18cfc176cc14a7658ec41fe46c163e6117",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/cn/cn-ningxia.99868b1d.pmtiles",
+      "sha256": "99868b1d8e0d3a16055aca8b564bdc14a987336ecf17c6a134e4d036da9028b4",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/places/cn.b21eb3e4.json",
+      "sha256": "b21eb3e40200b4b5cf12af6f2997dca2e1e7a35856432905a3ad89350b397c7d",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/sg/manifest.json",
+      "sha256": "86ff546e04e127acd1e9555478c2e21c348a7156d62f9f5092a11e7f270cd439",
+      "byteIdentical": false,
+      "manifestEquivalent": true
+    },
+    {
+      "file": "data/sg/sg-nofly.52266140.pmtiles",
+      "sha256": "52266140f9d2c092f23c5ee5323c678feeffadfbe0da34e6c34de977ec241102",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/sg/sg-nofly.boundary.8621758d.json",
+      "sha256": "8621758df002c24f8a98e2e5f95dded1051037a69256100eb45ee6ee31f831a2",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    },
+    {
+      "file": "data/sg/sg-nofly.points.c137b1a4.json",
+      "sha256": "c137b1a4b89e8b1a2063cda48af6c110f7bb81adad67b6a85c3e793396343057",
+      "byteIdentical": true,
+      "manifestEquivalent": false
+    }
+  ],
+  "points": [
+    {
+      "region": "cn-guangdong",
+      "inside": true,
+      "point": {
+        "lon": 113.547821,
+        "lat": 24.068984999999998,
+        "inside": true
+      },
+      "status": "selected-source-positive",
+      "rendered": true,
+      "pageErrors": []
+    },
+    {
+      "region": "cn-guangdong",
+      "inside": false,
+      "point": {
+        "lon": 114.3841555,
+        "lat": 23.536148,
+        "inside": false
+      },
+      "status": "nodata",
+      "rendered": false,
+      "pageErrors": []
+    },
+    {
+      "region": "cn-hunan",
+      "inside": true,
+      "point": {
+        "lon": 112.326278685,
+        "lat": 29.014205935,
+        "inside": true
+      },
+      "status": "selected-source-positive",
+      "rendered": true,
+      "pageErrors": []
+    },
+    {
+      "region": "cn-hunan",
+      "inside": false,
+      "point": {
+        "lon": 109.27001953,
+        "lat": 28.326187134999998,
+        "inside": false
+      },
+      "status": "nodata",
+      "rendered": false,
+      "pageErrors": []
+    },
+    {
+      "region": "cn-jilin",
+      "inside": true,
+      "point": {
+        "lon": 126.527481075,
+        "lat": 43.400802615,
+        "inside": true
+      },
+      "status": "selected-source-positive",
+      "rendered": true,
+      "pageErrors": []
+    },
+    {
+      "region": "cn-jilin",
+      "inside": false,
+      "point": {
+        "lon": 124.94338988999999,
+        "lat": 42.808914185,
+        "inside": false
+      },
+      "status": "nodata",
+      "rendered": false,
+      "pageErrors": []
+    },
+    {
+      "region": "cn-ningxia",
+      "inside": true,
+      "point": {
+        "lon": 106.4588925,
+        "lat": 36.037903,
+        "inside": true
+      },
+      "status": "selected-source-positive",
+      "rendered": true,
+      "pageErrors": []
+    },
+    {
+      "region": "cn-ningxia",
+      "inside": false,
+      "point": {
+        "lon": 106.261139,
+        "lat": 35.8442685,
+        "inside": false
+      },
+      "status": "nodata",
+      "rendered": false,
+      "pageErrors": []
+    }
+  ],
+  "hubei": {
+    "unchanged": true,
+    "cases": [
+      {
+        "lat": 30,
+        "lon": 110,
+        "inside": true
+      },
+      {
+        "lat": 30,
+        "lon": 112,
+        "inside": false
+      }
+    ]
+  },
+  "pullRequest": "https://github.com/muffinMonday/uav-companion/pull/6",
+  "rollback": "a2216319a5b7f74d2088d16f8988649f8f507761",
+  "deployment": "npm run deploy:live; supported CACHE_DIR override for Windows path limits"
+}
