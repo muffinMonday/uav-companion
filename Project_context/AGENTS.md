@@ -23,3 +23,8 @@ For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map
 
 ## Future backlog (documentation only)
 - `docs/COMMUNITY_FLYING_AREAS_PLAN.md`: approved product specification for locally saved, admin-reviewed community polygons. **Planned, not implemented**; its file paths should follow the component convention above. Do not start it, commit, push or deploy without owner authorization.
+
+## Future backlog: Flight Sessions 2.0
+- `docs/FLIGHT_SESSIONS_2_PLAN.md`: product decisions, unresolved questions, schema, phases and tests.
+- `docs/FLIGHT_SESSIONS_2_AGENT_HANDOFF.md`: Claude must clarify open policies and obtain explicit feature-scoped authorization before autonomously implementing, committing, pushing or deploying. This backlog is not itself authorization.
+- Keep Community Flying Areas separate.

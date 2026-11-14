@@ -141,3 +141,8 @@ Efficiency follow-ups are listed in `docs/EFFICIENCY.md` ("Still to do"); the pr
 - **HTML and `main.js` refactor:** `docs/HTML_MAIN_REFACTOR_BACKLOG.md`. Build-time HTML fragments, focused JS startup modules, component ownership map, and regression gates. **Not implemented.**
 - **Community Flying Areas:** `docs/COMMUNITY_FLYING_AREAS_PLAN.md`. Private local polygons/rectangles, authenticated submission, admin moderation, anonymous public approved areas, reviewed revisions and anonymized retention on account deletion. **Not implemented.**
 - **Order:** complete and verify HTML/main.js refactor first; then reconcile the Community Flying Areas file paths. Neither backlog authorizes implementation, migrations or deployment.
+
+## Future backlog: Flight Sessions 2.0 (2026-11-14; planning only)
+- Plan: `docs/FLIGHT_SESSIONS_2_PLAN.md`; autonomous agent handoff: `docs/FLIGHT_SESSIONS_2_AGENT_HANDOFF.md`.
+- Public/private exact-location sessions, map picker, hub from dashboard/map, 10 km discovery, five active host slots, 300 m same-host conflict checks, recurrence (weekly Saturday end-by-count preset), private invitations and links.
+- **Not implemented.** Claude must clarify remaining policy/security decisions and receive explicit authorization before code, migrations, commits or deployments.
