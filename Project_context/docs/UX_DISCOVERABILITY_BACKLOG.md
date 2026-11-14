@@ -1,6 +1,6 @@
 # UAV Companion — UX & Discoverability Backlog
 
-**Status:** APPROVED PRODUCT SPECIFICATION — NOT IMPLEMENTED  
+**Status:** IMPLEMENTED AND RELEASED 2026-11-14 (see section 14)  
 **Prepared:** 2026-11-14  
 **Repository:** `muffinMonday/uav-companion`  
 **Canonical destination:** `Project_context/docs/UX_DISCOVERABILITY_BACKLOG.md`  
