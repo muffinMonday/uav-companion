@@ -1,0 +1,38 @@
+{
+  "id": "cn-guangdong",
+  "country": "cn",
+  "name": "Guangdong",
+  "nameZh": "广东",
+  "format": "geojson",
+  "crs": "wgs84",
+  "crsVerified": false,
+  "semantics": "allow",
+  "maxHeightM": null,
+  "coverageMode": "positive-only",
+  "sourceConfidence": {
+    "mode": "selected-source",
+    "type": "third-party-uom-snapshot",
+    "alignment": "declared-only",
+    "completeness": "unverified",
+    "currency": "unverified",
+    "temporaryRestrictions": "not-included",
+    "flightPermission": "unverified",
+    "rightsBasis": "owner-attested-project-authorization"
+  },
+  "source": {
+    "authority": "KDji third-party UOM reference mirror",
+    "url": "https://kdji.cn/support/nfz-map.html",
+    "effective": null,
+    "publishedMonth": "2026-05",
+    "snapshotAt": "2026-09-22T05:48:55.817Z",
+    "contentSha256": "2090fd2361165f4fb9df3c48a115c7e29ce46d2e87400d2aaca5ab5581c0dbc5"
+  },
+  "license": "LicenseRef-OwnerAttested-KDji-Project",
+  "officialMap": {
+    "label": "Verify with UOM",
+    "url": "https://uom.caac.gov.cn/"
+  },
+  "file": "zones.geojson",
+  "boundary": null,
+  "publish": true
+}
