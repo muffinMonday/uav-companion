@@ -356,6 +356,9 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     mk('task-trip', 'Plan a trip', () => { panel.open('trips'); $('trip-new').click(); });
     if (cloud.sessions) mk('task-sessions', 'Find flight sessions', () => cloud.sessions.open('discover'));
     mk('task-customize', 'Customize the map', () => panel.open('config'));
+    mk('task-find', 'Find saved places', () => { panel.open('poi'); setTimeout(() => $('poi-search')?.focus(), 150); });
+    mk('task-types', 'Choose a marker type', () => actions.help?.replay('poi-types'));
+    mk('task-pins', 'Show or hide trip pins', () => actions.help?.replay('trip-visibility'));
     box.append(grid);
     return box;
   }

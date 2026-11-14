@@ -65,7 +65,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
   const ORIENT = [
     { title: 'Official information, not permission', text: 'The coloured zones come from official sources where data exists. A zone colour is information, not permission to fly: check the official platform before every flight.' },
     { title: 'Check a location', text: 'Press and hold the map for 2 seconds, or right-click, to check a spot. A check is not saved: use Add as marker in the check window to keep the place. Search also takes places and coordinates.' },
-    { title: 'Find your tools', text: 'The buttons on the left show your location, the crosshair and marker details. The tag button under them writes the name of each one beside it. Trips, Points of Interest and Flight Sessions are in the side panel and on the map.' },
+    { title: 'Find your tools', text: 'The buttons on the left show your location, the crosshair and marker details. The tag button under them writes the name of each one beside it. Trips, Points of Interest (save, search and sort places, and show or hide a trip) and Flight Sessions are in the side panel and on the map.' },
   ];
   function orient(i) {
     const step = ORIENT[i];

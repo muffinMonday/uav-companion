@@ -12,7 +12,7 @@ export function busy({ inDialog = false } = {}) {
   if (typeof document === 'undefined') return true;
   if (document.hidden) return true;
   if (!inDialog && document.querySelector('dialog[open]')) return true;
-  if (document.querySelector('.is-placing, .ses-bar:not([hidden])')) return true; // placing a marker, picking a point, exploring sessions on the map
+  if (document.querySelector('.is-placing, .is-editing, .ses-bar:not([hidden]), #poi-selbar:not([hidden]), .poi-pop form') || document.body.classList.contains('reordering')) return true; // placing or editing a marker, picking a point, selecting markers, dragging a row, exploring sessions on the map
   return false;
 }
 
@@ -41,7 +41,7 @@ export function createHelp({ state, isBusy = busy, dwell = DWELL_MS }) {
       if (state.has(id) || current || isBusy(opts)) return false;
       if (!render(id, place, true)) return false;
       const c = current;
-      c.timer = setTimeout(() => { if (current === c) state.mark(id); }, dwell);
+      if (!helpById(id)?.ack) c.timer = setTimeout(() => { if (current === c) state.mark(id); }, dwell); // a notice with `ack` is only used up when dismissed
       return true;
     },
     replay(id, place) { return render(id, place, false); },

@@ -117,6 +117,7 @@ addCompassControl(map, { rotation, onPress: () => locate.northUp() }); // after 
 const helpRef = { h: null }; // the contextual hints (help-wire.js), created just below; the toolbar reports to them
 const toolbar = initMapToolbarHelp(map, { onExpand: () => helpRef.h?.labelsOpened(), onUse: () => helpRef.h?.mapToolUsed() }); // the tag button under the others: names each map button on request
 helpRef.h = initHelp({ map, panel, sessions: () => cloud.sessions });
+poi.onNewTypeShared(() => helpRef.h?.newTypeShared()); // a newer marker type went into a shared trip
 const dash = initDashboard({ poi, panel, trips, cloud, shared: opensShareLink, splash: !opensShareLink, actions: { checkHere, crosshair: cross, toast, help: helpRef.h } });
 cloud.openData = () => dash.open(); // the account popover's export and import link
 const splash = initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud, toolbar }); // the quick setup: greets a first visit, and "Quick setup" reopens it

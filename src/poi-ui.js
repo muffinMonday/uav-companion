@@ -1663,6 +1663,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   renderTripSelects();
   renderList();
   // any change to the markers or trips (added, moved, edited, deleted, imported) also refreshes distances, pins and selectors
+  // A newer marker type (the six added after the first ten) put into a shared trip by this person: older app versions show it as Other, so one notice says so.
+  const NEWER = new Set(['food', 'attraction', 'shopping', 'nature', 'transport', 'meeting']);
+  const newerShared = () => new Set(store.items().filter((i) => NEWER.has(i.type) && store.getTrip(i.tripId)?.shared).map((i) => i.id));
+  let knownNewer = newerShared();
+  const newerListeners = new Set();
+  store.onChange((kind) => {
+    const now = newerShared();
+    const fresh = [...now].some((id) => !knownNewer.has(id));
+    knownNewer = now;
+    if (fresh && kind !== 'shared') for (const fn of newerListeners) { try { fn(); } catch (e) { log.error('poi', 'a listener failed', e); } } // not for markers that arrived from the server
+  });
   store.onChange(() => {
     const had = currentTripId;
     renderTripSelects();
@@ -1698,6 +1709,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     showTrip, fitTrip,
     /** Changes the type chosen in the Add a marker picker (and opens the group it is in). */
     setSelectedType,
+    onNewTypeShared: (fn) => newerListeners.add(fn),
     /** Whether a marker is drawn on the map under the trip rules (not counting the POI layer switch). */
     isShownOnMap: (id) => shownOnMap(store.get(id)),
     setTripShown,
