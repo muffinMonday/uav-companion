@@ -1,11 +1,11 @@
 # Session Checkpoint
 
-## Chongqing / Chengdu express release (2026-11-14; implementation qualified, review/deployment pending)
+## Chongqing / Chengdu express release (2026-11-14; Chongqing released, Chengdu withheld)
 - Isolated branch/worktree: feature/express-chongqing-chengdu, latest main 7758fe2. Owner expressly authorizes normal review/merge and deploy:live. Existing owner checkout edits preserved.
 - Chongqing: original 777-feature checksum-bound source retained; GEOS, all 777 tile interiors, 13 point cases and tiny triangle desktop/mobile pixel-location tests pass. Opt-in standard MVT extent 65536 only at regional z14; runtime/default/lower zooms unchanged. Registered candidate PMTiles a1d54094 (full hash in release evidence).
 - Chengdu: two bounded API captures, 59 occurrences / 57 unique originals, two exact repeats, zero conflicts, complete GEOS passes. Withheld: whole returned Sichuan polygon spans far beyond city; reviewed administrative coverage mask required before registration/publication. No Chengdu data published.
 - Verification: 56 application points and 14 desktop/mobile regional render checks pass; all previous artifacts byte-identical; build passes. All 57 unit suites covered with existing locale/timing failures passing targeted normal-host reruns. Focused integration 19/19, optional complete-pilot geometry 2/2, precision 2/2. No full browser repeat because runtime unchanged.
-- Evidence, source hashes, candidate and rollback: [express follow-up](../../docs/china-airspace/EXPRESS_CHONGQING_CHENGDU.md). Previous production ceffda1 complete ZIP retained under planning/express/; no deployment yet.
+- Evidence, source hashes, candidate and rollback: [express follow-up](../../docs/china-airspace/EXPRESS_CHONGQING_CHENGDU.md). Previous production ceffda1 complete ZIP retained under planning/express/. PR #8 merged as 3fb4f1a46905e81adb6c8d75391e5157d6169e84; deploy:live published 8018ea07e513b791b790e3b4487bbc2364a4521d. Live: 19 file checks, 13 archive points, 14 desktop/mobile region renders pass. Chengdu remains withheld; release is partial.
 
 
 ## Selected operational airspace rollout (2026-11-14; isolated production registration)

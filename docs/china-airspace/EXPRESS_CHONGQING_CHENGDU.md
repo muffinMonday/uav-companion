@@ -1,6 +1,6 @@
 # Chongqing / Chengdu express release
 
-2026-11-14. Chongqing is technically qualified; normal PR/deployment pending.
+2026-11-14. Chongqing is **published and live-verified** via [PR #8](https://github.com/muffinMonday/uav-companion/pull/8).
 Chengdu is acquired and independently validated, **withheld from publication**.
 Exact artifact identities and validation: [evidence](evidence/express-chongqing-chengdu.json).
 
@@ -42,3 +42,13 @@ complete static archive `planning/express/previous-production-ceffda1.zip`, SHA-
 Restore the entire previous data tree and previous registration state together,
 preserving unrelated changes; validate and redeploy with `npm run deploy:live`.
 Do not remove an archive while a manifest references it.
+
+Release source `3fb4f1a46905e81adb6c8d75391e5157d6169e84`; production `8018ea07e513b791b790e3b4487bbc2364a4521d`.
+`npm run deploy:live` succeeded. Live verification: 19 files (all archive hashes),
+13 downloaded-archive point checks including the tiny triangle, and 14 desktop/mobile
+map checks across Chongqing, the previous four regions, Hubei and Singapore passed.
+The existing Singapore manifest differs only in serialization; parsed content agrees.
+Before release, 56 application point cases, all 777 feature interiors, full GEOS,
+focused integration/pilot/precision checks and the application build passed. All 57
+unit suites were covered successfully, with known locale/timing failures passing
+isolated host reruns. No full browser-suite repeat: runtime unchanged.
