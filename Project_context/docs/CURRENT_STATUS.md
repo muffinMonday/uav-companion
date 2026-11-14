@@ -1,6 +1,7 @@
 # Session Checkpoint
 
 ## China airspace data staging (2026-11-14; isolated branch, no merge/deploy)
+- Review: draft PR https://github.com/muffinMonday/uav-companion/pull/1 opened; implementation commit `535b474` pushed on the isolated feature branch. PR creation used the repository's configured Git account after the connector reported insufficient integration permission.
 - Branch/worktree: `feature/china-airspace-data`, `.worktrees/china-airspace-data`, base `e0a6d64`; Claude's active UX checkout untouched. Audit, run instructions, sources, 31-division inventory and validation: `../../docs/china-airspace/README.md`.
 - Added independent serial/local acquisition, checksum archives, resumable checkpoints, cumulative request budgets, geometry/CRS validation, exact deduplication, overlapping-query comparison and offline previews. No production region, application, package, test registry or existing build changes.
 - Guangdong/Chongqing stay unverified reference and blocked: prior GeoJSON not located; API access/limits, geometry semantics, alignment, provincial completeness, exact dates and redistribution unverified. Public metadata index identifies 30 divisions (Beijing absent); no geometry API requests. Jilin official grid ZIP download returned 403; no bypass.
