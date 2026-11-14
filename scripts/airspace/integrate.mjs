@@ -28,8 +28,8 @@ export function normalizeWinding(collection) {
   } })) };
 }
 
-function structural(collection, crs) {
-  const result = validateCollection(collection, { crs });
+function structural(collection, crs, topologyBudget = 2_000_000) {
+  const result = validateCollection(collection, { crs, topologyBudget });
   need(!result.errorCount || result.errorCount <= result.errors.length, 'Validation findings truncated; explicit investigation required');
   // Do not weaken the existing contact policy. Complete contact geometries can be staged
   // and independently audited, but remain blocked from building/promotion by this policy.
@@ -43,7 +43,7 @@ function structural(collection, crs) {
       need(stringify(r[0]) === stringify(r.at(-1)), 'Unclosed ring');
     }
   }
-  return { valid: result.valid, errors: result.errors, errorCount: result.errorCount ?? result.errors.length };
+  return { valid: result.valid, errors: result.errors, errorCount: result.errorCount ?? result.errors.length, topologyBudget };
 }
 
 function geos(before, after) {
@@ -76,7 +76,14 @@ export async function inspect(configFile) {
       inputFiles[path.basename(file)] = digest(file);
     }
     const prj = fs.readFileSync(input.slice(0, -4) + '.prj', 'utf8');
-    need(meta.crs === 'wgs84' && /(?:GCS_WGS_1984|WGS[ _]84)/i.test(prj) && !/PROJCS|PROJCRS/i.test(prj), 'Shapefile requires geographic WGS84 .prj; reproject explicitly outside this workflow');
+    const name = /^\s*GEOGCS\s*\[\s*"([^"]+)"/i.exec(prj)?.[1];
+    const known = /^(?:GCS_WGS_1984|WGS[ _]84)$/i.test(name ?? '');
+    const dd = name === 'WGS84(DD)' && /DATUM\s*\[\s*"WGS84"/i.test(prj)
+      && /SPHEROID\s*\[\s*"WGS84"\s*,\s*6378137(?:\.0)?\s*,\s*298\.257223563\s*\]/i.test(prj)
+      && /PRIMEM\s*\[\s*"Greenwich"\s*,\s*0(?:\.0)?\s*\]/i.test(prj)
+      && /UNIT\s*\[\s*"degree"\s*,\s*0\.017453292519943(?:295)?\s*\]/i.test(prj);
+    const datum = /DATUM\s*\[\s*"([^"]+)"/i.exec(prj)?.[1];
+    need(meta.crs === 'wgs84' && (known || dd) && (!datum || /^(?:WGS84|WGS_1984|D_WGS_1984)$/i.test(datum)) && !/PROJCS|PROJCRS/i.test(prj), 'Shapefile requires geographic WGS84 .prj; reproject explicitly outside this workflow');
     // Unlike the legacy reader, retain attributes and reject null/non-polygon records.
     collection = await shapefile.read(input);
   }
@@ -89,7 +96,9 @@ export async function inspect(configFile) {
     need(config.referenceReport, 'Pilot requires original pilot-report.json identity evidence');
     assertCompleteReference(collection, json(path.resolve(base, config.referenceReport)));
   }
-  const policy = structural(collection, meta.crs);
+  const topologyBudget = config.topologyBudget ?? 2_000_000;
+  need(Number.isSafeInteger(topologyBudget) && topologyBudget > 0 && topologyBudget <= 100_000_000, 'topologyBudget must be an integer from 1 to 100000000');
+  const policy = structural(collection, meta.crs, topologyBudget);
   const normalized = normalizeWinding(collection);
   const audit = geos(collection, normalized);
   const boundary = json(boundaryFile);

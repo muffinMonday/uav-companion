@@ -77,9 +77,10 @@ existing region reader, builder, boundary handling and manifest format.
   edges. Add cases for every part, hole, border and significant contact. They compare source
   geometry with the application's actual PMTiles point reader at maximum data zoom.
 - `approval`: separate approval JSON, following the committed example.
+- `topologyBudget`: optional positive integer, at most 100,000,000; default remains 2,000,000. Set 3,000,000 for the complete Hunan grid. This changes only the conservative validator's work allowance, never its predicates or fail-closed exhaustion behavior. Reports record the allowance used; independent GEOS checks remain mandatory.
 
 GeoJSON supports the existing WGS84/GCJ-02 reader conversions. Shapefiles require geographic
-WGS84 `.prj`; projected/ambiguous sources require a separate reviewed reprojection. CRS labels
+WGS84 `.prj`; the geographic `WGS84(DD)` spelling requires the WGS84 datum/ellipsoid, Greenwich prime meridian and degree units. Projected/ambiguous sources require a separate reviewed reprojection. CRS labels
 do not prove alignment. All null/non-polygon records, invalid rings, truncated responses,
 count/hash mismatches, positive-area overlaps and unsupported CRS declarations fail closed.
 No deduplication, dropping, clipping, simplification or geometric repair occurs in staging.

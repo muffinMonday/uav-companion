@@ -1,5 +1,7 @@
 # China airspace acquisition staging
 
+[Focused follow-up](FOCUSED_FOLLOWUP.md): Hunan complete local build, Jilin direct-shapefile compatibility, and Ningxia archive/geometry inspection; source approvals remain pending.
+
 This workflow prepares evidence and reproducible local datasets for UAV Companion. It does not register regions, change point checks, or publish tiles. [Audit and plan](PLAN.md), [nationwide inventory](INVENTORY.md), [source investigation](SOURCES.md), [pilot results](PILOTS.md), [compatibility and checks](VALIDATION.md).
 
 For the separate stage/build/approved-registration-candidate CLI, batch commands and rollback procedure, see [Express regional integration](INTEGRATE.md). Neither workflow automatically activates or publishes data.
