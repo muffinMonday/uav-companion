@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "receivedOn": "2026-11-14",
+  "fixtures": [
+    {
+      "region": "cn-guangdong",
+      "file": "guangdong-guangzhou.geojson",
+      "archive": "planning/china-airspace/fixtures/bd7476e83aed9d44f5a5a1533984aa6c613228a8ce3d67c7ffcbcc7be3e4c1f1/guangdong-guangzhou.geojson",
+      "bytes": 645399,
+      "sha256": "bd7476e83aed9d44f5a5a1533984aa6c613228a8ce3d67c7ffcbcc7be3e4c1f1",
+      "features": 80,
+      "receivedOn": "2026-11-14",
+      "origin": "User-supplied response placed in the main checkout; original bytes preserved. Capture HTTP headers/time are unavailable.",
+      "metadataClaims": {
+        "type": "FeatureCollection",
+        "province": "广东",
+        "provinceId": "guangdong",
+        "publishDate": "2026年5月",
+        "snapshotFetchedAt": "2026-09-22T05:48:55.817Z",
+        "source": "用户小程序随包数据 / uav-tools 第三方 UOM 整理镜像",
+        "mode": "snapshot",
+        "coordinateSystem": "WGS84",
+        "bounds": {
+          "west": 112.9,
+          "south": 22.5,
+          "east": 114.1,
+          "north": 23.95
+        },
+        "notice": "第三方镜像的随包参考快照；实际空域请核查 UOM 官方平台。"
+      }
+    },
+    {
+      "region": "cn-guangdong",
+      "file": "guangdong-shenzhen-a.geojson",
+      "archive": "planning/china-airspace/fixtures/582f0ea46fec212021dc284a5dd7b90b7251ed1dea36d82939aa79c4ce2fd157/guangdong-shenzhen-a.geojson",
+      "bytes": 2977460,
+      "sha256": "582f0ea46fec212021dc284a5dd7b90b7251ed1dea36d82939aa79c4ce2fd157",
+      "features": 55,
+      "receivedOn": "2026-11-14",
+      "origin": "User-supplied response placed in the main checkout; original bytes preserved. Capture HTTP headers/time are unavailable.",
+      "metadataClaims": {
+        "type": "FeatureCollection",
+        "province": "广东",
+        "provinceId": "guangdong",
+        "publishDate": "2026年5月",
+        "snapshotFetchedAt": "2026-09-22T05:48:55.817Z",
+        "source": "用户小程序随包数据 / uav-tools 第三方 UOM 整理镜像",
+        "mode": "snapshot",
+        "coordinateSystem": "WGS84",
+        "bounds": {
+          "west": 113.93331,
+          "south": 22.54032,
+          "east": 114.23889,
+          "north": 22.74925
+        },
+        "notice": "第三方镜像的随包参考快照；实际空域请核查 UOM 官方平台。"
+      }
+    },
+    {
+      "region": "cn-guangdong",
+      "file": "guangdong-shenzhen-b.geojson",
+      "archive": "planning/china-airspace/fixtures/b1ecfc2a15404c7ff51f10690999e3c7a20a83395e25ff6cd846fea7b7ab8ee2/guangdong-shenzhen-b.geojson",
+      "bytes": 3197174,
+      "sha256": "b1ecfc2a15404c7ff51f10690999e3c7a20a83395e25ff6cd846fea7b7ab8ee2",
+      "features": 79,
+      "receivedOn": "2026-11-14",
+      "origin": "User-supplied response placed in the main checkout; original bytes preserved. Capture HTTP headers/time are unavailable.",
+      "metadataClaims": {
+        "type": "FeatureCollection",
+        "province": "广东",
+        "provinceId": "guangdong",
+        "publishDate": "2026年5月",
+        "snapshotFetchedAt": "2026-09-22T05:48:55.817Z",
+        "source": "用户小程序随包数据 / uav-tools 第三方 UOM 整理镜像",
+        "mode": "snapshot",
+        "coordinateSystem": "WGS84",
+        "bounds": {
+          "west": 113.85737,
+          "south": 22.44768,
+          "east": 114.23991,
+          "north": 22.84037
+        },
+        "notice": "第三方镜像的随包参考快照；实际空域请核查 UOM 官方平台。"
+      }
+    },
+    {
+      "region": "cn-chongqing",
+      "file": "chongqing-full.geojson",
+      "archive": "planning/china-airspace/fixtures/78f86e54c762c008b78effc89e7ee0aa561b9d1405f7ba20587f80ab74c510a3/chongqing-full.geojson",
+      "bytes": 1612832,
+      "sha256": "78f86e54c762c008b78effc89e7ee0aa561b9d1405f7ba20587f80ab74c510a3",
+      "features": 777,
+      "receivedOn": "2026-11-14",
+      "origin": "User-supplied response placed in the main checkout; original bytes preserved. Capture HTTP headers/time are unavailable.",
+      "metadataClaims": {
+        "type": "FeatureCollection",
+        "province": "重庆",
+        "provinceId": "chongqing",
+        "publishDate": "2026年5月",
+        "snapshotFetchedAt": "2026-09-22T05:48:52.820Z",
+        "source": "用户小程序随包数据 / uav-tools 第三方 UOM 整理镜像",
+        "mode": "snapshot",
+        "coordinateSystem": "WGS84",
+        "bounds": {
+          "west": 105.2,
+          "south": 28.1,
+          "east": 110.3,
+          "north": 32.3
+        },
+        "notice": "第三方镜像的随包参考快照；实际空域请核查 UOM 官方平台。"
+      }
+    }
+  ]
+}

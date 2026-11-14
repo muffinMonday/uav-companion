@@ -1,110 +1,1334 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "region": "cn-guangdong",
   "checkedOn": "2026-11-14",
-  "status": "blocked-no-source-fixture",
+  "status": "technically-validated-reference-staging-with-policy-warnings",
   "quality": "unverified-reference",
-  "provenance": {
-    "sourceType": "third-party-reference",
-    "mapUrl": "https://kdji.cn/support/nfz-map.html",
-    "governmentContextUrl": "https://www.jiangmen.gov.cn/home/bmdt/content/post_3495659.html",
-    "publicationMonthClaim": "2026-05",
-    "snapshotMonthClaim": "2026-09",
-    "effectiveDate": null,
-    "semantics": "unknown",
-    "crsDeclared": null,
-    "crsClientInference": "Client transforms incoming longitude/latitude to GCJ-02 for display; WGS84 is an unverified inference.",
-    "redistribution": "unknown",
-    "fixtureStatus": "User reports successful GeoJSON response; saved file not located locally.",
-    "crsProviderClaim": "Client code comment describes WGS84 data; polygon declaration and alignment not verified."
+  "networkRequests": 0,
+  "sourceOccurrences": 214,
+  "uniqueIds": 101,
+  "uniqueGeometries": 101,
+  "deduplicatedOccurrences": 113,
+  "idOrPropertyConflicts": [],
+  "extent": [
+    111.922594,
+    21.998749,
+    115.278168,
+    25.51691
+  ],
+  "fixtures": [
+    {
+      "file": "guangdong-guangzhou.geojson",
+      "sha256": "bd7476e83aed9d44f5a5a1533984aa6c613228a8ce3d67c7ffcbcc7be3e4c1f1",
+      "bytes": 645399,
+      "features": 80,
+      "uniqueIds": 80,
+      "missingIds": 0,
+      "duplicateIds": [],
+      "duplicateGeometryGroups": [],
+      "geometryTypes": [
+        "Polygon"
+      ],
+      "extent": [
+        111.922594,
+        21.998749,
+        115.278168,
+        25.51691
+      ],
+      "positions": 27707,
+      "rings": 704,
+      "holes": 624,
+      "sourceWinding": {
+        "clockwiseShells": 80,
+        "counterclockwiseHoles": 624,
+        "preservedUnmodified": true
+      },
+      "structuralIssues": [],
+      "query": [
+        112.9,
+        22.5,
+        114.1,
+        23.95
+      ],
+      "sourceDeclaresCrs": "WGS84",
+      "coordinateRangeValid": true,
+      "bboxIntersectionMatches": 80,
+      "geometryNonIntersectionIds": [],
+      "featuresExtendingBeyondQuery": 7,
+      "metadataClaims": {
+        "type": "FeatureCollection",
+        "province": "广东",
+        "provinceId": "guangdong",
+        "publishDate": "2026年5月",
+        "snapshotFetchedAt": "2026-09-22T05:48:55.817Z",
+        "source": "用户小程序随包数据 / uav-tools 第三方 UOM 整理镜像",
+        "mode": "snapshot",
+        "coordinateSystem": "WGS84",
+        "bounds": {
+          "west": 112.9,
+          "south": 22.5,
+          "east": 114.1,
+          "north": 23.95
+        },
+        "notice": "第三方镜像的随包参考快照；实际空域请核查 UOM 官方平台。"
+      },
+      "geos": {
+        "file": "guangdong-guangzhou.geojson",
+        "sourceSha256": "bd7476e83aed9d44f5a5a1533984aa6c613228a8ce3d67c7ffcbcc7be3e4c1f1",
+        "features": 80,
+        "validFeatures": 80,
+        "invalidFeatures": [],
+        "queryGeometryNonIntersections": [],
+        "featuresExtendingBeyondQuery": 7,
+        "overlaps": {
+          "complete": true,
+          "positiveAreaPairs": [],
+          "boundaryTouchPairCount": 20,
+          "errors": []
+        }
+      },
+      "strictPolicy": {
+        "valid": false,
+        "acceptedSubset": 69,
+        "budgetExhausted": false,
+        "reviewFeatures": [
+          {
+            "index": 2,
+            "id": "guangdong-125-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 6,
+            "id": "guangdong-129-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 9,
+            "id": "guangdong-132-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 14,
+            "id": "guangdong-137-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 23,
+            "id": "guangdong-146-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 26,
+            "id": "guangdong-174-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 36,
+            "id": "guangdong-185-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 39,
+            "id": "guangdong-188-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 44,
+            "id": "guangdong-193-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 51,
+            "id": "guangdong-200-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 54,
+            "id": "guangdong-203-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          }
+        ],
+        "collectionErrors": []
+      },
+      "knownUniverseFiltering": {
+        "knownUniverseFeatures": 101,
+        "received": 80,
+        "predictedByBoundingBox": 80,
+        "missing": [],
+        "unexpected": [],
+        "exactSampleMatch": true,
+        "scope": "Observed fixture union only; does not test unknown/missing source features or prove a universal API contract."
+      }
+    },
+    {
+      "file": "guangdong-shenzhen-a.geojson",
+      "sha256": "582f0ea46fec212021dc284a5dd7b90b7251ed1dea36d82939aa79c4ce2fd157",
+      "bytes": 2977460,
+      "features": 55,
+      "uniqueIds": 55,
+      "missingIds": 0,
+      "duplicateIds": [],
+      "duplicateGeometryGroups": [],
+      "geometryTypes": [
+        "Polygon"
+      ],
+      "extent": [
+        111.922594,
+        22.441551,
+        115.278168,
+        25.51691
+      ],
+      "positions": 22402,
+      "rings": 564,
+      "holes": 509,
+      "sourceWinding": {
+        "clockwiseShells": 55,
+        "counterclockwiseHoles": 509,
+        "preservedUnmodified": true
+      },
+      "structuralIssues": [],
+      "query": [
+        113.93331,
+        22.54032,
+        114.23889,
+        22.74925
+      ],
+      "sourceDeclaresCrs": "WGS84",
+      "coordinateRangeValid": true,
+      "bboxIntersectionMatches": 55,
+      "geometryNonIntersectionIds": [],
+      "featuresExtendingBeyondQuery": 11,
+      "metadataClaims": {
+        "type": "FeatureCollection",
+        "province": "广东",
+        "provinceId": "guangdong",
+        "publishDate": "2026年5月",
+        "snapshotFetchedAt": "2026-09-22T05:48:55.817Z",
+        "source": "用户小程序随包数据 / uav-tools 第三方 UOM 整理镜像",
+        "mode": "snapshot",
+        "coordinateSystem": "WGS84",
+        "bounds": {
+          "west": 113.93331,
+          "south": 22.54032,
+          "east": 114.23889,
+          "north": 22.74925
+        },
+        "notice": "第三方镜像的随包参考快照；实际空域请核查 UOM 官方平台。"
+      },
+      "geos": {
+        "file": "guangdong-shenzhen-a.geojson",
+        "sourceSha256": "582f0ea46fec212021dc284a5dd7b90b7251ed1dea36d82939aa79c4ce2fd157",
+        "features": 55,
+        "validFeatures": 55,
+        "invalidFeatures": [],
+        "queryGeometryNonIntersections": [],
+        "featuresExtendingBeyondQuery": 11,
+        "overlaps": {
+          "complete": true,
+          "positiveAreaPairs": [],
+          "boundaryTouchPairCount": 19,
+          "errors": []
+        }
+      },
+      "strictPolicy": {
+        "valid": false,
+        "acceptedSubset": 47,
+        "budgetExhausted": false,
+        "reviewFeatures": [
+          {
+            "index": 0,
+            "id": "guangdong-146-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 1,
+            "id": "guangdong-174-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 11,
+            "id": "guangdong-185-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 13,
+            "id": "guangdong-188-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 16,
+            "id": "guangdong-193-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 23,
+            "id": "guangdong-200-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 26,
+            "id": "guangdong-203-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 36,
+            "id": "guangdong-233-0",
+            "reasons": [
+              "overlapping-or-nested-holes"
+            ]
+          }
+        ],
+        "collectionErrors": []
+      },
+      "knownUniverseFiltering": {
+        "knownUniverseFeatures": 101,
+        "received": 55,
+        "predictedByBoundingBox": 55,
+        "missing": [],
+        "unexpected": [],
+        "exactSampleMatch": true,
+        "scope": "Observed fixture union only; does not test unknown/missing source features or prove a universal API contract."
+      }
+    },
+    {
+      "file": "guangdong-shenzhen-b.geojson",
+      "sha256": "b1ecfc2a15404c7ff51f10690999e3c7a20a83395e25ff6cd846fea7b7ab8ee2",
+      "bytes": 3197174,
+      "features": 79,
+      "uniqueIds": 79,
+      "missingIds": 0,
+      "duplicateIds": [],
+      "duplicateGeometryGroups": [],
+      "geometryTypes": [
+        "Polygon"
+      ],
+      "extent": [
+        111.922594,
+        22.441551,
+        115.278168,
+        25.51691
+      ],
+      "positions": 23989,
+      "rings": 621,
+      "holes": 542,
+      "sourceWinding": {
+        "clockwiseShells": 79,
+        "counterclockwiseHoles": 542,
+        "preservedUnmodified": true
+      },
+      "structuralIssues": [],
+      "query": [
+        113.85737,
+        22.44768,
+        114.23991,
+        22.84037
+      ],
+      "sourceDeclaresCrs": "WGS84",
+      "coordinateRangeValid": true,
+      "bboxIntersectionMatches": 79,
+      "geometryNonIntersectionIds": [
+        "guangdong-141-0"
+      ],
+      "featuresExtendingBeyondQuery": 10,
+      "metadataClaims": {
+        "type": "FeatureCollection",
+        "province": "广东",
+        "provinceId": "guangdong",
+        "publishDate": "2026年5月",
+        "snapshotFetchedAt": "2026-09-22T05:48:55.817Z",
+        "source": "用户小程序随包数据 / uav-tools 第三方 UOM 整理镜像",
+        "mode": "snapshot",
+        "coordinateSystem": "WGS84",
+        "bounds": {
+          "west": 113.85737,
+          "south": 22.44768,
+          "east": 114.23991,
+          "north": 22.84037
+        },
+        "notice": "第三方镜像的随包参考快照；实际空域请核查 UOM 官方平台。"
+      },
+      "geos": {
+        "file": "guangdong-shenzhen-b.geojson",
+        "sourceSha256": "b1ecfc2a15404c7ff51f10690999e3c7a20a83395e25ff6cd846fea7b7ab8ee2",
+        "features": 79,
+        "validFeatures": 79,
+        "invalidFeatures": [],
+        "queryGeometryNonIntersections": [
+          "guangdong-141-0"
+        ],
+        "featuresExtendingBeyondQuery": 10,
+        "overlaps": {
+          "complete": true,
+          "positiveAreaPairs": [],
+          "boundaryTouchPairCount": 25,
+          "errors": []
+        }
+      },
+      "strictPolicy": {
+        "valid": false,
+        "acceptedSubset": 70,
+        "budgetExhausted": false,
+        "reviewFeatures": [
+          {
+            "index": 1,
+            "id": "guangdong-129-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 4,
+            "id": "guangdong-146-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 8,
+            "id": "guangdong-174-0",
+            "reasons": [
+              "hole-outside-or-touching-shell",
+              "overlapping-or-nested-holes"
+            ]
+          },
+          {
+            "index": 19,
+            "id": "guangdong-185-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 22,
+            "id": "guangdong-188-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 27,
+            "id": "guangdong-193-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 34,
+            "id": "guangdong-200-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 37,
+            "id": "guangdong-203-0",
+            "reasons": [
+              "hole-outside-or-touching-shell"
+            ]
+          },
+          {
+            "index": 59,
+            "id": "guangdong-233-0",
+            "reasons": [
+              "overlapping-or-nested-holes"
+            ]
+          }
+        ],
+        "collectionErrors": []
+      },
+      "knownUniverseFiltering": {
+        "knownUniverseFeatures": 101,
+        "received": 79,
+        "predictedByBoundingBox": 79,
+        "missing": [],
+        "unexpected": [],
+        "exactSampleMatch": true,
+        "scope": "Observed fixture union only; does not test unknown/missing source features or prove a universal API contract."
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "a": "guangdong-guangzhou.geojson",
+      "b": "guangdong-shenzhen-a.geojson",
+      "sharedIds": 36,
+      "identicalSharedGeometry": 36,
+      "geometryConflictIds": [],
+      "onlyA": [
+        "guangdong-100-0",
+        "guangdong-125-0",
+        "guangdong-126-0",
+        "guangdong-127-0",
+        "guangdong-128-0",
+        "guangdong-129-0",
+        "guangdong-130-0",
+        "guangdong-131-0",
+        "guangdong-132-0",
+        "guangdong-133-0",
+        "guangdong-134-0",
+        "guangdong-135-0",
+        "guangdong-136-0",
+        "guangdong-137-0",
+        "guangdong-138-0",
+        "guangdong-139-0",
+        "guangdong-140-0",
+        "guangdong-141-0",
+        "guangdong-142-0",
+        "guangdong-143-0",
+        "guangdong-144-0",
+        "guangdong-145-0",
+        "guangdong-172-0",
+        "guangdong-173-0",
+        "guangdong-180-0",
+        "guangdong-186-0",
+        "guangdong-190-0",
+        "guangdong-191-0",
+        "guangdong-204-0",
+        "guangdong-205-0",
+        "guangdong-206-0",
+        "guangdong-208-0",
+        "guangdong-209-0",
+        "guangdong-210-0",
+        "guangdong-216-0",
+        "guangdong-217-0",
+        "guangdong-218-0",
+        "guangdong-219-0",
+        "guangdong-220-0",
+        "guangdong-221-0",
+        "guangdong-225-0",
+        "guangdong-226-0",
+        "guangdong-227-0",
+        "guangdong-98-0"
+      ],
+      "onlyB": [
+        "guangdong-178-0",
+        "guangdong-233-0",
+        "guangdong-238-0",
+        "guangdong-239-0",
+        "guangdong-243-0",
+        "guangdong-244-0",
+        "guangdong-246-0",
+        "guangdong-247-0",
+        "guangdong-249-0",
+        "guangdong-251-0",
+        "guangdong-252-0",
+        "guangdong-258-0",
+        "guangdong-264-0",
+        "guangdong-266-0",
+        "guangdong-267-0",
+        "guangdong-268-0",
+        "guangdong-269-0",
+        "guangdong-270-0",
+        "guangdong-271-0"
+      ],
+      "commonQuery": [
+        113.93331,
+        22.54032,
+        114.1,
+        22.74925
+      ],
+      "bboxSelectedOverlap": {
+        "a": 36,
+        "b": 36,
+        "onlyA": [],
+        "onlyB": []
+      },
+      "provesUniversalFiltering": false,
+      "provesProvincialCompleteness": false
+    },
+    {
+      "a": "guangdong-guangzhou.geojson",
+      "b": "guangdong-shenzhen-b.geojson",
+      "sharedIds": 58,
+      "identicalSharedGeometry": 58,
+      "geometryConflictIds": [],
+      "onlyA": [
+        "guangdong-100-0",
+        "guangdong-125-0",
+        "guangdong-126-0",
+        "guangdong-128-0",
+        "guangdong-130-0",
+        "guangdong-131-0",
+        "guangdong-132-0",
+        "guangdong-133-0",
+        "guangdong-135-0",
+        "guangdong-136-0",
+        "guangdong-137-0",
+        "guangdong-138-0",
+        "guangdong-139-0",
+        "guangdong-140-0",
+        "guangdong-142-0",
+        "guangdong-143-0",
+        "guangdong-144-0",
+        "guangdong-145-0",
+        "guangdong-225-0",
+        "guangdong-226-0",
+        "guangdong-227-0",
+        "guangdong-98-0"
+      ],
+      "onlyB": [
+        "guangdong-171-0",
+        "guangdong-178-0",
+        "guangdong-233-0",
+        "guangdong-238-0",
+        "guangdong-239-0",
+        "guangdong-243-0",
+        "guangdong-244-0",
+        "guangdong-246-0",
+        "guangdong-247-0",
+        "guangdong-249-0",
+        "guangdong-251-0",
+        "guangdong-252-0",
+        "guangdong-258-0",
+        "guangdong-264-0",
+        "guangdong-266-0",
+        "guangdong-267-0",
+        "guangdong-268-0",
+        "guangdong-269-0",
+        "guangdong-270-0",
+        "guangdong-271-0",
+        "guangdong-278-0"
+      ],
+      "commonQuery": [
+        113.85737,
+        22.5,
+        114.1,
+        22.84037
+      ],
+      "bboxSelectedOverlap": {
+        "a": 58,
+        "b": 58,
+        "onlyA": [],
+        "onlyB": []
+      },
+      "provesUniversalFiltering": false,
+      "provesProvincialCompleteness": false
+    },
+    {
+      "a": "guangdong-shenzhen-a.geojson",
+      "b": "guangdong-shenzhen-b.geojson",
+      "sharedIds": 55,
+      "identicalSharedGeometry": 55,
+      "geometryConflictIds": [],
+      "onlyA": [],
+      "onlyB": [
+        "guangdong-127-0",
+        "guangdong-129-0",
+        "guangdong-134-0",
+        "guangdong-141-0",
+        "guangdong-171-0",
+        "guangdong-172-0",
+        "guangdong-173-0",
+        "guangdong-180-0",
+        "guangdong-186-0",
+        "guangdong-190-0",
+        "guangdong-191-0",
+        "guangdong-204-0",
+        "guangdong-205-0",
+        "guangdong-206-0",
+        "guangdong-208-0",
+        "guangdong-209-0",
+        "guangdong-210-0",
+        "guangdong-216-0",
+        "guangdong-217-0",
+        "guangdong-218-0",
+        "guangdong-219-0",
+        "guangdong-220-0",
+        "guangdong-221-0",
+        "guangdong-278-0"
+      ],
+      "commonQuery": [
+        113.93331,
+        22.54032,
+        114.23889,
+        22.74925
+      ],
+      "bboxSelectedOverlap": {
+        "a": 55,
+        "b": 55,
+        "onlyA": [],
+        "onlyB": []
+      },
+      "provesUniversalFiltering": false,
+      "provesProvincialCompleteness": false
+    }
+  ],
+  "independentAudit": {
+    "sha256": "a956d69ef7c176ad79a948bf924a7a9e764ca71e5204d7baad46d5e383b9381b",
+    "engine": {
+      "shapely": "2.2.0",
+      "geos": "3.14.1",
+      "numpy": "2.5.3"
+    },
+    "region": {
+      "region": "cn-guangdong",
+      "uniqueIds": 101,
+      "idConflicts": [],
+      "overlaps": {
+        "complete": true,
+        "positiveAreaPairs": [],
+        "boundaryTouchPairCount": 27,
+        "errors": []
+      }
+    }
   },
+  "strictPipeline": {
+    "valid": false,
+    "inputResponses": 3,
+    "inputFeatures": 214,
+    "uniqueFeatures": 89,
+    "duplicateCount": 97,
+    "duplicates": [
+      {
+        "id": "string:guangdong-175-0",
+        "previousId": "string:guangdong-175-0",
+        "geometryHash": "a42382291d8dd02c9e7fe658fc49abd31d07c4401beece6ffaca4b51a6a27307"
+      },
+      {
+        "id": "string:guangdong-176-0",
+        "previousId": "string:guangdong-176-0",
+        "geometryHash": "8d5bf045479edae53b023e4e2106a6565c91e96e47ba28c12f0d0d8ef282ec23"
+      },
+      {
+        "id": "string:guangdong-177-0",
+        "previousId": "string:guangdong-177-0",
+        "geometryHash": "7a0cc29e9ad86ea09e8770a9cbd41e46f05be76f07bcf441a60aa7a6a6be339e"
+      },
+      {
+        "id": "string:guangdong-179-0",
+        "previousId": "string:guangdong-179-0",
+        "geometryHash": "a10856cd8a3145d16df6cf6f6d5139d2356b6b775f9dd2128a4a379bb5bedd9a"
+      },
+      {
+        "id": "string:guangdong-181-0",
+        "previousId": "string:guangdong-181-0",
+        "geometryHash": "d26f5414f1b6d51b8bd514e68917cfeb37536c73399ad01d4e80d7323e4e6bbb"
+      },
+      {
+        "id": "string:guangdong-182-0",
+        "previousId": "string:guangdong-182-0",
+        "geometryHash": "fd9479c18ecfcf7a474d7817a1d48cb7f4409c3e98a6ddbe818435a1685d505b"
+      },
+      {
+        "id": "string:guangdong-183-0",
+        "previousId": "string:guangdong-183-0",
+        "geometryHash": "aa6866a1e83181ee315a8a9cf97e5f34e2bfb59073662c9576b655a29c58624f"
+      },
+      {
+        "id": "string:guangdong-184-0",
+        "previousId": "string:guangdong-184-0",
+        "geometryHash": "ac6084b0e700a3d3c819caa515d090bc18e0944d66d58847f493240bc9e112d6"
+      },
+      {
+        "id": "string:guangdong-187-0",
+        "previousId": "string:guangdong-187-0",
+        "geometryHash": "748d62b12b4e5d7087ea84dd942a2eb92dd8ff543fe762e5bf84358addcf0f6e"
+      },
+      {
+        "id": "string:guangdong-189-0",
+        "previousId": "string:guangdong-189-0",
+        "geometryHash": "3591bb3b7f656fac25925c67be4cbef2cb0c68b1a01142642a778b901996284f"
+      },
+      {
+        "id": "string:guangdong-192-0",
+        "previousId": "string:guangdong-192-0",
+        "geometryHash": "cbc29f11c46c04706419b1428c5a0c582df8a99d69bedf273720147d903c78ad"
+      },
+      {
+        "id": "string:guangdong-194-0",
+        "previousId": "string:guangdong-194-0",
+        "geometryHash": "f29ebb14aa2ef32e275e8908da36b25ffd1fc0ccd138d500ff2c75d637356cd1"
+      },
+      {
+        "id": "string:guangdong-195-0",
+        "previousId": "string:guangdong-195-0",
+        "geometryHash": "85efc79cbec900ebfeaa7eb05dd0b1f8e7afe5ddddbe0120a3702649ed7cd50c"
+      },
+      {
+        "id": "string:guangdong-196-0",
+        "previousId": "string:guangdong-196-0",
+        "geometryHash": "072aa586edc6496526c875bbd65afa587150c6cdc773d66fb3eb3c0c7d943dbe"
+      },
+      {
+        "id": "string:guangdong-197-0",
+        "previousId": "string:guangdong-197-0",
+        "geometryHash": "8672564fb000be5412afd537de4afaa401bdb5f1e0fa3cbcbd0b8e6b6240b118"
+      },
+      {
+        "id": "string:guangdong-198-0",
+        "previousId": "string:guangdong-198-0",
+        "geometryHash": "a4a3bc17169daa935ecf66bfd56125ec93ce69eda4c8e442af9bb05d7ca64397"
+      },
+      {
+        "id": "string:guangdong-199-0",
+        "previousId": "string:guangdong-199-0",
+        "geometryHash": "8fe72b7eadfa412022af591df58c3dd89a2e6145d31e0acc2c178172900af1a5"
+      },
+      {
+        "id": "string:guangdong-201-0",
+        "previousId": "string:guangdong-201-0",
+        "geometryHash": "7e70e31ef2257d60c47e1b7065c9740a66e073ee7fbd6f06b218525efedd0771"
+      },
+      {
+        "id": "string:guangdong-202-0",
+        "previousId": "string:guangdong-202-0",
+        "geometryHash": "6377fdf1218ecfee573a88d56ab473b9513bcdb6713ed4bcb1c24519d8b85748"
+      },
+      {
+        "id": "string:guangdong-207-0",
+        "previousId": "string:guangdong-207-0",
+        "geometryHash": "b111b08f4a0579ad9f46aee54238ed53ba408d1be191e32f0906eb45305ff254"
+      },
+      {
+        "id": "string:guangdong-211-0",
+        "previousId": "string:guangdong-211-0",
+        "geometryHash": "cf52e7c39ec52e87d59b92a6f97eed37f4ccc16ad86e6fcbf093b1d5d8890144"
+      },
+      {
+        "id": "string:guangdong-212-0",
+        "previousId": "string:guangdong-212-0",
+        "geometryHash": "2f3ecae24d877c05020411280b302bc67c238503bfcd625099c501fd16060ca9"
+      },
+      {
+        "id": "string:guangdong-213-0",
+        "previousId": "string:guangdong-213-0",
+        "geometryHash": "015983cbe3936a3b5dcc26e2264e368e00a306e2f26dbf7fa3822d4e4fb4c5b9"
+      },
+      {
+        "id": "string:guangdong-214-0",
+        "previousId": "string:guangdong-214-0",
+        "geometryHash": "19f18a2d6c076c6d423170ed666191689600eb56eab568c27a64f38119ec2db6"
+      },
+      {
+        "id": "string:guangdong-215-0",
+        "previousId": "string:guangdong-215-0",
+        "geometryHash": "7e8a8c48870b43884ef3ae73d1a7e4e92504a49d2116be2d8304ca2e0fc2a1be"
+      },
+      {
+        "id": "string:guangdong-222-0",
+        "previousId": "string:guangdong-222-0",
+        "geometryHash": "86c99cdc362259c318c901e9bce5aade50a5946f519ef34e7b2e31adb8bd1320"
+      },
+      {
+        "id": "string:guangdong-223-0",
+        "previousId": "string:guangdong-223-0",
+        "geometryHash": "af9f043e87aa0d78e6df848d24a78772b1667677a405e383abd2638ecee81f99"
+      },
+      {
+        "id": "string:guangdong-224-0",
+        "previousId": "string:guangdong-224-0",
+        "geometryHash": "56ba717e0a532277f0bd4f1393e6f1cdd7243faa540706f097f3c1d40b630786"
+      },
+      {
+        "id": "string:guangdong-263-0",
+        "previousId": "string:guangdong-263-0",
+        "geometryHash": "9f250db06dae8b002702f0700119425bdc16cbf882daead3ea49c48812c90058"
+      },
+      {
+        "id": "string:guangdong-127-0",
+        "previousId": "string:guangdong-127-0",
+        "geometryHash": "89c19b02637d51bf6f9dc65b9ab2104635f0f3265e28e32f036c38d96e9107cc"
+      },
+      {
+        "id": "string:guangdong-134-0",
+        "previousId": "string:guangdong-134-0",
+        "geometryHash": "13a4ddd8a54fe764e73c51b02a71f9a8089adafe01bfd9e464d931343be669f8"
+      },
+      {
+        "id": "string:guangdong-141-0",
+        "previousId": "string:guangdong-141-0",
+        "geometryHash": "750661c18612eab2ff3bed16695f8844f95e0d43d5142a5e69790954c0405edc"
+      },
+      {
+        "id": "string:guangdong-172-0",
+        "previousId": "string:guangdong-172-0",
+        "geometryHash": "3549d14ae9091f4f3558b150c06315ff07ce11cf96783390d171bbb30b734769"
+      },
+      {
+        "id": "string:guangdong-173-0",
+        "previousId": "string:guangdong-173-0",
+        "geometryHash": "90c6958a7a4a1ff75b9a605acba4f9c490a69ffb98842b87c5153718de50f89d"
+      },
+      {
+        "id": "string:guangdong-175-0",
+        "previousId": "string:guangdong-175-0",
+        "geometryHash": "a42382291d8dd02c9e7fe658fc49abd31d07c4401beece6ffaca4b51a6a27307"
+      },
+      {
+        "id": "string:guangdong-176-0",
+        "previousId": "string:guangdong-176-0",
+        "geometryHash": "8d5bf045479edae53b023e4e2106a6565c91e96e47ba28c12f0d0d8ef282ec23"
+      },
+      {
+        "id": "string:guangdong-177-0",
+        "previousId": "string:guangdong-177-0",
+        "geometryHash": "7a0cc29e9ad86ea09e8770a9cbd41e46f05be76f07bcf441a60aa7a6a6be339e"
+      },
+      {
+        "id": "string:guangdong-178-0",
+        "previousId": "string:guangdong-178-0",
+        "geometryHash": "7820feead6e1b9d3f489af301e521eaa07264aa81953b681ac9e2e7e4db8a084"
+      },
+      {
+        "id": "string:guangdong-179-0",
+        "previousId": "string:guangdong-179-0",
+        "geometryHash": "a10856cd8a3145d16df6cf6f6d5139d2356b6b775f9dd2128a4a379bb5bedd9a"
+      },
+      {
+        "id": "string:guangdong-180-0",
+        "previousId": "string:guangdong-180-0",
+        "geometryHash": "92a78f4e1891efc77fb5c496de38c9f8ab1f3c194363e73c86b794dff8ce105c"
+      },
+      {
+        "id": "string:guangdong-181-0",
+        "previousId": "string:guangdong-181-0",
+        "geometryHash": "d26f5414f1b6d51b8bd514e68917cfeb37536c73399ad01d4e80d7323e4e6bbb"
+      },
+      {
+        "id": "string:guangdong-182-0",
+        "previousId": "string:guangdong-182-0",
+        "geometryHash": "fd9479c18ecfcf7a474d7817a1d48cb7f4409c3e98a6ddbe818435a1685d505b"
+      },
+      {
+        "id": "string:guangdong-183-0",
+        "previousId": "string:guangdong-183-0",
+        "geometryHash": "aa6866a1e83181ee315a8a9cf97e5f34e2bfb59073662c9576b655a29c58624f"
+      },
+      {
+        "id": "string:guangdong-184-0",
+        "previousId": "string:guangdong-184-0",
+        "geometryHash": "ac6084b0e700a3d3c819caa515d090bc18e0944d66d58847f493240bc9e112d6"
+      },
+      {
+        "id": "string:guangdong-186-0",
+        "previousId": "string:guangdong-186-0",
+        "geometryHash": "a57ec64b7be33bf4f281336cde021b35e7cd4da49f3203874ceb191945374668"
+      },
+      {
+        "id": "string:guangdong-187-0",
+        "previousId": "string:guangdong-187-0",
+        "geometryHash": "748d62b12b4e5d7087ea84dd942a2eb92dd8ff543fe762e5bf84358addcf0f6e"
+      },
+      {
+        "id": "string:guangdong-189-0",
+        "previousId": "string:guangdong-189-0",
+        "geometryHash": "3591bb3b7f656fac25925c67be4cbef2cb0c68b1a01142642a778b901996284f"
+      },
+      {
+        "id": "string:guangdong-190-0",
+        "previousId": "string:guangdong-190-0",
+        "geometryHash": "cc5e10e86945839f19f5fde859695042cdb544907d1d4be787d83244a19c9ad1"
+      },
+      {
+        "id": "string:guangdong-191-0",
+        "previousId": "string:guangdong-191-0",
+        "geometryHash": "6fe93289a9298a7341918492b7a5dc97227ef74c4c6cf34ffa3c78972b8a7feb"
+      },
+      {
+        "id": "string:guangdong-192-0",
+        "previousId": "string:guangdong-192-0",
+        "geometryHash": "cbc29f11c46c04706419b1428c5a0c582df8a99d69bedf273720147d903c78ad"
+      },
+      {
+        "id": "string:guangdong-194-0",
+        "previousId": "string:guangdong-194-0",
+        "geometryHash": "f29ebb14aa2ef32e275e8908da36b25ffd1fc0ccd138d500ff2c75d637356cd1"
+      },
+      {
+        "id": "string:guangdong-195-0",
+        "previousId": "string:guangdong-195-0",
+        "geometryHash": "85efc79cbec900ebfeaa7eb05dd0b1f8e7afe5ddddbe0120a3702649ed7cd50c"
+      },
+      {
+        "id": "string:guangdong-196-0",
+        "previousId": "string:guangdong-196-0",
+        "geometryHash": "072aa586edc6496526c875bbd65afa587150c6cdc773d66fb3eb3c0c7d943dbe"
+      },
+      {
+        "id": "string:guangdong-197-0",
+        "previousId": "string:guangdong-197-0",
+        "geometryHash": "8672564fb000be5412afd537de4afaa401bdb5f1e0fa3cbcbd0b8e6b6240b118"
+      },
+      {
+        "id": "string:guangdong-198-0",
+        "previousId": "string:guangdong-198-0",
+        "geometryHash": "a4a3bc17169daa935ecf66bfd56125ec93ce69eda4c8e442af9bb05d7ca64397"
+      },
+      {
+        "id": "string:guangdong-199-0",
+        "previousId": "string:guangdong-199-0",
+        "geometryHash": "8fe72b7eadfa412022af591df58c3dd89a2e6145d31e0acc2c178172900af1a5"
+      },
+      {
+        "id": "string:guangdong-201-0",
+        "previousId": "string:guangdong-201-0",
+        "geometryHash": "7e70e31ef2257d60c47e1b7065c9740a66e073ee7fbd6f06b218525efedd0771"
+      },
+      {
+        "id": "string:guangdong-202-0",
+        "previousId": "string:guangdong-202-0",
+        "geometryHash": "6377fdf1218ecfee573a88d56ab473b9513bcdb6713ed4bcb1c24519d8b85748"
+      },
+      {
+        "id": "string:guangdong-204-0",
+        "previousId": "string:guangdong-204-0",
+        "geometryHash": "bf889faf72039069f5817804aac4aeb4b75f463f1c4db0eeda18bca05410861c"
+      },
+      {
+        "id": "string:guangdong-205-0",
+        "previousId": "string:guangdong-205-0",
+        "geometryHash": "1945073ac7ed9fea6c70d67ded9855f3d916503293b0b3012b9ada0521f72252"
+      },
+      {
+        "id": "string:guangdong-206-0",
+        "previousId": "string:guangdong-206-0",
+        "geometryHash": "fa14ebc9943936714058311f657f7339d787f7406d51eee051024cc14ccade09"
+      },
+      {
+        "id": "string:guangdong-207-0",
+        "previousId": "string:guangdong-207-0",
+        "geometryHash": "b111b08f4a0579ad9f46aee54238ed53ba408d1be191e32f0906eb45305ff254"
+      },
+      {
+        "id": "string:guangdong-208-0",
+        "previousId": "string:guangdong-208-0",
+        "geometryHash": "646f544846f9dec256b2e5fcfe209338225ac468b1a02b9d460c2278b3ef973f"
+      },
+      {
+        "id": "string:guangdong-209-0",
+        "previousId": "string:guangdong-209-0",
+        "geometryHash": "cf5edaede889ba51cae1f522f0bcfb341375c1a29dd4747877fd5b953f782836"
+      },
+      {
+        "id": "string:guangdong-210-0",
+        "previousId": "string:guangdong-210-0",
+        "geometryHash": "2ea6d7a320bf4333ccc82b826ea8cd288ad07535ed8f34c51fae8cb05a3a0705"
+      },
+      {
+        "id": "string:guangdong-211-0",
+        "previousId": "string:guangdong-211-0",
+        "geometryHash": "cf52e7c39ec52e87d59b92a6f97eed37f4ccc16ad86e6fcbf093b1d5d8890144"
+      },
+      {
+        "id": "string:guangdong-212-0",
+        "previousId": "string:guangdong-212-0",
+        "geometryHash": "2f3ecae24d877c05020411280b302bc67c238503bfcd625099c501fd16060ca9"
+      },
+      {
+        "id": "string:guangdong-213-0",
+        "previousId": "string:guangdong-213-0",
+        "geometryHash": "015983cbe3936a3b5dcc26e2264e368e00a306e2f26dbf7fa3822d4e4fb4c5b9"
+      },
+      {
+        "id": "string:guangdong-214-0",
+        "previousId": "string:guangdong-214-0",
+        "geometryHash": "19f18a2d6c076c6d423170ed666191689600eb56eab568c27a64f38119ec2db6"
+      },
+      {
+        "id": "string:guangdong-215-0",
+        "previousId": "string:guangdong-215-0",
+        "geometryHash": "7e8a8c48870b43884ef3ae73d1a7e4e92504a49d2116be2d8304ca2e0fc2a1be"
+      },
+      {
+        "id": "string:guangdong-216-0",
+        "previousId": "string:guangdong-216-0",
+        "geometryHash": "3c67ad83671d5f417079bc5d21ebe1daa8b491f6d7c6905b5b2423ada2175bf5"
+      },
+      {
+        "id": "string:guangdong-217-0",
+        "previousId": "string:guangdong-217-0",
+        "geometryHash": "d5b79d270e2f067b1bf5983614b2ca14849e5e800e684b7d7db2a2437fff1758"
+      },
+      {
+        "id": "string:guangdong-218-0",
+        "previousId": "string:guangdong-218-0",
+        "geometryHash": "9eb73a42fb0315323b7480bdb93103d8b6568bfbbbe019968950cebc4ce55e5c"
+      },
+      {
+        "id": "string:guangdong-219-0",
+        "previousId": "string:guangdong-219-0",
+        "geometryHash": "416e13e05b039911cd8a9040946834cf698438e47c7509787ecd959912666db7"
+      },
+      {
+        "id": "string:guangdong-220-0",
+        "previousId": "string:guangdong-220-0",
+        "geometryHash": "fe6b52d754aa35a5ae56a95149eb7e114c03bef9342fdbec2daf9f1b91b14d13"
+      },
+      {
+        "id": "string:guangdong-221-0",
+        "previousId": "string:guangdong-221-0",
+        "geometryHash": "41b493e33fe85cc8cead7110539faeef4ab174f997b4fc21161c383ac959c86f"
+      },
+      {
+        "id": "string:guangdong-222-0",
+        "previousId": "string:guangdong-222-0",
+        "geometryHash": "86c99cdc362259c318c901e9bce5aade50a5946f519ef34e7b2e31adb8bd1320"
+      },
+      {
+        "id": "string:guangdong-223-0",
+        "previousId": "string:guangdong-223-0",
+        "geometryHash": "af9f043e87aa0d78e6df848d24a78772b1667677a405e383abd2638ecee81f99"
+      },
+      {
+        "id": "string:guangdong-224-0",
+        "previousId": "string:guangdong-224-0",
+        "geometryHash": "56ba717e0a532277f0bd4f1393e6f1cdd7243faa540706f097f3c1d40b630786"
+      },
+      {
+        "id": "string:guangdong-238-0",
+        "previousId": "string:guangdong-238-0",
+        "geometryHash": "4a50e699609b7ea54d20e336cbf1571a88e425288d70c17eaa1b4e32562c32c3"
+      },
+      {
+        "id": "string:guangdong-239-0",
+        "previousId": "string:guangdong-239-0",
+        "geometryHash": "d8d2633171c493043c5668e84f83ba29aed56a2af9a37cfdbda8188f18eee272"
+      },
+      {
+        "id": "string:guangdong-243-0",
+        "previousId": "string:guangdong-243-0",
+        "geometryHash": "b6d6ddf5e0ab45b248aeea9e6769ebae28031911fbf0a6b721a7658f43421996"
+      },
+      {
+        "id": "string:guangdong-244-0",
+        "previousId": "string:guangdong-244-0",
+        "geometryHash": "560ccf2a58d33b64c9dbb5bd66bac040a0ee44a1705f64adb2d6189c182864c7"
+      },
+      {
+        "id": "string:guangdong-246-0",
+        "previousId": "string:guangdong-246-0",
+        "geometryHash": "379a5086f8b184e3841b7582428d70be72e58c543d05028b2fbdb98115cc956e"
+      },
+      {
+        "id": "string:guangdong-247-0",
+        "previousId": "string:guangdong-247-0",
+        "geometryHash": "4af8cd233683731556dfb4bf15666901f39a60ae3bda0a8a96aad7bcfd4e4fc9"
+      },
+      {
+        "id": "string:guangdong-249-0",
+        "previousId": "string:guangdong-249-0",
+        "geometryHash": "e01e9f0d8b8327cc3819eccbd0353768ba4545ead0cb4df242ec3728f8856673"
+      },
+      {
+        "id": "string:guangdong-251-0",
+        "previousId": "string:guangdong-251-0",
+        "geometryHash": "c3c647db851157f5e732fe3441033e5a7042cbe3713470ff5dcd5de9de3f400c"
+      },
+      {
+        "id": "string:guangdong-252-0",
+        "previousId": "string:guangdong-252-0",
+        "geometryHash": "8d6379d2631d434e16d95b782215ee739055a8f2284f736432d6927adfe6cf0e"
+      },
+      {
+        "id": "string:guangdong-258-0",
+        "previousId": "string:guangdong-258-0",
+        "geometryHash": "498d7440126b4d87fbfc3e75c18db1a2fe7b9c5120224247e59d5b3fc5047d01"
+      },
+      {
+        "id": "string:guangdong-263-0",
+        "previousId": "string:guangdong-263-0",
+        "geometryHash": "9f250db06dae8b002702f0700119425bdc16cbf882daead3ea49c48812c90058"
+      },
+      {
+        "id": "string:guangdong-264-0",
+        "previousId": "string:guangdong-264-0",
+        "geometryHash": "613464896cf06b9e6d6f02cdb602311c3660d5f93a13cf645276c41070474cff"
+      },
+      {
+        "id": "string:guangdong-266-0",
+        "previousId": "string:guangdong-266-0",
+        "geometryHash": "66bcc8de115768e079bdaa74cbbac57411b2a652b52e484a4a1adede7784ed74"
+      },
+      {
+        "id": "string:guangdong-267-0",
+        "previousId": "string:guangdong-267-0",
+        "geometryHash": "c9c4ab947a8ecd31ec0ff5b54102aae7bec5b0833fad38e71609791607d0b087"
+      },
+      {
+        "id": "string:guangdong-268-0",
+        "previousId": "string:guangdong-268-0",
+        "geometryHash": "66d5c8c1363ed919236215d86a7e844973238cb91011de796bde70cd6fc855bc"
+      },
+      {
+        "id": "string:guangdong-269-0",
+        "previousId": "string:guangdong-269-0",
+        "geometryHash": "ce27bb22d40ace263931c76ba545eaa3bca3dcb02fc37f200e7de05aafe82209"
+      },
+      {
+        "id": "string:guangdong-270-0",
+        "previousId": "string:guangdong-270-0",
+        "geometryHash": "d108a5fe5b5c5ccc3bdf27453d45f48dfd4480b6669a18b88496d00813e29bfe"
+      },
+      {
+        "id": "string:guangdong-271-0",
+        "previousId": "string:guangdong-271-0",
+        "geometryHash": "a916cc4a5d3b866ee62e61542ab2ffa8e1a12884e3a4ac8fd1d80ec4910b9b6f"
+      }
+    ],
+    "conflicts": [],
+    "overlaps": [],
+    "overlapCheckComplete": true,
+    "errors": [
+      "response-0:feature-2:hole-outside-or-touching-shell",
+      "response-0:feature-2:overlapping-or-nested-holes",
+      "response-0:feature-6:hole-outside-or-touching-shell",
+      "response-0:feature-9:hole-outside-or-touching-shell",
+      "response-0:feature-14:hole-outside-or-touching-shell",
+      "response-0:feature-23:hole-outside-or-touching-shell",
+      "response-0:feature-23:overlapping-or-nested-holes",
+      "response-0:feature-26:hole-outside-or-touching-shell",
+      "response-0:feature-26:overlapping-or-nested-holes",
+      "response-0:feature-36:hole-outside-or-touching-shell",
+      "response-0:feature-39:hole-outside-or-touching-shell",
+      "response-0:feature-44:hole-outside-or-touching-shell",
+      "response-0:feature-51:hole-outside-or-touching-shell",
+      "response-0:feature-54:hole-outside-or-touching-shell",
+      "response-1:feature-0:hole-outside-or-touching-shell",
+      "response-1:feature-0:overlapping-or-nested-holes",
+      "response-1:feature-1:hole-outside-or-touching-shell",
+      "response-1:feature-1:overlapping-or-nested-holes",
+      "response-1:feature-11:hole-outside-or-touching-shell",
+      "response-1:feature-13:hole-outside-or-touching-shell",
+      "response-1:feature-16:hole-outside-or-touching-shell",
+      "response-1:feature-23:hole-outside-or-touching-shell",
+      "response-1:feature-26:hole-outside-or-touching-shell",
+      "response-1:feature-36:overlapping-or-nested-holes",
+      "response-2:feature-1:hole-outside-or-touching-shell",
+      "response-2:feature-4:hole-outside-or-touching-shell",
+      "response-2:feature-4:overlapping-or-nested-holes",
+      "response-2:feature-8:hole-outside-or-touching-shell",
+      "response-2:feature-8:overlapping-or-nested-holes",
+      "response-2:feature-19:hole-outside-or-touching-shell",
+      "response-2:feature-22:hole-outside-or-touching-shell",
+      "response-2:feature-27:hole-outside-or-touching-shell",
+      "response-2:feature-34:hole-outside-or-touching-shell",
+      "response-2:feature-37:hole-outside-or-touching-shell",
+      "response-2:feature-59:overlapping-or-nested-holes"
+    ],
+    "errorCount": 35,
+    "crs": "wgs84",
+    "crsAlignment": "unverified",
+    "semantics": "unknown",
+    "regulatoryValidity": "unverified",
+    "integrationReady": false,
+    "note": "Conservative shell/hole contact policy; its normalized.geojson is a filtered subset, not the full reference dataset."
+  },
+  "completeReference": {
+    "file": "planning/china-airspace/local-pilots/cn-guangdong/deduplicated-reference.geojson",
+    "emitted": true,
+    "contentSha256": "2090fd2361165f4fb9df3c48a115c7e29ce46d2e87400d2aaca5ab5581c0dbc5",
+    "features": 101,
+    "geometryPolicy": "Original geometry unchanged; exact duplicates removed only. No repair, clipping, union, reprojection or PMTiles.",
+    "winding": "Source ring order preserved; full RFC 7946 winding normalization remains a separate reviewed derivative."
+  },
+  "pmtilesReaderCompatibility": {
+    "supported": true,
+    "features": 101,
+    "bounds": [
+      111.922594,
+      21.998749,
+      115.278168,
+      25.51691
+    ],
+    "pmtilesGenerated": false
+  },
+  "resolvedBlockers": [
+    "original-local-fixtures-available-and-checksummed",
+    "source-declares-wgs84",
+    "source-snapshot-timestamp-claim-available",
+    "all-source-geometries-checked-by-geos",
+    "ids-unique-within-captures",
+    "source-union-overlaps-and-duplicates-checked"
+  ],
+  "remainingBlockers": [
+    "api-access-and-request-limits-unverified",
+    "universal-pagination-filtering-and-clipping-contract-unverified",
+    "crs-landmark-alignment-unverified",
+    "polygon-airspace-semantics-not-authoritatively-confirmed",
+    "province-wide-completeness-unproven",
+    "effective-date-and-current-validity-unverified",
+    "redistribution-not-cleared",
+    "conservative-pipeline-contact-policy-requires-review",
+    "complete-reference-winding-normalization-requires-review"
+  ],
   "queryBounds": [
     [
-      109.5,
-      20.1,
-      111.57374999999999,
-      22.025
+      112.9,
+      22.5,
+      114.1,
+      23.95
     ],
     [
-      111.37625,
-      20.1,
-      113.54875,
-      22.025
+      113.93331,
+      22.54032,
+      114.23889,
+      22.74925
     ],
     [
-      113.35125000000001,
-      20.1,
-      115.52375,
-      22.025
-    ],
-    [
-      115.32625000000002,
-      20.1,
-      117.4,
-      22.025
-    ],
-    [
-      109.5,
-      21.84166666666667,
-      111.57374999999999,
-      23.858333333333334
-    ],
-    [
-      111.37625,
-      21.84166666666667,
-      113.54875,
-      23.858333333333334
-    ],
-    [
-      113.35125000000001,
-      21.84166666666667,
-      115.52375,
-      23.858333333333334
-    ],
-    [
-      115.32625000000002,
-      21.84166666666667,
-      117.4,
-      23.858333333333334
-    ],
-    [
-      109.5,
-      23.675000000000004,
-      111.57374999999999,
-      25.6
-    ],
-    [
-      111.37625,
-      23.675000000000004,
-      113.54875,
-      25.6
-    ],
-    [
-      113.35125000000001,
-      23.675000000000004,
-      115.52375,
-      25.6
-    ],
-    [
-      115.32625000000002,
-      23.675000000000004,
-      117.4,
-      25.6
+      113.85737,
+      22.44768,
+      114.23991,
+      22.84037
     ]
   ],
-  "technical": {
-    "valid": null,
-    "geometry": "not-tested",
-    "crsAlignment": "unverified"
-  },
-  "overlapReproduction": "not-tested",
   "provincialCompleteness": "unverified",
   "regulatoryValidity": "unverified",
   "integrationReady": false,
-  "blockers": [
-    "No previously obtained GeoJSON located in repository or Downloads",
-    "Live API permission/limits are unverified; automated acquisition disabled",
-    "Semantics, CRS alignment, geometry and provincial completeness require source evidence",
-    "Redistribution and effective date not established"
-  ]
+  "artifactSelection": {
+    "completeReference": {
+      "file": "deduplicated-reference.geojson",
+      "features": 101,
+      "identityGuard": "assertCompleteReference(collection, report)",
+      "productionApproved": false
+    },
+    "conservativeSubset": {
+      "file": "normalized.geojson",
+      "features": 89,
+      "omittedFeatures": 12,
+      "integrationCandidate": false,
+      "warning": "DIAGNOSTIC SUBSET ONLY. Never use as the complete region dataset."
+    }
+  }
 }
