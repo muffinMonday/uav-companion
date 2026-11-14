@@ -9,6 +9,7 @@ export const MEANINGS = {
   allow: { colour: '--zone', text: 'Teal: suitable-flight airspace (flying permitted within the stated height); everything else is controlled.' },
   restrict: { colour: '--zone-restrict', text: 'Red: restricted area. Elsewhere there is no restriction in this data, which is not the same as permission to fly.' },
 };
+export const SELECTED_SOURCE_MEANING = 'Teal: suitable-flight polygons in the selected source. Gaps and areas outside these polygons have unknown coverage; current flight permission is unverified. Check UOM before flying.';
 
 const swatch = (colour) => { const i = el('i', 'mean-swatch'); i.style.background = colour; i.setAttribute('aria-hidden', 'true'); return i; };
 const row = (colour, text) => { const r = el('div', 'mean-row'); r.append(swatch(colour), el('span', '', text)); return r; };
@@ -24,6 +25,11 @@ export function zoneExplanation(res) {
     return box;
   }
   const r = res.region, m = MEANINGS[r.semantics];
+  if (r.sourceConfidence?.mode === 'selected-source') {
+    body.append(row('var(--zone)', SELECTED_SOURCE_MEANING));
+    body.append(el('p', '', `${r.name}: ${r.source.authority}; snapshot ${r.source.snapshotAt?.slice(0, 10) || 'unknown'}; effective date ${r.source.effective || 'unknown'}. Independent coordinate alignment, completeness and regulatory currency are unverified. Temporary restrictions may be missing.`));
+    return box;
+  }
   if (r.classes) { // named classes (Singapore): one row per kind of zone, with the colour it has on the map
     body.append(el('p', '', 'Red areas on the map are no-fly zones of the kinds below. Not being inside one does not mean flying is allowed.'));
     for (const c of r.classes) body.append(row(c.color, c.points ? `${c.label}: where flying is allowed (a pin on the map).` : `${c.label}${c.summary ? ': ' + c.summary : '.'}`));

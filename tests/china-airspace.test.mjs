@@ -169,6 +169,25 @@ test('undocumented clipping/pagination blocks before network', async t => {
   const dir = temp(t), c = config(); c.responsePolicy.pagination = 'unknown';
   await assert.rejects(acquire(c, dir, path.join(dir,'out')), /pagination/);
 });
+
+test('bounded observation still requires permission and reports an unknown response contract', async t => {
+  const dir = temp(t), c = config();
+  c.acquisitionMode = 'bounded-observation';
+  c.responsePolicy = { pagination: 'unknown', wholeFeatures: null };
+  c.access.status = 'unverified';
+  let calls = 0;
+  const tx = transport(async () => { calls++; return mock(); });
+  await assert.rejects(acquire(c, dir, path.join(dir, 'denied'), tx), /permission/);
+  assert.equal(calls, 0);
+  c.access.status = 'permitted';
+  const r = await acquire(c, dir, path.join(dir, 'observed'), tx);
+  assert.equal(r.report.acquisition.responseContractVerified, false);
+  assert.equal(r.report.acquisition.provincialCompleteness, 'unverified');
+  assert.equal(r.report.integrationReady, false);
+  assert(r.report.blockers.includes('response-contract-unverified'));
+  c.acquisitionMode = 'typo';
+  await assert.rejects(acquire(c, dir, path.join(dir, 'typo'), tx), /Unknown acquisition mode/);
+});
 test('serial acquisition archives checksums and resumes without fetching', async t => {
   const dir = temp(t), c = config(), out = path.join(dir,'out'); let calls = 0;
   const result = await acquire(c, dir, out, transport(async () => { calls++; return mock(); }));

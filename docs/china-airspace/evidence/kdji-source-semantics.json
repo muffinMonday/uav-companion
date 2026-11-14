@@ -1,0 +1,10 @@
+{
+  "reviewedOn": "2026-11-14",
+  "providerMap": "https://kdji.cn/support/nfz-map.html",
+  "archivedClientSha256": "09caf16c8e7dbabf9e2c27da901505c769f3663c981e6f9d63b3519052143a18",
+  "providerConvention": "queryUom passes each complete feature, including its interior rings, into flyLayer; interior rings are additionally drawn in controlLayer. Layer labels identify suitable-flight reference and internal control reference.",
+  "interpretation": "allow polygons with their holes excluded",
+  "scope": "Selected third-party snapshot semantics; does not verify official regulatory permission, height, currency, completeness or independent alignment.",
+  "negativeCoverage": "unknown",
+  "geometryReview": "Ring reversal/rotation only; exact coordinates, feature properties/IDs, ring/component counts and topology independently audited with GEOS. Conservative contact and work-budget findings retained. No repair or dropping."
+}

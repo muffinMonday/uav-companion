@@ -8,6 +8,7 @@ import { readRegion } from '../lib/readers.js';
 import { validateCollection, sha256, stringify } from '../china-airspace/core.js';
 import { canonicalRing, polygons } from '../china-airspace/geometry.js';
 import { assertCompleteReference } from '../china-airspace/artifact-contract.js';
+import { fixtureEvidence, deduplicateEvidence } from '../china-airspace/fixture-evidence.js';
 import { previewHTML } from '../china-airspace/preview.js';
 import { pointSmoke, renderSmoke } from './smoke.mjs';
 
@@ -28,13 +29,14 @@ export function normalizeWinding(collection) {
   } })) };
 }
 
-function structural(collection, crs, topologyBudget = 2_000_000) {
+function structural(collection, crs, topologyBudget = 2_000_000, independentBudgetReview = false) {
   const result = validateCollection(collection, { crs, topologyBudget });
   need(!result.errorCount || result.errorCount <= result.errors.length, 'Validation findings truncated; explicit investigation required');
   // Do not weaken the existing contact policy. Complete contact geometries can be staged
-  // and independently audited, but remain blocked from building/promotion by this policy.
+  // and independently audited. Strict build/promote remain blocked; selected-source
+  // publication separately requires a recorded full-source independent GEOS review.
   const contact = /:(hole-outside-or-touching-shell|overlapping-or-nested-holes|self-intersection)$/;
-  const fatal = result.errors.filter(e => !contact.test(e));
+  const fatal = result.errors.filter(e => !contact.test(e) && !(independentBudgetReview && e === 'topology-budget-exhausted'));
   need(!fatal.length, `Validation failed: ${fatal.join(', ')}`);
   for (const f of collection.features) {
     need(['Polygon', 'MultiPolygon'].includes(f.geometry?.type), 'Non-polygon/null geometry');
@@ -46,9 +48,9 @@ function structural(collection, crs, topologyBudget = 2_000_000) {
   return { valid: result.valid, errors: result.errors, errorCount: result.errorCount ?? result.errors.length, topologyBudget };
 }
 
-function geos(before, after) {
+function geos(before, after, includeInteriorWitnesses = false) {
   const run = spawnSync(process.env.AIRSPACE_PYTHON || 'python', [path.join(import.meta.dirname, 'geos.py')], {
-    input: JSON.stringify({ before, after }), encoding: 'utf8', maxBuffer: 256 * 1024 * 1024,
+    input: JSON.stringify({ before, after, includeInteriorWitnesses }), encoding: 'utf8', maxBuffer: 256 * 1024 * 1024,
   });
   need(run.status === 0, `GEOS audit failed (set AIRSPACE_PYTHON; use existing requirements-geos.txt): ${run.error?.message || run.stderr}`);
   const result = JSON.parse(run.stdout);
@@ -56,16 +58,17 @@ function geos(before, after) {
   return result;
 }
 
-export async function inspect(configFile) {
+export async function inspect(configFile, { selectedSource = false } = {}) {
   const config = json(configFile), base = path.dirname(path.resolve(configFile));
   const meta = config.region;
   need(meta && /^[a-z]{2}$/.test(meta.country) && new RegExp(`^${meta.country}-[a-z0-9]+(?:-[a-z0-9]+)*$`).test(meta.id), 'Invalid country/region id');
   need(['geojson', 'shapefile'].includes(meta.format) && ['wgs84', 'gcj02'].includes(meta.crs), 'Unsupported format/CRS');
   need(['allow', 'restrict'].includes(meta.semantics) && typeof meta.name === 'string' && meta.name.trim(), 'Missing name/semantics');
-  need(meta.source?.authority && date(meta.source.effective) && typeof meta.license === 'string' && meta.license.trim(), 'Missing authority/effective date/license');
+  need(meta.source?.authority && (date(meta.source.effective) || (selectedSource && meta.source.effective === null)) && typeof meta.license === 'string' && meta.license.trim(), 'Missing authority/effective date/license');
+  if (selectedSource) need(meta.sourceConfidence?.mode === 'selected-source' && meta.coverageMode === 'positive-only' && meta.semantics === 'allow', 'Selected suitable-flight sources require explicit confidence metadata and positive-only coverage');
   need(meta.layers === undefined && meta.file === undefined && meta.boundary === undefined && meta.publish === undefined, 'Use input/boundary; publish is controlled by the workflow');
-  need(typeof config.input === 'string' && typeof config.boundary === 'string', 'input and boundary required');
-  const input = path.resolve(base, config.input), boundaryFile = path.resolve(base, config.boundary);
+  need(typeof config.input === 'string' && (typeof config.boundary === 'string' || (selectedSource && config.boundary === null)), 'input and boundary required');
+  const input = path.resolve(base, config.input), boundaryFile = config.boundary === null ? null : path.resolve(base, config.boundary);
   const inputFiles = { [path.basename(input)]: digest(input) };
   let collection;
   if (meta.format === 'geojson') collection = json(input);
@@ -90,6 +93,23 @@ export async function inspect(configFile) {
   need(collection?.type === 'FeatureCollection' && Array.isArray(collection.features) && collection.features.length, 'Expected non-empty FeatureCollection');
   const contentSha256 = sha256(stringify(collection));
   need(config.expected?.features === collection.features.length && config.expected?.contentSha256 === contentSha256, 'Complete dataset hash/count mismatch; subsets are forbidden');
+  let sourceSnapshots;
+  if (selectedSource) {
+    need(Array.isArray(config.sourceSnapshots) && config.sourceSnapshots.length > 0 && config.sourceSnapshots.length <= 64, 'Selected source requires checksum-bound original response snapshots');
+    const originals = config.sourceSnapshots.map(s => {
+      const file = path.resolve(base, s.file);
+      need(digest(file) === s.sha256, 'Original response checksum mismatch');
+      const raw = json(file);
+      need(['WGS84', 'EPSG:4326'].includes(raw.coordinateSystem) && meta.crs === 'wgs84', 'Selected API response requires a declared WGS84 CRS');
+      need(raw.features?.length === s.features && !raw.truncated && !raw.hasMore && !raw.next && !raw.nextPage && !(raw.links ?? []).some(x => x.rel === 'next') && (!Number.isFinite(raw.totalFeatures) || raw.totalFeatures === raw.features.length) && (!Number.isFinite(raw.numberMatched) || raw.numberMatched === raw.features.length), 'Incomplete or truncated original response');
+      const evidence = fixtureEvidence(raw);
+      need(!evidence.summary.structuralIssues.length, 'Invalid original response structure');
+      return evidence;
+    });
+    const full = deduplicateEvidence(originals);
+    need(!full.conflicts.length && sha256(stringify(full.items.map(x => x.feature))) === sha256(stringify(collection.features)), 'Selected input must preserve the complete acquired source union');
+    sourceSnapshots = config.sourceSnapshots;
+  }
   const ids = collection.features.filter(f => f?.id !== undefined).map(f => stringify(f.id));
   need(new Set(ids).size === ids.length, 'Duplicate feature IDs; resolve against the complete-source inventory');
   if (['cn-guangdong', 'cn-chongqing'].includes(meta.id)) {
@@ -98,9 +118,10 @@ export async function inspect(configFile) {
   }
   const topologyBudget = config.topologyBudget ?? 2_000_000;
   need(Number.isSafeInteger(topologyBudget) && topologyBudget > 0 && topologyBudget <= 100_000_000, 'topologyBudget must be an integer from 1 to 100000000');
-  const policy = structural(collection, meta.crs, topologyBudget);
+  const policy = structural(collection, meta.crs, topologyBudget, selectedSource);
   const normalized = normalizeWinding(collection);
-  const audit = geos(collection, normalized);
+  const { interiorWitnesses, ...audit } = geos(collection, normalized, selectedSource);
+  if (boundaryFile) {
   const boundary = json(boundaryFile);
   const geometry = boundary.type === 'Feature' ? boundary.geometry : boundary;
   const boundaryCollection = { type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry }] };
@@ -109,10 +130,11 @@ export async function inspect(configFile) {
   // Also check boundary CRS declarations, never infer them from numeric ranges.
   need(!boundary.crs || ['EPSG:4326', 'urn:ogc:def:crs:OGC:1.3:CRS84', 'urn:ogc:def:crs:EPSG::4326'].includes(boundary.crs?.properties?.name), 'Boundary must be WGS84');
   need(!boundary.coordinateSystem || ['WGS84', 'EPSG:4326'].includes(boundary.coordinateSystem), 'Boundary must be WGS84');
+  }
   const checks = config.pointChecks;
   need(Array.isArray(checks) && checks.length >= 2 && checks.some(c => c.inside === true) && checks.some(c => c.inside === false) && checks.every(c => Number.isFinite(c.lon) && Math.abs(c.lon) <= 180 && Number.isFinite(c.lat) && Math.abs(c.lat) <= 85 && typeof c.inside === 'boolean'), 'Require inside/outside pointChecks in WGS84, away from edges');
-  const subject = { region: meta, synthetic: config.synthetic === true, inputFiles, contentSha256, features: collection.features.length, boundarySha256: digest(boundaryFile), pointChecks: checks };
-  return { config, base, meta, input, boundaryFile, collection, normalized, policy, audit, subject, subjectSha256: sha256(stringify(subject)) };
+  const subject = { region: meta, synthetic: config.synthetic === true, inputFiles, contentSha256, features: collection.features.length, boundarySha256: boundaryFile ? digest(boundaryFile) : null, pointChecks: checks, ...(sourceSnapshots && { sourceSnapshots }) };
+  return { config, base, meta, input, boundaryFile, collection, normalized, policy, audit, interiorWitnesses, subject, subjectSha256: sha256(stringify(subject)) };
 }
 
 export function approvalEvidence(ctx, now = new Date()) {
@@ -135,6 +157,24 @@ export function approvalEvidence(ctx, now = new Date()) {
   return { approval, evidence };
 }
 
+// Operational-source selection is distinct from the six-gate high-confidence approval.
+export function selectionEvidence(ctx) {
+  need(!ctx.config.synthetic && ctx.meta.sourceConfidence?.mode === 'selected-source' && ctx.meta.coverageMode === 'positive-only', 'Selected-source publication requires real data and positive-only coverage');
+  need(ctx.config.selection, 'Explicit selected-source rights and semantics evidence required');
+  const review = json(path.resolve(ctx.base, ctx.config.selection));
+  need(review.subjectSha256 === ctx.subjectSha256, 'Selection subject mismatch');
+  const evidence = {};
+  for (const kind of ['rights', 'semantics']) {
+    const item = review[kind];
+    need(item?.file && /^[a-f0-9]{64}$/.test(item.sha256 ?? ''), `Missing selected-source ${kind} evidence`);
+    const file = path.resolve(ctx.base, item.file);
+    need(digest(file) === item.sha256 && fs.statSync(file).size > 0, `Selected-source ${kind} evidence changed`);
+    evidence[kind] = { ...item, file };
+  }
+  if (!ctx.policy.valid) need(review.geometryReview === 'independent-geos-full-source' && ctx.audit.valid && ctx.policy.errors.every(e => e === 'topology-budget-exhausted' || /:(hole-outside-or-touching-shell|overlapping-or-nested-holes)$/.test(e)), 'Selected source has unresolved geometry policy findings');
+  return { review, evidence };
+}
+
 // Only write under ignored planning/. No public/data, production sources or UI paths.
 function safeOutput(out) {
   const target = path.resolve(out), allowed = path.join(ROOT, 'planning');
@@ -148,19 +188,25 @@ function safeOutput(out) {
 
 async function emit(ctx, operation, dir) {
   const { meta, normalized, subjectSha256, subject, policy, audit } = ctx;
-  const publish = operation === 'promote';
-  const approved = publish ? approvalEvidence(ctx) : null;
-  if (operation !== 'stage') need(policy.valid, 'Unresolved conservative geometry/contact policy findings; stage only');
+  const publish = operation === 'promote' || operation === 'select';
+  const approved = operation === 'promote' ? approvalEvidence(ctx) : null;
+  const selected = operation === 'select' ? selectionEvidence(ctx) : null;
+  if (operation !== 'stage' && !selected) need(policy.valid, 'Unresolved conservative geometry/contact policy findings; stage only');
   const regionDir = path.join(dir, 'data/regions', meta.country, meta.id.slice(3));
-  const source = { ...meta, format: 'geojson', file: 'zones.geojson', boundary: 'boundary.geojson', publish };
+  const source = { ...meta, format: 'geojson', file: 'zones.geojson', boundary: ctx.boundaryFile ? 'boundary.geojson' : null, publish };
   write(path.join(regionDir, 'source.json'), source);
   write(path.join(regionDir, 'zones.geojson'), normalized);
-  fs.copyFileSync(ctx.boundaryFile, path.join(regionDir, 'boundary.geojson'));
+  if (ctx.boundaryFile) fs.copyFileSync(ctx.boundaryFile, path.join(regionDir, 'boundary.geojson'));
   // Preserve exact source bytes and shapefile sidecars separately from the derivative.
   for (const file of Object.keys(subject.inputFiles)) {
     const original = path.join(path.dirname(ctx.input), file);
     const dest = path.join(dir, 'original', file);
     fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.copyFileSync(original, dest);
+  }
+  for (const [i, snapshot] of (subject.sourceSnapshots ?? []).entries()) {
+    const dest = path.join(dir, 'original-responses', `${i}.json`);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(path.resolve(ctx.base, snapshot.file), dest);
   }
   let manifest = null, smoke = null;
   if (operation !== 'stage') {
@@ -168,6 +214,11 @@ async function emit(ctx, operation, dir) {
     need(manifest.cells === subject.features, 'Reader omitted source features');
     const { features } = await readRegion(regionDir, source);
     smoke = await pointSmoke(path.join(dir, 'tiles', manifest.file), { type: 'FeatureCollection', features }, ctx.config.pointChecks);
+    if (selected) {
+      need(ctx.interiorWitnesses?.length === subject.features, 'Missing full-source feature interior witnesses');
+      const presence = await pointSmoke(path.join(dir, 'tiles', manifest.file), { type: 'FeatureCollection', features }, ctx.interiorWitnesses);
+      smoke.featureInteriorChecks = presence.points;
+    }
     write(path.join(dir, 'tiles', meta.country, 'manifest.json'), { regions: [manifest] });
     smoke.rendering = await renderSmoke(dir, manifest);
   }
@@ -176,13 +227,25 @@ async function emit(ctx, operation, dir) {
     for (const item of Object.values(evidence)) fs.copyFileSync(item.file, (() => { const p = path.join(dir, item.evidence); fs.mkdirSync(path.dirname(p), { recursive: true }); return p; })());
     write(path.join(dir, 'approval.json'), { ...approval, gates: Object.fromEntries(Object.entries(evidence).map(([k, { file, ...v }]) => [k, v])) });
   }
+  if (selected) {
+    const evidence = {};
+    for (const [kind, item] of Object.entries(selected.evidence)) {
+      const file = `evidence/${kind}${path.extname(item.file)}`;
+      fs.mkdirSync(path.join(dir, 'evidence'), { recursive: true });
+      fs.copyFileSync(item.file, path.join(dir, file));
+      evidence[kind] = { ...item, file };
+    }
+    write(path.join(dir, 'selection.json'), { ...selected.review, ...evidence });
+  }
   // Catch source/evidence changes during a long build, before marking any candidate complete.
   for (const [file, hash] of Object.entries(subject.inputFiles)) need(digest(path.join(path.dirname(ctx.input), file)) === hash, 'Input changed during build');
-  need(digest(ctx.boundaryFile) === subject.boundarySha256, 'Boundary changed during build');
-  if (publish) approvalEvidence(ctx);
+  if (ctx.boundaryFile) need(digest(ctx.boundaryFile) === subject.boundarySha256, 'Boundary changed during build');
+  for (const s of subject.sourceSnapshots ?? []) need(digest(path.resolve(ctx.base, s.file)) === s.sha256, 'Original response changed during build');
+  if (approved) approvalEvidence(ctx);
+  if (selected) selectionEvidence(ctx);
   write(path.join(dir, 'report.json'), { operation, active: false, subject, subjectSha256, normalizedSha256: sha256(stringify(normalized)),
     tools: { node: process.version, normalizerSha256: digest(import.meta.filename), geosAuditSha256: digest(path.join(import.meta.dirname, 'geos.py')) }, policy, audit, smoke, manifest,
-    note: publish ? 'APPROVED REGISTRATION CANDIDATE ONLY. Review and publish through the existing deployment workflow.' : 'LOCAL ONLY. Never copy into production registration or public/data.' });
+    note: selected ? 'SELECTED OPERATIONAL SOURCE CANDIDATE. Six-gate approval is NOT asserted. Review before registration/publication.' : publish ? 'APPROVED REGISTRATION CANDIDATE ONLY. Review and publish through the existing deployment workflow.' : 'LOCAL ONLY. Never copy into production registration or public/data.' });
   if (manifest) write(path.join(dir, 'preview.html'), previewHTML({ type: 'FeatureCollection', features: (await readRegion(regionDir, source)).features }, { region: meta.id, integrationReady: false, status: 'Local integration smoke preview' }, manifest.bounds));
   // Hash every emitted file so an operator can check a reviewed candidate before copying.
   const hashes = {};
@@ -192,13 +255,15 @@ async function emit(ctx, operation, dir) {
 }
 
 export async function integrate(operation, files, { out, dryRun = false, requireApproved = false } = {}) {
-  need(['stage', 'build', 'promote'].includes(operation), 'Use stage, build or promote');
+  need(['stage', 'build', 'promote', 'select'].includes(operation), 'Use stage, build, promote or select');
+  need(!(operation === 'select' && requireApproved), 'select is distinct from six-gate approval; use promote --approved for that workflow');
   need(files.length, 'Supply at least one config');
   const contexts = [];
-  for (const file of files) contexts.push(await inspect(file));
+  for (const file of files) contexts.push(await inspect(file, { selectedSource: operation === 'select' }));
   need(new Set(contexts.map(c => c.meta.id)).size === contexts.length, 'Duplicate region in batch');
   for (const ctx of contexts) {
-    if (operation !== 'stage') need(ctx.policy.valid, 'Unresolved conservative geometry/contact policy findings; stage only');
+    if (operation === 'select') selectionEvidence(ctx);
+    else if (operation !== 'stage') need(ctx.policy.valid, 'Unresolved conservative geometry/contact policy findings; stage only');
     if (operation === 'promote' || requireApproved) approvalEvidence(ctx);
   }
   const preview = contexts.map(c => ({ id: c.meta.id, operation, subjectSha256: c.subjectSha256, features: c.subject.features, policy: c.policy, active: false }));

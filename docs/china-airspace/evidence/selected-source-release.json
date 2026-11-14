@@ -1,0 +1,323 @@
+{
+  "baseline": "0df811ea5bb498f37b3fc2e9f8a293f44ec5a532",
+  "rollback": {
+    "release": "a2216319a5b7f74d2088d16f8988649f8f507761",
+    "rollbackArchive": "planning/rollout/previous-production-a221631.zip",
+    "rollbackArchiveSha256": "adef35d164c2570eb38ca3b4f767b0ccedd03e30b2935ad9666472a294d2de5e",
+    "artifacts": {
+      "cn/cn-hubei.566a4850.pmtiles": "566a485009c6d44e9b234ecdcbce2858b840f2040e59de204d7de0c286f12ec5",
+      "cn/cn-hubei.boundary.d51de41d.json": "d51de41db7ce7f2ad8eb5b00cc5ea42c9444710961ca210e47b84ef4713feaab",
+      "sg/sg-nofly.52266140.pmtiles": "52266140f9d2c092f23c5ee5323c678feeffadfbe0da34e6c34de977ec241102",
+      "sg/sg-nofly.boundary.8621758d.json": "8621758df002c24f8a98e2e5f95dded1051037a69256100eb45ee6ee31f831a2"
+    }
+  },
+  "regions": [
+    {
+      "region": "cn-jilin",
+      "features": 140,
+      "subjectSha256": "8d19a7a323b7f5741e0e152d4df2109faba9eae32c74d5b0b9e3f8033192bc49",
+      "sourceSnapshotAt": "2026-09-22T05:49:05.729Z",
+      "tile": "cn/cn-jilin.f11867c2.pmtiles",
+      "tileSha256": "f11867c2b6a59fce26290b4e7d8ebf18cfc176cc14a7658ec41fe46c163e6117",
+      "points": 11,
+      "tiles": 41804,
+      "rendering": {
+        "renderer": "leaflet/protomaps-leaflet",
+        "painted": true,
+        "pageErrors": 0
+      },
+      "sourceContentSha256": "c08a9934ddf899371c6ac76e9fcb276fae08b4f49cf4169fc9559a1825a88570",
+      "sourceSnapshots": [
+        {
+          "file": "../live-jilin/capture/responses/0-0.json",
+          "sha256": "ba144311faaf37390367d7bda1c16c80183aea15291e8ae02e576f65e0220421",
+          "features": 127
+        },
+        {
+          "file": "../live-jilin/capture/responses/0-1.json",
+          "sha256": "c3cfa0cd5b2c704580218bf527d1763d9129bc9ccab66479ae276471d65a6c9b",
+          "features": 47
+        }
+      ],
+      "policy": {
+        "valid": false,
+        "errors": [
+          "feature-20:hole-outside-or-touching-shell",
+          "feature-28:hole-outside-or-touching-shell",
+          "feature-28:overlapping-or-nested-holes",
+          "topology-budget-exhausted"
+        ],
+        "errorCount": 4,
+        "topologyBudget": 2000000
+      },
+      "geos": {
+        "valid": true,
+        "features": 140,
+        "shapely": "2.2.0",
+        "geos": "3.14.1"
+      },
+      "confidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "coverageMode": "positive-only"
+    },
+    {
+      "region": "cn-hunan",
+      "features": 53,
+      "subjectSha256": "2a769080a4b3221283585b13928a7f45bcb55ad0cf1dc91aceb8e703e5ad34a0",
+      "sourceSnapshotAt": "2026-09-22T05:49:03.681Z",
+      "tile": "cn/cn-hunan.b0935b4d.pmtiles",
+      "tileSha256": "b0935b4d7c0846832bb63839048d435f0668cd2212e8c58388f2aaf28f96dc81",
+      "points": 7,
+      "tiles": 59676,
+      "rendering": {
+        "renderer": "leaflet/protomaps-leaflet",
+        "painted": true,
+        "pageErrors": 0
+      },
+      "sourceContentSha256": "b4b8a50fcef36b89bcbb2f922eaaeefe1f2ce8add39369349aa29168dc0583d3",
+      "sourceSnapshots": [
+        {
+          "file": "../live-hunan/capture/responses/0-0.json",
+          "sha256": "3d5b070a81644796e8afaecb6e9fbf4c7a993e7dcaad1e554ba6aededfd4ccea",
+          "features": 19
+        },
+        {
+          "file": "../live-hunan/capture/responses/0-1.json",
+          "sha256": "774a155b36eb2c5b944dde15a4ef815e649db33df2701cbd557212426d761654",
+          "features": 38
+        }
+      ],
+      "policy": {
+        "valid": false,
+        "errors": [
+          "topology-budget-exhausted"
+        ],
+        "errorCount": 1,
+        "topologyBudget": 2000000
+      },
+      "geos": {
+        "valid": true,
+        "features": 53,
+        "shapely": "2.2.0",
+        "geos": "3.14.1"
+      },
+      "confidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "coverageMode": "positive-only"
+    },
+    {
+      "region": "cn-ningxia",
+      "features": 79,
+      "subjectSha256": "9634e7bcbb4ab6df5be9aafbbc5adf51fa563f550a12e10d26b5fa8b156ded34",
+      "sourceSnapshotAt": "2026-09-22T05:49:08.719Z",
+      "tile": "cn/cn-ningxia.99868b1d.pmtiles",
+      "tileSha256": "99868b1d8e0d3a16055aca8b564bdc14a987336ecf17c6a134e4d036da9028b4",
+      "points": 11,
+      "tiles": 9334,
+      "rendering": {
+        "renderer": "leaflet/protomaps-leaflet",
+        "painted": true,
+        "pageErrors": 0
+      },
+      "sourceContentSha256": "60af7b14aa6c7bb557b51984abc1aa3b8fb55a053a834ba1a37e384e8854ebc0",
+      "sourceSnapshots": [
+        {
+          "file": "../live-ningxia/capture/responses/0-0.json",
+          "sha256": "ab611d9062d58c1f6137a70a2865431edb8fe9714be6ed647c3427f70955dadd",
+          "features": 21
+        },
+        {
+          "file": "../live-ningxia/capture/responses/0-1.json",
+          "sha256": "795d035bba5ca31117605ed6f3a76da3259ef9dd69bb7d8df1ae914c4e4851a9",
+          "features": 62
+        }
+      ],
+      "policy": {
+        "valid": false,
+        "errors": [
+          "feature-0:hole-outside-or-touching-shell",
+          "feature-23:hole-outside-or-touching-shell",
+          "feature-58:hole-outside-or-touching-shell"
+        ],
+        "errorCount": 3,
+        "topologyBudget": 2000000
+      },
+      "geos": {
+        "valid": true,
+        "features": 79,
+        "shapely": "2.2.0",
+        "geos": "3.14.1"
+      },
+      "confidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "coverageMode": "positive-only"
+    },
+    {
+      "region": "cn-guangdong",
+      "features": 101,
+      "subjectSha256": "ef048447df72c2d54801da09bd901a78c43b78f400a783c8e53031ce7fe68045",
+      "sourceSnapshotAt": "2026-09-22T05:48:55.817Z",
+      "tile": "cn/cn-guangdong.550bc53c.pmtiles",
+      "tileSha256": "550bc53c423dc86ea38f1b99ee2e71b2f56307289e989ff73f052c203c8a512d",
+      "points": 11,
+      "tiles": 14864,
+      "rendering": {
+        "renderer": "leaflet/protomaps-leaflet",
+        "painted": true,
+        "pageErrors": 0
+      },
+      "sourceContentSha256": "2090fd2361165f4fb9df3c48a115c7e29ce46d2e87400d2aaca5ab5581c0dbc5",
+      "sourceSnapshots": [
+        {
+          "file": "../../china-airspace/fixtures/bd7476e83aed9d44f5a5a1533984aa6c613228a8ce3d67c7ffcbcc7be3e4c1f1/guangdong-guangzhou.geojson",
+          "sha256": "bd7476e83aed9d44f5a5a1533984aa6c613228a8ce3d67c7ffcbcc7be3e4c1f1",
+          "features": 80
+        },
+        {
+          "file": "../../china-airspace/fixtures/582f0ea46fec212021dc284a5dd7b90b7251ed1dea36d82939aa79c4ce2fd157/guangdong-shenzhen-a.geojson",
+          "sha256": "582f0ea46fec212021dc284a5dd7b90b7251ed1dea36d82939aa79c4ce2fd157",
+          "features": 55
+        },
+        {
+          "file": "../../china-airspace/fixtures/b1ecfc2a15404c7ff51f10690999e3c7a20a83395e25ff6cd846fea7b7ab8ee2/guangdong-shenzhen-b.geojson",
+          "sha256": "b1ecfc2a15404c7ff51f10690999e3c7a20a83395e25ff6cd846fea7b7ab8ee2",
+          "features": 79
+        }
+      ],
+      "policy": {
+        "valid": false,
+        "errors": [
+          "feature-0:hole-outside-or-touching-shell",
+          "feature-0:overlapping-or-nested-holes",
+          "feature-2:hole-outside-or-touching-shell",
+          "feature-6:hole-outside-or-touching-shell",
+          "feature-6:overlapping-or-nested-holes",
+          "feature-26:hole-outside-or-touching-shell",
+          "feature-32:overlapping-or-nested-holes",
+          "feature-38:hole-outside-or-touching-shell",
+          "feature-38:overlapping-or-nested-holes",
+          "feature-64:hole-outside-or-touching-shell",
+          "feature-83:hole-outside-or-touching-shell",
+          "feature-84:hole-outside-or-touching-shell",
+          "feature-89:hole-outside-or-touching-shell",
+          "feature-92:hole-outside-or-touching-shell",
+          "feature-93:hole-outside-or-touching-shell"
+        ],
+        "errorCount": 15,
+        "topologyBudget": 2000000
+      },
+      "geos": {
+        "valid": true,
+        "features": 101,
+        "shapely": "2.2.0",
+        "geos": "3.14.1"
+      },
+      "confidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "coverageMode": "positive-only"
+    }
+  ],
+  "existingArtifactsUnchanged": true,
+  "approvalMode": "selected-source; no six-gate approval asserted",
+  "sourcePolicy": "Owner-selected operational reference sources, distinct from the six-gate high-confidence workflow",
+  "rightsEvidence": "owner-api-authorization.json",
+  "semanticsEvidence": "kdji-source-semantics.json",
+  "rawAcquisition": {
+    "networkRequests": 6,
+    "provinces": [
+      "cn-jilin",
+      "cn-hunan",
+      "cn-ningxia"
+    ],
+    "perProvinceRequests": 2,
+    "spacingMs": 3000,
+    "attempts": 1,
+    "providerQuota": "undocumented; operator caps only",
+    "accessOrRateLimitBypass": false
+  },
+  "acceptedUncertainties": [
+    "Independent alignment unverified",
+    "Provincial completeness unverified",
+    "Latest regulatory revision unverified",
+    "Temporary controls may be missing",
+    "Current flight permission unverified"
+  ],
+  "runtimeRule": "Legacy Hubei/Singapore verdicts take precedence. Elsewhere, only positive selected-source polygons can produce a mapped suitable-flight result; gaps, holes, missing tiles and outside footprint remain unknown.",
+  "withheldRegions": [
+    {
+      "region": "cn-chongqing",
+      "acquiredFeatures": 777,
+      "sourceContentSha256": "fe74a3a59558df666907c7af40a28a03b6ae121dac75f7fad515bb34044e9f89",
+      "reason": "One valid source polygon is smaller than the existing z14/4096 tile grid and is absent from the generated archive. Entire province withheld; no source record removed or repaired.",
+      "featureId": "chongqing-271-0",
+      "bounds": [
+        106.482239,
+        28.568573,
+        106.482241,
+        28.568576
+      ],
+      "sourceValid": true,
+      "selectedSourceCandidate": "planning/rollout/release-candidate/cn-chongqing",
+      "published": false
+    }
+  ],
+  "fullFeaturePresenceChecks": [
+    {
+      "region": "cn-jilin",
+      "features": 140,
+      "interiorPresenceChecks": 140,
+      "allPresent": true
+    },
+    {
+      "region": "cn-hunan",
+      "features": 53,
+      "interiorPresenceChecks": 53,
+      "allPresent": true
+    },
+    {
+      "region": "cn-ningxia",
+      "features": 79,
+      "interiorPresenceChecks": 79,
+      "allPresent": true
+    },
+    {
+      "region": "cn-guangdong",
+      "features": 101,
+      "interiorPresenceChecks": 101,
+      "allPresent": true
+    }
+  ],
+  "qualifiedCandidate": "planning/rollout/qualified-release"
+}

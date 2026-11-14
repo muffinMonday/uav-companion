@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { inspect, integrate, normalizeWinding, approvalEvidence } from '../scripts/airspace/integrate.mjs';
+import { inspect, integrate, normalizeWinding, approvalEvidence, selectionEvidence } from '../scripts/airspace/integrate.mjs';
 import { sha256, stringify } from '../scripts/china-airspace/core.js';
 import { readRegion } from '../scripts/lib/readers.js';
 
@@ -38,6 +38,83 @@ async function approve(config) {
   write(p, approval);
 }
 const snapshot = () => ['data/regions/cn/hubei/source.json', 'data/regions/cn/hubei/boundary.geojson', 'src/map.js', 'scripts/strip-local.js'].map(p => sha256(fs.readFileSync(path.join(root, p))));
+
+async function selectedSetup({ topologyBudget, tinyFeature = false } = {}) {
+  const s = setup(), c = read(s.config), collection = read(path.join(s.dir, c.input));
+  const { deduplicateEvidence, fixtureEvidence } = await import('../scripts/china-airspace/fixture-evidence.js');
+  if (tinyFeature) collection.features.push({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[103.2,1.2],[103.200002,1.2],[103.2,1.200003],[103.2,1.2]]] } });
+  collection.features.forEach((f, i) => { f.properties.id = String(i); });
+  const raw = { ...collection, coordinateSystem: 'WGS84' };
+  write(path.join(s.dir, 'response.json'), raw);
+  const full = { type: 'FeatureCollection', features: deduplicateEvidence([fixtureEvidence(raw)]).items.map(x => x.feature) };
+  write(path.join(s.dir, c.input), full);
+  c.synthetic = false; c.boundary = null;
+  c.expected = { features: full.features.length, contentSha256: sha256(stringify(full)) };
+  c.region.source.effective = null;
+  c.region.crsVerified = false;
+  c.region.coverageMode = 'positive-only';
+  c.region.sourceConfidence = { mode: 'selected-source', currency: 'unverified' };
+  c.sourceSnapshots = [{ file: 'response.json', features: raw.features.length, sha256: sha256(fs.readFileSync(path.join(s.dir, 'response.json'))) }];
+  c.selection = 'selection.json'; write(s.config, c);
+  if (topologyBudget) { c.topologyBudget = topologyBudget; write(s.config, c); }
+  const ctx = await inspect(s.config, { selectedSource: true });
+  const evidence = { file: 'evidence.txt', sha256: sha256(fs.readFileSync(path.join(s.dir, 'evidence.txt'))) };
+  write(path.join(s.dir, 'selection.json'), { subjectSha256: ctx.subjectSha256, rights: evidence, semantics: evidence, geometryReview: 'independent-geos-full-source' });
+  return { ...s, ctx };
+}
+
+test('selected-source candidates retain unknown dates/coverage, bind rights and never assert six-gate approval', async () => {
+  const { config, dir, ctx } = await selectedSetup();
+  assert(selectionEvidence(ctx));
+  await assert.rejects(inspect(config), /effective date/);
+  await assert.rejects(integrate('promote', [config], { dryRun: true }));
+  const output = path.join(tmp, 'selected-build');
+  await integrate('select', [config], { out: output });
+  const report = read(path.join(output, 'report.json'));
+  assert.equal(report.manifest.cells, 2);
+  assert.equal(report.manifest.coverageMode, 'positive-only');
+  assert.equal(report.manifest.source.effective, null);
+  assert.equal(report.manifest.crsVerified, false);
+  assert.equal(report.manifest.sourceConfidence.mode, 'selected-source');
+  assert.equal(report.smoke.featureInteriorChecks, 2);
+  assert.equal(fs.existsSync(path.join(output, 'approval.json')), false);
+  assert.equal(fs.existsSync(path.join(output, 'selection.json')), true);
+  const review = read(path.join(dir, 'selection.json'));
+  review.rights.sha256 = '0'.repeat(64); write(path.join(dir, 'selection.json'), review);
+  assert.throws(() => selectionEvidence(ctx), /rights evidence changed/);
+});
+
+test('selected-source inspection rejects source loss, truncated originals and undeclared CRS', async () => {
+  for (const mutate of [raw => { raw.truncated = true; }, raw => { raw.coordinateSystem = 'GCJ-02'; }]) {
+    const { config, dir } = await selectedSetup();
+    const file = path.join(dir, 'response.json'), raw = read(file); mutate(raw); write(file, raw);
+    change(config, c => { c.sourceSnapshots[0].sha256 = sha256(fs.readFileSync(file)); });
+    await assert.rejects(inspect(config, { selectedSource: true }));
+  }
+  const { config } = await selectedSetup();
+  geometry(config, gj => { gj.features.pop(); });
+  await assert.rejects(inspect(config, { selectedSource: true }), /complete acquired source union/);
+});
+
+test('selected-source budget findings require explicit full-source GEOS review; strict build remains blocked', async () => {
+  const { config, dir, ctx } = await selectedSetup({ topologyBudget: 1 });
+  assert.equal(ctx.policy.valid, false);
+  assert(ctx.policy.errors.includes('topology-budget-exhausted'));
+  assert.equal(ctx.audit.valid, true);
+  assert(selectionEvidence(ctx));
+  const review = read(path.join(dir, 'selection.json'));
+  delete review.geometryReview; write(path.join(dir, 'selection.json'), review);
+  assert.throws(() => selectionEvidence(ctx), /unresolved geometry/);
+  change(config, c => { c.region.source.effective = '2026-05-14'; c.boundary = 'boundary.geojson'; });
+  await assert.rejects(integrate('build', [config], { dryRun: true }), /topology-budget-exhausted/);
+});
+
+test('selected-source batch fails atomically when a valid source feature is lost at tile precision', async () => {
+  const { config } = await selectedSetup({ tinyFeature: true });
+  const output = path.join(tmp, 'sub-grid-rejected');
+  await assert.rejects(integrate('select', [config], { out: output }), /Point smoke failed/);
+  assert.equal(fs.existsSync(output), false);
+});
 
 test('dry run validates complete synthetic geometry without writing or changing Hubei/UI', async () => {
   const before = snapshot();
