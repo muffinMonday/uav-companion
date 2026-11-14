@@ -1,7 +1,7 @@
 # Session Checkpoint
 
 ## China airspace data staging (2026-11-14; isolated branch, no merge/deploy)
-- Review: initial PR https://github.com/muffinMonday/uav-companion/pull/1 was merged upstream outside this session (`origin/main` now `eab4b6f`). New supplied-fixture results are being prepared as a follow-up draft on the same isolated feature branch; no merge/deploy by this session.
+- Review: follow-up draft PR https://github.com/muffinMonday/uav-companion/pull/2 opened with implementation commit `07075b8` on the same isolated branch. Initial PR #1 was merged upstream outside this session (`origin/main` now `eab4b6f`); no merge/deploy by this session.
 - Branch/worktree: `feature/china-airspace-data`, `.worktrees/china-airspace-data`, base `e0a6d64`; Claude's active UX checkout untouched. Audit, run instructions, sources, 31-division inventory and validation: `../../docs/china-airspace/README.md`.
 - Added independent serial/local acquisition, checksum archives, resumable checkpoints, cumulative request budgets, geometry/CRS validation, exact deduplication, overlapping-query comparison and offline previews. No production region, application, package, test registry or existing build changes.
 - Supplied originals now archived byte-for-byte: Guangdong 55/79 Shenzhen captures plus 80 Guangzhou, Chongqing 777. Fixture manifest records SHA-256 and source metadata. Guangdong deduplicates 214 occurrences to 101 IDs/geometries; Chongqing 777 remain unique. All 991 source occurrences and both unions are GEOS-valid with zero positive-area overlaps. Source-declared WGS84 and 2026-09-22 snapshot claims are not verified alignment, capture time or effective dates.
