@@ -74,7 +74,7 @@ const lines = (p) => p.evaluate(() => ({ dashed: document.querySelectorAll('.lea
 let S = await session();
 let p = S.page;
 const types = await p.$$eval('#poi-types .type-btn', (bs) => bs.map((x) => ({ t: x.dataset.type, label: x.textContent.trim(), title: x.title, svg: x.innerHTML })));
-ok(types.length === 10 && types.map((t) => t.t).join() === 'home,hotel,takeoff,landing,photo,train,airport,hazard,residence,other', '1: ten types in the picker');
+ok(types.length === 16 && types.map((t) => t.t).join() === 'home,hotel,takeoff,landing,photo,train,airport,hazard,residence,other,food,attraction,shopping,nature,transport,meeting', '1: sixteen types in the picker');
 const th = types.find((t) => t.t === 'home'), tr = types.find((t) => t.t === 'residence');
 ok(th.label === 'Home point' && tr.label === 'Home', '1: "Home point" and "Home" are separate buttons');
 ok(th.title !== tr.title && /drone/i.test(th.title) && /residence/i.test(tr.title) && /not the drone/i.test(tr.title), '1: each has a tooltip that says which is which: ' + JSON.stringify([th.title, tr.title]));
@@ -101,12 +101,12 @@ ok(order.slice(0, 4).join() === 'Hotel One,Tower,Hotel Two,Lake', '2: ordered by
 
 // ================= 3. distances in the list (dates decide which hotel)
 const w1 = await distLine(p, 'Tower');
-ok(w1 === `${F(D(P.W1, P.HP))} to home point · ${F(D(P.W1, P.H1))} to hotel · ${F(D(P.W1, P.RES))} to home`, `3: "Tower" (13 Nov) is measured to Hotel One only (12–14 Nov), not the nearer-in-time-wrong Hotel Two: "${w1}"`);
+ok(w1 === `${F(D(P.W1, P.HP))} to home point · ${F(D(P.W1, P.H1))} to accommodation · ${F(D(P.W1, P.RES))} to home`, `3: "Tower" (13 Nov) is measured to Hotel One only (12–14 Nov), not the nearer-in-time-wrong Hotel Two: "${w1}"`);
 const w2 = await distLine(p, 'Lake');
-ok(w2 === `${F(D(P.W2, P.HP))} to home point · ${F(D(P.W2, P.H2))} to hotel · ${F(D(P.W2, P.RES))} to home`, `3: "Lake" (16 Nov) is measured to Hotel Two (15–17 Nov): "${w2}"`);
+ok(w2 === `${F(D(P.W2, P.HP))} to home point · ${F(D(P.W2, P.H2))} to accommodation · ${F(D(P.W2, P.RES))} to home`, `3: "Lake" (16 Nov) is measured to Hotel Two (15–17 Nov): "${w2}"`);
 const nearestUndated = D(P.W3, P.H1) < D(P.W3, P.H2) ? P.H1 : P.H2;
 const w3 = await distLine(p, 'Airport');
-ok(w3 === `${F(D(P.W3, P.HP))} to home point · ${F(D(P.W3, nearestUndated))} to hotel · ${F(D(P.W3, P.RES))} to home`, `3: an undated waypoint uses the nearest hotel whatever its dates: "${w3}"`);
+ok(w3 === `${F(D(P.W3, P.HP))} to home point · ${F(D(P.W3, nearestUndated))} to accommodation · ${F(D(P.W3, P.RES))} to home`, `3: an undated waypoint uses the nearest hotel whatever its dates: "${w3}"`);
 const hl = [await distLine(p, 'Launch A'), await distLine(p, 'Hotel One')];
 ok(hl.every((t) => /^\S.* to home$/.test(t) && !/hotel|home point/.test(t)) && (await distLine(p, 'My flat')) === null, '3: Home points and hotels show only the distance to Home; the Home marker has no distance line: ' + hl.join(' | '));
 const clipped = await p.$$eval('#poi-list .dist-line', (els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1).length);
@@ -117,7 +117,7 @@ await open(p, 'Tower');
 let rows = await rowsOf(p);
 ok(rows.length === 3, '4: three rows: nearest home point, nearest hotel and your Home');
 ok(rows[0].v === `${F(D(P.W1, P.HP))} ${compassOf(P.W1, P.HP)}` && /home point Launch A/.test(rows[0].s), `4: home point row: "${rows[0].v}", "${rows[0].s}"`);
-ok(rows[1].v === `${F(D(P.W1, P.H1))} ${compassOf(P.W1, P.H1)}` && /hotel Hotel One/.test(rows[1].s) && !/Two/.test(rows[1].s), `4: hotel row names the matching hotel: "${rows[1].v}", "${rows[1].s}"`);
+ok(rows[1].v === `${F(D(P.W1, P.H1))} ${compassOf(P.W1, P.H1)}` && /accommodation Hotel One/.test(rows[1].s) && !/Two/.test(rows[1].s), `4: hotel row names the matching hotel: "${rows[1].v}", "${rows[1].s}"`);
 ok(rows[2].v === `${F(D(P.W1, P.RES))} ${compassOf(P.W1, P.RES)}` && /from home My flat/.test(rows[2].s), `4: Home row: "${rows[2].v}", "${rows[2].s}"`);
 ok(/from home point Launch A/.test(rows[0].s) && /from home My flat/.test(rows[2].s) && !/home point/.test(rows[2].s), '4: the Home point line and the Home line read differently ("home point Launch A" / "home My flat")');
 ok(await p.locator('.poi-pop .dist-wrap').isVisible(), '4: the distances are shown, below the conditions');
@@ -147,7 +147,7 @@ S = await session({ keys: ['HP', 'H1', 'W1'], extra: { W1: { date: '2026-12-25' 
 p = S.page;
 await open(p, 'Tower');
 rows = await rowsOf(p);
-ok(rows.length === 1 && !/No hotel/.test(await p.locator('.poi-pop .dist-wrap').innerText()), '6: a waypoint on a date no hotel covers shows no hotel row at all');
+ok(rows.length === 1 && !/No (hotel|accommodation)/.test(await p.locator('.poi-pop .dist-wrap').innerText()), '6: a waypoint on a date no hotel covers shows no hotel row at all');
 ok(rows[0].v.startsWith(F(D(P.W1, P.HP))), '6: while the home point (undated) is still measured');
 ln = await lines(p);
 ok(ln.dashed === 1, '6: only one dashed line (to the home point)');
@@ -164,11 +164,11 @@ await closePopup(p);
 await S.ctx.close();
 S = await session({ keys: ['H1', 'W1'] }); p = S.page;
 await open(p, 'Tower'); rows = await rowsOf(p);
-ok(rows.length === 1 && /hotel Hotel One/.test(rows[0].s), '6: with no home point saved, only the hotel row is shown');
+ok(rows.length === 1 && /accommodation Hotel One/.test(rows[0].s), '6: with no home point saved, only the hotel row is shown');
 await closePopup(p); await S.ctx.close();
 S = await session({ keys: ['W1'] }); p = S.page;
 await open(p, 'Tower');
-ok(/Add a Home point, Hotel or Home marker/.test(await p.locator('.poi-pop .dist-wrap').innerText()) && (await lines(p)).dashed === 0, '6: with neither saved, the window says what to add');
+ok(/Add a Home point, Accommodation or Home marker/.test(await p.locator('.poi-pop .dist-wrap').innerText()) && (await lines(p)).dashed === 0, '6: with neither saved, the window says what to add');
 await closePopup(p); await S.ctx.close();
 
 // ================= 6b. the Home marker as the only base, and the max range ignoring it
@@ -192,7 +192,7 @@ await open(p, 'Far'); rows = await rowsOf(p);
 const nearFar = Math.min(D(P.FAR, P.HP), D(P.FAR, P.H1));
 console.log(`     Far is ${(nearFar / 1000).toFixed(1)} km from its nearest home point or hotel and ${Math.round(D(P.FAR, P.RES2))} m from the Home marker`);
 ok(rows.length === 3 && rows[0].over && rows[1].over && !rows[2].over, '6b: with a 5 km range: home point and hotel rows are red, the Home row (' + rows[2].v + ') is not');
-ok(/Beyond your 5\.0 km max range from every home point and hotel/.test(await p.locator('.poi-pop .dist-wrap').innerText()), '6b: and the note says it is beyond the range from every home point and hotel');
+ok(/Beyond your 5\.0 km max range from every home point and accommodation/.test(await p.locator('.poi-pop .dist-wrap').innerText()), '6b: and the note says it is beyond the range from every home point and hotel');
 ok((await item(p, 'Far').locator('.dist-line.over').count()) === 1, '6b: the list line is red too');
 await closePopup(p);
 delete P.FAR; delete P.RES2;
@@ -233,17 +233,17 @@ await p.mouse.move(pin.x, pin.y); await p.mouse.down(); await p.waitForTimeout(6
 await p.click('#banner-action');
 const hpNow = (await store(p)).find((i) => i.id === 'hp');
 const after = await distLine(p, 'Tower');
-ok(before !== after && after === `${F(D(P.W1, hpNow))} to home point · ${F(D(P.W1, P.H1))} to hotel`, `7: moving the home point updates the distances at once: "${before}" -> "${after}"`);
+ok(before !== after && after === `${F(D(P.W1, hpNow))} to home point · ${F(D(P.W1, P.H1))} to accommodation`, `7: moving the home point updates the distances at once: "${before}" -> "${after}"`);
 await open(p, 'Hotel One');
 await p.click('.poi-pop .btn:has-text("Delete")'); await p.click('.poi-pop .btn.danger'); await p.waitForTimeout(500);
 ok((await distLine(p, 'Tower')) === `${F(D(P.W1, hpNow))} to home point`, '7: deleting Hotel One drops it from "Tower" (no other hotel covers 13 Nov)');
 await open(p, 'Tower'); rows = await rowsOf(p);
-ok(rows.length === 1 && !/No hotel/.test(await p.locator('.poi-pop .dist-wrap').innerText()), '7: and the window has no hotel row');
+ok(rows.length === 1 && !/No (hotel|accommodation)/.test(await p.locator('.poi-pop .dist-wrap').innerText()), '7: and the window has no hotel row');
 await closePopup(p);
 // editing a waypoint's date re-targets the hotel
 await open(p, 'Tower'); await p.click('.poi-pop .btn:has-text("Edit")'); await p.waitForSelector('.poi-pop form');
 await p.locator('.poi-pop input[type=date]').nth(0).fill('2026-11-16'); await p.click('.poi-pop button[type=submit]'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(600);
-ok((await distLine(p, 'Tower')) === `${F(D(P.W1, hpNow))} to home point · ${F(D(P.W1, P.H2))} to hotel`, '7: changing Tower to 16 Nov makes Hotel Two its hotel');
+ok((await distLine(p, 'Tower')) === `${F(D(P.W1, hpNow))} to home point · ${F(D(P.W1, P.H2))} to accommodation`, '7: changing Tower to 16 Nov makes Hotel Two its hotel');
 await closePopup(p); await S.ctx.close();
 
 // ================= 8. the dates form
@@ -280,7 +280,7 @@ ok(/\b(km|m)\b/.test(await scale()) && !/mi|ft/.test(await scale()), '9: metric 
 ok((await p.inputValue('#dist-units')) === 'metric' && (await p.textContent('#dist-max-unit')) === 'km', '9: settings card shows metric');
 await setUnits(p, 'imperial'); await p.waitForTimeout(500);
 const imp = await distLine(p, 'Tower');
-ok(imp === `${F(D(P.W1, P.HP), 'imperial')} to home point · ${F(D(P.W1, P.H1), 'imperial')} to hotel` && /ft|mi/.test(imp), '9: miles and feet in the list: "' + imp + '"');
+ok(imp === `${F(D(P.W1, P.HP), 'imperial')} to home point · ${F(D(P.W1, P.H1), 'imperial')} to accommodation` && /ft|mi/.test(imp), '9: miles and feet in the list: "' + imp + '"');
 ok(/mi|ft/.test(await scale()) && !/\bkm\b/.test(await scale()), '9: the scale bar switches to miles/feet: ' + await scale());
 ok((await p.textContent('#dist-max-unit')) === 'mi', '9: the max-range field is now in miles');
 await open(p, 'Tower'); rows = await rowsOf(p);

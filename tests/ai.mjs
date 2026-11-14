@@ -72,7 +72,7 @@ ok(/can be wrong/.test(await p.textContent('#ai-preview')) && /unverified/.test(
 const checks = await p.$$eval('#ai-preview .prow input', (cs) => cs.map((c) => [c.checked, c.disabled]));
 ok(JSON.stringify(checks) === JSON.stringify([[true, false], [false, true], [true, false], [false, true]]), '2: places with coordinates are ticked; places needing a lookup are unticked and locked while lookup is off');
 ok(/Needs a name lookup. Turn it on in Privacy settings/.test(rows[1]), '2: the locked rows say why');
-ok(/Day 1 · Stop 1/.test(rows[0]) && /Hotel/.test(rows[0]) && /30\.59280, 114\.30550/.test(rows[0]), '2: rows show type, day/stop and coordinates');
+ok(/Day 1 · Stop 1/.test(rows[0]) && /Accommodation/.test(rows[0]) && /30\.59280, 114\.30550/.test(rows[0]), '2: rows show type, day/stop and coordinates');
 ok((await p.textContent('#ai-add')) === 'Add 2 markers', '2: the button counts what will be added');
 ok(S.photon.length === 0 && S.nom.length === 0 && (await pois(p)).length === 0, '2: previewing sends nothing anywhere and adds nothing');
 await p.screenshot({ path: SP + '/ai-preview.png' });

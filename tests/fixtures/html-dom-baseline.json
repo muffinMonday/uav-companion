@@ -1,6 +1,6 @@
 {
  "description": "Corrected pre-Phase-1 index.html; freeze before extraction. Normalize CRLF to LF for the source digest.",
- "sourceSha256": "17615c94d7c0962a08b1a040647673564acb6d2af39006a56401de4277c5b24c",
+ "sourceSha256": "6beec4a83f5897ed0a56cd602eba44b98e26668b8ace9fb1fd5a5a997a66a464",
  "elements": [
   {
    "tag": "html",
@@ -1374,7 +1374,7 @@
     "class": "hint",
     "id": "trips-intro"
    },
-   "text": "A trip groups markers. A waypoint's distance to a hotel or home point only looks within its own trip. Your Home marker belongs to no trip."
+   "text": "A trip groups markers. A waypoint's distance to accommodation or a home point only looks within its own trip. Your Home marker belongs to no trip."
   },
   {
    "tag": "ul",
@@ -2890,7 +2890,7 @@
    "attrs": {
     "class": "hint"
    },
-   "text": "Every marker shows its straight-line distance to your nearest Home. A waypoint also shows its nearest Home point and Hotel, only from its own trip and only those whose dates overlap its own (one with no dates counts for every date). If a waypoint is farther than the max range from every such Home point and Hotel, it is shown in red; your Home does not count toward the range. Units also set the map's scale bar. Elevation and height limits stay in metres."
+   "text": "Every marker shows its straight-line distance to your nearest Home. A waypoint also shows its nearest Home point and Accommodation, only from its own trip and only those whose dates overlap its own (one with no dates counts for every date). If a waypoint is farther than the max range from every such Home point and Accommodation, it is shown in red; your Home does not count toward the range. Units also set the map's scale bar. Elevation and height limits stay in metres."
   },
   {
    "tag": "div",

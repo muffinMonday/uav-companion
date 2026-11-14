@@ -37,7 +37,7 @@ ok(w.noHotel.join() === '2,3', 'nights with no hotel: the hotel covers the night
 ok(T.tripWarnings(items.filter((i) => i.type !== 'hotel'), trip).noHotel.length === 0, 'a trip with no hotel at all has no hotel warning (staying with friends)');
 const longStay = [...items, mk('h2', 'Hotel B', 30.6, 114.3, { type: 'hotel', date: '2026-11-13', endDate: '2026-11-15' })];
 ok(T.tripWarnings(longStay, trip).noHotel.length === 0, 'two stays cover every night; the last day has no night');
-ok(T.warningsLine(w) === '1 without a date · 1 outside the dates · no hotel for the night of Days 2, 3', 'one line for the card: ' + T.warningsLine(w));
+ok(T.warningsLine(w) === '1 without a date · 1 outside the dates · no accommodation for the night of Days 2, 3', 'one line for the card: ' + T.warningsLine(w));
 ok(T.warningsLine({ undated: 0, outside: 0, noHotel: [] }) === '', 'nothing to say when all is well');
 
 // ---------- past trips

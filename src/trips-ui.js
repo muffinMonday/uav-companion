@@ -197,13 +197,13 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
       const msgs = [];
       if (w.undated) msgs.push(w.undated + ' marker' + (w.undated === 1 ? ' has' : 's have') + ' no date (listed under “No date” below).');
       if (w.outside) msgs.push(w.outside + ' marker' + (w.outside === 1 ? ' is' : 's are') + ' dated outside the trip (listed under “Outside the dates”).');
-      for (const d of w.noHotel) msgs.push('No hotel for the night of Day ' + d + '.');
+      for (const d of w.noHotel) msgs.push('No accommodation for the night of Day ' + d + '.');
       const zr = zoneChecks.get(t.id);
       if (zr) for (const it of items) { const z = it.tripId === t.id && zr.get(it.id); if (z && z.sig === sigOf(it) && z.s.cls === 'no') msgs.push(it.name + ': ' + z.s.title + '.'); }
       const box = el('details', 'trip-warnings'); box.open = msgs.length > 0;
       box.append(el('summary', '', msgs.length ? 'Warnings (' + msgs.length + ')' : 'No warnings'));
       if (msgs.length) { const ul = el('ul'); for (const m of msgs) ul.append(el('li', '', m)); box.append(ul); }
-      else box.append(el('p', 'hint', 'Every marker is dated inside the trip' + (items.some((i) => i.tripId === t.id && i.type === 'hotel') ? ', and every night has a hotel.' : '.')));
+      else box.append(el('p', 'hint', 'Every marker is dated inside the trip' + (items.some((i) => i.tripId === t.id && i.type === 'hotel') ? ', and every night has accommodation.' : '.')));
       detail.append(box);
       const stopsToCheck = items.filter((i) => i.tripId === t.id && i.type !== 'residence');
       if (stopsToCheck.length) {

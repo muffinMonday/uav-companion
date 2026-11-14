@@ -189,6 +189,41 @@ ok(!bea2.store.getTrip(TID).shared && bea2.eng.takeNotices().length === 1 && (aw
   await e.stop();
 }
 
+// ---------- all sixteen marker types, and an older app version that only knows ten
+{
+  const NEW = ['food', 'attraction', 'shopping', 'nature', 'transport', 'meeting'];
+  const OLD_IDS = new Set(['home', 'hotel', 'takeoff', 'landing', 'photo', 'train', 'airport', 'hazard', 'residence', 'other']);
+  const typesOnServer = async (uid, id) => Object.fromEntries((await server(uid, id)).doc.items.map((i) => [i.name, i.type]));
+  const trip16 = alex.store.addTrip({ name: 'Sixteen types', startDate: '2026-12-10', endDate: '2026-12-11' }).trip;
+  for (const t of [...NEW, 'hotel', 'photo']) alex.store.add({ type: t, name: 'N-' + t, lat: 30.5, lon: 114.3, tripId: trip16.id });
+  await alex.eng.share(trip16.id);
+  ok(Object.values(await typesOnServer(A, trip16.id)).sort().join() === [...NEW, 'hotel', 'photo'].sort().join(), 'a current client shares all six new types as they are');
+  await alex.eng.invite(trip16.id, await friendId(A, 'Bea'));
+  await alex.eng.invite(trip16.id, await friendId(A, 'Cam'));
+  const camNew = device(B);
+  await camNew.eng.poll(); await camNew.eng.respond(trip16.id, true); await camNew.eng.poll(); await tick(120);
+  ok(camNew.store.items().filter((i) => i.tripId === trip16.id).every((i) => i.name === 'N-' + i.type), 'a second current client receives every type unchanged, and sends nothing back');
+  ok((await server(A, trip16.id)).rev === 1, 'so the revision stays at 1');
+  await camNew.eng.stop();
+
+  // An app version from before the six types: sanitize() turned an unknown type into 'other'. Same store, with that one rule put back.
+  const oldClient = (uid) => {
+    const d = device(uid);
+    const down = (doc) => ({ ...doc, items: (doc.items ?? []).map((i) => (OLD_IDS.has(i.type) ? i : { ...i, type: 'other' })) });
+    const apply = d.store.applyShared.bind(d.store);
+    d.store.applyShared = (id, doc) => apply(id, down(doc));
+    return d;
+  };
+  const oldCam = oldClient(C);
+  await oldCam.eng.poll(); await oldCam.eng.respond(trip16.id, true);
+  ok(oldCam.store.items().filter((i) => i.name === 'N-food')[0].type === 'other', 'an older client shows a new type as Other');
+  await oldCam.eng.poll(); await tick(120);
+  const after = await typesOnServer(A, trip16.id);
+  // KNOWN RISK, documented in POI_EXPLORER_BACKLOG.md: the downcast copy differs from the last synced document, so the older client's next poll saves it.
+  ok(after['N-food'] === 'other' && after['N-photo'] === 'photo' && after['N-hotel'] === 'hotel', 'RISK: the older client next poll saves the downcast type back to the server without any edit (' + after['N-food'] + ')');
+  await oldCam.eng.stop();
+}
+
 // ---------- stopping
 await alex.eng.stop(); await bea.eng.stop(); await bea2.eng.stop(); await cam.eng.stop(); await dee.eng.stop();
 await db.close();

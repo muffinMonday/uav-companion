@@ -469,7 +469,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     return li;
   }
 
-  /** Short distance line for the list: "0.8 km to home point · 3.2 km to hotel · 8 km to home". null for markers that have none. */
+  /** Short distance line for the list: "0.8 km to home point · 3.2 km to accommodation · 8 km to home". null for markers that have none. */
   function distanceSummary(it, items) {
     if (!needsDistance(it)) return null;
     const b = nearestBases(it, items), { units, maxRangeM } = getDistanceSettings();
@@ -520,7 +520,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (!lines.some((t) => b[t.id].exists)) {
       // a waypoint is told what to add; a hotel or home point simply has nothing to show until a Home marker exists
       box.hidden = lines.length < BASE_TYPES.length;
-      if (!box.hidden) box.append(el('div', 'dist-empty', 'Add a Home point, Hotel or Home marker to see how far this place is from it.'));
+      if (!box.hidden) box.append(el('div', 'dist-empty', 'Add a Home point, Accommodation or Home marker to see how far this place is from it.'));
       return;
     }
     box.hidden = false;
@@ -542,7 +542,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       box.append(row);
     }
     box.hidden = shown === 0;
-    if (over) box.append(el('small', 'stats-note over', `Beyond your ${fmtDistance(maxRangeM, units)} max range from every home point and hotel that applies.`));
+    if (over) box.append(el('small', 'stats-note over', `Beyond your ${fmtDistance(maxRangeM, units)} max range from every home point and accommodation that applies.`));
     if (approx) box.append(el('small', 'stats-note', '≈ means a location involved is unverified, so the distance is approximate.'));
   }
 
@@ -1244,9 +1244,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       work = work.map((x) => (x.id === id ? merged : x));
       changed.push(merged);
     }
-    if (!changed.length) { toast(skipped ? 'Home points, Hotels and Home markers cannot be Side Quests.' : 'Nothing to change.'); return; }
+    if (!changed.length) { toast(skipped ? 'Home points, Accommodation and Home markers cannot be Side Quests.' : 'Nothing to change.'); return; }
     const res = store.setMany(changed);
-    toast(`${plural(changed.length)} ${changed.length === 1 ? 'is' : 'are'} now ${toSub ? (changed.length === 1 ? 'a Side Quest' : 'Side Quests') : (changed.length === 1 ? 'a main stop' : 'main stops')}.${skipped ? ` ${skipped} skipped (Home points, Hotels and Home markers cannot be Side Quests).` : ''}`, 10000, { label: 'Undo', run: () => { store.setMany(res.previous); toast('Change undone.', 3000); } });
+    toast(`${plural(changed.length)} ${changed.length === 1 ? 'is' : 'are'} now ${toSub ? (changed.length === 1 ? 'a Side Quest' : 'Side Quests') : (changed.length === 1 ? 'a main stop' : 'main stops')}.${skipped ? ` ${skipped} skipped (Home points, Accommodation and Home markers cannot be Side Quests).` : ''}`, 10000, { label: 'Undo', run: () => { store.setMany(res.previous); toast('Change undone.', 3000); } });
     renderList();
   }
   $('sel-side').addEventListener('click', () => convertMany(true));

@@ -19,17 +19,19 @@ The format is in `public/ai/` and served from the site root: `ai/prompt.md` (the
 |---|---|---|
 | `geometry` | yes | `{"type":"Point","coordinates":[lon, lat]}`, or `null` |
 | `properties.name` | yes | up to 80 characters |
-| `properties.type` | no | `home`, `hotel`, `takeoff`, `landing`, `photo`, `train`, `airport`, `hazard`, `residence`, `other` (default `other`) |
+| `properties.type` | no | `home`, `hotel`, `takeoff`, `landing`, `photo`, `train`, `airport`, `hazard`, `residence`, `other`, `food`, `attraction`, `shopping`, `nature`, `transport`, `meeting` (default `other`; see below) |
 | `properties.note` | no | up to 500 characters |
 | `properties.date` | **no** | calendar date of the visit, `YYYY-MM-DD` with the year |
 | `properties.endDate` | **no** | last date of a multi-day stay (a hotel), `YYYY-MM-DD`, after `date`; only with `date` |
 | `properties.day` | **no** | itinerary day, a whole number from 1 (1 = first day). Only for itineraries with no calendar dates: with dates the app works the day out itself and ignores this |
 | `properties.order` | **no** | position within the day, from 1 |
 | `trip` (top level, not per place) | **no** | `{ name, country?, startDate, endDate, description? }` (the dates are required to create the trip; the app asks for them if they are missing); every place in the reply is put in this trip (a Home marker is not). `country` is a name or ISO code from the standard list |
-| `properties.sideQuest` | no | `true` for an optional nearby extra (a Side Quest), not a place the traveller plans to go. Never for `hotel`, `home` or `residence` |
+| `properties.sideQuest` | no | `true` for an optional nearby extra (a Side Quest), not a place the traveller plans to go. Never for `hotel`, `home` or `residence`; the six newer types may be Side Quests |
 | `properties.near` | no | with `sideQuest`: the exact name of the main stop (another feature) it is close to; without a match the app picks the nearest main stop of the trip |
 | `properties.query` | when `geometry` is `null` | text to search: venue, address, city, country, **in English** |
 | `properties.queryLocal` | no | the same place in its local language and script; tried if the English query finds nothing |
+
+There are 16 type ids. `hotel` is shown in the app as **Accommodation** (any place to stay); the id stays `hotel`. `transport` is a bus stop, ferry pier or car park, never a train station (`train`) or airport (`airport`); `attraction` is a sight to visit, `photo` a spot to fly or film at. The six types added later (`food`, `attraction`, `shopping`, `nature`, `transport`, `meeting`) are ordinary waypoints: they may be main stops or Side Quests and are not a distance base. An app version from before they existed turns an unknown type into `other` when it reads the marker, so a newer marker edited there can lose its type (see `POI_EXPLORER_BACKLOG.md`).
 
 `home` is the **drone's home point** (where flights start and return to). `residence` is the **traveller's own home**; an AI should add one only if the itinerary asks for it, and never guess an address. The app keeps `residence` markers private: they are left out of share links and automatic weather and elevation lookups.
 
@@ -40,7 +42,7 @@ The format is in `public/ai/` and served from the site root: `ai/prompt.md` (the
 A place that appears twice with different dates (a landmark on day 1 and day 3) is fine: the app keeps both as separate visits. Repeating the same place with the same date, or with no date, is treated as a duplicate and skipped.
 
 
-Besides the zone check, each waypoint shows its straight-line distance to the nearest **home point** and **hotel** in its own trip whose dates overlap its own (an undated one applies to every date), and every marker except Home shows its distance to the nearest **Home** (residence), whatever the trip or dates. A reply with a `trip` object creates that trip (or reuses a saved trip with the same name, country and dates) unless the person picks another trip or none in the import preview. So an itinerary that gives hotels check-in and check-out dates gets the right hotel for each day. The AI does not need to compute any distances.
+Besides the zone check, each waypoint shows its straight-line distance to the nearest **home point** and **hotel** (shown as Accommodation) in its own trip whose dates overlap its own (an undated one applies to every date), and every marker except Home shows its distance to the nearest **Home** (residence), whatever the trip or dates. A reply with a `trip` object creates that trip (or reuses a saved trip with the same name, country and dates) unless the person picks another trip or none in the import preview. So an itinerary that gives hotels check-in and check-out dates gets the right hotel for each day. The AI does not need to compute any distances.
 
 ## The rule that matters most: no invented coordinates
 

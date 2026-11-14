@@ -30,7 +30,7 @@ await p.keyboard.press('Escape');
 // ---- place a Hotel by tapping the map
 await p.click('#poi-types [data-type=hotel]');
 await p.click('#poi-place');
-ok(await p.isVisible('#banner') && /Hotel/.test(await p.textContent('#banner-text')), 'place mode banner names the type');
+ok(await p.isVisible('#banner') && /Accommodation/.test(await p.textContent('#banner-text')), 'place mode banner names the type');
 await p.mouse.click(500, 420);
 await p.waitForSelector('.poi-pop form', { timeout: 5000 });
 ok(true, 'popup opens in the edit form after placing');
@@ -57,7 +57,7 @@ ok((await p.locator('#poi-list .poi-item').count()) === 3, 'list has 3 items');
 await p.screenshot({ path: SP + '/ui-poi-list.png' });
 
 // ---- filter chips
-await p.click('#poi-filter .chip:has-text("Hotel")'); ok((await p.locator('#poi-list .poi-item').count()) === 1, 'filter chip narrows the list');
+await p.click('#poi-filter .chip:has-text("Accommodation")'); ok((await p.locator('#poi-list .poi-item').count()) === 1, 'filter chip narrows the list');
 await p.click('#poi-filter .chip:has-text("All")');
 
 // ---- list click recentres + opens popup

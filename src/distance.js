@@ -28,7 +28,7 @@ export const compass = (deg) => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Mat
  */
 export const BASE_TYPES = [
   { id: 'home', label: 'Home point', short: 'home point', launch: true },
-  { id: 'hotel', label: 'Hotel', short: 'hotel', launch: true },
+  { id: 'hotel', label: 'Accommodation', short: 'accommodation', launch: true },
   { id: 'residence', label: 'Home', short: 'home', launch: false },
 ];
 const BASES = new Set(['home', 'hotel', 'residence']); // the markers waypoints are measured to

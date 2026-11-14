@@ -25,7 +25,7 @@
     {
       "type": "Feature",
       "geometry": null,
-      "properties": { "name": "Hubu Alley snack street", "type": "other", "query": "Hubuxiang, Wuchang District, Wuhan, China", "date": "2026-11-13", "sideQuest": true, "near": "Yellow Crane Tower" }
+      "properties": { "name": "Hubu Alley snack street", "type": "food", "query": "Hubuxiang, Wuchang District, Wuhan, China", "date": "2026-11-13", "sideQuest": true, "near": "Yellow Crane Tower" }
     }
   ]
 }

@@ -18,7 +18,7 @@ const G = 'stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" s
 // the traveller's actual residence, drawn as a house. The ids are what is stored and exchanged, so they never change.
 export const TYPES = [
   { id: 'home', label: 'Home point', hint: 'The drone\'s home point: where flights start and return to', color: '#2e7d32', glyph: `<path d="M8.6 6v10M15.4 6v10M8.6 11h6.8" ${G}/>` },
-  { id: 'hotel', label: 'Hotel', hint: 'Where you are staying', color: '#6a4fb3', glyph: `<path d="M6.5 6.5v9M6.5 12.8h11v2.7M17.5 12.8v-2.2a1.6 1.6 0 0 0-1.6-1.6h-4.4v3.8" ${G}/><circle cx="9" cy="10.3" r="1.3" fill="#fff"/>` },
+  { id: 'hotel', label: 'Accommodation', hint: 'Where you are staying: hotel, hostel, rental or friends', color: '#6a4fb3', glyph: `<path d="M6.5 6.5v9M6.5 12.8h11v2.7M17.5 12.8v-2.2a1.6 1.6 0 0 0-1.6-1.6h-4.4v3.8" ${G}/><circle cx="9" cy="10.3" r="1.3" fill="#fff"/>` },
   { id: 'takeoff', label: 'Takeoff spot', hint: 'A good place to launch the drone', color: '#1565c0', glyph: `<path d="M12 15.4V6.2M8.2 9.8 12 6l3.8 3.8M7.5 17.6h9" ${G}/>` },
   { id: 'landing', label: 'Landing spot', hint: 'A good place to land or recover it', color: '#8d6e63', glyph: `<path d="M12 6.2v9.2M8.2 11.8 12 15.6l3.8-3.8M7.5 17.6h9" ${G}/>` },
   { id: 'photo', label: 'Photo spot', hint: 'A scenic spot to fly or film at', color: '#c2185b', glyph: `<rect x="6.2" y="8.2" width="11.6" height="7.6" rx="1.8" ${G}/><circle cx="12" cy="12" r="2.2" ${G}/><path d="M9.6 8.2l.9-1.4h3l.9 1.4" ${G}/>` },
@@ -27,8 +27,29 @@ export const TYPES = [
   { id: 'hazard', label: 'Hazard', hint: 'Something to avoid: crowds, cables, a restricted site', color: '#e65100', glyph: `<path d="M12 5.8 18 16.2H6z" ${G}/><path d="M12 9.8v3.2" ${G}/><circle cx="12" cy="14.7" r=".7" fill="#fff"/>` },
   { id: 'residence', label: 'Home', hint: 'Your actual residence (not the drone\'s home point)', color: '#827717', glyph: '<path d="M12 5.2 6.2 10.2h1.6v5.3h3v-3.6h2.4v3.6h3v-5.3h1.6z" fill="#fff"/>' },
   { id: 'other', label: 'Other', hint: 'Anything else', color: '#546e7a', glyph: '<circle cx="12" cy="11.3" r="3" fill="#fff"/>' },
+  // Added after the first ten. Appended, never inserted: a share link stores a type as its position in this list (see sharecompact.js), and the
+  // published schema lists the ids in this order (tests/ai-unit.mjs). All six are ordinary waypoints (not in NOT_SUB, not a distance base).
+  { id: 'food', label: 'Food & Drink', hint: 'A restaurant, cafe or food court', color: '#c62828', glyph: `<path d="M7.6 8.4h7v3.8a3.5 3.5 0 0 1-7 0zM14.6 9.4h1.2a1.4 1.4 0 0 1 0 2.8h-1.2M8 17h6.2" ${G}/>` },
+  { id: 'attraction', label: 'Attraction', hint: 'A museum, monument or other sight', color: '#9e6b00', glyph: `<path d="M12 5.6l1.9 3.8 4.1.6-3 2.9.7 4.1-3.7-1.9-3.7 1.9.7-4.1-3-2.9 4.1-.6z" ${G}/>` },
+  { id: 'shopping', label: 'Shopping', hint: 'A mall, market or shopping street', color: '#7b1fa2', glyph: `<path d="M7 9.4h10l-.9 7.2H7.9zM9.6 9.4V8.2a2.4 2.4 0 0 1 4.8 0v1.2" ${G}/>` },
+  { id: 'nature', label: 'Nature & Outdoors', hint: 'A park, lake, trail or nature reserve', color: '#558b2f', glyph: `<path d="M12 17v-3.2M12 5.8 8.2 11h2.1l-2.6 3.2h8.6L13.7 11h2.1z" ${G}/>` },
+  { id: 'transport', label: 'Other Transport', hint: 'A bus stop, ferry pier or car park (trains and airports have their own types)', color: '#37474f', glyph: `<rect x="5.8" y="6.6" width="12.4" height="8.2" rx="2" ${G}/><path d="M5.8 11h12.4M9 6.6V11M15 6.6V11" ${G}/><circle cx="9" cy="17" r="1" fill="#fff"/><circle cx="15" cy="17" r="1" fill="#fff"/>` },
+  { id: 'meeting', label: 'Meeting Point', hint: 'Where a group gathers', color: '#d84315', glyph: `<circle cx="9.4" cy="8.8" r="1.7" ${G}/><circle cx="14.6" cy="8.8" r="1.7" ${G}/><path d="M6.4 16c0-2 1.4-3.2 3-3.2s3 1.2 3 3.2M11.6 16c0-2 1.4-3.2 3-3.2s3 1.2 3 3.2" ${G}/>` },
 ];
-export const typeOf = (id) => TYPES.find((t) => t.id === id) || TYPES[TYPES.length - 1];
+// The fallback is looked up by id, not by position: new types are appended after `other`.
+export const typeOf = (id) => TYPES.find((t) => t.id === id) || TYPES.find((t) => t.id === 'other');
+
+/**
+ * How the type picker groups the types. Presentation only: never stored, never exchanged, and not a property of a marker.
+ * Order inside a group is the order the buttons show.
+ */
+export const TYPE_GROUPS = [
+  { id: 'travel', label: 'Travel & Places', types: ['hotel', 'food', 'attraction', 'shopping', 'nature', 'meeting'] },
+  { id: 'transport', label: 'Transportation', types: ['train', 'airport', 'transport'] },
+  { id: 'drone', label: 'Drone & Safety', types: ['home', 'takeoff', 'landing', 'photo', 'hazard'] },
+  { id: 'special', label: 'Special', types: ['residence', 'other'] },
+];
+export const groupOf = (typeId) => (TYPE_GROUPS.find((g) => g.types.includes(typeId)) || TYPE_GROUPS[3]).id;
 
 /** Pin SVG for a type. Built only from the constants above, never from user text, so it is safe as innerHTML. */
 export function pinSvg(typeId) {

@@ -68,9 +68,9 @@ ok(top.n === 2 && s.ticked.length === 1 && s.ticked[0] === top.hit, 'stacked vis
 
 // the list filter hides a type: its pin is dimmed and ignored
 await p.click('#sel-none'); await p.waitForTimeout(200);
-await p.locator('#poi-filter .chip', { hasText: 'Hotel' }).click(); await p.waitForTimeout(300);
+await p.locator('#poi-filter .chip', { hasText: 'Accommodation' }).click(); await p.waitForTimeout(300);
 s = await state(p);
-ok(s.dim.includes('Alpha') && !s.dim.includes('Charlie'), 'with the Hotel filter on, pins it hides are dimmed: ' + s.dim.join());
+ok(s.dim.includes('Alpha') && !s.dim.includes('Charlie'), 'with the Accommodation filter on, pins it hides are dimmed: ' + s.dim.join());
 await pin(p, 'Alpha').click({ force: true }); await p.waitForTimeout(200);
 s = await state(p);
 ok(s.ticked.length === 0, 'and a tap on a dimmed pin does nothing');

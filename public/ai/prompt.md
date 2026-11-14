@@ -20,20 +20,26 @@ FORMAT: a GeoJSON FeatureCollection. Each place is one Feature:
 
 RULES
 
-1. Make one Feature for each place where I will stay, take off, land, take photos or video, or which I should avoid with a drone.
+1. Make one Feature for each place where I will stay, eat, visit, take off, land, take photos or video, or which I should avoid with a drone.
 
 2. properties.name is required: at most 80 characters, in the language I wrote the itinerary in.
 
 3. properties.type must be exactly one of these:
    - "home"      the drone's home point: the spot flights start from and return to
-   - "hotel"     where I am staying
+   - "hotel"     where I am staying: a hotel, hostel, rental or friends (the app shows this as "Accommodation")
    - "takeoff"   a good place to launch the drone
    - "landing"   a good place to land or recover it
-   - "photo"     a scenic spot worth flying or filming at
+   - "photo"     a scenic spot worth flying or filming at (for a place to visit that is not mainly a viewpoint, use "attraction")
+   - "attraction" a museum, monument or other sight to visit
+   - "food"      a restaurant, cafe, street food or food court
+   - "shopping"  a mall, market or shopping street
+   - "nature"    a park, lake, trail or nature reserve
+   - "meeting"   a place where my group gathers
    - "train"     a train or metro station I will use
    - "airport"   an airport I fly in or out of
+   - "transport" any other transport stop: a bus stop or terminal, a ferry pier, a car park. NOT a train station or an airport (use "train" or "airport" for those)
    - "hazard"    something to avoid: crowds, power lines, a military or government site, a no-fly sign
-   - "residence" my own home, where I actually live. NOT the drone's home point. Add one only if my itinerary asks for it (for example a departure address); never guess an address
+   - "residence" my own home, where I actually live. NOT the drone's home point (that is "home"). Add one only if my itinerary asks for it (for example a departure address); never guess an address
    - "other"     anything else
 
 4. properties.date, properties.endDate, properties.day and properties.order are all OPTIONAL. Never invent them.
@@ -80,7 +86,7 @@ EXAMPLE OF THE REPLY
     {
       "type": "Feature",
       "geometry": null,
-      "properties": { "name": "Hubu Alley snack street", "type": "other", "query": "Hubuxiang, Wuchang District, Wuhan, China", "queryLocal": "户部巷, 武昌区, 武汉, 中国", "date": "2026-11-13", "sideQuest": true, "near": "Yellow Crane Tower" }
+      "properties": { "name": "Hubu Alley snack street", "type": "food", "query": "Hubuxiang, Wuchang District, Wuhan, China", "queryLocal": "户部巷, 武昌区, 武汉, 中国", "date": "2026-11-13", "sideQuest": true, "near": "Yellow Crane Tower" }
     }
   ]
 }

@@ -165,12 +165,12 @@ export function tripWarnings(items, trip) {
   return { undated: plan.undated.length, outside: plan.outside.length, noHotel };
 }
 
-/** One line for the trip card: "2 without a date · 1 outside the dates · no hotel on Day 2, 3", or '' when all is well. */
+/** One line for the trip card: "2 without a date · 1 outside the dates · no accommodation on Day 2, 3", or '' when all is well. */
 export function warningsLine(w) {
   const parts = [];
   if (w.undated) parts.push(`${w.undated} without a date`);
   if (w.outside) parts.push(`${w.outside} outside the dates`);
-  if (w.noHotel.length) parts.push(`no hotel for the night of ${w.noHotel.length === 1 ? 'Day' : 'Days'} ${w.noHotel.join(', ')}`);
+  if (w.noHotel.length) parts.push(`no accommodation for the night of ${w.noHotel.length === 1 ? 'Day' : 'Days'} ${w.noHotel.join(', ')}`);
   return parts.join(' · ');
 }
 

@@ -45,7 +45,7 @@ let { ctx, p } = await open({ width: 1300, height: 900 }, false);
 const sub = async (name) => (await card(p, name).innerText()).replace(/\n+/g, ' | ');
 ok(/5 days to go/.test(await sub('Hubei spring')), 'an upcoming trip shows its countdown: ' + await sub('Hubei spring'));
 ok(/Day 2 of 3/.test(await sub('Under way')), 'a trip under way shows the day: ' + (await sub('Under way')).slice(0, 60));
-ok(/⚠ 1 without a date · no hotel for the night of Days 2, 3/.test(await sub('Hubei spring')), 'the card has a one-line warning summary');
+ok(/⚠ 1 without a date · no accommodation for the night of Days 2, 3/.test(await sub('Hubei spring')), 'the card has a one-line warning summary');
 ok(!/⚠/.test(await sub('Under way')), 'a trip with nothing wrong has none');
 ok((await p.locator('#trips-list .trip-card').count()) === 2 && (await p.locator('#trips-past-list .trip-card').count()) === 1, 'the finished trip is in Past trips, not in the main list');
 ok(!(await p.locator('#trips-past').evaluate((d) => d.open)) && /Past trips \(1\)/.test(await p.textContent('#trips-past-title')), 'the Past trips section is collapsed and counts its trips');

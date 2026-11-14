@@ -2,9 +2,11 @@
 // form, written as short rows: coordinates are whole numbers of millionths of a degree (exactly what the app stores), each as a step from
 // the row before, dates are day counts, and the type is its position in the list of types. Pure: no DOM, so Node tests can use it.
 // Private things never go in a link, so a trip's notes, checklist and colour are not part of this form (the receiver picks its own colour).
-import { TYPES } from './poi.js';
-
-const TYPE_IDS = TYPES.map((t) => t.id);
+// A link stores a type as its position in this list, so the list is frozen: new types are only ever appended, and a link made today
+// opens correctly in every build that knows the ids before it. (Not derived from TYPES, so reordering TYPES cannot break old links.)
+export const SHARE_TYPE_ORDER = ['home', 'hotel', 'takeoff', 'landing', 'photo', 'train', 'airport', 'hazard', 'residence', 'other', 'food', 'attraction', 'shopping', 'nature', 'transport', 'meeting'];
+const TYPE_IDS = SHARE_TYPE_ORDER;
+const OTHER = TYPE_IDS.indexOf('other');
 const BASE = Date.UTC(2000, 0, 1);
 const toDays = (iso) => Math.round((Date.parse(`${iso}T00:00:00Z`) - BASE) / 86400000) + 1; // +1 so that 0 can mean "no date"
 const fromDays = (n) => new Date(BASE + (n - 1) * 86400000).toISOString().slice(0, 10);
@@ -21,7 +23,7 @@ export function compactShare(gj) {
     const [lon, lat] = f.geometry.coordinates;
     const la = Math.round(lat * 1e6), lo = Math.round(lon * 1e6);
     const date = p.date ? toDays(p.date) : 0;
-    const row = [Math.max(0, TYPE_IDS.indexOf(p.type)), p.name ?? '', la - la0, lo - lo0, date, date && p.endDate ? toDays(p.endDate) - date : 0, p.order ?? 0, p.unverified ? 1 : 0, tripAt.get(p.tripId) ?? 0, p.note ?? '', p.day ?? 0, p.isSub ? 1 : 0, (p.isSub && p.parentId !== undefined && rowOf.get(p.parentId)) || 0];
+    const row = [TYPE_IDS.includes(p.type) ? TYPE_IDS.indexOf(p.type) : OTHER, p.name ?? '', la - la0, lo - lo0, date, date && p.endDate ? toDays(p.endDate) - date : 0, p.order ?? 0, p.unverified ? 1 : 0, tripAt.get(p.tripId) ?? 0, p.note ?? '', p.day ?? 0, p.isSub ? 1 : 0, (p.isSub && p.parentId !== undefined && rowOf.get(p.parentId)) || 0];
     la0 = la; lo0 = lo;
     return trim(row, 4);
   });

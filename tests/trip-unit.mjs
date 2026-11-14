@@ -16,13 +16,13 @@ const byId = Object.fromEntries(poi.TYPES.map((t) => [t.id, t]));
 ok(byId.home.label === 'Home point' && byId.residence.label === 'Home', 'the drone home point is labelled "Home point"; the residence is labelled "Home"');
 ok(byId.home.glyph !== byId.residence.glyph && byId.home.color !== byId.residence.color, 'they differ in glyph and colour, so they cannot be confused');
 ok(poi.pinSvg('home') !== poi.pinSvg('residence') && /M8\.6 6v10/.test(byId.home.glyph) && /M12 5\.2 6\.2 10\.2/.test(byId.residence.glyph), 'Home point is drawn as an "H", Home as a house');
-ok(new Set(poi.TYPES.map((t) => t.color)).size === poi.TYPES.length && new Set(poi.TYPES.map((t) => t.glyph)).size === poi.TYPES.length, 'all ten types have their own colour and glyph');
+ok(new Set(poi.TYPES.map((t) => t.color)).size === poi.TYPES.length && new Set(poi.TYPES.map((t) => t.glyph)).size === poi.TYPES.length, 'all sixteen types have their own colour and glyph');
 ok(poi.TYPES.every((t) => typeof t.hint === 'string' && t.hint.length > 5), 'every type has a hint (shown as a tooltip)');
 ok(/not the drone's home point/.test(byId.residence.hint) && /home point/i.test(byId.home.hint), 'the hints spell out the difference');
 ok(poi.typeOf('residence').label === 'Home' && poi.typeOf('nonsense').id === 'other', 'residence is a known type; unknown types still fall back to other');
 const prompt = fs.readFileSync(path.join(ROOT, 'public/ai/prompt.md'), 'utf8');
 const schema = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/ai/schema.json'), 'utf8'));
-ok(poi.TYPES.every((t) => prompt.includes(`"${t.id}"`)) && JSON.stringify(schema.$defs.feature.properties.properties.properties.type.enum) === JSON.stringify(poi.TYPES.map((t) => t.id)), 'prompt.md and schema.json list all ten types, in the app\'s order');
+ok(poi.TYPES.every((t) => prompt.includes(`"${t.id}"`)) && JSON.stringify(schema.$defs.feature.properties.properties.properties.type.enum) === JSON.stringify(poi.TYPES.map((t) => t.id)), 'prompt.md and schema.json list all sixteen types, in the app\'s order');
 ok(/NOT the drone's home point/.test(prompt) && /never guess an address/.test(prompt), 'the prompt tells an AI the difference and not to guess an address');
 ok(/endDate/.test(prompt) && /YYYY-MM-DD/.test(prompt) && /Do not guess the year/.test(prompt) && /Never invent them/.test(prompt), 'the prompt covers date and endDate: ISO form, never guess the year, never invent');
 const props = schema.$defs.feature.properties.properties;
@@ -96,7 +96,7 @@ const baseOf = (id) => dist.BASE_TYPES.find((b) => b.id === id);
 ok(dist.lineApplies(it('a', 'photo'), baseOf('home')) && dist.lineApplies(it('a', 'photo'), baseOf('hotel')) && dist.lineApplies(it('a', 'photo'), baseOf('residence')), 'a waypoint gets all three lines');
 ok(!dist.lineApplies(it('a', 'hotel'), baseOf('home')) && !dist.lineApplies(it('a', 'hotel'), baseOf('hotel')) && dist.lineApplies(it('a', 'hotel'), baseOf('residence')) && !dist.lineApplies(it('a', 'home'), baseOf('hotel')) && dist.lineApplies(it('a', 'home'), baseOf('residence')), 'a hotel or a home point gets only the Home line');
 ok(dist.BASE_TYPES.map((t) => t.id).join() === 'home,hotel,residence', 'waypoints are measured to Home points, Hotels and the Home marker, in that order');
-ok(dist.BASE_TYPES.map((t) => t.launch).join() === 'true,true,false' && dist.BASE_TYPES.map((t) => t.short).join() === 'home point,hotel,home', 'Home points and Hotels are launch bases; the Home marker is not');
+ok(dist.BASE_TYPES.map((t) => t.launch).join() === 'true,true,false' && dist.BASE_TYPES.map((t) => t.short).join() === 'home point,accommodation,home', 'Home points and Hotels are launch bases; the Home marker is not');
 
 const W = it('W', 'photo', 30, 114);
 const items = [

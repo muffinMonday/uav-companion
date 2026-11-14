@@ -82,3 +82,25 @@ const r1 = ai.parseItinerary(await ai.decodeShare(l1));
 ok(r1.rows.length === 1 && r1.rows[0].lat === 1.3521 && r1.rows[0].lon === 103.8198 && r1.trips.length === 0, 'one place and no trip: a short link that reads back exactly');
 const notOurs = await ai.encodeShare(JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: { name: 'x' }, geometry: { type: 'Point', coordinates: [1, 2] } }] }));
 ok(notOurs.startsWith('z.'), 'anything that is not an app export keeps the older compressed form');
+
+// ---------- the type list in a link is frozen: new types are only appended
+const OLD_TEN = ['home', 'hotel', 'takeoff', 'landing', 'photo', 'train', 'airport', 'hazard', 'residence', 'other'];
+const NEW_SIX = ['food', 'attraction', 'shopping', 'nature', 'transport', 'meeting'];
+ok(JSON.stringify(SC.SHARE_TYPE_ORDER) === JSON.stringify([...OLD_TEN, ...NEW_SIX]) && JSON.stringify(poi.TYPES.map((t) => t.id)) === JSON.stringify(SC.SHARE_TYPE_ORDER), 'the share order is the first ten, unchanged, then the six new types; TYPES lists them in the same order');
+{
+  const gjOf = (type) => ({ type: 'FeatureCollection', uavzones: 1, features: [{ type: 'Feature', properties: { id: 'a', type, name: 'X' }, geometry: { type: 'Point', coordinates: [114.3, 30.5] } }] });
+  const idx = (type) => SC.compactShare(gjOf(type)).m[0][0];
+  ok(OLD_TEN.every((t, i) => idx(t) === i), 'a link written today stores each of the first ten types as the same number as before, so links made earlier open correctly');
+  // a row an earlier version wrote: type number 8 was "residence", 9 "other"
+  const oldRows = (n) => ({ v: 2, m: [[n, 'Old', 1, 1]] });
+  ok(SC.expandShare(oldRows(8)).features[0].properties.type === 'residence' && SC.expandShare(oldRows(9)).features[0].properties.type === 'other' && SC.expandShare(oldRows(1)).features[0].properties.type === 'hotel', 'rows written by an earlier version decode to the same types');
+  ok(SC.expandShare(oldRows(99)).features[0].properties.type === 'other', 'a type number nobody knows decodes to other');
+  ok(idx('banana') === OLD_TEN.indexOf('other') && idx(undefined) === OLD_TEN.indexOf('other'), 'an unknown type is written as other, not as the first type (home)');
+  let all = true;
+  for (const t of poi.TYPES.map((x) => x.id)) {
+    const l = await ai.encodeShare(JSON.stringify(gjOf(t)));
+    const row = ai.parseItinerary(await ai.decodeShare(l)).rows[0];
+    all = all && row.type === t;
+  }
+  ok(all, 'all sixteen types survive a real share link (encode, decode, import preview)');
+}

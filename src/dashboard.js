@@ -117,7 +117,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     if (tripFade) { c.classList.add('swap'); tripFade = false; }
     if (!coming.length) {
       if (store.items().length || store.trips().length) return null;
-      c.append(el('h3', '', 'Get started'), el('p', 'hint', 'Create a trip, then drop markers for hotels, takeoff spots and photo spots. Or place a marker straight away.'));
+      c.append(el('h3', '', 'Get started'), el('p', 'hint', 'Create a trip, then drop markers for accommodation, takeoff spots and photo spots. Or place a marker straight away.'));
       const row = el('div', 'btn-row');
       const mk = (text, fn, cls) => { const b = el('button', 'btn small ' + cls, text); b.type = 'button'; b.addEventListener('click', fn); row.append(b); };
       mk('Create your first trip', () => { panel.open('trips'); $('trip-new').click(); }, 'primary');
@@ -252,8 +252,8 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     const row = (svg, text) => { const r = el('div', 'key-line'), s = el('span', 'key-sample'); s.innerHTML = svg; r.append(s, text); lines.append(r); };
     row(arrow('stroke="currentColor" stroke-width="2" opacity=".45"'), 'A day\'s stops, in order');
     row(arrow('stroke="currentColor" stroke-width="5"'), 'Into and out of the selected stop, with the distance');
-    row(arrow('stroke="currentColor" stroke-width="5" stroke-dasharray="8 5"'), 'Overnight: through the hotel, or on to the next day');
-    row('<svg viewBox="0 0 44 12" aria-hidden="true"><line x1="2" y1="6" x2="42" y2="6" stroke="currentColor" stroke-width="3" stroke-dasharray="6 5" opacity=".85"/></svg>', 'To the nearest hotel or Home point, with the distance');
+    row(arrow('stroke="currentColor" stroke-width="5" stroke-dasharray="8 5"'), 'Overnight: through the accommodation, or on to the next day');
+    row('<svg viewBox="0 0 44 12" aria-hidden="true"><line x1="2" y1="6" x2="42" y2="6" stroke="currentColor" stroke-width="3" stroke-dasharray="6 5" opacity=".85"/></svg>', 'Straight-line distance to the nearest Home point or accommodation');
     kb.append(lines, el('p', 'hint', 'Arrows take the colour of their trip. A planning aid, not flight advice: zones can change, so check the official platform for the place you are flying (for China, UOM) before every flight.'));
     const more = el('button', 'dash-link key-more', 'See more'); more.type = 'button'; more.hidden = true;
     more.addEventListener('click', () => { const open = !loadPrefs().keyOpen; savePrefs({ keyOpen: open || null }); fitKey(c); });
@@ -382,8 +382,8 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     const ol = el('ol', 'w-steps');
     for (const t of [
       ['Check a spot.', 'Press and hold on the map for 2 seconds (or right-click) to see whether you can fly there. Search takes places and coordinates.'],
-      ['Plan your trip.', 'Create a trip under Trips, then drop markers for hotels, takeoff spots and photo spots, or paste an AI-made itinerary. Press and hold a saved place to move it to another day.'],
-      ['See the conditions.', 'Open a marker for its zone verdict and its distance to your hotel and Home. Open a trip for a plan of each day and, if you turn weather on, a forecast.'],
+      ['Plan your trip.', 'Create a trip under Trips, then drop markers for accommodation, takeoff spots and photo spots, or paste an AI-made itinerary. Press and hold a saved place to move it to another day.'],
+      ['See the conditions.', 'Open a marker for its zone verdict and its distance to your accommodation and Home. Open a trip for a plan of each day and, if you turn weather on, a forecast.'],
       ['Your data stays yours.', 'Markers and trips are saved only in this browser. Weather, elevation and name lookups are off until you allow them (shield button). Export a backup now and then.'],
     ]) { const li = el('li'); li.append(el('b', '', t[0] + ' '), t[1]); ol.append(li); }
     d.append(ol, tipsList());
