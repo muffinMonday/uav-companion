@@ -4,16 +4,17 @@ This workflow prepares evidence and reproducible local datasets for UAV Companio
 
 ## Run
 
+**Integration warning:** `normalized.geojson` is a diagnostic subset: Guangdong **89 of 101**, Chongqing **756 of 777**. Never substitute it for the complete `deduplicated-reference.geojson`. Both remain unapproved for production. Read the [mandatory artifact identity guard, winding procedure and investigation checklist](INTEGRATION_GATES.md) first.
+
 Use Node 24 and the repository's existing dependencies (`npm ci` in a clean checkout). Commands below run from the feature worktree root. No new dependencies or package scripts are needed.
 
 ```powershell
-# Inspect the proposed queries: no HTTP requests and no filesystem writes.
+# Inspect local source inputs: no HTTP requests and no filesystem writes.
 node scripts/china-airspace/cli.mjs acquire data/china-airspace/pilots/cn-guangdong.json --dry-run
 node scripts/china-airspace/cli.mjs acquire data/china-airspace/pilots/cn-chongqing.json --dry-run
 
-# Reproduce blocked pilot reports and offline acquisition-grid previews.
-node scripts/china-airspace/cli.mjs pilot data/china-airspace/pilots/cn-guangdong.json
-node scripts/china-airspace/cli.mjs pilot data/china-airspace/pilots/cn-chongqing.json
+# Replay the complete supplied-fixture audit after the optional GEOS check below.
+node scripts/china-airspace/resume-pilots.mjs
 
 # Check the inventory and regenerate its table.
 node scripts/china-airspace/inventory.mjs
@@ -24,7 +25,25 @@ node .claude/skills/test-impact/impact.mjs
 npm run build
 ```
 
-Pilot outputs are `planning/china-airspace/cn-guangdong/` and `cn-chongqing/`. Open `preview.html` directly. It works offline, supports pan/zoom, shows longitude/latitude and request grids, and includes provenance. It uses a simple longitude/latitude plot, without a basemap; it is **not** an imagery alignment check. With no source data it deliberately shows no polygons and an explicit unknown-coverage message.
+## Resume the supplied local pilots
+
+The original 55/79-feature Guangdong and 777-feature Chongqing responses, plus an 80-feature Guangzhou response, are now archived locally. Raw originals remain ignored, with identities and relative archive paths in `data/china-airspace/fixture-manifest.json`. A fresh checkout needs those exact bytes; do not reconstruct geometry from reports. Import from an ordinary directory laid out as `<directory>/<region>/<original-filename>`:
+
+```powershell
+node scripts/china-airspace/resume-pilots.mjs --import-from "<original-checkout>/planning/china-airspace" --import-only
+
+# Optional isolated audit environment; used here with Python 3.14.
+python -m pip install --only-binary=:all: --target planning/china-airspace/python-vendor -r scripts/china-airspace/requirements-geos.txt
+python tests/china-airspace-geos.py
+python scripts/china-airspace/validate_geos.py
+node scripts/china-airspace/resume-pilots.mjs
+```
+
+This runs the existing local acquisition and strict validation, then combines independent checksum-bound GEOS evidence with raw-file summaries and cross-query comparisons. GEOS processes unmodified source geometry and never repairs it. Node preserves its conservative contact policy. The two results are recorded separately; a complete derivative is emitted only after the independent source-bound audit succeeds. Import, Python analysis and replay make no HTTP calls. The optional pip installation contacts package repositories, not the airspace API.
+
+Latest pilot outputs are `planning/china-airspace/local-pilots/cn-guangdong/` and `cn-chongqing/`. Each contains exact response archives, the conservative `normalized.geojson` **subset**, a complete `deduplicated-reference.geojson`, `pilot-report.json`, and `preview.html`. Do not confuse the subset with the complete reference. Repeat the Python audit and Node replay to regenerate reports; unchanged inputs produced byte-identical pilot reports and complete-reference content hashes.
+
+Open the latest `preview.html` directly. It works offline, supports pan/zoom, shows coordinates and captured query windows, and includes provenance. All 101/777 deduplicated reference features are shown. The simple longitude/latitude plot has no basemap and is **not** a landmark alignment check. The generic `cli.mjs pilot/acquire` commands still return exit 2 on these source contact-policy cases; they do not override those checks or enable live collection. Historical empty previews under `planning/china-airspace/<region>/` are superseded by `local-pilots`.
 
 ## Local sources and overlap reproduction
 
@@ -59,7 +78,7 @@ Validation-only replays/checks archives without fetching. Re-running acquisition
 
 ## Controlled live acquisition
 
-Both pilot configurations are disabled. No endpoint enumeration or geometry acquisition was performed. The public static client index was read for research only.
+Both pilot configurations have live access disabled and now reference local archives. No new geometry API requests were made. The public static client index was read during initial research; supplied responses are replayed offline.
 
 Live collection requires `access.status: "permitted"`, a reviewed `access.evidence` reference, `access.checkedOn`, and `access.maxRequests` (at most 64, including retries across resumes). It also requires an evidenced response contract: `responsePolicy.pagination: "none"`, `wholeFeatures: true`, and `evidence`. The generic adapter does not guess pagination. A provider with pagination needs a documented adapter before collection. Unknown area/feature limits require a conservative approved plan or local files, never probing until an error occurs.
 

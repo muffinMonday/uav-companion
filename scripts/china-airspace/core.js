@@ -35,6 +35,10 @@ export function validateCollection(collection, { crs = 'unknown', idProperty, to
   if (!collection || collection.type !== 'FeatureCollection' || !Array.isArray(collection.features)) return { valid: false, errors: ['expected-feature-collection'], features: [] };
   if (!collection.features.length) errors.push('empty-response');
   if (!['wgs84', 'gcj02'].includes(crs)) errors.push('crs-unverified-or-unsupported');
+  if (collection.coordinateSystem !== undefined) {
+    const declared = {WGS84:'wgs84','EPSG:4326':'wgs84','GCJ-02':'gcj02',GCJ02:'gcj02'}[collection.coordinateSystem];
+    if (!declared || declared !== crs) errors.push('conflicting-or-unsupported-coordinate-system');
+  }
   if (collection.crs) {
     const name = collection.crs?.properties?.name;
     if (crs !== 'wgs84' || !['EPSG:4326', 'urn:ogc:def:crs:OGC:1.3:CRS84', 'urn:ogc:def:crs:EPSG::4326'].includes(name)) errors.push('conflicting-or-unsupported-declared-crs');
