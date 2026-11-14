@@ -2,6 +2,10 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-15 (Wave 2: social, account, sessions and AI import cards)
+- Presentation only (CSS at the end of `styles.css`): rows of equally outlined secondary buttons in Friends, party, account popover, privacy and cloud copy, the sessions dialog and the AI import card now use soft secondary actions (one filled action per card; danger keeps its red outline). Weather, toast, banner, splash, progression and the sessions layout were audited and left alone. No behaviour, consent, privacy, schema or permission change.
+- `scripts/ui-baseline.mjs`: twelve new screens, a mocked server per viewport and theme. Design: `DESIGN.md` section 22. Backlog `DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md` closed (`completed/`).
+
 ## 2026-11-14 (UX and discoverability)
 - Map: a tag button under the left-hand buttons writes the name of each one beside it (current action: Show/Hide crosshair, Follow me, Hide trip markers and so on; the compass only while it shows). Collapsed after every reload; nothing is stored. New `map-toolbar-help.js`, `map-tool-labels.js`; the controls got `data-tool` attributes.
 - Quick Setup: optional three-step *Learn the map* (official information is not permission to fly, how to check a spot, where the tools are), skippable at every step; asks for no permission. `splash.js`.

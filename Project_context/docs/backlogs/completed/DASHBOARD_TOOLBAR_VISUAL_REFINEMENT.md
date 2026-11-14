@@ -1,6 +1,6 @@
 # UAV Companion — Dashboard, Map Tools, Sessions & Marker UI Refinement
 
-**Status:** OWNER-APPROVED TWO-WAVE DESIGN; RECONCILED WITH POI EXPLORER IMPLEMENTATION; UI IMPLEMENTATION NOT YET AUTHORIZED  
+**Status:** COMPLETED 2026-11-15. Wave 1 released 2026-11-14 (`4015de5`, deployed). Wave 2 slices Trips and shared panel header released 2026-11-14 (`0df811e`; gh-pages `a221631` published 10 s later). Wave 2 P2 and P3 closed 2026-11-15: release commit and deploy evidence in section 16. Residual risks: older-client shared-trip POI downcast (owner-accepted at the 2026-11-14 POI release); not verified on a real phone, Safari, a screen reader or at 200% zoom; `trips` and `sidedrag` browser suites use fixed fixture dates and fail from 2026-11-15 on (test-side, see section 16). Status history: in progress 2026-11-14 (moved from `completed/`), completed 2026-11-15.  
 **Prepared:** 2026-11-14  
 **Repository:** `muffinMonday/uav-companion`  
 **Destination:** `Project_context/docs/backlogs/completed/DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md`  
@@ -199,16 +199,30 @@ Use the provided spec as final product decisions. Avoid broad exploratory redesi
 5. **Responsive:** new hierarchy, long labels and More tools sheet do not obstruct map picking, POI editing, drag selection or map-to-list reveal on phone/foldable layouts.
 6. **Tests:** include new `poi-types-unit`, `poi-model-unit`, `visibility-unit`, `picker`, `hierarchy`, `poisearch`, `visibility`, `helppoi` alongside existing dashboard/help/toolbar/sessions/maplinks suites; run the full suite once near completion.
 
-### Release blocker inherited from POI rollout
+### Release blocker inherited from POI rollout (resolved: owner-accepted risk, 2026-11-14)
 
 The POI status documents a **measured older-client shared-trip downcast**: an older client can receive one of the six new types and write it back as `other` on its next poll, even without a deliberate edit. No server guard or migration was authorized. **Do not deploy the UI overhaul or implicitly approve the POI rollout while this owner decision remains unresolved.** UI work may be developed and tested locally if explicitly authorized, but the Claude handoff must not push, merge or deploy. Do not attempt a backend mitigation as part of styling.
+
+**Resolution:** the owner accepted this risk when the POI Explorer was deployed on 2026-11-14 (`POI_EXPLORER_BACKLOG.md` section 12) and confirmed it for the Wave 2 close on 2026-11-15. An older client can still re-save a newer marker type as Other in a shared trip; people with the page open need a refresh. No backend mitigation was made.
 
 ### Wave boundaries
 
 Wave 1 may touch POI components only for the approved dashboard entry point, marker/point-check appearance, shared Navigate behavior, contextual explanation and directly required integration. Wave 2 POI work is **visual harmonization only**, not a second POI Explorer rebuild. Any broader POI behavioral change requires a new decision.
 
-## 15. Implementation status (Wave 1, 2026-11-14; local only)
-Wave 1 is built in the working tree (not committed, pushed or deployed); Wave 2 (section 12) is untouched. Behaviour and files: `DESIGN.md` section 20, `MODULES.md`, `CURRENT_STATUS.md`. Deviations: the greeting line stays above the task row; *Find saved places* and *Choose a marker type* are buttons in Help (Trips topic), the four dashboard tasks being Check a location, Plan a trip, Save a place, Find sessions; the zone map key lives in Help (Map basics) and the coverage note in Help (Data, privacy and safety) instead of beside every verdict; the folded explanation beside each verdict is generated from the same region data.
+## 15. Implementation status (Wave 1, 2026-11-14; released)
+Wave 1 was released on 2026-11-14 (`4015de5`, deployed); Wave 2 is recorded in section 16. Behaviour and files: `DESIGN.md` section 20, `MODULES.md`, `CURRENT_STATUS.md`. Deviations: the greeting line stays above the task row; *Find saved places* and *Choose a marker type* are buttons in Help (Trips topic), the four dashboard tasks being Check a location, Plan a trip, Save a place, Find sessions; the zone map key lives in Help (Map basics) and the coverage note in Help (Data, privacy and safety) instead of beside every verdict; the folded explanation beside each verdict is generated from the same region data.
 
-## 16. Implementation status (Wave 2, 2026-11-14)
-Owner authorized Wave 2 (commit, push, one `deploy:live`). Slices: (1) Trips and itinerary done (soft secondary actions, flat members box, hairline sections); (4) shared panel header done (compact header at every width; fixes the collapse button clipped by 18px with the Friends tab); (2) Map Config and (3) POI Explorer visual harmonization examined on 9 viewports x 2 themes and **skipped**: they already meet the Wave 1 patterns. (5) P2 and (6) P3 not started (no inconsistency found in the audited screens; the remaining candidates were not screenshotted). Details and deviations: `DESIGN.md` section 21.
+## 16. Implementation status (Wave 2, 2026-11-14 and 2026-11-15)
+Owner authorized Wave 2 (commit, push, one `deploy:live` per run). **Run 1 (2026-11-14, `0df811e`, deployed):** (1) Trips and itinerary (soft secondary actions, flat members box, hairline sections); (4) shared panel header (compact header at every width; fixes the collapse button clipped by 18px with the Friends tab); (2) Map Config and (3) POI Explorer examined on 9 viewports x 2 themes and skipped (already meet the Wave 1 patterns).
+
+**Run 2 (2026-11-15): P2 and P3.** Audit first: the baseline script gained twelve screens (party unshared and shared, AI card, preview and error, cloud card, privacy unfolded, sessions hub, My sessions, New session, weather card and error) and 458 screenshots were captured before the change (`w2b-before`: 47 screens x 5 viewports x 2 themes). Findings:
+- **Real inconsistency (fixed, CSS only, end of `styles.css`):** rows of equally outlined secondary buttons in Friends, party, account popover, privacy and cloud card, sessions dialog and the AI import card. Applied the Trips rule: one filled action, the rest soft, danger keeps its red outline. P2a Friends and party; P2b Account, sync, privacy; P2c Progression (audited; its buttons sit on `--surface-2` and keep the outlined look, rank and rarity colours unchanged); P2d Sessions dialog (outlined `.map-action` kept); P2e AI import.
+- **Audited and left alone (already meet the patterns):** weather card, toast, `#banner`, splash, achievements, XP history, Edit profile, profile popover, sessions hub and form layout, P3 as a whole.
+- **Unaudited (not seeded):** session cards with data, invitation rows, a shared trip with several members.
+- Design record: `DESIGN.md` section 22.
+
+**Verification:** `npm run test:unit` all suites pass; `npm run build` passes; per-slice suites pass (friends, party, live, autoshare, priv, cloud, diag, mw, progression, steam, sessions, sessions-explorer, discover, responsive, ai, splash, rain); `live` failed once under load ("Bea's pin moves") and passed 32/32 alone. Full `npm test`: 123 suites pass, **`trips` and `sidedrag` fail**, also on the unmodified `styles.css`: their fixtures use trips ending 2026-11-14, which are past trips from 2026-11-15, so the trip is not listed. Confirmed by running copies with the fixture dates moved 10 days later: both pass. Not fixed here (test-side, out of scope). Screenshots: 458 vs 458 (`w2b-before`, `w2b-after`): 318 identical, 140 differ, all in the changed cards (Friends, party, account, cloud, sessions create, AI) plus dates that moved from 14 to 15 Nov (achievements, XP history). Samples viewed at desk and phone, light and dark.
+
+**Not verified:** real phone or foldable, Safari, screen reader, 200% zoom.
+
+**Release:** RELEASE_EVIDENCE_PLACEHOLDER

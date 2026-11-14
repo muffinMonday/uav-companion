@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { chromium, CHANNEL, LATEST_SEEN } from '../tests/lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN, moreTool } from '../tests/lib.mjs';
 import { HELP } from '../src/help-content.js';
 
 const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i >= 0 ? process.argv[i + 1] : d; };
@@ -156,9 +156,9 @@ const STRESS_TRIPS = [
 ];
 
 // ---------- signed-in screens: the real Supabase client against a mocked server running the real SQL on PGlite (same approach as tests/progression.mjs)
-let acct = null;
-async function account() {
-  if (acct) return acct;
+const accts = new Map(); // one mocked server per viewport and theme: jobs run in parallel and a screen that uploads local data must not change another job's server
+async function account(key = '') {
+  if (accts.has(key)) return accts.get(key);
   const { makeDb, as, A, B, C, D } = await import('../tests/lib-db.mjs');
   const env = fs.readFileSync(new URL('../.env.development.local', import.meta.url), 'utf8');
   const URL_ = /VITE_SUPABASE_URL=(\S+)/.exec(env)?.[1];
@@ -188,7 +188,7 @@ async function account() {
   } catch (e) { log('steam: ' + e.message); }
   let lock = Promise.resolve();
   const serial = (fn) => { const r = lock.then(fn, fn); lock = r.catch(() => {}); return r; };
-  const SETOF = new Set(['list_friends', 'list_blocked', 'list_sessions', 'list_steam_apps', 'list_session_rsvps']);
+  const SETOF = new Set(['list_friends', 'list_blocked', 'list_sessions', 'list_steam_apps', 'list_session_rsvps', 'list_friend_live_locations', 'list_invitable_friends', 'list_live_locations', 'list_my_trips', 'list_shared_trip_versions', 'list_trip_members', 'list_user_data_versions', 'list_public_sessions', 'list_my_session_invitations', 'list_my_session_notices', 'list_session_invites']);
   const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
   const mock = async (route) => {
     const req = route.request(), u = new URL(req.url());
@@ -204,7 +204,8 @@ async function account() {
   const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
   const exp = Math.floor(Date.now() / 1000) + 6 * 3600;
   const sess = { access_token: `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: A, email: 'a@example.test', role: 'authenticated', exp })}.sig`, refresh_token: 'r', token_type: 'bearer', expires_in: 21600, expires_at: exp, user: { id: A, email: 'a@example.test', aud: 'authenticated', role: 'authenticated' } };
-  acct = { URL_, REF, mock, sess };
+  const acct = { URL_, REF, mock, sess, reset: () => serial(() => db.exec('delete from public.user_data_versions; delete from public.user_data;')).catch(() => {}) }; // a screen that uploads its local data must not leave a cloud copy for the next one
+  accts.set(key, acct);
   return acct;
 }
 
@@ -232,12 +233,13 @@ async function newContext(vpName, theme) {
   return ctx;
 }
 
-async function openPage(ctx, theme, { stress = false, signed = false, dash = { showOnStart: false, welcomed: true, seen: LATEST_SEEN }, data = true, prefs = {}, vpName } = {}) {
-  const a = signed ? await account() : null;
+async function openPage(ctx, theme, { stress = false, signed = false, dash = { showOnStart: false, welcomed: true, seen: LATEST_SEEN }, data = true, localData = false, trips = null, prefs = {}, vpName } = {}) {
+  const a = signed ? await account(vpName + '|' + theme) : null;
+  if (a) await a.reset();
   if (a) await ctx.route(new RegExp('^' + a.URL_.replace(/[.]/g, '\\.') + '/'), a.mock);
   const p = await ctx.newPage();
   p.on('request', (q) => { if (q.url().includes("/deps/leaflet.js")) p.leafletUrl = q.url(); }); // the app's own Leaflet module, for screens that draw on a map of their own
-  await p.addInitScript(seedInit, [a?.REF, a?.sess ?? null, { dash, help: HELP.map((h) => h.id), prefs: { theme, themeAt: 1, ...prefs }, data: data && !signed, pois: stress ? STRESS_POIS : POIS, trips: stress ? STRESS_TRIPS : TRIPS }]);
+  await p.addInitScript(seedInit, [a?.REF, a?.sess ?? null, { dash, help: HELP.map((h) => h.id), prefs: { theme, themeAt: 1, ...prefs }, data: data && (!signed || localData), pois: stress ? STRESS_POIS : POIS, trips: trips ?? (stress ? STRESS_TRIPS : TRIPS) }]);
   await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
   await p.waitForTimeout(1300);
   if (signed) await p.locator('#name-dlg-skip').click({ timeout: 2500 }).catch(() => {});
@@ -312,6 +314,19 @@ const SCREENS = [
   { id: 'config-open', run: async (p) => { await tab(p, 'config'); await p.evaluate(() => document.querySelectorAll('#panel details').forEach((d) => { d.open = true; })); await p.waitForTimeout(500); } }, // Wave 2: Map Config with every section unfolded
   { id: 'trip-open', run: async (p) => { await tab(p, 'trips'); await p.locator('.trip-card .btn.primary').nth(1).click(); await p.waitForTimeout(800); } }, // Wave 2: itinerary of the trip with days, warnings and a checklist
   { id: 'poi-saved', run: async (p) => { await tab(p, 'poi'); await p.waitForTimeout(400); await p.evaluate(() => { document.querySelectorAll('#panel .sec-toggle[aria-expanded=false]').forEach((b) => b.click()); document.getElementById('poi-list').scrollIntoView({ block: 'start' }); }); await p.waitForTimeout(500); } }, // Wave 2: the saved list, all groups unfolded
+  // Wave 2 (P2/P3) additions, appended so earlier numbering stays: party, AI import, cloud card, sessions hub and form, weather card, banner
+  { id: 'party-unshared', signed: true, open: { localData: true }, run: async (p) => { await tab(p, 'trips'); await p.waitForTimeout(500); await p.locator('.trip-card .btn.primary').first().click(); await p.waitForTimeout(700); await p.locator('#trip-detail .trip-party summary').first().click(); await p.waitForTimeout(600); await p.locator('#trip-detail .trip-party').scrollIntoViewIfNeeded(); await p.waitForTimeout(300); } },
+  { id: 'party-shared', signed: true, open: { localData: true, trips: [{ id: '3f1c2a9e-5b7d-4c1e-9a3b-2d6f8e0a7b11', name: 'Shared spring', startDate: iso(5), endDate: iso(8), description: '', color: '#e91e63', created: '2026-11-01T00:00:00.000Z' }] }, run: async (p) => { await tab(p, 'trips'); await p.waitForTimeout(500); await p.locator('.trip-card', { hasText: 'Shared spring' }).locator('.btn.primary').first().click(); await p.waitForTimeout(700); await p.locator('#trip-detail .trip-party summary').first().click(); await p.waitForTimeout(500); p.on('dialog', (d) => d.accept()); await p.locator('#trip-detail .trip-party button', { hasText: 'Share this trip' }).click({ timeout: 6000 }).catch(async (e) => { await p.screenshot({ path: process.env.TEMP + '/party-dbg.png' }); throw e; }); await p.waitForTimeout(2200); await p.locator('#trip-detail .trip-party').scrollIntoViewIfNeeded(); await p.waitForTimeout(300); } },
+  { id: 'ai-card', run: async (p) => { await tab(p, 'trips'); await p.waitForTimeout(400); await p.locator('#ai-card').scrollIntoViewIfNeeded(); await p.waitForTimeout(300); } },
+  { id: 'ai-preview', run: async (p) => { await tab(p, 'trips'); await p.waitForTimeout(400); await p.fill('#ai-text', JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [114.36, 30.57] }, properties: { name: 'East Lake Greenway', type: 'photo', date: iso(5) } }, { type: 'Feature', geometry: { type: 'Point', coordinates: [114.3, 30.55] }, properties: { name: 'Hongshan Takeoff', type: 'takeoff' } }] })); await p.click('#ai-preview-btn'); await p.waitForTimeout(500); await p.locator('#ai-card').scrollIntoViewIfNeeded(); await p.waitForTimeout(300); } },
+  { id: 'ai-error', run: async (p) => { await tab(p, 'trips'); await p.waitForTimeout(400); await p.fill('#ai-text', 'hello there'); await p.click('#ai-preview-btn'); await p.waitForTimeout(500); await p.locator('#ai-card').scrollIntoViewIfNeeded(); await p.waitForTimeout(300); } },
+  { id: 'cloud-card', signed: true, run: async (p) => { await tab(p, 'config'); await p.click('#privacy-btn'); await p.waitForTimeout(1500); await p.locator('#cloud-card').scrollIntoViewIfNeeded(); await p.waitForTimeout(400); } },
+  { id: 'privacy-open', run: async (p) => { await tab(p, 'config'); await p.click('#privacy-btn'); await p.waitForTimeout(900); await p.evaluate(() => document.querySelectorAll('#privacy details').forEach((d) => { d.open = true; })); await p.waitForTimeout(400); } },
+  { id: 'ses-hub', signed: true, run: async (p) => { await moreTool(p, 'sessions'); await p.waitForSelector('#ses-hub[open]'); await p.waitForTimeout(900); } },
+  { id: 'ses-mine', signed: true, run: async (p) => { await moreTool(p, 'sessions'); await p.waitForSelector('#ses-hub[open]'); await p.click('#ses-hub .ses-tab[data-section=mine]'); await p.waitForTimeout(900); } },
+  { id: 'ses-create', signed: true, run: async (p) => { await moreTool(p, 'sessions'); await p.waitForSelector('#ses-hub[open]'); await p.click('#ses-new'); await p.waitForTimeout(800); } },
+  { id: 'weather-card', run: async (p, vp) => { await p.route('**/api.open-meteo.com/**', (r) => { const time = Array.from({ length: 48 }, (_, i) => new Date(Date.UTC(2026, 10, 13, 0, 0) + i * 3600000).toISOString().slice(0, 16)); const hourly = { time, temperature_2m: time.map((_, i) => 14 + (i % 12) / 2), wind_speed_10m: time.map((_, i) => 3 + (i % 9)), wind_gusts_10m: time.map((_, i) => 6 + (i % 9)), wind_speed_120m: time.map((_, i) => 5 + (i % 9)), visibility: time.map(() => 20000), snowfall: time.map(() => 0), snow_depth: time.map(() => 0), precipitation_probability: time.map((_, i) => (i % 7) * 10), precipitation: time.map((_, i) => (i % 7 === 6 ? 0.4 : 0)), weather_code: time.map(() => 2) }; return r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ latitude: 30.6, longitude: 114.3, utc_offset_seconds: 28800, timezone: 'Asia/Shanghai', timezone_abbreviation: 'GMT+8', hourly, daily: { time: ['2026-11-13', '2026-11-14'], sunrise: ['2026-11-13T06:25', '2026-11-14T06:26'], sunset: ['2026-11-13T17:20', '2026-11-14T17:19'] } }) }); }); const v = VIEWPORTS[vp]; await p.mouse.move(v.w * 0.42, v.h * 0.62); await p.mouse.down(); await p.waitForTimeout(2400); await p.mouse.up(); await p.getByRole('button', { name: /Show weather here/i }).click({ timeout: 4000 }).catch(() => {}); await p.waitForSelector('#weather:not([hidden])', { timeout: 5000 }).catch(() => {}); await p.waitForTimeout(1500); } },
+  { id: 'weather-error', run: async (p, vp) => { const v = VIEWPORTS[vp]; await p.mouse.move(v.w * 0.42, v.h * 0.62); await p.mouse.down(); await p.waitForTimeout(2400); await p.mouse.up(); await p.getByRole('button', { name: /Show weather here/i }).click({ timeout: 4000 }).catch(() => {}); await p.waitForSelector('#weather:not([hidden])', { timeout: 5000 }).catch(() => {}); await p.waitForTimeout(1500); } },
 ];
 
 // ---------- run
@@ -333,7 +348,7 @@ async function runJob({ vp, theme }) {
       await s.run(p, vp);
       await p.evaluate(() => { const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); for (let n = w.nextNode(); n; n = w.nextNode()) if (/[0-9A-Z]{5}-[0-9A-Z]{5}/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/[0-9A-Z]{5}-[0-9A-Z]{5}/g, 'ABCDE-12345'); }); // the friend code is random on every run
       await p.screenshot({ path: path.join(OUT, name), animations: 'disabled', caret: 'hide' });
-    } catch (e) { status = 'failed'; note = String(e.message).split('\n')[0].slice(0, 160); }
+    } catch (e) { if (process.env.DBG && p) await p.screenshot({ path: path.join(process.env.TEMP, 'dbg-' + name) }).catch(() => {}); status = 'failed'; note = String(e.message).split('\n')[0].slice(0, 160); }
     finally { await p?.close().catch(() => {}); }
     manifest.shots.push({ file: name, viewport: vp, theme, screen: s.id, priority: !!(s.prio && VIEWPORTS[vp].priority), status, note });
     console.log(`${status === 'ok' ? 'ok    ' : 'FAILED'} ${name}${note ? '  ' + note : ''}`);

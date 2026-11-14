@@ -1416,3 +1416,16 @@ body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}
   .tabs button[aria-selected=true]{min-width:0;padding-left:8px;padding-right:8px}
   .tabs button[aria-selected=false]{flex-basis:30px}
 }
+
+/* ---------- Wave 2, P2a: friends and party (DESIGN.md section 22). Same rule as Trips: one filled action per card, the other actions soft (no outline); danger keeps its red outline ---------- */
+#pane-friends .btn:not(.primary):not(.danger),#trip-detail .trip-party .btn:not(.primary):not(.danger){border-color:transparent;background:var(--surface-2)}
+@media (hover:hover){#pane-friends .btn:not(.primary):not(.danger):hover,#trip-detail .trip-party .btn:not(.primary):not(.danger):hover{border-color:var(--accent)}}
+
+/* ---------- Wave 2, P2b: account popover, privacy settings, cloud copy. Same soft secondary actions. P2c: the Progression and Steam cards sit on --surface-2, so their buttons keep the outlined look (rank and rarity colours untouched) ---------- */
+#account-pop .btn:not(.primary):not(.danger),#privacy .btn:not(.primary):not(.danger),#cloud-card .btn:not(.primary):not(.danger){border-color:transparent;background:var(--surface-2)}
+#account-pop .prog-card .btn:not(.primary):not(.danger),#account-pop .steam-card .btn:not(.primary):not(.danger){border-color:var(--line);background:var(--surface)}
+@media (hover:hover){#account-pop .btn:not(.primary):not(.danger):hover,#privacy .btn:not(.primary):not(.danger):hover,#cloud-card .btn:not(.primary):not(.danger):hover{border-color:var(--accent)}}
+
+/* ---------- Wave 2, P2d sessions dialog and P2e AI import card: soft secondary actions; the outlined Navigate/Map actions of Wave 1 (.map-action) are kept ---------- */
+#ses-hub .btn:not(.primary):not(.danger):not(.map-action),#ai-card .btn:not(.primary):not(.danger){border-color:transparent;background:var(--surface-2)}
+@media (hover:hover){#ses-hub .btn:not(.primary):not(.danger):not(.map-action):hover,#ai-card .btn:not(.primary):not(.danger):hover{border-color:var(--accent)}}
