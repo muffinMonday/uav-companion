@@ -23,7 +23,8 @@ let { ctx, p } = await open({ width: 1200, height: 800 }, false, 'Yellow Crane')
 ok((await tools(p)).join() === 'Edit,Add visit,Make Side Quest,Delete', 'desktop: Edit, Add visit, Make Side Quest and Delete are icons in the bar at the top: ' + (await tools(p)).join());
 ok((await p.locator('.poi-pop .acts').count()) === 0, 'there is no row of action buttons at the bottom any more');
 ok((await p.locator('.poi-pop .coords-row a.maplink').allTextContents()).join() === 'Open in Amap,Navigate in Amap', 'one Open and one Navigate icon, named after the app, on the coordinates line');
-ok(((await p.locator('.poi-pop .coords-row a.maplink').first().getAttribute('title')) || '').includes('shares this location') && (await p.locator('.poi-pop .coords-row a.maplink').first().evaluate((e) => e.getBoundingClientRect().width)) < 40, 'they are small icons, and the tooltip says the location is shared');
+ok(((await p.locator('.poi-pop .coords-row a.maplink').first().getAttribute('title')) || '').includes('shares this location'), 'the tooltip says the location is shared');
+ok(await p.locator('.poi-pop .coords-row a.maplink').evaluateAll((l) => l.length === 2 && l.every((e) => { const c = getComputedStyle(e), t = e.querySelector('.map-action-label'); return e.classList.contains('map-action') && c.borderTopStyle === 'solid' && parseFloat(c.borderTopWidth) >= 1 && !!e.querySelector('svg') && t.getBoundingClientRect().width > 30 && e.getBoundingClientRect().height >= 28; })), 'both are outlined icon + visible text controls (the same style as the session cards), still external links');
 ok((await p.locator('.poi-pop .maplinks-note').count()) === 0, 'the long sentence under the old buttons is gone');
 ok((await p.textContent('.poi-pop .disclaimer')) === 'Planning aid, not flight advice.', 'the disclaimer is one short line');
 const kids = await p.evaluate(() => [...document.querySelector('.poi-pop').children].map((c) => c.className.split(' ')[0]));

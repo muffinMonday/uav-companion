@@ -604,10 +604,6 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 
 /* ---------- the map-app icons beside the coordinates ---------- */
 .coords-row{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
-.map-icons{display:inline-flex;gap:0;margin:0;padding:0}
-.pop .map-icons .btn.tool{width:26px;height:26px;color:var(--accent);text-decoration:none}
-.pop .map-icons .btn.tool.armed{width:auto;color:var(--on-danger)}
-.btn.tool.armed.share{background:var(--accent);color:var(--accent-fg)}
 .pop-sub.has-icons{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
 
 /* ---------- the days of a trip as a flip card ---------- */
@@ -1256,3 +1252,61 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 /* destructive actions read as destructive before they are pressed */
 .btn.danger{border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}
 @media (hover:hover){.btn.danger:hover{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent)}}
+
+/* ---------- map actions: one outlined icon + visible text control (maplinks-ui.js): marker windows, point-check windows, session cards ---------- */
+.map-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.maplinks.map-icons{margin:0;padding:0}
+.map-action{position:relative;min-height:32px;padding:4px 10px;gap:6px;border:1.5px solid var(--control-border);background:transparent;color:var(--accent);font-size:var(--fs-small);font-weight:var(--fw-semibold);line-height:1.2;text-align:left;text-decoration:none}
+.map-action svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.map-action .map-action-label{min-width:0;overflow-wrap:anywhere}
+@media (hover:hover){.map-action:hover{background:var(--accent-soft);text-decoration:none}}
+.map-action.armed{background:var(--danger-solid);border-color:var(--danger-solid);color:var(--on-danger)}
+.map-action.armed.share{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.map-action.armed svg{display:none}
+.ses-map-actions{display:contents}
+.ses-nopoint{align-self:center;margin:0}
+.pop .map-action{min-height:28px;padding:3px 8px;font-size:var(--fs-meta)}
+.pop .map-action svg{width:14px;height:14px}
+@media (pointer:coarse){
+  .map-action{min-height:44px;padding:6px 12px}
+  /* inside a marker or point-check window the control stays compact (the window has little height); its touch target grows with ::after instead (DESIGN.md section 9) */
+  .pop .map-action{min-height:30px;padding:3px 8px}
+  .pop .map-action::after{content:"";position:absolute;inset:-8px -1px}
+}
+
+/* ---------- the sessions map explorer (sessions-map-explorer.js): a non-modal dock over the interactive map, a left panel or a bottom sheet ---------- */
+.ses-explorer{position:fixed;z-index:var(--z-sheet);display:flex;flex-direction:column;min-height:0;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2);overflow:hidden;animation:ses-x-in .18s ease-out}
+.ses-explorer[hidden]{display:none}
+.ses-explorer[data-mode=side]{left:max(8px,env(safe-area-inset-left,0px));top:8px;bottom:8px;width:var(--ses-x-w,320px)}
+.ses-explorer[data-mode=side][data-collapsed=true]{bottom:auto}
+.ses-explorer[data-mode=bottom]{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));height:var(--ses-x-h,260px)}
+.ses-explorer[data-mode=bottom][data-collapsed=true]{height:auto}
+@keyframes ses-x-in{from{opacity:0}to{opacity:1}}
+.ses-x-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-2);padding:var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-3);border-bottom:1px solid var(--line)}
+.ses-explorer[data-collapsed=true] .ses-x-head{border-bottom:0}
+.ses-x-titles{min-width:0;display:flex;align-items:baseline;gap:4px}
+.ses-x-title{margin:0;font-size:var(--fs-body);font-weight:var(--fw-semibold);outline-offset:2px}
+.ses-x-count{color:var(--muted)}
+.ses-x-tools{flex:none;display:flex;gap:2px}
+.ses-explorer[data-mode=side][data-collapsed=false] #ses-x-fold svg,.ses-explorer[data-mode=bottom][data-collapsed=true] #ses-x-fold svg{transform:rotate(180deg)}
+.ses-x-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:var(--sp-2);padding-bottom:max(var(--sp-2),env(safe-area-inset-bottom,0px))}
+.ses-x-body[hidden]{display:none}
+.ses-x-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--sp-2)}
+.ses-xempty{margin:0;padding:var(--sp-3);text-align:center}
+.ses-xcard{display:flex;flex-direction:column;gap:6px;padding:var(--sp-2) var(--sp-3);border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer}
+.ses-xcard.selected{border-color:var(--accent);background:var(--accent-soft)}
+.ses-xsel{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;min-width:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ses-xtop{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}
+.ses-xtitle{font-weight:var(--fw-semibold);overflow-wrap:anywhere}
+.ses-xwhen,.ses-xplace,.ses-xmeta{color:var(--muted);font-size:var(--fs-small);overflow-wrap:anywhere}
+.ses-xmeta:empty{display:none}
+.ses-xactions{display:flex;flex-wrap:wrap;align-items:center;gap:6px;cursor:default}
+.ses-xactions .map-actions{display:contents}
+.ses-xdetails{min-height:32px}
+@media (pointer:coarse){.ses-explorer .icon-btn{width:44px;height:44px}.ses-xsel{min-height:44px}.ses-xdetails{min-height:44px}}
+.ses-map-pin.sel span{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 40%,transparent),0 1px 4px rgba(0,0,0,.45);transform:scale(1.15)}
+.ses-pin-n{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;display:grid;place-items:center;border-radius:8px;background:var(--fg);color:var(--bg);font:var(--fw-bold) 10px/1 var(--font);font-style:normal}
+/* the map's own controls and the search box stay reachable beside the dock */
+body[data-sesx=side] .leaflet-top.leaflet-left,body[data-sesx=side] .leaflet-bottom.leaflet-left{margin-left:var(--ses-x-off)}
+body[data-sesx=side] .search{left:calc(56px + var(--ses-x-off));width:min(340px,calc(100% - 56px - 72px - var(--ses-x-off)))}
+body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}

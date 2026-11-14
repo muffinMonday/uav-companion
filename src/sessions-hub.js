@@ -5,6 +5,8 @@ import L from 'leaflet';
 import { createSessions, sessionState, whenText, capacityText, roleText, seriesText, linkUrl, tokenFromHash } from './sessions.js';
 import { createSessionForm, clearDraft } from './sessions-create.js';
 import { localDate, localTime } from './sessions-recurrence.js';
+import { createExplorer } from './sessions-map-explorer.js';
+import { sessionMapActions } from './maplinks-ui.js';
 import { avatarEl } from './avatars.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { log } from './log.js';
@@ -55,10 +57,11 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
   const barHide = () => { bar.hidden = true; bar.replaceChildren(); };
   let keepTop = 0; // the form behind the closed dialog is kept as it is (nothing is redrawn), so what was typed stays
   const suspend = () => { keepTop = body.scrollTop; quietClose = dlg.open; dlg.close(); panel?.closeIfPhone?.(); };
-  const resume = () => { if (!dlg.open) { dlg.showModal(); fit(); } body.scrollTop = keepTop; };
+  const resume = () => { if (!dlg.open) { dlg.showModal(); fit(); } if (!body.firstChild) paint(); body.scrollTop = keepTop; };
 
   function pickPoint(initial) {
     return new Promise((resolve) => {
+      if (exploring) endExplore(); // the explorer and the point picker never run together
       suspend();
       const c = initial ?? map.getCenter().wrap();
       const mk = L.marker([c.lat, c.lng], { draggable: true, keyboard: true, title: 'Meeting point', alt: 'Meeting point' }).addTo(map);
@@ -69,27 +72,35 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
       barShow('Drag the pin or tap the map to set the meeting point.', [['Use this point', 'btn small primary', () => finish(mk.getLatLng().wrap())], ['Move pin to the map centre', 'btn small', () => mk.setLatLng(map.getCenter())], ['Cancel', 'btn small', () => finish(null)]]);
     });
   }
-  let shown = null;
-  function showOnMap(list, focus) {
-    const pts = list.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
-    if (!pts.length) return;
-    suspend(); shown?.remove();
-    const layer = L.layerGroup().addTo(map); shown = layer;
-    for (const s of pts) {
-      const m = L.marker([s.lat, s.lng], { icon: L.divIcon({ className: 'ses-map-pin', html: '<span>✈</span>', iconSize: [30, 30], iconAnchor: [15, 15] }), title: s.title, alt: s.title, keyboard: true });
-      m.on('click', () => { end(); open('discover', { id: s.id, fallback: s }); });
-      m.addTo(layer);
-    }
-    const f = pts.find((s) => s.id === focus);
-    if (pts.length === 1 || f) map.setView([(f ?? pts[0]).lat, (f ?? pts[0]).lng], Math.max(map.getZoom(), 14));
-    else map.fitBounds(L.latLngBounds(pts.map((s) => [s.lat, s.lng])), { padding: [60, 60], maxZoom: 14 });
-    const end = () => { layer.remove(); if (shown === layer) shown = null; barHide(); };
-    barShow(pts.length === 1 ? 'Showing the session on the map.' : `Showing ${pts.length} sessions on the map. Tap one to open it.`, [['Back to sessions', 'btn small primary', () => { end(); resume(); }]]);
+  // ---- the map explorer: the hub steps aside (state kept) and a non-modal dock lists the same sessions beside the interactive map
+  let exploring = null; // { src: 'discover' | 'mine' | 'invites' | 'one', id }: which list the explorer shows (the hub's own data, read again on every update)
+  const upcomingMine = () => { const t = Date.now(); return mine.sessions.filter((s) => (s.isHost || s.iRsvped || s.myAttended) && s.status === 'scheduled' && Date.parse(s.endsAt) > t); };
+  const discoverList = () => (pub.space ? pub.list.filter((s) => s.capacity === null || s.rsvpCount < s.capacity) : pub.list).map((p) => ({ ...(mine.sessions.find((x) => x.id === p.id) ?? asSession(p)), distanceKm: p.distanceKm }));
+  function exploreItems() {
+    if (!exploring) return [];
+    if (exploring.src === 'one') { const s = currentOf(exploring.id); return s && (s.visibility === 'public' || signedIn()) ? [s] : []; }
+    if (exploring.src === 'discover') return discoverList();
+    if (!signedIn()) return []; // private sessions and their coordinates belong to a signed-in person only
+    return exploring.src === 'mine' ? upcomingMine() : [...new Map(mine.invites.map((i) => [i.id, { ...i, isHost: false }])).values()];
   }
+  const resumeHub = () => { resume(); if (view !== 'create') paint(); }; // a half-typed form is never redrawn
+  function endExplore() { exploring = null; ex.close(); }
+  function explore(src, { focus = null, id = null } = {}) {
+    if (!dlg.open) return;
+    scroll.set(`${section}:${view}`, body.scrollTop);
+    exploring = { src, id }; suspend(); ex.open({ focusId: focus });
+  }
+  const ex = createExplorer({
+    map, panel, getItems: exploreItems,
+    onDetails: (s) => { endExplore(); resumeHub(); openDetail(s); },
+    onExpand: () => { endExplore(); resumeHub(); dlg.querySelector('.ses-tab[aria-selected=true]')?.focus(); },
+    onClose: () => { endExplore(); scroll.clear(); const o = opener; opener = null; (o?.isConnected && !o.closest('[inert]') ? o : control._a)?.focus?.({ preventScroll: true }); },
+  });
+  const exploreButton = (src) => { const b = btn('Explore on map'); b.dataset.act = 'explore'; b.addEventListener('click', () => explore(src)); return b; };
 
   // ---- loading
   async function loadMine({ quiet = false } = {}) {
-    if (!signedIn()) { mine = mineEmpty(); summaryDone(); return; }
+    if (!signedIn()) { mine = mineEmpty(); summaryDone(); ex.update(); return; }
     const me = ++seqMine;
     if (mine.status === 'idle' && !quiet) { mine = { ...mine, status: 'loading' }; if (dlg.open) paint(); }
     const one = async (fn, fallback) => { try { return await fn(); } catch (e) { log.warn('sessions', 'load failed', e); return fallback; } };
@@ -104,6 +115,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
     if (!failed.v) await Promise.all([...manageOpen].map(async (id) => { const s = mine.sessions.find((x) => x.id === id); if (s?.canManage) await loadPeople(s); else manageOpen.delete(id); }));
     summaryDone();
     if (dlg.open) paint();
+    ex.update();
   }
   async function loadPeople(s) {
     try { people.set(s.id, await api.people(s.id)); } catch { people.delete(s.id); }
@@ -121,6 +133,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
       pub = { ...pub, status: 'ready', list: more ? [...pub.list, ...rows] : rows, more: rows.length === PAGE, offset: (more ? pub.offset : 0) + rows.length };
     } catch (e) { if (me !== seqPub) return; log.warn('sessions', 'public list failed', e); pub = { ...pub, status: 'error' }; }
     if (dlg.open) paint();
+    ex.update();
   }
 
   // ---- the summary the dashboard and the Friends card show
@@ -169,7 +182,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
     r.append(top, el('small', 'ses-when', whenText(s.startsAt, s.endsAt) + (s.location ? ' · ' + s.location : '')));
     const meta = [seriesText(s), capacityText(s), Number.isFinite(s.distanceKm) ? `${s.distanceKm.toFixed(1)} km away` : ''].filter(Boolean);
     r.append(el('small', 'ses-count', meta.join(' · ')), hostBadge(s));
-    const bs = el('div', 'btn-row'); const d = btn('Details'); d.dataset.act = 'details'; d.addEventListener('click', () => openDetail(s)); bs.append(d, ...extra); r.append(bs);
+    const bs = el('div', 'btn-row'); const d = btn('Details'); d.dataset.act = 'details'; d.addEventListener('click', () => openDetail(s)); bs.append(sessionMapActions({ lat: s.lat, lng: s.lng, title: s.title, onMap: () => explore(section, { focus: s.id }) }), d, ...extra); r.append(bs);
     return r;
   }
   const empty = (t) => el('p', 'hint ses-empty', t);
@@ -217,11 +230,11 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
     if (pub.status === 'loading' || pub.status === 'idle') f.append(el('p', 'hint', 'Loading sessions…'));
     else if (pub.status === 'error') { f.append(el('p', 'hint', 'Public sessions are unavailable right now.')); const r = btn('Try again'); r.addEventListener('click', () => loadPublic()); f.append(r); }
     else {
-      const list = pub.space ? pub.list.filter((s) => s.capacity === null || s.rsvpCount < s.capacity) : pub.list;
+      const list = discoverList();
       if (!list.length) f.append(empty('No public sessions match. Try a wider distance or date, or plan one yourself.'));
       else {
-        const mapBtn = btn('Show these on the map'); mapBtn.dataset.act = 'show-map'; mapBtn.addEventListener('click', () => showOnMap(list)); f.append(mapBtn);
-        for (const p of list) { const s = mine.sessions.find((x) => x.id === p.id) ?? asSession(p); f.append(rowFor({ ...s, distanceKm: p.distanceKm }, [])); }
+        f.append(exploreButton('discover'));
+        for (const s of discoverList()) f.append(rowFor(s, []));
         if (pub.more) { const m = btn('Show more'); m.dataset.act = 'more'; m.addEventListener('click', () => loadPublic({ more: true })); f.append(m); }
       }
     }
@@ -237,6 +250,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
     if (mine.status === 'loading' || mine.status === 'idle') { f.append(el('p', 'hint', 'Loading sessions…')); return; }
     if (mine.status === 'error') { f.append(el('p', 'hint', 'Sessions are unavailable right now.')); const r = btn('Try again'); r.addEventListener('click', () => loadMine()); f.append(r); return; }
     f.append(createButton());
+    if (upcomingMine().length) f.append(exploreButton('mine'));
     const unread = mine.notices.filter((n) => n.unread);
     if (unread.length || mine.takedowns.length) {
       const box = el('div', 'ses-notices'); box.append(el('h3', '', 'Updates'));
@@ -246,7 +260,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
       f.append(box);
     }
     const t = Date.now(), mineOnly = mine.sessions.filter((s) => s.isHost || s.iRsvped || s.myAttended);
-    const upcoming = mineOnly.filter((s) => s.status === 'scheduled' && Date.parse(s.endsAt) > t), history = mineOnly.filter((s) => !(s.status === 'scheduled' && Date.parse(s.endsAt) > t)).reverse();
+    const upcoming = upcomingMine(), history = mineOnly.filter((s) => !(s.status === 'scheduled' && Date.parse(s.endsAt) > t)).reverse();
     const group = (title, list, none) => { f.append(el('h3', 'ses-group', title)); if (!list.length) f.append(empty(none)); for (const s of list) f.append(rowFor(s)); };
     group('Hosting', upcoming.filter((s) => s.isHost), 'You are not hosting anything upcoming.');
     group('Joined', upcoming.filter((s) => !s.isHost), 'You have not joined any session yet.');
@@ -258,7 +272,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
     if (!signedIn()) { f.append(signInBox('Sign in to see private invitations sent to you.')); return; }
     if (mine.status !== 'ready') { f.append(el('p', 'hint', mine.status === 'error' ? 'Invitations are unavailable right now.' : 'Loading invitations…')); return; }
     if (!mine.invites.length) { f.append(empty('No invitations waiting. A host can invite you by your friend code or give you a private link.')); return; }
-    f.append(el('p', 'hint', 'Private sessions you were invited to. Open one to say you will come.'));
+    f.append(el('p', 'hint', 'Private sessions you were invited to. Open one to say you will come.'), exploreButton('invites'));
     for (const i of mine.invites) {
       const note = i.scope === 'series' ? 'Invited to the whole series' : 'Invited to this session only';
       const r = rowFor({ ...i, isHost: false }); r.querySelector('.ses-count').textContent = [note, seriesText(i), `from ${i.hostName}`].filter(Boolean).join(' · '); f.append(r);
@@ -293,7 +307,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
     f.append(el('p', 'ses-when', whenText(s.startsAt, s.endsAt)));
     if (seriesText(s)) f.append(el('p', 'hint', seriesText(s) + '. Each session has its own RSVPs, capacity and attendance.'));
     if (s.location) f.append(el('p', 'ses-place', s.location));
-    if (s.lat !== null) { const p = el('p', 'ses-coords'); p.append(el('span', '', `Meeting point: ${s.lat.toFixed(5)}, ${s.lng.toFixed(5)} `)); const m = btn('Show on the map'); m.dataset.act = 'show-map'; m.addEventListener('click', () => showOnMap([s], s.id)); p.append(m); f.append(p); }
+    if (s.lat !== null) { const p = el('p', 'ses-coords'); p.append(el('span', '', `Meeting point: ${s.lat.toFixed(5)}, ${s.lng.toFixed(5)} `)); const m = btn('Show on the map'); m.dataset.act = 'show-map'; m.addEventListener('click', () => explore('one', { id: s.id, focus: s.id })); p.append(m); f.append(p); }
     else f.append(el('p', 'hint', 'No meeting point was set for this session.'));
     f.append(hostBadge(s), el('p', 'ses-count', capacityText(s)));
     if (s.description) f.append(el('p', 'ses-desc', s.description));
@@ -452,6 +466,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
 
   // ---- public
   function open(sec = 'discover', opts = {}) {
+    if (exploring) endExplore();
     section = sec === 'detail' ? 'mine' : sec; view = 'list'; detail = null; message = ''; editing = null; reporting = null;
     if (opts.near) pub = { ...pub, near: String(opts.near) };
     if (!dlg.open) { opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : opener; dlg.showModal(); fit(); }
@@ -461,7 +476,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
     if (section === 'discover' || opts.id) loadPublic().then(() => { if (opts.id && !detail) { const p = pub.list.find((x) => x.id === opts.id) ?? opts.fallback; if (p) openDetail(p.status ? p : asSession(p)); } });
     dlg.querySelector('.ses-tab[aria-selected=true]')?.focus();
   }
-  function reset() { seqMine++; seqPub++; mine = mineEmpty(); nearby = null; manageOpen.clear(); people.clear(); invite.clear(); newLink = null; editing = null; reporting = null; message = ''; summaryAt = 0; clearDraft(); if (dlg.open) { if (view !== 'list' && section !== 'discover') { view = 'list'; detail = null; } paint(); } summaryDone(); }
+  function reset() { seqMine++; seqPub++; mine = mineEmpty(); nearby = null; manageOpen.clear(); people.clear(); invite.clear(); newLink = null; editing = null; reporting = null; message = ''; summaryAt = 0; clearDraft(); ex.update(); if (!dlg.open) { body.replaceChildren(); if (view !== 'list') { view = 'list'; detail = null; } } /* a hidden dialog keeps no private text */ if (dlg.open) { if (view !== 'list' && section !== 'discover') { view = 'list'; detail = null; } paint(); } summaryDone(); }
 
   // sign-in changes: a person who signs in gets their sessions (and a link they opened as a guest is used); sign-out forgets them; a link waits until the saved sign-in has been read
   let was = signedIn();

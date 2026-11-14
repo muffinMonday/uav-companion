@@ -1,5 +1,14 @@
 # Session Checkpoint
 
+## Latest: Flight Sessions map explorer (2026-11-14; owner authorized commit/push/deploy:live for this feature only)
+- Spec and status: `FLIGHT_SESSIONS_MAP_EXPLORER.md` (registered in `AGENTS.md`; deviations listed in its "Implementation status"). Design rules: `DESIGN.md` section 17. Frontend only: no migration, RLS, session rule or flag change.
+- Built: new `src/sessions-map-explorer.js` (non-modal dock: left panel when 320 px of map remain beside a 300 to 360 px dock, else a 30 to 40% bottom sheet; compact cards; Expand, Collapse, Close, Escape; one marker per place with a count badge; selection centres the marker in the free map area, rotation-aware, latest selection wins, a manual pan is respected, relayout on resize, fold and rotation); `src/sessions-hub.js` (Explore on map on Discover, My sessions and Invitations, Map and Navigate on every card, hub state kept while it steps aside, hidden hub DOM emptied on sign-out); `src/maplinks-ui.js` (shared outlined `.map-action`: `mapLinkIcons` for marker and point-check windows, `sessionMapActions` for cards; Home two-step consent unchanged); `src/panel.js` (`suspend()`); `src/styles.css`.
+- Tests: new browser suite `sessions-explorer` (158 checks: dock side and size at 8 viewports, folded phone and desktop in dark, selection and centring within 16 px, rapid taps with and without animation, manual pan, scrolling, same-place occurrences, no-point cards, guest and signed-in boundary, sign-out while open, keyboard, Expand, Details, Close, fold and rotate, turned map, Navigate links with Amap and Google walking); `tools` and `popswipe` updated for the outlined buttons.
+- Results: unit 53/53 (`live-engine-unit` "next position recovers" failed once under load, passes alone 3/3 as noted before); build passes; full `npm test` run 2: 113 of 114 suites passed, `trips` failed the tab-order check once under load (the Friends tab is added after cloud start-up; passes alone 2/2 and passed in run 1); run 1 had `popswipe` failing, fixed (see `lessons.md`). Screenshots: 298 before (HEAD) and 298 after (`~/UAV_UI_Screenshots/explorer-before-20261114`, `explorer-after-20261114`): 258 identical, 40 differ, all in the four intended screens (popup-collapsed, popup-expanded, point-check, stress-popup) at 5 viewports x 2 themes; desktop and phone samples viewed. Explorer screenshots: `tests/out/explorer/` (ignored).
+- Not verified: a real foldable, a real phone, Safari, the real Android toolbar and keyboard. Marker and point-check windows are about 20 px taller than before.
+- Left alone: the uncommitted `.gitignore` change (`.env*`) was already in the tree and is not part of this work.
+
+
 ## Latest: aesthetic pass on Sessions forms (2026-11-14; owner authorized commit/push/deploy:live for this UI work only)
 - Audit (hub screens at 390x844, 412x915, 700x850, 850x700, 768x1024, 1440x900, light and dark; side panel, privacy, profile, dashboard reviewed at desk/phone/tabport): the New session form stretched every field across 640-720 px, nested bordered cards, radios and checkboxes inherited `width:100%` (visibly broken visibility choice), time inputs unstyled, doubled paragraph margins in the detail view, full-width Details/action buttons, Discover filters filled the row. Side panel, dashboard, account/profile were already balanced and were not changed.
 - Fix: `src/styles.css` (form and detail block, shared `input[type=time]`), `src/sessions-create.js` (markup only: `.ses-field` wrappers, repeat row, four sections, Cancel then Create), `src/sessions-hub.js` (`.ses-narrow`, shorter distance option text, aria-label keeps "of the map centre"), `tests/responsive.mjs` (now 210 checks: filter and form widths, radio and capacity size, four groups). Conventions: `DESIGN.md` section 16.
@@ -173,6 +182,9 @@ Efficiency follow-ups are listed in `docs/EFFICIENCY.md` ("Still to do"); the pr
 - **HTML and `main.js` refactor:** `docs/HTML_MAIN_REFACTOR_BACKLOG.md`. Build-time HTML fragments, focused JS startup modules, component ownership map, and regression gates. **Not implemented.**
 - **Community Flying Areas:** `docs/COMMUNITY_FLYING_AREAS_PLAN.md`. Private local polygons/rectangles, authenticated submission, admin moderation, anonymous public approved areas, reviewed revisions and anonymized retention on account deletion. **Not implemented.**
 - **Order:** complete and verify HTML/main.js refactor first; then reconcile the Community Flying Areas file paths. Neither backlog authorizes implementation, migrations or deployment.
+
+## Backlog registered: Flight Sessions Map Explorer (2026-11-14)
+- `docs/FLIGHT_SESSIONS_MAP_EXPLORER.md`: implemented (first entry above); status section at the end of that file.
 
 ## Future backlog: Flight Sessions 2.0 (2026-11-14; planning only)
 - Plan: `docs/FLIGHT_SESSIONS_2_PLAN.md`; autonomous agent handoff: `docs/FLIGHT_SESSIONS_2_AGENT_HANDOFF.md`.

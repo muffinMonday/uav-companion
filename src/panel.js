@@ -168,5 +168,7 @@ export function initPanel() {
     onChange(fn) { changers.push(fn); },
     /** On phones the panel is a bottom sheet that would hide the map, so get it out of the way. */
     closeIfPhone() { if (isPhone() && !panel.hidden) { setOpen(false); } },
+    /** Hides the panel for a while without touching the saved choice (the sessions map explorer needs the room). Returns a function that brings it back if it is still hidden. */
+    suspend() { if (panel.hidden) return () => {}; setOpen(false); return () => { if (panel.hidden) setOpen(true); }; },
   };
 }

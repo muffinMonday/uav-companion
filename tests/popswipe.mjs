@@ -78,7 +78,8 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
   await openWindow(p, 'Alpha');
   const v0 = await view(p);
   const b3 = await box(p, '.poi-pop h3');
-  await swipe([b3.cx, b3.cy], [b3.cx, b3.cy + 150]);
+  const bx = b3.x + 30; // the left of the name line: the title column is as wide as the Open / Navigate buttons now, and its centre is under the top bar's eye button, whose touch target reaches 8 px below it
+  await swipe([bx, b3.cy], [bx, b3.cy + 150]);
   ok(await winOpen(p), 'a downward swipe on the body (not the border) leaves it open');
   ok((await view(p)) === v0, 'and the map underneath does not move');
 
@@ -171,7 +172,9 @@ const searchAt = async (p) => { await p.evaluate(() => { if (document.getElement
   await searchAt(p);
   await p.waitForSelector('.leaflet-popup .pop-bar', { timeout: 8000 }); await p.waitForTimeout(400);
   const last = await box(p, '.leaflet-popup .check > :last-child');
-  await swipe([last.cx, last.cy], [last.cx, last.cy - 150]);
+  // the Open / Navigate buttons make the window a little taller, so the bottom row can reach below the visible bubble: swipe from its visible part, left of the tip
+  const wb = await p.$eval('.leaflet-popup-content-wrapper', (e) => e.getBoundingClientRect().bottom), lx = last.x + 30, ly = Math.min(last.cy, wb - 10);
+  await swipe([lx, ly], [lx, ly - 150]);
   ok(!(await pop()), 'swiping up from the bottom row closes it');
   ok(!errs.length, 'no page errors: ' + errs.join(' | '));
   await ctx.close();

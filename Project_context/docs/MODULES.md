@@ -13,7 +13,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `view.js` | Centre map aware of the panel; popup heights | - |
 | `locate.js`, `heading.js` (pure maths), `maprotate.js` | Locate button steps, compass, own map rotation (not `leaflet-rotate`: GPL) | Leaflet |
 | `search.js`, `coordparse.js` (pure), `coords.js` (pure, WGS-84/GCJ-02, `inChina`) | Offline and online search, coordinate/map-link parsing | `config.js` |
-| `maplinks.js` (pure), `maplinks-ui.js` | Google Maps / Amap links and routes | `coords.js` |
+| `maplinks.js` (pure), `maplinks-ui.js` | Google Maps / Amap links and routes; the outlined icon + text `.map-action` controls (`mapLinkIcons` for marker and point-check windows, `sessionMapActions` for session cards, `hasPoint`) | `coords.js` |
 
 ## Markers and trips (local model)
 | File | Responsibility | Depends on |
@@ -48,7 +48,8 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `sessions.js` (pure + API wrapper) | Flight sessions 2.0: validation of every RPC reply (`cleanSession`, `cleanPublic`, `cleanInvitation`, `cleanNotice`, `cleanInviteList`), which controls to offer (`sessionState`), the wording that separates hosting from "can verify attendance for XP" (`roleText`), link helpers | `createSessions`, `sessionState`, `roleText`, `capacityText` |
 | `sessions-recurrence.js` (pure) | Dates a repeat gives (weekly, every two weeks, monthly with clamping), the Saturday preset, the preview text; mirrors the SQL `session_occurrence_date` | `occurrenceDates`, `previewSeries`, `nextSaturday` |
 | `sessions-create.js` | The New session form (layout classes `.ses-narrow` `.ses-field` `.ses-sec`: DESIGN section 16; map pin, saved-marker shortcut, repeat preview, private by default, public confirmation, capacity); the draft lives in memory only; pure `draftToRequest` | `createSessionForm`, `draftToRequest` |
-| `sessions-hub.js` | The Sessions hub dialog (Discover, My sessions, Invitations, detail, host tools, invitations and private links, reporting), the map button, the point picker and "show on the map" bar, the `#session=` link handler, the summary the dashboard and Friends card read (`cloud.sessions`) | `initSessionsHub` |
+| `sessions-hub.js` | The Sessions hub dialog (Discover, My sessions, Invitations, detail, host tools, invitations and private links, reporting), the map button, the point picker bar, the hand-over to the map explorer (`explore()`, hub state kept while it is out of the way), the `#session=` link handler, the summary the dashboard and Friends card read (`cloud.sessions`) | `initSessionsHub` |
+| `sessions-map-explorer.js` | The non-modal sessions explorer: left dock or bottom sheet, compact cards (Map, Navigate, Details), one marker per place, selection that centres the marker in the free map area (rotation-aware), manual-pan respect, relayout on resize or fold, Escape. Reads the hub's data through `getItems()`; keeps no copy of its own. Design: `DESIGN.md` section 17 | `createExplorer` |
 | `sessions-ui.js` | The short Flight sessions card in the Friends tab: a summary and a button that opens the hub | `createSessionsCard`, `summaryLines` |
 | `progression.js` (pure), `progression-api.js`, `progression-ui.js` | Rank progress, validation of what the database returns, a short cache, and the rank badge, progression card, achievement collection and XP history | `cleanProgression`, `rankProgress`, `getProgression`, `mountProgression`, `rankBadge`, `progressionMini` (map pin card; `livemap.js` `setRanks`) |
 | `social.js` | Friends and profile RPC wrappers | `createSocial` |
@@ -65,7 +66,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 ## Shell and settings
 | File | Responsibility |
 |---|---|
-| `panel.js`, `swipe.js` | Side panel, rail, tabs (generic over `[role=tab]`), phone sheet; swipe gestures (sheets, dashboard, the map popups via `onPopupSwipe`, and the profile, achievement and account dialogs via `onDialogSwipe`) |
+| `panel.js`, `swipe.js` | Side panel, rail, tabs (generic over `[role=tab]`), phone sheet, `suspend()` (hide without touching the saved choice); swipe gestures (sheets, dashboard, the map popups via `onPopupSwipe`, and the profile, achievement and account dialogs via `onDialogSwipe`) |
 | `dashboard.js`, `dashstate.js` (pure), `whatsnew.js` | Bottom dashboard and its start rules; What's new entries (add one to announce a change) |
 | `prefs.js`, `privacy.js`, `privacy-ui.js` | Validated settings; opt-in switches and rounding |
 | `log.js`, `logscrub.js`, `logstore.js`, `errors.js` | Local diagnostics: the logger (levels, `?debug=1`, repeat counting), privacy scrubbing (allow-list), the IndexedDB ring buffer with rotation and JSON export, and the observe-only global error handlers. `backoff.js` (`name`) logs the start and end of a failure streak | none (`privacy-ui.js` shows the Diagnostics card) |
@@ -119,7 +120,7 @@ All CSS is in `src/styles.css` (tokens and rules: `DESIGN.md`); find a feature's
 | Marker windows, name tags, pins | dynamic | `poi-ui.js`, `livemap.js` | `.poi-pin`, `.name-tag`, `.live-pin` | `poi1`, `poi2`, `popswipe`, `live` |
 | Legend, coverage note, zone layers | `map-config.html` nodes moved by `dashboard.js` | `app/region-ui.js` (`renderRegionInfo`), `map.js` | `.legend` | `dashboard`, `prefs`, `smoke` |
 | Locate, compass, rotation | dynamic Leaflet controls | `locate.js`, `maprotate.js` | `.locate-btn` | `launchloc`, `locatemode`, `maprotate` |
-| Friends, party, sessions, account pane, progression, Steam | dynamic | `friends-ui.js`, `party-ui.js`, `sessions-ui.js`, `account-ui.js`, `progression-ui.js`, `steam-ui.js` | `.fr-`, `.ses-`, `.account-pop`, `.profile-dialog` | `friends`, `party`, `live`, `sessions`, `responsive`, `progression`, `steam`, `autoshare` |
+| Friends, party, sessions, account pane, progression, Steam | dynamic | `friends-ui.js`, `party-ui.js`, `sessions-ui.js`, `sessions-map-explorer.js`, `account-ui.js`, `progression-ui.js`, `steam-ui.js` | `.fr-`, `.ses-`, `.ses-x`, `.map-action`, `.account-pop`, `.profile-dialog` | `friends`, `party`, `live`, `sessions`, `sessions-explorer`, `responsive`, `progression`, `steam`, `autoshare` |
 | Toast, banner, weather card | `index.html` (`#toast`, `#banner`, `#weather`) | `main.js` (toast), `weather.js`, `whatsnew.js` | `.toast`, `.wx` | `smoke`, `mw`, `rain` |
 
 The two weather/elevation status lines are `#mw-status` (Map Configs) and `#pv-mw-status` (Privacy); `poi-ui.js` writes both.

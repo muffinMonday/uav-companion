@@ -2,6 +2,12 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-14 (Flight Sessions map explorer)
+- New `src/sessions-map-explorer.js`: a non-modal dock beside the interactive map (left panel from about 620 px wide, bottom sheet below) listing sessions as compact cards; tapping a card selects that occurrence and centres its marker in the unobstructed map area (rotation-aware); one marker per place with a count badge for recurring occurrences; Expand, Collapse and Close; Escape; relayout on resize, fold and rotation; the main side panel steps aside temporarily (`panel.suspend()`) without touching the saved choice.
+- Hub: **Explore on map** on Discover, My sessions and Invitations; every session card has outlined **Map** (internal) and **Navigate** (external, Maps settings apply) plus Details; cards without a meeting point say so. The old "Show these on the map" bar is replaced by the explorer; the picker bar stays.
+- Marker windows and point-check windows: **Open in <app>** and **Navigate in <app>** are now outlined icon + text controls (`.map-action`), same links, same Home two-step consent.
+- Hidden hub DOM is emptied on sign-out (a suspended hub kept the previous private text). Tests: new browser suite `sessions-explorer`, `tools` updated. Spec: `FLIGHT_SESSIONS_MAP_EXPLORER.md`; design `DESIGN.md` section 17.
+
 ## 2026-11-14 (aesthetic pass: Sessions forms)
 - New session form: one 600 px centred column, four flat sections (Basics, When, Where, Visibility and capacity), date and times in one row from 480 px, repeat picker beside the Saturday preset, count and preview on a left rule, meeting point as one row, visibility as two cards, short capacity field, Cancel then a wide Create. Fixed radios and checkboxes stretched to 100% width. Discover filters are a bounded flex row; list and detail buttons are content-width; detail paragraphs no longer double-margined; time inputs styled like date inputs. Files: `styles.css`, `sessions-create.js` (markup only), two lines in `sessions-hub.js`, `tests/responsive.mjs` (210 checks). Same ids, data, validation and API. See `DESIGN.md` section 16.
 
