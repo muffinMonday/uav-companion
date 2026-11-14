@@ -39,8 +39,8 @@ function validate(meta, dir) {
   if (!meta.source.authority || !meta.source.effective) throw new Error(`${meta.id}: source.authority and source.effective are required`);
 }
 
-async function buildRegion(countryId, dirName, OUT) {
-  const dir = path.join(REGIONS, countryId, dirName);
+export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS) {
+  const dir = path.join(regionsRoot, countryId, dirName);
   const meta = readJson(path.join(dir, 'source.json'));
   validate(meta, dir);
   const id = meta.id;
@@ -168,6 +168,8 @@ async function buildTree(OUT, local) {
   return index;
 }
 
-const pub = await buildTree(OUT_PUBLIC, false);
-const loc = await buildTree(OUT_LOCAL, true);
-console.log(`index: ${pub.countries.length} country(ies) public${loc.countries.length ? `, ${loc.countries.length} local-only (public/data-local, never deployed)` : ''}`);
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename)) {
+  const pub = await buildTree(OUT_PUBLIC, false);
+  const loc = await buildTree(OUT_LOCAL, true);
+  console.log(`index: ${pub.countries.length} country(ies) public${loc.countries.length ? `, ${loc.countries.length} local-only (public/data-local, never deployed)` : ''}`);
+}

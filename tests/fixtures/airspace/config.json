@@ -1,0 +1,57 @@
+{
+  "synthetic": true,
+  "input": "zones.geojson",
+  "boundary": "boundary.geojson",
+  "region": {
+    "id": "xx-synthetic",
+    "country": "xx",
+    "name": "Synthetic regression fixture",
+    "format": "geojson",
+    "crs": "wgs84",
+    "crsVerified": true,
+    "semantics": "allow",
+    "maxHeightM": 120,
+    "source": {
+      "authority": "Project-authored test data",
+      "effective": "2026-11-14"
+    },
+    "license": "CC0-1.0"
+  },
+  "expected": {
+    "features": 2,
+    "contentSha256": "cf45c2e756b64d4dc39c48108324faaa67af8262ba74b9494a62ea35abaad93c"
+  },
+  "pointChecks": [
+    {
+      "lon": 103.01,
+      "lat": 1.01,
+      "inside": true
+    },
+    {
+      "lon": 103.05,
+      "lat": 1.05,
+      "inside": false
+    },
+    {
+      "lon": 103.12,
+      "lat": 1.01,
+      "inside": true
+    },
+    {
+      "lon": 103.15,
+      "lat": 1.01,
+      "inside": true
+    },
+    {
+      "lon": 103.105,
+      "lat": 1.01,
+      "inside": false
+    },
+    {
+      "lon": 103.2,
+      "lat": 1.05,
+      "inside": false
+    }
+  ],
+  "approval": "approval.json"
+}

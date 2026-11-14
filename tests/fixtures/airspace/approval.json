@@ -1,0 +1,48 @@
+{
+  "subjectSha256": "fef66ea622727979007f71307fddd4b5c658a266f06ad353da68d9116c9aab8b",
+  "validUntil": "2099-12-31",
+  "gates": {
+    "semantics": {
+      "status": "approved",
+      "reviewer": "Synthetic regression fixture ONLY",
+      "reviewedAt": "2026-11-14",
+      "evidence": "evidence.txt",
+      "sha256": "28aed72016dd02028dd7492fcf8184ae1ae834b8803a1161145fcfccf3bf3039"
+    },
+    "crsAlignment": {
+      "status": "approved",
+      "reviewer": "Synthetic regression fixture ONLY",
+      "reviewedAt": "2026-11-14",
+      "evidence": "evidence.txt",
+      "sha256": "28aed72016dd02028dd7492fcf8184ae1ae834b8803a1161145fcfccf3bf3039"
+    },
+    "completeness": {
+      "status": "approved",
+      "reviewer": "Synthetic regression fixture ONLY",
+      "reviewedAt": "2026-11-14",
+      "evidence": "evidence.txt",
+      "sha256": "28aed72016dd02028dd7492fcf8184ae1ae834b8803a1161145fcfccf3bf3039"
+    },
+    "effectiveDates": {
+      "status": "approved",
+      "reviewer": "Synthetic regression fixture ONLY",
+      "reviewedAt": "2026-11-14",
+      "evidence": "evidence.txt",
+      "sha256": "28aed72016dd02028dd7492fcf8184ae1ae834b8803a1161145fcfccf3bf3039"
+    },
+    "redistribution": {
+      "status": "approved",
+      "reviewer": "Synthetic regression fixture ONLY",
+      "reviewedAt": "2026-11-14",
+      "evidence": "evidence.txt",
+      "sha256": "28aed72016dd02028dd7492fcf8184ae1ae834b8803a1161145fcfccf3bf3039"
+    },
+    "production": {
+      "status": "approved",
+      "reviewer": "Synthetic regression fixture ONLY",
+      "reviewedAt": "2026-11-14",
+      "evidence": "evidence.txt",
+      "sha256": "28aed72016dd02028dd7492fcf8184ae1ae834b8803a1161145fcfccf3bf3039"
+    }
+  }
+}
