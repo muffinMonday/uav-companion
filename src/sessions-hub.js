@@ -203,8 +203,8 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
   function drawDiscover(f) {
     const form = el('form', 'ses-filters'); form.setAttribute('role', 'search');
     const q = el('input'); q.type = 'search'; q.placeholder = 'Search title or place'; q.value = pub.query; q.maxLength = 60; q.setAttribute('aria-label', 'Search sessions'); q.id = 'ses-q';
-    const near = el('select'); near.setAttribute('aria-label', 'Distance'); near.id = 'ses-near';
-    for (const [v, t] of [['any', 'Anywhere'], ['10', 'Within 10 km of the map centre'], ['25', 'Within 25 km of the map centre'], ['100', 'Within 100 km of the map centre']]) near.append(new Option(t, v)); near.value = pub.near;
+    const near = el('select'); near.setAttribute('aria-label', 'Distance from the map centre'); near.id = 'ses-near';
+    for (const [v, t] of [['any', 'Anywhere'], ['10', 'Within 10 km'], ['25', 'Within 25 km'], ['100', 'Within 100 km']]) near.append(new Option(t, v)); near.value = pub.near;
     const when = el('select'); when.setAttribute('aria-label', 'When'); when.id = 'ses-when-f';
     for (const [v, t] of [['any', 'Any date'], ['week', 'Next 7 days'], ['month', 'Next 30 days']]) when.append(new Option(t, v)); when.value = pub.when;
     const sl = el('label', 'ses-check'); const sp = el('input'); sp.type = 'checkbox'; sp.checked = pub.space; sl.append(sp, el('span', '', 'Has space'));
@@ -266,6 +266,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
   }
 
   function drawCreate(f) {
+    f.classList.add('ses-narrow');
     const back_ = btn('← Back'); back_.id = 'ses-back'; back_.addEventListener('click', back); f.append(back_, el('h3', '', 'New session'));
     f.append(el('p', 'hint', 'Anyone signed in can host. Hosting gives no XP, and a host cannot verify attendance for XP unless they are an organiser or administrator.'));
     const form = createSessionForm({
@@ -282,6 +283,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
   }
 
   function drawDetail(f) {
+    f.classList.add('ses-narrow');
     const s = currentOf(detail.id);
     const back_ = btn('← Back'); back_.id = 'ses-back'; back_.addEventListener('click', back); f.append(back_);
     if (!s) { f.append(empty('This session is no longer available.')); return; }

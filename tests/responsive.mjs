@@ -89,9 +89,9 @@ for (const vp of VPS) {
   const sheet = touch && (w <= 900 || h <= 520);
   const dr = await rect(p, hub);
   ok(sheet ? (dr.l <= 0.5 && dr.t <= 0.5 && dr.r >= w - 0.5 && dr.b >= h - 0.5) : (dr.r - dr.l <= 960.5 && dr.l >= 15), `${tag}: ${sheet ? 'a touch screen gets the full-screen sheet' : 'a mouse or a big tablet keeps the dialog'}`);
-  const cols = await p.evaluate(() => getComputedStyle(document.querySelector('.ses-filters')).gridTemplateColumns.split(' ').length);
   const bodyW = await p.evaluate(() => document.getElementById('ses-hub-body').clientWidth);
-  ok(bodyW >= 560 ? cols === 3 : cols === 2, `${tag}: Discover filters use ${cols} columns for a ${Math.round(bodyW)} px body`);
+  const fw = await p.evaluate(() => { const w = (q) => Math.round(document.querySelector(q).getBoundingClientRect().width); return { q: w('.ses-filters input[type=search]'), near: w('#ses-near'), when: w('#ses-when-f') }; });
+  ok(fw.q <= 361 && fw.near <= 221 && fw.when <= 221 && fw.near >= 100, `${tag}: Discover filters stay compact (search ${fw.q} px, selects ${fw.near} and ${fw.when} px, for a ${Math.round(bodyW)} px body)`);
   await shot(p, `hub-discover-${slug}`);
   const before = await rect(p, '.ses-hub-head');
   await p.evaluate(() => { const bd = document.getElementById('ses-hub-body'); const s = document.createElement('div'); s.style.height = '1500px'; s.className = 'ses-filler'; bd.firstChild.append(s); bd.scrollTop = 400; });
@@ -105,10 +105,13 @@ for (const vp of VPS) {
   await p.click(`${hub} .ses-tab[data-section=invites]`); await p.waitForTimeout(300); await shot(p, `hub-invites-${slug}`);
   await p.click(`${hub} .ses-tab[data-section=discover]`); await p.waitForTimeout(300);
   await p.click('#ses-new'); await p.waitForSelector('#ses-form');
-  const f = await p.evaluate(`(() => { const g = ${R.toString()}; return { go: g('#ses-create'), cancel: g('#ses-create-cancel'), body: g('#ses-hub-body'), cols: getComputedStyle(document.getElementById('ses-form')).gridTemplateColumns.split(' ').length, ids: ['sc-1', 'sc-2', 'sc-3', 'sc-starts', 'sc-ends', 'sc-4'].every((i) => document.getElementById(i)), sec: document.querySelectorAll('#ses-form .ses-sec').length }; })()`);
+  const f = await p.evaluate(`(() => { const g = ${R.toString()}; return { go: g('#ses-create'), cancel: g('#ses-create-cancel'), body: g('#ses-hub-body'), fw: g('#ses-form'), ids: ['sc-1', 'sc-2', 'sc-3', 'sc-starts', 'sc-ends', 'sc-4'].every((i) => document.getElementById(i)), sec: document.querySelectorAll('#ses-form .ses-sec').length }; })()`);
   ok(inside(f.go, w, h) && inside(f.cancel, w, h) && f.go.b <= f.body.b + 0.5, `${tag}: Create and Cancel are visible without scrolling`);
-  ok(f.ids && f.sec === 5, `${tag}: the form has its five groups and its fields`);
-  ok(bodyW >= 600 ? f.cols === 2 : f.cols !== 2, `${tag}: the form uses ${f.cols === 2 ? 'two columns' : 'one column'} for a ${Math.round(bodyW)} px body`);
+  ok(f.ids && f.sec === 4, `${tag}: the form has its four groups and its fields`);
+  const small = await p.evaluate(() => { const w = (q) => Math.round(document.querySelector(q).getBoundingClientRect().width); return { radio: w('#ses-form input[type=radio]'), cap: w('#ses-form input[name=capacity]') }; });
+  ok(small.radio <= 24 && small.cap <= 200, `${tag}: radio buttons keep their size (${small.radio} px) and the capacity field stays short (${small.cap} px)`);
+  const fwid = f.fw.r - f.fw.l, lgap = f.fw.l - f.body.l, rgap = f.body.r - f.fw.r;
+  ok(fwid <= 601 && (bodyW <= 640 || Math.abs(lgap - rgap) <= 8), `${tag}: the form is one column of ${Math.round(fwid)} px (at most 600), centred in a ${Math.round(bodyW)} px body`);
   ok(await noSideways(p), `${tag}: the form does not scroll sideways`);
   await shot(p, `hub-create-${slug}`);
   await p.fill('#ses-form input[name=title]', 'A very long session title that goes on and on to check how a long line wraps in the form');

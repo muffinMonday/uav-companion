@@ -2,6 +2,9 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-14 (aesthetic pass: Sessions forms)
+- New session form: one 600 px centred column, four flat sections (Basics, When, Where, Visibility and capacity), date and times in one row from 480 px, repeat picker beside the Saturday preset, count and preview on a left rule, meeting point as one row, visibility as two cards, short capacity field, Cancel then a wide Create. Fixed radios and checkboxes stretched to 100% width. Discover filters are a bounded flex row; list and detail buttons are content-width; detail paragraphs no longer double-margined; time inputs styled like date inputs. Files: `styles.css`, `sessions-create.js` (markup only), two lines in `sessions-hub.js`, `tests/responsive.mjs` (210 checks). Same ids, data, validation and API. See `DESIGN.md` section 16.
+
 ## 2026-11-14 (responsive dialogs for unfolded phones)
 - Sessions hub: sized in % instead of `vh` (header and close button no longer end up above the screen when the visible area is shorter than the dialog), full-screen sheet on touch screens up to 900 px wide, follows `visualViewport` for the keyboard, sticky Create/Cancel row, Discover filters and the New session form in columns by container width, sectioned form, calmer empty states, hosting-limit text corrected (five active hosted sessions, public or private, a series counts once), focus returns to the calendar button after the map picker. `.profile-dialog` and `.account-pop` heights no longer use `100vh`. New browser suite `responsive`. Details and measurements: `DESIGN.md` section 9, `CURRENT_STATUS.md`.
 

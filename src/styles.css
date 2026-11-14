@@ -56,7 +56,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
 .btn-row .btn{flex:1 1 auto}
 
-input[type=text],input[type=url],input[type=email],input[type=number],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--fg)}
+input[type=text],input[type=url],input[type=email],input[type=number],input[type=time],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--fg)}
 select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238a99a6' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
 input[type=range]{width:100%;accent-color:var(--accent)}
 textarea{resize:vertical;min-height:60px}
@@ -376,12 +376,12 @@ textarea{resize:vertical;min-height:60px}
 :root{color-scheme:light}
 :root[data-theme="dark"]{color-scheme:dark}
 
-input[type=date]{width:100%;min-height:38px;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--fg);font-variant-numeric:tabular-nums}
+input[type=date],input[type=time]{width:100%;min-height:38px;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--fg);font-variant-numeric:tabular-nums}
 input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.6;border-radius:var(--radius-xs);padding:3px;margin-left:2px}
 @media (hover:hover){input[type=date]::-webkit-calendar-picker-indicator:hover{opacity:1;background:var(--accent-soft)}}
 input[type=date]::-webkit-datetime-edit-fields-wrapper{padding:0}
 input[type=date]:disabled{opacity:var(--disabled-opacity)}
-input[type=text]:focus,input[type=email]:focus,input[type=number]:focus,input[type=date]:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input[type=text]:focus,input[type=email]:focus,input[type=number]:focus,input[type=date]:focus,input[type=time]:focus,select:focus,textarea:focus{border-color:var(--accent)}
 input[type=number]{-moz-appearance:textfield;appearance:textfield;text-align:center;font-variant-numeric:tabular-nums}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 
@@ -1131,10 +1131,10 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .ses-hub-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:var(--sp-4);container:ses/inline-size}
 .ses-hub-inner{display:flex;flex-direction:column;gap:8px;max-width:720px;margin-inline:auto}
 .ses-hub-inner>.btn,.ses-hub-inner>.ses-signin{align-self:flex-start}
-.ses-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:center}
-.ses-filters input[type=search]{grid-column:1/-1;min-width:0;box-sizing:border-box}
-.ses-filters select{min-width:0;width:100%}
-.ses-filters .ses-check{grid-column:1/-1}
+.ses-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ses-filters input[type=search]{flex:1 1 260px;max-width:360px;min-width:0;box-sizing:border-box;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--fg)}
+.ses-filters select{flex:1 1 150px;max-width:220px;min-width:0;width:auto}
+.ses-filters .ses-check{flex:none}
 .ses-check{display:flex;align-items:center;gap:6px;font-size:var(--fs-small)}
 .ses-group{margin:12px 0 0;font-size:var(--fs-micro);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .ses-host{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
@@ -1171,26 +1171,85 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
   .ses-hub .btn,.ses-hub select,.ses-hub input:not([type=checkbox]):not([type=radio]){min-height:40px}
 }
 /* inside the hub, columns follow the room the hub has (container query), not the screen */
-@container ses (min-width:560px){
-  .ses-filters{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .ses-filters .ses-check{grid-column:auto}
-  .ses-hub-inner{gap:10px}
-}
+@container ses (min-width:560px){.ses-hub-inner{gap:10px}}
 .ses-hub-inner>.ses-empty{padding:var(--sp-4);border:1px dashed var(--line);border-radius:var(--radius-sm);text-align:center;margin:0}
 .ses-group{margin:var(--sp-3) 0 0;padding-bottom:4px;border-bottom:1px solid var(--line)}
-/* the New session form: sections, and two columns where the hub is wide */
-.ses-sec{display:flex;flex-direction:column;gap:4px;padding:var(--sp-3);border:1px solid var(--line);border-radius:var(--radius-sm);min-width:0}
-.ses-sec>h4{margin:0 0 2px;font-size:var(--fs-micro);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.ses-sec>.fr-label:first-of-type{margin-top:0}
-.ses-create{gap:var(--sp-3);margin-top:var(--sp-2)}
-.ses-when{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px}
+/* Form and detail layout in the hub (aesthetic pass 2026-11-14, DESIGN.md section 16): one centred column of at most 600 px (.ses-narrow), flat sections divided by a hairline,
+   field = label + control + hint (.ses-field), short controls keep short widths, choices as cards, one action row. */
+.ses-hub-inner>p{margin:0}
+.ses-hub-inner.ses-narrow{max-width:600px}
+.ses-narrow>h3{margin:0;font-size:var(--fs-title);line-height:var(--lh-tight)}
+.ses-narrow>.btn:first-child{align-self:flex-start}
+.ses-form{margin-top:0}
+.ses-sec{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0;padding-top:var(--sp-4);border-top:1px solid var(--line)}
+.ses-sec:first-of-type{padding-top:var(--sp-1);border-top:0}
+.ses-sec>h4{margin:0;font-size:var(--fs-micro);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ses-create{gap:var(--sp-4);margin-top:var(--sp-2)}
+.ses-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ses-field .fr-label,.ses-vis .fr-label{margin:0}
+.ses-field .hint{margin:0}
+.ses-field>textarea{min-height:64px}
+/* date and times: one row where there is room (date wider than the times), else date, then two times */
+.ses-when{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-3) var(--sp-2)}
 .ses-when>.ses-date{grid-column:1/-1}
-.ses-when .fr-label{margin-top:0}
-.ses-actions{position:sticky;bottom:calc(-1 * var(--sp-3));z-index:1;margin:0 calc(-1 * var(--sp-3)) calc(-1 * var(--sp-3));padding:var(--sp-3);background:var(--surface);border-top:1px solid var(--line)}
-@container ses (min-width:600px){
-  .ses-create{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
-  .ses-create>.ses-sec-wide,.ses-create>.ses-message,.ses-create>.ses-actions{grid-column:1/-1}
+.ses-endhint{margin:calc(-1 * var(--sp-1)) 0 0}
+/* repeat: picker and the Saturday preset side by side; the count and preview hang off a left rule, not a nested card */
+.ses-repeat-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--sp-2)}
+.ses-repeat-pick{flex:1 1 180px;max-width:260px;min-width:0}
+.ses-repeat-row>.btn{flex:0 0 auto}
+.ses-repeat{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:var(--sp-3);align-items:start;padding:0 0 0 var(--sp-3);background:none;border-left:2px solid var(--line);border-radius:0}
+.ses-repeat .ses-preview{min-width:0;font-size:var(--fs-small)}
+.ses-repeat .ses-preview p{margin:0 0 4px}
+.ses-preview ul{margin:2px 0 6px;padding-left:18px}
+/* meeting point: status on the left, actions beside it, saved markers below */
+.ses-pin{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3);padding:var(--sp-3);background:var(--surface-2);border-radius:var(--radius-sm)}
+.ses-pin-text{flex:1 1 180px;margin:0;font-variant-numeric:tabular-nums}
+.ses-pin .btn-row{flex:0 1 auto;margin:0}
+.ses-pin .btn-row .btn{flex:0 0 auto}
+.ses-pin>select{flex:1 1 100%;max-width:280px}
+/* visibility: two choice cards; capacity stays narrow */
+.ses-vis{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-2)}
+.ses-vis>legend{grid-column:1/-1;padding:0;margin-bottom:var(--sp-1)}
+.ses-vis>.ses-radio{margin:0;padding:var(--sp-2) var(--sp-3);border:1.5px solid var(--line);border-radius:var(--radius-sm);cursor:pointer;align-items:flex-start}
+.ses-vis>.ses-radio:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.ses-vis>.ses-radio b{display:block}
+.ses-vis>.ses-radio small{display:block}
+.ses-radio{display:flex;gap:var(--sp-2);cursor:pointer}
+.ses-radio input{flex:none;width:auto;margin:2px 0 0;accent-color:var(--accent)}
+.ses-public-warn{display:flex;flex-direction:column;gap:var(--sp-2);padding:var(--sp-3);border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--surface-2);font-size:var(--fs-small)}
+.ses-public-warn p{margin:0}
+.ses-cap{max-width:340px}
+.ses-cap .num-field{max-width:160px}
+.ses-message:empty{display:none}
+/* the action row: Cancel is secondary, Create is the wide primary; it stays at the bottom of the scrolling body */
+.ses-actions{position:sticky;bottom:calc(-1 * var(--sp-3));z-index:1;display:flex;gap:var(--sp-2);margin:0 calc(-1 * var(--sp-3)) calc(-1 * var(--sp-3));padding:var(--sp-3);background:var(--surface);border-top:1px solid var(--line)}
+.ses-actions .btn{flex:0 0 auto;min-width:96px}
+.ses-actions .btn.primary{flex:1 1 auto}
+@container ses (min-width:480px){
+  .ses-when{grid-template-columns:minmax(0,1.5fr) repeat(2,minmax(0,1fr))}
+  .ses-when>.ses-date{grid-column:auto}
+  .ses-actions .btn.primary{flex:0 1 220px;margin-left:auto}
 }
+@container ses (max-width:420px){
+  .ses-vis{grid-template-columns:1fr}
+  .ses-repeat{grid-template-columns:1fr}
+}
+/* lists and details: compact buttons, tighter empty states, readable manage panel */
+.ses-hub .ses-row{gap:2px}
+.ses-hub .ses-row .btn-row,.ses-narrow>.btn-row{margin:var(--sp-2) 0 0}
+.ses-hub .ses-row .btn-row .btn,.ses-narrow>.btn-row .btn{flex:0 0 auto;min-width:88px}
+.ses-narrow>.btn-row{margin-top:var(--sp-1)}
+.ses-hub-inner>.ses-empty{padding:var(--sp-3) var(--sp-4);font-size:var(--fs-small)}
+.ses-narrow .ses-top h3{margin:0;font-size:var(--fs-title)}
+.ses-narrow .ses-coords{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2)}
+.ses-narrow .ses-manage{margin-top:var(--sp-2);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-2)}
+.ses-narrow .ses-manage>*{margin-top:0;margin-bottom:0}
+.ses-narrow .ses-manage h3{margin-bottom:0}
+.ses-narrow .ses-manage .btn-row{margin:0}
+.ses-narrow .ses-manage .btn-row .btn{flex:0 0 auto}
+.ses-invite-form,.ses-link-form{align-items:center;margin:0}
+.ses-invite-form input,.ses-link-form input,.ses-link-form select{flex:1 1 160px;min-width:0;max-width:260px;width:auto}
+.ses-person{padding:var(--sp-1) 0}
 /* friends and account rows: one comfortable row height */
 .fr-row{padding:10px 0;min-height:52px}
 .fr-who b{font-weight:var(--fw-semibold)}

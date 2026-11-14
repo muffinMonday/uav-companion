@@ -207,3 +207,14 @@ Measured on one machine and browser build (Chrome 157), app on :5173, files in `
 | `box-shadow` / `filter` / `backdrop-filter` rules | 38 / 11 / 6 | 41 / 11 / 6 | Filters and blur did not rise. Shadow rules +3 (cause not traced); the plan's rule was "must not rise", so this is a deviation the owner may accept or ask to trace |
 | Style recalc / layout / task time, 4x CPU slowdown (median of 5) | 425 / 324 / 2404 ms | 435 / 272 / 2352 ms | No regression; frame gap median 8.3 ms, p95 8.5 ms in both |
 `ui-perf.mjs` times a scripted session (panel open, popup, dashboard), not a map pan on a real phone. Not covered: forced-colors (no rules exist), screen readers, tab order, a real device. Owner pass still to do on iPhone Safari and Android Chrome: tap accuracy on the 36 px map buttons and 30 px tabs, the 16 px field text, dialog roominess on a 360x640 screen, the dark map filter cost.
+
+## 16. Form and detail layout (aesthetic pass, 2026-11-14)
+Built for the Sessions hub; reuse for new forms. CSS: the block "Form and detail layout in the hub" in `styles.css`.
+- **One centred column.** A form or detail view adds `.ses-narrow` to `.ses-hub-inner` (max 600 px, centred). Lists keep 720 px. Short controls stay short: capacity 160 px, repeat picker 260 px, count 150 px, Discover search 260 to 360 px, filter selects 150 to 220 px (a wrapping flex row, not a grid).
+- **Field = `.ses-field`:** label (`.fr-label`, margin 0), control, optional `.hint` (margin 0), 4 px apart; 12 px between fields.
+- **Sections are flat:** `.ses-sec` = eyebrow `h4` + fields, divided by a hairline (16 px above). No bordered card inside a bordered card; a tint (`--surface-2`) is allowed one level deep (`.ses-pin`, `.ses-public-warn`); the repeat block hangs off a 2 px left rule.
+- **Two-column controls follow the container, not the screen** (`@container ses`): date, start and end in one row from a 480 px container, else date then two times; the two visibility choices are cards in two columns (one column under 420 px).
+- **Choices as cards:** `.ses-vis > .ses-radio` (1.5 px border, accent border and `--accent-soft` when checked, like `.radio`). Checkboxes and radios must never inherit `width:100%` (bug fixed here: `.ses-form input` stretched them).
+- **Action row:** `.ses-actions`, sticky at the bottom of the scrolling body: secondary (Cancel) first, primary last and wide (max 220 px on wide containers, fills on phones). Buttons in cards and detail views are content-width (min 88 px).
+- `input[type=time]` shares the control look of `input[type=date]`.
+- Reviewed and left unchanged: side panel cards, dashboard, account and profile dialogs, popups (their field widths already follow the 380 px panel and read as balanced).

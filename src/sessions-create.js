@@ -58,7 +58,7 @@ export function createSessionForm({ tools, tz, onSubmit, onCancel, locale = 'en-
   let n = 0, cur = f;
   /** Starts a titled group; the fields that follow go inside it. `wide` groups span both columns when the hub is wide. */
   const section = (name, wide = false) => { const g = el('div', 'ses-sec' + (wide ? ' ses-sec-wide' : '')); g.append(el('h4', '', name)); f.append(g); cur = g; return g; };
-  const field = (label, input, hint, into = cur) => { const l = el('label', 'fr-label', label); const id = 'sc-' + (++n); input.id = id; l.setAttribute('for', id); into.append(l, input); if (hint) into.append(el('small', 'hint', hint)); return input; };
+  const field = (label, input, hint, into = cur) => { const w = el('div', 'ses-field'); const l = el('label', 'fr-label', label); const id = 'sc-' + (++n); input.id = id; l.setAttribute('for', id); w.append(l, input); if (hint) w.append(el('small', 'hint', hint)); into.append(w); return input; };
   const input = (type, key, extra = {}) => { const i = el('input'); i.type = type; i.value = draft[key] ?? ''; Object.assign(i, extra); i.addEventListener('input', () => { draft[key] = i.value; update(); }); return i; };
 
   section('Basics', true);
@@ -68,22 +68,23 @@ export function createSessionForm({ tools, tz, onSubmit, onCancel, locale = 'en-
   const times = el('div', 'ses-when'); const dateBox = el('div', 'ses-date'); times.append(dateBox);
   const date = field('Date', input('date', 'date'), undefined, dateBox); date.name = 'date';
   const start = input('time', 'start'), end = input('time', 'end');
-  for (const [lab, i] of [['Starts', start], ['Ends', end]]) { const l = el('label', 'fr-label', lab); i.id = 'sc-' + lab.toLowerCase(); l.setAttribute('for', i.id); const w = el('div'); w.append(l, i); times.append(w); }
+  for (const [lab, i] of [['Starts', start], ['Ends', end]]) { const l = el('label', 'fr-label', lab); i.id = 'sc-' + lab.toLowerCase(); l.setAttribute('for', i.id); const w = el('div', 'ses-field'); w.append(l, i); times.append(w); }
   cur.append(times);
   const endHint = el('small', 'hint ses-endhint'); cur.append(endHint);
 
   // repeat
   const rep = el('select'); rep.append(new Option('Does not repeat', 'none'));
   for (const q of FREQUENCIES) rep.append(new Option(q.label, q.id));
-  field('Repeat', rep); rep.value = draft.repeat; rep.addEventListener('change', () => { draft.repeat = rep.value; update(); });
+  const repRow = el('div', 'ses-repeat-row'); const repPick = el('div', 'ses-repeat-pick'); repRow.append(repPick); cur.append(repRow);
+  field('Repeat', rep, undefined, repPick); rep.value = draft.repeat; rep.addEventListener('change', () => { draft.repeat = rep.value; update(); });
   const repBox = el('div', 'ses-repeat');
   const preset = btn('Every Saturday for 4 weeks'); preset.dataset.act = 'preset-saturday';
   preset.addEventListener('click', () => { draft.repeat = 'weekly'; draft.count = DEFAULT_COUNT; draft.date = nextSaturday(draft.date) ?? draft.date; rep.value = 'weekly'; date.value = draft.date; count.value = draft.count; update(); });
   const count = el('input'); count.type = 'number'; count.min = MIN_COUNT; count.max = MAX_COUNT; count.step = 1; count.value = draft.count; count.setAttribute('aria-label', 'Number of sessions');
   count.addEventListener('input', () => { draft.count = count.value; update(); });
-  const countRow = el('div', 'ses-count-row'); const cl = el('label', 'fr-label', 'Number of sessions (2 to 12)'); cl.setAttribute('for', 'sc-count'); count.id = 'sc-count'; countRow.append(cl, count);
+  const countRow = el('div', 'ses-field ses-count-row'); const cl = el('label', 'fr-label', 'Number of sessions (2 to 12)'); cl.setAttribute('for', 'sc-count'); count.id = 'sc-count'; countRow.append(cl, count);
   const preview = el('div', 'ses-preview'); preview.setAttribute('aria-live', 'polite');
-  repBox.append(countRow, preview); cur.append(preset, repBox);
+  repBox.append(countRow, preview); repRow.append(preset); cur.append(repBox);
 
   // where
   section('Where');
@@ -100,11 +101,11 @@ export function createSessionForm({ tools, tz, onSubmit, onCancel, locale = 'en-
   marks.forEach((m, i) => sel.append(new Option(m.name || 'Marker', String(i))));
   sel.addEventListener('change', () => { const m = marks[+sel.value]; sel.value = ''; if (!m) return; setPoint(m.lat, m.lon); if (!draft.label && m.name) { draft.label = m.name.slice(0, 120); lab.value = draft.label; } });
   pin.append(pinText, pinBtns); if (marks.length) pin.append(sel);
-  cur.append(el('span', 'fr-label', 'Meeting point'), pin);
+  const pinField = el('div', 'ses-field'); pinField.append(el('span', 'fr-label', 'Meeting point'), pin); cur.append(pinField);
   function setPoint(lat, lng) { draft.lat = Math.round(lat * 1e6) / 1e6; draft.lng = Math.round(lng * 1e6) / 1e6; update(); }
 
   // who can see it
-  section('Who can see it');
+  section('Visibility and capacity', true);
   const vis = el('fieldset', 'ses-vis'); vis.append(el('legend', 'fr-label', 'Who can see it'));
   const radios = {};
   for (const [v, t, h] of [['private', 'Private', 'Only you, people you invite and people you give a link to.'], ['public', 'Public', 'Anyone, signed in or not, can find it and see the exact meeting point.']]) {
@@ -117,15 +118,15 @@ export function createSessionForm({ tools, tz, onSubmit, onCancel, locale = 'en-
   ack.addEventListener('change', () => { draft.ack = ack.checked; update(); }); ackL.append(ack, el('span', '', 'I understand that anyone can see the exact meeting point.')); warn.append(ackL);
   cur.append(vis, warn);
 
-  section('Capacity');
-  const cap = field('Capacity (optional)', input('number', 'capacity', { min: 1, max: 500, step: 1 }), 'Leave empty for no limit. People who RSVP after it is full are turned away.'); cap.name = 'capacity';
+  const capBox = el('div', 'ses-cap'); cur.append(capBox);
+  const cap = field('Capacity (optional)', input('number', 'capacity', { min: 1, max: 500, step: 1 }), 'Leave empty for no limit. People who RSVP after it is full are turned away.', capBox); cap.name = 'capacity';
 
   cur = f;
   const msg = el('p', 'hint ses-message'); msg.setAttribute('role', 'status'); f.append(msg);
   const row = el('div', 'btn-row ses-actions');
   const go = btn('Create session', 'btn small primary'); go.type = 'submit'; go.id = 'ses-create';
   const cancel = btn('Cancel'); cancel.id = 'ses-create-cancel'; cancel.addEventListener('click', () => onCancel());
-  row.append(go, cancel); f.append(row);
+  row.append(cancel, go); f.append(row);
 
   function update() {
     pinText.textContent = draft.lat === null ? 'No point chosen yet.' : `Point chosen: ${draft.lat.toFixed(5)}, ${draft.lng.toFixed(5)}`;
