@@ -18,6 +18,7 @@ import { mapLinkIcons } from './maplinks-ui.js';
 import { MODES } from './maplinks.js';
 import { planMove, planSideMove, stepSideIndex, stepSlot, groupKey, addDays } from './reorder.js';
 import { initReorder } from './reorder-ui.js';
+import { newExpansion, scopeOpen, dayOpen, dayId, summarise, summaryText, isOutside, reveal as revealSection, prune as pruneSections, unlinkedSideQuests, SCOPE_HOME } from './poi-model.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer, toolBar } from './cards.js';
 import { onPopupSwipe } from './swipe.js';
@@ -58,6 +59,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let sideMap = { byParent: new Map(), orphans: [] }; // Side Quests under their parent main stops (trips.js sideQuestMap)
   let subParent = new Map();  // Side Quest id -> its parent's id (a Side Quest with no parent is not in it)
   let expandedParent = null;  // the main stop whose Side Quests are unfolded in the lists (one at a time)
+  const expansion = newExpansion(); // which trips and days are open in the saved list: this page only, so every reload starts folded (poi-model.js)
+  let listForce = false;      // true while the list must show everything (selecting, a type or trip filter): sections read as open without changing `expansion`
+  let listCollapsible = false; // there are trips, so the list has trip sections to fold
   let showAllSide = !!loadPrefs().showSide;
   let hideTrips = !!loadPrefs().hideTrips; // trip markers, their routes and Side Quest links are taken off the map
   const expandListeners = new Set();
@@ -151,7 +155,10 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
 
   // ---------- list ----------
+  let renderPending = false; // a redraw asked for while a row is being dragged waits until the drag is over (the row under the finger must stay in the page)
   function renderList() {
+    if (document.body.classList.contains('reordering')) { renderPending = true; return; }
+    renderPending = false;
     const items = store.items();
     countEl.textContent = items.length ? `(${items.length})` : '';
     emptyEl.hidden = items.length > 0;
@@ -178,6 +185,10 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const nestedIds = new Set(); // Side Quests listed under their (shown) main stop instead of in the flow
     for (const [pid, subs] of sideMap.byParent) if (visibleIds.has(pid)) for (const s of subs) if (visibleIds.has(s.id)) nestedIds.add(s.id);
     if (!items.length) selecting = false;
+    listForce = selecting || filter !== 'all' || tripFilter !== 'all';
+    listCollapsible = trips.length > 0;
+    pruneSections(expansion, trips.map((t) => t.id));
+    const orphanIds = new Set(unlinkedSideQuests(items).map((u) => u.item.id));
     for (const id of [...selected]) if (!visibleIds.has(id)) selected.delete(id); // the count always matches what is shown
     renderSelectBar(items);
     $('poi-drag-hint').hidden = true; // shown below once the list is drawn, if any row can be dragged
@@ -188,37 +199,58 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       if (head) listEl.append(head);
       // dragging is for dated or day-numbered lists only, with no type filter on, and not while selecting
       const dragOk = !selecting && filter === 'all' && mode === 'date';
-      const heading = (label, key) => { const h = el('li', 'day-head', label); h.setAttribute('role', 'presentation'); h.dataset.scope = scope; h.dataset.gkey = String(key); return h; };
-      let lastGroup = null;
-      for (const it of sortForList(group.filter((x) => !nestedIds.has(x.id)), mode)) {
+      const trip = scope === 'none' || scope === SCOPE_HOME ? null : store.getTrip(scope);
+      const dayFold = listCollapsible && trip && mode !== 'plain'; // days fold inside a trip; Unassigned and Home have no day sections
+      const heading = (label, key, outside) => {
+        const h = el('li', 'day-head'); h.setAttribute('role', 'presentation'); h.dataset.scope = scope; h.dataset.gkey = String(key); h.dataset.dayKey = String(key);
+        if (dayFold) { const b = secToggle(label, scope, String(key)); h.append(b); } else h.append(label);
+        if (outside) h.append(el('span', 'out-tag', 'outside trip dates'));
+        return h;
+      };
+      let lastGroup = null, lastOrphan = false;
+      // a Side Quest with no main stop to hang from is listed last in its day, under a small heading (nothing about it is changed)
+      const flow = sortForList(group.filter((x) => !nestedIds.has(x.id)), mode);
+      const ordered = [];
+      { let bucket = [], bucketKey = null; // per day group, in order, the unlinked Side Quests after the rest
+        const flush = () => { ordered.push(...bucket.filter((x) => !orphanIds.has(x.id)), ...bucket.filter((x) => orphanIds.has(x.id))); bucket = []; };
+        for (const it of flow) { const k = groupKey(it, mode); if (k !== bucketKey) { flush(); bucketKey = k; } bucket.push(it); }
+        flush(); }
+      for (const it of ordered) {
         if (mode !== 'plain') {
           const label = groupLabel(it, mode);
           if (label !== lastGroup) {
-            listEl.append(heading(label, groupKey(it, mode)));
-            lastGroup = label;
+            listEl.append(heading(label, groupKey(it, mode), isOutside(it, trip, mode)));
+            lastGroup = label; lastOrphan = false;
           }
         }
+        if (orphanIds.has(it.id) && !lastOrphan) {
+          const u = el('li', 'unlinked-head', 'Unlinked Side Quests'); u.setAttribute('role', 'presentation'); u.dataset.section = scope; u.dataset.dayKey = String(groupKey(it, mode));
+          listEl.append(u);
+        }
+        lastOrphan = orphanIds.has(it.id);
         const row = renderItem(it, items, mode);
-        row.dataset.id = it.id; row.dataset.scope = scope; row.dataset.mode = mode; row.dataset.gkey = String(groupKey(it, mode));
+        row.dataset.id = it.id; row.dataset.scope = scope; row.dataset.mode = mode; row.dataset.gkey = String(groupKey(it, mode)); row.dataset.dayKey = String(groupKey(it, mode));
         if (dragOk && it.type !== 'residence' && isMain(it)) row.dataset.drag = '1';
         listEl.append(row);
         if (expandedParent === it.id || selecting) { // its Side Quests, indented under it
           for (const k of sideMap.byParent.get(it.id) ?? []) {
             if (!visibleIds.has(k.id)) continue;
             const kr = renderItem(k, items, mode);
-            kr.classList.add('side-row'); kr.dataset.id = k.id; kr.dataset.sub = '1'; kr.dataset.scope = scope; kr.dataset.parent = it.id;
+            kr.classList.add('side-row'); kr.dataset.id = k.id; kr.dataset.sub = '1'; kr.dataset.scope = scope; kr.dataset.parent = it.id; kr.dataset.dayKey = String(groupKey(it, mode));
             if (dragOk) { kr.dataset.drag = '1'; kr.dataset.mode = mode; kr.dataset.gkey = String(groupKey(it, mode)); } // held and dragged like a main card
             listEl.append(kr);
           }
         }
       }
     };
-    const heading = (text, trip) => {
+    const heading = (text, trip, scope, group) => {
       const h = el('li', 'trip-head');
-      h.setAttribute('role', 'presentation');
-      if (trip) { const dot = el('i', 'trip-dot-sm'); dot.style.background = trip.color; h.append(dot); }
-      h.append(el('span', 'trip-head-name', text));
+      h.setAttribute('role', 'presentation'); h.dataset.section = scope;
+      const label = el('span', 'trip-head-name', text);
+      if (scope !== SCOPE_HOME) { const b = secToggle('', scope, null); if (trip) { const dot = el('i', 'trip-dot-sm'); dot.style.background = trip.color; b.append(dot); } b.append(label); h.append(b); }
+      else h.append(label);
       if (trip && tripSummary(trip)) h.append(el('small', '', tripSummary(trip)));
+      if (scope !== SCOPE_HOME) h.append(el('small', 'sec-count', summaryText(summarise(group, trip))));
       return h;
     };
 
@@ -227,16 +259,60 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     } else {
       for (const t of sortTrips(trips)) {
         const group = visible.filter((i) => i.tripId === t.id);
-        if (group.length || tripFilter === t.id) renderGroup(group, listMode(group), heading(t.name, t), t.id);
+        if (group.length || tripFilter === t.id) renderGroup(group, listMode(group), heading(t.name, t, t.id, group), t.id);
       }
       const loose = visible.filter((i) => !i.tripId && i.type !== 'residence');
-      if (loose.length) renderGroup(loose, listMode(loose), heading('No trip'), 'none');
+      if (loose.length) renderGroup(loose, listMode(loose), heading('No trip', null, 'none', loose), 'none');
       const homes = visible.filter((i) => i.type === 'residence');
-      if (homes.length) renderGroup(homes, 'plain', heading('Home'));
+      if (homes.length) renderGroup(homes, 'plain', heading('Home', null, SCOPE_HOME, homes), SCOPE_HOME);
       if (!listEl.children.length) listEl.append(el('li', 'poi-none', 'Nothing matches this filter.'));
     }
+    syncSections();
     $('poi-drag-hint').hidden = !listEl.querySelector('li[data-drag="1"]');
     settleRows(before);
+  }
+  // ---------- folding trips and days in the saved list (list only: the map is not touched) ----------
+  /** A header's fold button. Its text is the label, so reading the heading still gives the label. */
+  function secToggle(label, scope, day) {
+    const b = el('button', 'sec-toggle'); b.type = 'button';
+    b.dataset.section = scope; if (day !== null) b.dataset.day = day;
+    if (label) b.append(label);
+    b.setAttribute('aria-expanded', 'false');
+    return b;
+  }
+  /** Hides the rows of folded trips and days (they stay in the page, so a drag and the keyboard still see the same list) and paints the buttons. */
+  function syncSections() {
+    for (const b of listEl.querySelectorAll('.sec-toggle')) {
+      const day = b.dataset.day, scope = b.dataset.section;
+      const open = day === undefined ? scopeOpen(expansion, scope, listForce) : dayOpen(expansion, scope, day, listForce);
+      b.setAttribute('aria-expanded', String(open)); b.disabled = listForce;
+      b.title = listForce ? 'Everything is shown while you select or filter' : open ? 'Fold' : 'Unfold';
+    }
+    for (const li of listEl.querySelectorAll('li[data-scope], li.day-head, li.unlinked-head')) {
+      const scope = li.dataset.scope ?? li.dataset.section;
+      let folded = false;
+      if (listCollapsible && scope !== SCOPE_HOME && !listForce) {
+        folded = !scopeOpen(expansion, scope);
+        const dayKey = li.dataset.dayKey;
+        if (!folded && dayKey !== undefined && scope !== 'none' && !li.classList.contains('day-head') && listEl.querySelector(`.sec-toggle[data-section="${CSS.escape(scope)}"][data-day]`)) folded = !dayOpen(expansion, scope, dayKey);
+      }
+      li.hidden = folded;
+    }
+  }
+  listEl.addEventListener('click', (e) => {
+    const b = e.target.closest?.('.sec-toggle');
+    if (!b || b.disabled) return;
+    const scope = b.dataset.section, day = b.dataset.day;
+    const set = day === undefined ? expansion.scopes : expansion.days, key = day === undefined ? scope : dayId(scope, day);
+    if (set.has(key)) set.delete(key); else set.add(key);
+    syncSections();
+  });
+  /** Opens whatever holds a marker so its row can be seen. Nothing is stored; returns true when something opened. */
+  function revealRow(id) {
+    const it = store.get(id);
+    if (!it || !revealSection(expansion, it, store.items())) return false;
+    syncSections();
+    return true;
   }
   /** New rows ease in; rows that moved glide from their old place. Not on the first drawing, and not with reduced motion. */
   function settleRows(before) {
@@ -307,7 +383,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         else [...listEl.querySelectorAll(`li[data-scope="${scope}"]`)].pop().after(h);
       }
     },
-    onEnd: () => { for (const h of listEl.querySelectorAll('li.drop-only')) h.remove(); },
+    onEnd: () => { for (const h of listEl.querySelectorAll('li.drop-only')) h.remove(); if (renderPending) renderList(); },
     onDrop: dropRow,
     onStep: (id, scope, mode, dir) => {
       if (stepRow(id, scope, mode, dir)) requestAnimationFrame(() => listEl.querySelector(`li[data-id="${CSS.escape(id)}"] .poi-item`)?.focus());
@@ -760,6 +836,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const scrollToCard = (node) => node?.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' });
   /** A marker was clicked on the map: bring its card into view in the panel that is open (the POI list, or the trip's day in Trips). A Side Quest unfolds its parent first. */
   function revealCard(id) {
+    revealRow(id);
     const tab = panel.getTab();
     if (!panel.isOpen() || selecting || (tab !== 'poi' && tab !== 'trips')) return;
     const pid = subParent.get(id);
@@ -1303,6 +1380,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     else if (switched) toast("Side Quests can't be Home point, Accommodation or Home (residence), so the type is now Other.", 6000);
     ensureVisible();
     addMarker(res.item);
+    revealRow(res.item.id); // its trip and day open in the list
     markers.get(res.item.id)?.getElement()?.classList.add('drop'); // the new pin drops onto the map
     mw.refresh([res.item.id]); // no-op unless automatic weather is on
     openPopup(res.item.id, true); // opens in edit form so it can be named straight away
@@ -1319,6 +1397,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       added.push(res.item);
       addMarker(res.item);
     }
+    for (const it of added) revealRow(it.id); // the trips and days they went into are open in the list
     if (added.length) { ensureVisible(); mw.refreshMissing(); }
     return { added, stored };
   }

@@ -22,12 +22,14 @@ export const chromium = {
   async launch(options) {
     const browser = await real.launch(options);
     const newContext = browser.newContext.bind(browser);
-    browser.newContext = async ({ addFolded, ...opts } = {}) => {
+    browser.newContext = async ({ addFolded, listFolded, ...opts } = {}) => {
       const ctx = await newContext({ reducedMotion: 'reduce', ...opts }); // moving elements make timing flaky; motion.mjs asks for it back
       // (the contextual hints are marked as seen too, or a hint at the top of a pane would move what the suites click on; the discover suite starts without them)
       await ctx.addInitScript(([seen, hints]) => { try { if (localStorage.getItem('uavzones.v1.dash') === null) localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: false, welcomed: true, seen })); if (localStorage.getItem('uavzones.v1.help') === null) localStorage.setItem('uavzones.v1.help', JSON.stringify({ v: 1, seen: hints })); } catch { /* ignore */ } }, [LATEST_SEEN, HELP.map((h) => h.id)]);
       // Add a marker is folded on every page load (by design). The older suites click its controls, so they get it opened; `addFolded: true` keeps the real first state (the picker suite).
       if (!addFolded) await ctx.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => document.getElementById('poi-add')?.setAttribute('open', '')); });
+      // The saved list starts with its trips and days folded (by design). The older suites click rows, so every fold button is pressed whenever the list is drawn; `listFolded: true` keeps the real first state.
+      if (!listFolded) await ctx.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => { const l = document.getElementById('poi-list'); if (!l) return; const open = () => l.querySelectorAll('.sec-toggle[aria-expanded=false]:not(:disabled)').forEach((b) => b.click()); new MutationObserver(open).observe(l, { childList: true }); open(); }); });
       return ctx;
     };
     return browser;
