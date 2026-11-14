@@ -43,10 +43,13 @@ export function initReorder({ list, scroller, onLift = () => {}, onEnd = () => {
     rowOf(id)?.classList.remove('lift-source');
     st = null;
     if (wasLifted) {
-      // the pointer release that ends a drag must not count as a click on the row
-      const swallow = (e) => { e.stopPropagation(); e.preventDefault(); };
-      list.addEventListener('click', swallow, { capture: true, once: true });
-      setTimeout(() => list.removeEventListener('click', swallow, true), 400);
+      // the pointer release that ends a drag must not count as a click on the row: swallow one click, until the next touch or press
+      // (a new tap right after a drop must not be swallowed) or 400 ms, whichever comes first
+      const release = () => { list.removeEventListener('click', swallow, true); document.removeEventListener('pointerdown', release, true); clearTimeout(timer); };
+      const swallow = (e) => { release(); e.stopPropagation(); e.preventDefault(); };
+      const timer = setTimeout(release, 400);
+      list.addEventListener('click', swallow, true);
+      document.addEventListener('pointerdown', release, true);
       onEnd();
       if (drop && target) onDrop({ id, scope, mode, key: target.key, index: target.index, sub, parent: target.parent, kind: target.kind });
     }

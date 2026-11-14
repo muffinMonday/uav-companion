@@ -111,7 +111,7 @@ All CSS is in `src/styles.css` (tokens and rules: `DESIGN.md`); find a feature's
 | Panel rail | `dock.html` (`#dock`) | `panel.js`; account button from `account-ui.js` | `.dock` | `shell`, `swipe`, `tabpill`, `friends` |
 | Side panel shell, tabs, phone sheet | `panel.html` (`aside#panel`, includes the four below) | `panel.js`, `swipe.js` | `.sp-`, `.tabs`, `.pbody` | `shell`, `ui`, `paneltall`, `swipe`, `tabpill` |
 | Map Configs (basemap, opacity, country, units, map app, wind limit, Appearance) | `map-config.html` (`#pane-config`) | `app/map-settings.js`, `app/region-ui.js`, `theme.js`, `weather.js`, `poi-ui.js` (status lines) | `.switch`, `.radio`, `.status` | `prefs`, `layers`, `opacity`, `mapsel`, `theme`, `dashboard`, `mw` |
-| Trips and Plan with AI | `trips-panel.html` (`#pane-trips`) | `trips-ui.js`, `ai-ui.js` | `.trip-card`, `.plan-name` | `trip`, `trips`, `tripplan`, `ai`, `sidelist`, `sidedrag` |
+| Trips and Plan with AI | `trips-panel.html` (`#pane-trips`) | `trips-ui.js`, `ai-ui.js` | `.trip-card`, `.plan-name` | `trip`, `trips`, `tripplan`, `tripstouch`, `ai`, `sidelist`, `sidedrag` |
 | Points of Interest | `poi-panel.html` (`#pane-poi`) | `poi-ui.js`, `reorder-ui.js` | `.poi-list`, `.poi-item` | `poi1`, `poi2`, `bulk`, `edit`, `stops`, `days`, `cardsel`, `side` |
 | Privacy and Diagnostics | `privacy-panel.html` (`#privacy`) | `privacy-ui.js`, `panel.js`; cloud card from `sync-ui.js` | `.pv-`, `.switch` | `priv`, `mw`, `rain`, `diag`, `autoshare`, `cloud` |
 | Dashboard and quick setup | `dashboard.html` (`#dash`, `#dash-peek`, `#dash-tab`) | `dashboard.js`, `splash.js` | `.dash`, `.dash-card`, `.dash-peek`, `.splash` | `dashboard`, `dashtall`, `dayroute`, `splash`, `swipe` |

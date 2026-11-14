@@ -1082,7 +1082,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 
 /* ---------- touch screens (DESIGN.md section 9): the tap target grows past the drawn control (::after), 16 px text in fields stops the iOS focus zoom, map buttons are bigger ---------- */
 @media (pointer:coarse){
-  :where(.btn:not(.tool),.icon-btn,.route-btn,.pop-seq-btn,.checkin-clear,.flip-btn,.chip,.visit-chip,.pop-side-btn){position:relative} /* :where has no weight, so a control that is already positioned (.dash-tab, .pop-toggle ...) keeps its own */
+  :where(.btn:not(.tool),.icon-btn,.route-btn,.pop-seq-btn,.checkin-clear,.flip-btn,.chip,.visit-chip,.pop-side-btn,.side-chip){position:relative} /* :where has no weight, so a control that is already positioned (.dash-tab, .pop-toggle ...) keeps its own */
   .btn:not(.tool):not(.small)::after{content:"";position:absolute;inset:-4px 0}
   .btn.small::after,.route-btn::after,.pop-seq-btn::after,.chip::after,.visit-chip::after,.pop-side-btn::after,.side-chip::after{content:"";position:absolute;inset:-8px 0}
   .btn.tool::after,.pop-toggle::after,.pop-close::after,.checkin-clear::after,.flip-btn::after{content:"";position:absolute;inset:-8px -1px}
