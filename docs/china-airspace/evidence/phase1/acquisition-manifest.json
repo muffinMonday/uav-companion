@@ -1,0 +1,212 @@
+{
+  "checkedOn": "2026-11-14",
+  "baseline": "31a3799149c9ab24306a76f28834283b6984e47a",
+  "method": "Serial ordinary curl HTTPS GETs with certificate verification; no credentials, cookies, custom headers, access-control workarounds or geometry API requests. Python sandbox network/TLS failures were environment failures, not HTTP denials.",
+  "rawDataPolicy": "All original bytes, geometry, PDF maps, third-party research resources and tiles remain in ignored planning/. This manifest grants no redistribution permission.",
+  "resources": [
+    {
+      "path": "planning/china-airspace/phase1/cn-jilin/source.zip",
+      "bytes": 2321391,
+      "sha256": "04211e891698153926cf547575bfe0dbd3efcc52ad5efc394aa79b82cb2b692b",
+      "url": "https://jtyst.jl.gov.cn/zw_133208/tzgg/202605/P020260512515648788871.zip",
+      "retrievedOn": "2026-11-14",
+      "complete": true,
+      "archiveMembers": [
+        {
+          "name": "吉林适飞网格/吉林适飞网格.dbf",
+          "bytes": 40610154,
+          "sha256": "aeed9f5d805d01196799de4fcf21cf905c5b0f74d54de8cd84593e2eac1af5ff"
+        },
+        {
+          "name": "吉林适飞网格/吉林适飞网格.fix",
+          "bytes": 957757,
+          "sha256": "f1ba5d894b49034007c0ee64f356bb8ed9d49c7f4cfa937fd72021c20c77b46b"
+        },
+        {
+          "name": "吉林适飞网格/吉林适飞网格.prj",
+          "bytes": 238,
+          "sha256": "00a681c97d09da0982b2634a54aafd0df99c38fa634f682d6b241d18213d5a42"
+        },
+        {
+          "name": "吉林适飞网格/吉林适飞网格.shp",
+          "bytes": 10850724,
+          "sha256": "f43381ab42546ec96d84924139f1c5ad48e43d8694c9a352049a0c47007c862b"
+        },
+        {
+          "name": "吉林适飞网格/吉林适飞网格.shx",
+          "bytes": 638372,
+          "sha256": "843cd6ef4a4822a0788d1fa0cbc5952beefc7739e190a6c2df99959b8ca51283"
+        }
+      ]
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-jilin/notice.html",
+      "bytes": 61426,
+      "sha256": "438eba5fba19395a0efc1e6e555e286fed3f849e2cd691ff215981d25dc8209d",
+      "url": "https://jtyst.jl.gov.cn/zw_133208/tzgg/202605/t20260512_9599843.html",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-jilin/source-map.pdf.partial",
+      "bytes": 5111526,
+      "sha256": "7d377ab8d1aefd3d475c3398f0d29f9b1be9cec6b8324ef9944e0488d9b196ca",
+      "url": "https://jtyst.jl.gov.cn/zw_133208/tzgg/202605/P020260512515648553596.pdf",
+      "retrievedOn": "2026-11-14",
+      "complete": false,
+      "result": "curl exit 28; timed out at 40 seconds; 5,111,526 of 9,228,666 expected bytes; not parsed",
+      "expectedBytes": 9228666
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-hunan/source.zip",
+      "bytes": 2928930,
+      "sha256": "60c5eab1adffda18f336c98ef2ae2ff9b5291ac3c9e87c0ca5181348f8edbf39",
+      "url": "https://fgw.hunan.gov.cn/fgw/xxgk_70899/gzdtf/gzdt/202605/33975865/files/664bcd483b7d4a0783a4aebd81134cd5.zip",
+      "retrievedOn": "2026-11-14",
+      "complete": true,
+      "archiveMembers": [
+        {
+          "name": "附件2.湖南省微型、轻型、小型无人驾驶航空器适飞空域范围图（dbf、fix、prj、shp、shx）/湖南适飞网格.dbf",
+          "bytes": 52163944,
+          "sha256": "87d0239841c91677b466fe8b97adeab8113d6cded107849a9a0d2de6f16d2894"
+        },
+        {
+          "name": "附件2.湖南省微型、轻型、小型无人驾驶航空器适飞空域范围图（dbf、fix、prj、shp、shx）/湖南适飞网格.fix",
+          "bytes": 1229809,
+          "sha256": "2cee1ad192262a8ff11349ad8cb85c89de4c9480fa8b8f3c5006aee475fa008a"
+        },
+        {
+          "name": "附件2.湖南省微型、轻型、小型无人驾驶航空器适飞空域范围图（dbf、fix、prj、shp、shx）/湖南适飞网格.prj",
+          "bytes": 238,
+          "sha256": "00a681c97d09da0982b2634a54aafd0df99c38fa634f682d6b241d18213d5a42"
+        },
+        {
+          "name": "附件2.湖南省微型、轻型、小型无人驾驶航空器适飞空域范围图（dbf、fix、prj、shp、shx）/湖南适飞网格.shp",
+          "bytes": 13937788,
+          "sha256": "92a561c4e337759f612d59b4e3d415ae6218139e11a5770dcbc14bf91deeaa0a"
+        },
+        {
+          "name": "附件2.湖南省微型、轻型、小型无人驾驶航空器适飞空域范围图（dbf、fix、prj、shp、shx）/湖南适飞网格.shx",
+          "bytes": 819964,
+          "sha256": "9acadf909411e6e2dd2bda7bd92609b8ec3f94be610cf6b66828368b907085fb"
+        }
+      ]
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-hunan/notice.html",
+      "bytes": 26071,
+      "sha256": "ac93ee953e8b99eecc7783eb32bcea0916c4c99dbff2f1c70d50ad3295e51b6d",
+      "url": "https://fgw.hunan.gov.cn/fgw/xxgk_70899/gzdtf/gzdt/202605/t20260513_33975865.html",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-hunan/source-map.pdf",
+      "bytes": 3103771,
+      "sha256": "1d1a5e8857803c4b983ef6832a044512229092fcf07cc687e9ff5a0b317529a1",
+      "url": "https://fgw.hunan.gov.cn/fgw/xxgk_70899/gzdtf/gzdt/202605/33975865/files/34d34cc50fd04a42b4299135d641dd99.pdf",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-hunan/official-map.html",
+      "bytes": 804,
+      "sha256": "ae2f15ed375d88fba442e0fec389033d3312e36c93ed98e57de0e3851eb77f07",
+      "url": "https://hunan.tianditu.gov.cn/wx/aircraftAirspace/",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-shandong/may-source.docx",
+      "bytes": 21323,
+      "sha256": "70276d8c6fec7c83a991339de3f0d483f70c55c870fc60888bd74b39f4cec4de",
+      "url": "https://jtt.shandong.gov.cn/module/download/downfile.jsp?classid=0&filename=fbfc632be0e646a0a567a0e36ed0402a.docx",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-shandong/may-notice.html",
+      "bytes": 12203,
+      "sha256": "7319a9ccb37d7a5a4f3b25640ce84903bbd601d81d76beab4eb6d0e64bc42117",
+      "url": "https://jtt.shandong.gov.cn/art/2026/5/14/art_15843_10329329.html",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-ningxia/source.rar",
+      "bytes": 716438,
+      "sha256": "a211ee4eae463dd65fbc991defb3b6cc1a68e3c5aa3ac8d69a8c96b850a2f68d",
+      "url": "https://jtt.nx.gov.cn/xwzx/tzgg/202605/P020260526350229632001.rar",
+      "retrievedOn": "2026-11-14",
+      "complete": true,
+      "format": "RAR5, magic 526172211a070100",
+      "inspection": "Windows tar list failed for all five unreadable filenames; archive member formats/counts and CRS not verified"
+    },
+    {
+      "path": "planning/china-airspace/phase1/ningxia-notice.html",
+      "bytes": 8968,
+      "sha256": "e188a4c5c166c09c551693e1d48cdfe0fd84675f8c7b1dc1f12995d63804f4ef",
+      "url": "https://jtt.nx.gov.cn/xwzx/tzgg/202605/t20260511_5236967_wap.html",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/ne_10m_admin_1_states_provinces.zip",
+      "bytes": 14909524,
+      "sha256": "efc59726337323058f9446210adc96673179cd344e053666ee3d28cb58ba2b05",
+      "url": "https://naturalearth.s3.amazonaws.com/10m_cultural/ne_10m_admin_1_states_provinces.zip",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/lead-index.html",
+      "bytes": 839,
+      "sha256": "ed5dbf0e10a4615fb027f5f1e7b9119dfa1528e1926b68ae4fb87495fe14f06a",
+      "url": "https://airspace.hackall.cn/",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/lead-client.js",
+      "bytes": 287952,
+      "sha256": "d48346335b7e2d5149be9ee2cbff8e556287123d081cccd4690b814e71d7266d",
+      "url": "https://airspace.hackall.cn/assets/index-DFrpOWz4.js",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/lead-notices.json",
+      "bytes": 73126,
+      "sha256": "1096c71b48e7c81b522a0441ec90f57e5fe99c41f4392e152961300a7f76c4d6",
+      "url": "https://airspace.hackall.cn/api/v1/situation/restrictions?include_all=true&include_geometry=false",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    },
+    {
+      "path": "planning/china-airspace/phase1/tianjin-september-notice.html",
+      "bytes": 140766,
+      "sha256": "f79815473502cd68c3ce89c0bec4b768e47a7cd7710cc1f458462d404bff732f",
+      "url": "https://www.tj.gov.cn/sy/tzgg/202609/t20260930_7386087.html",
+      "retrievedOn": "2026-11-14",
+      "complete": true
+    }
+  ],
+  "failures": [
+    {
+      "url": "https://jtyst.shanxi.gov.cn/jtzx/tzgg/202602/t20260203_10055293.shtml",
+      "result": "curl exit 28, connection failed after 22.173 s, HTTP 000; no body"
+    },
+    {
+      "url": "https://jtyst.shanxi.gov.cn/jtzx/tzgg/202609/t20260920_10223695.shtml",
+      "result": "curl exit 28, connection failed after 21.140 s, HTTP 000; no body; original URL discovered in third-party metadata; primary content unverified"
+    },
+    {
+      "url": "https://jtt.ah.gov.cn/gsgg/123369181.html",
+      "result": "Web tool returned 403; stopped; no download/client variation attempted"
+    },
+    {
+      "url": "https://jtt.nx.gov.cn/xwzx/tzgg/202605/t20260511_5236967.html",
+      "result": "Web tool returned 405 after the separately published _wap notice and its ordinary attachment had already been downloaded; no further request"
+    }
+  ]
+}

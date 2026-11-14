@@ -4,6 +4,8 @@ This workflow prepares evidence and reproducible local datasets for UAV Companio
 
 For the separate stage/build/approved-registration-candidate CLI, batch commands and rollback procedure, see [Express regional integration](INTEGRATE.md). Neither workflow automatically activates or publishes data.
 
+[Phase 1 official acquisitions](PHASE1.md): Jilin and Hunan originals acquired (182,267 cells audited), one local Jilin PMTiles build; all source/production approval gates remain open. Ningxia archive and Batch A access/version blockers are recorded separately.
+
 ## Run
 
 **Integration warning:** `normalized.geojson` is a diagnostic subset: Guangdong **89 of 101**, Chongqing **756 of 777**. Never substitute it for the complete `deduplicated-reference.geojson`. Both remain unapproved for production. Read the [mandatory artifact identity guard, winding procedure and investigation checklist](INTEGRATION_GATES.md) first.

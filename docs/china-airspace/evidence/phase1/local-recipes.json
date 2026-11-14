@@ -1,0 +1,22 @@
+[
+  {
+    "path": "planning/china-airspace/phase1/inspect.mjs",
+    "bytes": 1215,
+    "sha256": "5cdf31f38bae087eae99f0b830c94bb8eab2d01386d1071ab889d81d7ec83fb8"
+  },
+  {
+    "path": "planning/china-airspace/phase1/prepare.mjs",
+    "bytes": 2480,
+    "sha256": "a92dd0ea8ed693311321b475ad03a754918af0b74fd1b1dcf9debd02b75842a4"
+  },
+  {
+    "path": "planning/china-airspace/phase1/hunan-policy.mjs",
+    "bytes": 665,
+    "sha256": "8001505a69082e6cad6f70b6d1ed021710e5d0c02cbabb13c60ee1a544c5937e"
+  },
+  {
+    "path": "planning/china-airspace/phase1/source-audit.py",
+    "bytes": 2993,
+    "sha256": "a8e700248607e4c6ccb7891c735c81abf3d87aa7cfb2be765ec77ad3e292071c"
+  }
+]
