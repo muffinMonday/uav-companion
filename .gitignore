@@ -26,4 +26,4 @@ public/data-local/
 supabase/.temp/
 supabase/.branches/
 supabase/.env
-.env
+.env*
