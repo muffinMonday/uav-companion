@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "cn-guangdong",
+  "checkedOn": "2026-11-14",
+  "bbox": [
+    109.5,
+    20.1,
+    117.4,
+    25.6
+  ],
+  "boundaryFile": null,
+  "boundaryNote": "Approximate planning envelope only, not an authoritative province or airspace coverage boundary.",
+  "endpoint": "https://kdji.cn/nfz-api.php?action=uom&province=guangdong",
+  "partition": {
+    "columns": 4,
+    "rows": 3,
+    "overlap": 0.05,
+    "maxRequests": 12
+  },
+  "access": {
+    "status": "unverified",
+    "evidence": null,
+    "checkedOn": "2026-11-14",
+    "maxRequests": 0
+  },
+  "responsePolicy": {
+    "pagination": "unknown",
+    "wholeFeatures": null,
+    "featureLimit": null,
+    "evidence": null
+  },
+  "transport": {
+    "intervalMs": 3000,
+    "attempts": 3,
+    "timeoutMs": 30000,
+    "maxBytes": 25000000
+  },
+  "validation": {
+    "crs": "unknown",
+    "topologyBudget": 2000000
+  },
+  "quality": "unverified-reference",
+  "provenance": {
+    "sourceType": "third-party-reference",
+    "mapUrl": "https://kdji.cn/support/nfz-map.html",
+    "governmentContextUrl": "https://www.jiangmen.gov.cn/home/bmdt/content/post_3495659.html",
+    "publicationMonthClaim": "2026-05",
+    "snapshotMonthClaim": "2026-09",
+    "effectiveDate": null,
+    "semantics": "unknown",
+    "crsDeclared": null,
+    "crsClientInference": "Client transforms incoming longitude/latitude to GCJ-02 for display; WGS84 is an unverified inference.",
+    "redistribution": "unknown",
+    "fixtureStatus": "User reports successful GeoJSON response; saved file not located locally.",
+    "crsProviderClaim": "Client code comment describes WGS84 data; polygon declaration and alignment not verified."
+  }
+}
