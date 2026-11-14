@@ -30,7 +30,9 @@ publication and September 22 snapshots; exact timestamps and raw hashes are in t
 null. The directly acquired government shapefiles are preserved locally and are not
 published by this release. Jilin's official-site permission condition was not bypassed.
 
-Chongqing is withheld: its complete 777-feature source is GEOS-valid, but one approximately 20 by 30 cm polygon is absent at the current tile precision. No diagnostic subset or repaired geometry is substituted. The whole source and failed presence-check evidence remain local for a later precision fix.
+Chongqing's subsequent 777-feature precision fix and release status are recorded in
+[the express follow-up](EXPRESS_CHONGQING_CHENGDU.md). The original four-region
+release evidence below remains historical; it is not the rollback baseline for that follow-up.
 
 ## Application behavior
 

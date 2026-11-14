@@ -51,7 +51,7 @@ export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS
   const { features, bounds, classes, points, effective } = await readRegion(dir, meta);
   console.log(`[${id}] ${features.length} polygons, bounds ${bounds.map((v) => v.toFixed(4)).join(', ')}`);
   const source = { ...meta.source, effective: meta.source.effective === 'auto' ? effective : meta.source.effective };
-  const tiles = buildTiles(features, bounds, (m) => console.log(`[${id}]   ${m}`));
+  const tiles = buildTiles(features, bounds, (m) => console.log(`[${id}]   ${m}`), meta.tilePrecision);
   const buf = writePMTiles({
     tiles, bounds, minZoom: MIN_Z, maxZoom: MAX_Z,
     metadata: { name: meta.name, attribution: `${source.authority}, effective ${source.effective ?? 'unknown'}`, vector_layers: [{ id: 'zones', fields: classes ? { c: 'String', n: 'String', d: 'String' } : {} }] },

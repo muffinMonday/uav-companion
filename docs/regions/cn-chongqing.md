@@ -1,5 +1,14 @@
 # cn-chongqing
 
-Not production-registered. All 777 captured reference polygons remain intact and GEOS-valid locally. A full per-feature tile presence audit identified a valid approximately 20 by 30 cm source polygon (`chongqing-271-0`) absent from the existing z14/4096 output. The entire province is withheld rather than dropping that record. No geometry repair or source deletion was applied.
+KDji third-party UOM suitable-flight snapshot; 777 original polygons, declared WGS84,
+independent alignment and municipal completeness unverified. Source snapshot claim:
+2026-09-22T05:48:52.820Z; legal effective date and height limit unknown. Original
+holes/contacts retained. Only positive polygon interiors establish selected-source
+coverage; holes, gaps and unavailable archives remain unknown. Temporary controls
+are not included. Rights: existing owner-attested joint-project permission for
+bounded retrieval and public PMTiles derivatives; no public open licence asserted.
 
-[Evidence and source identity](../china-airspace/evidence/selected-source-release.json). Resolve tile precision and repeat full-source checks before a future registration.
+Uses the existing selected-source policy and disclaimer. The z14 MVT extent is
+65536 to preserve the original sub-metre triangle; lower zooms use the default 4096.
+Geometry, source bytes, validation, publication and rollback:
+[express release](../china-airspace/EXPRESS_CHONGQING_CHENGDU.md).
