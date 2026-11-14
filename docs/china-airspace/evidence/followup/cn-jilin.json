@@ -1,0 +1,137 @@
+{
+  "operation": "stage",
+  "active": false,
+  "subject": {
+    "region": {
+      "id": "cn-jilin",
+      "country": "cn",
+      "name": "Jilin",
+      "format": "shapefile",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "semantics": "allow",
+      "source": {
+        "authority": "Jilin Department of Transportation",
+        "effective": "2026-05-14",
+        "url": "https://jtyst.jl.gov.cn/zw_133208/tzgg/202605/t20260512_9599843.html"
+      },
+      "license": "Unknown; no redistribution permission established"
+    },
+    "synthetic": false,
+    "inputFiles": {
+      "\u5409\u6797\u9002\u98de\u7f51\u683c.shp": "f43381ab42546ec96d84924139f1c5ad48e43d8694c9a352049a0c47007c862b",
+      "\u5409\u6797\u9002\u98de\u7f51\u683c.shx": "843cd6ef4a4822a0788d1fa0cbc5952beefc7739e190a6c2df99959b8ca51283",
+      "\u5409\u6797\u9002\u98de\u7f51\u683c.dbf": "aeed9f5d805d01196799de4fcf21cf905c5b0f74d54de8cd84593e2eac1af5ff",
+      "\u5409\u6797\u9002\u98de\u7f51\u683c.prj": "00a681c97d09da0982b2634a54aafd0df99c38fa634f682d6b241d18213d5a42"
+    },
+    "contentSha256": "578df46a282248902891f9faa2a197591f173f76ccaea029d7b442d554197624",
+    "features": 79784,
+    "boundarySha256": "b414af7fcbe5da3a70a0e951ebe98ed7fda03d3283415e7db5d430f0ef4c22c9",
+    "pointChecks": [
+      {
+        "lon": 131.000976565,
+        "lat": 43.28613281,
+        "inside": true
+      },
+      {
+        "lon": 125.787277225,
+        "lat": 43.987197875,
+        "inside": true
+      },
+      {
+        "lon": 125.90744018500001,
+        "lat": 44.040069579999994,
+        "inside": true
+      },
+      {
+        "lon": 126.559066775,
+        "lat": 42.100296025,
+        "inside": true
+      },
+      {
+        "lon": 125.682907105,
+        "lat": 41.023635865,
+        "inside": true
+      },
+      {
+        "lon": 121.53787842000001,
+        "lat": 40.88175049,
+        "inside": false
+      },
+      {
+        "lon": 125.32,
+        "lat": 43.82,
+        "inside": false
+      },
+      {
+        "lon": 122.43278503583333,
+        "lat": 44.9357986475,
+        "inside": false
+      },
+      {
+        "lon": 122.43278503583333,
+        "lat": 45.814476015833336,
+        "inside": false
+      },
+      {
+        "lon": 123.22769165166667,
+        "lat": 44.496459963333336,
+        "inside": false
+      },
+      {
+        "lon": 123.22769165166667,
+        "lat": 45.375137331666664,
+        "inside": false
+      },
+      {
+        "lon": 124.10636901499998,
+        "lat": 43.24836731,
+        "inside": true
+      },
+      {
+        "lon": 121.63925171000001,
+        "lat": 45.751190185,
+        "inside": true
+      },
+      {
+        "lon": 131.176071165,
+        "lat": 43.42277526499999,
+        "inside": true
+      },
+      {
+        "lon": 125.80581665,
+        "lat": 40.98312378,
+        "inside": true
+      },
+      {
+        "lon": 123.31398010500001,
+        "lat": 46.25312805499999,
+        "inside": true
+      }
+    ]
+  },
+  "subjectSha256": "1a5377f4af68aaed2e3e91356fed09da10e0227d329e06b8a54f34462ae7120f",
+  "normalizedSha256": "8fbed349ba1fbca9e226f16dd1697ebbbc222e36265b1542e4c612786fc3a697",
+  "tools": {
+    "node": "v24.19.0",
+    "normalizerSha256": "cbb50c0e752a5747d7cd843c86a6c4d3574d28e69411a36b7e67ab05dbbbf849",
+    "geosAuditSha256": "fff038bdd65083c253bc29e021481f3d4867cfb4cee9f5579e6d6d67c677e6a8"
+  },
+  "policy": {
+    "valid": true,
+    "errors": [],
+    "errorCount": 0,
+    "topologyBudget": 2000000
+  },
+  "audit": {
+    "valid": true,
+    "features": 79784,
+    "shapely": "2.2.0",
+    "geos": "3.14.1"
+  },
+  "smoke": null,
+  "manifest": null,
+  "note": "LOCAL ONLY. Never copy into production registration or public/data.",
+  "localOutput": "planning\\followup-jilin-direct",
+  "completeMarkerPresent": true
+}

@@ -1,0 +1,131 @@
+{
+  "operation": "build",
+  "active": false,
+  "subject": {
+    "region": {
+      "id": "cn-hunan",
+      "country": "cn",
+      "name": "Hunan",
+      "format": "shapefile",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "semantics": "allow",
+      "source": {
+        "authority": "Hunan Development and Reform Commission",
+        "effective": "2026-05-14",
+        "url": "https://fgw.hunan.gov.cn/fgw/xxgk_70899/gzdtf/gzdt/202605/t20260513_33975865.html"
+      },
+      "license": "Unknown; no redistribution permission established"
+    },
+    "synthetic": false,
+    "inputFiles": {
+      "\u6e56\u5357\u9002\u98de\u7f51\u683c.shp": "92a561c4e337759f612d59b4e3d415ae6218139e11a5770dcbc14bf91deeaa0a",
+      "\u6e56\u5357\u9002\u98de\u7f51\u683c.shx": "9acadf909411e6e2dd2bda7bd92609b8ec3f94be610cf6b66828368b907085fb",
+      "\u6e56\u5357\u9002\u98de\u7f51\u683c.dbf": "87d0239841c91677b466fe8b97adeab8113d6cded107849a9a0d2de6f16d2894",
+      "\u6e56\u5357\u9002\u98de\u7f51\u683c.prj": "00a681c97d09da0982b2634a54aafd0df99c38fa634f682d6b241d18213d5a42"
+    },
+    "contentSha256": "7b00a66ad0b1c77bf244a095b309eac6cccad3fd0e4d288af76cadbde59fc8cd",
+    "features": 102483,
+    "boundarySha256": "aca9004d8e9a6e73ccbbdfa3d86a308fe1ab9cbf68a0b5efcef42e121cd129cf",
+    "pointChecks": [
+      {
+        "lon": 110.654296875,
+        "lat": 26.455078125,
+        "inside": true
+      },
+      {
+        "lon": 113.04725647000001,
+        "lat": 25.553512575,
+        "inside": true
+      },
+      {
+        "lon": 112.34207153,
+        "lat": 29.30465698,
+        "inside": true
+      },
+      {
+        "lon": 113.732528685,
+        "lat": 28.018569945000003,
+        "inside": true
+      },
+      {
+        "lon": 111.423339845,
+        "lat": 27.927246095,
+        "inside": true
+      },
+      {
+        "lon": 108.68662109,
+        "lat": 24.53821411,
+        "inside": false
+      }
+    ]
+  },
+  "subjectSha256": "c8c9dc413215c96fa1eaa50e5c0ca641f8f278001b9509b97b00ba7023650689",
+  "normalizedSha256": "41353e246a9e53a306ed5f1dfc2691d3ecffc1b11ce195d07e396b49dfd60b53",
+  "tools": {
+    "node": "v24.19.0",
+    "normalizerSha256": "cbb50c0e752a5747d7cd843c86a6c4d3574d28e69411a36b7e67ab05dbbbf849",
+    "geosAuditSha256": "fff038bdd65083c253bc29e021481f3d4867cfb4cee9f5579e6d6d67c677e6a8"
+  },
+  "policy": {
+    "valid": true,
+    "errors": [],
+    "errorCount": 0,
+    "topologyBudget": 3000000
+  },
+  "audit": {
+    "valid": true,
+    "features": 102483,
+    "shapely": "2.2.0",
+    "geos": "3.14.1"
+  },
+  "smoke": {
+    "points": 6,
+    "tiles": 51340,
+    "rendering": {
+      "renderer": "leaflet/protomaps-leaflet",
+      "painted": true,
+      "pageErrors": 0
+    }
+  },
+  "manifest": {
+    "id": "cn-hunan",
+    "country": "cn",
+    "name": "Hunan",
+    "file": "cn/cn-hunan.7e060d7f.pmtiles",
+    "boundary": "cn/cn-hunan.boundary.aca9004d.json",
+    "bounds": [
+      108.78662109,
+      24.63821411,
+      114.25643921,
+      30.13000488
+    ],
+    "coverageBounds": [
+      108.78662109,
+      24.63821411,
+      114.25643921,
+      30.13000488
+    ],
+    "cells": 102483,
+    "minZoom": 3,
+    "maxZoom": 14,
+    "semantics": "allow",
+    "maxHeightM": null,
+    "source": {
+      "authority": "Hunan Development and Reform Commission",
+      "effective": "2026-05-14",
+      "url": "https://fgw.hunan.gov.cn/fgw/xxgk_70899/gzdtf/gzdt/202605/t20260513_33975865.html"
+    },
+    "license": "Unknown; no redistribution permission established",
+    "crs": "wgs84",
+    "crsVerified": false,
+    "local": true
+  },
+  "note": "LOCAL ONLY. Never copy into production registration or public/data.",
+  "localOutput": "planning\\followup-hunan-build",
+  "completeMarkerPresent": true,
+  "tileArtifact": {
+    "bytes": 8848174,
+    "sha256": "7e060d7fa6aad60bb6ca30c2a65cc5228aaca5a263330e4683005173cb9a12dc"
+  }
+}

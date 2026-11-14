@@ -197,6 +197,22 @@ test('Guangdong and Chongqing require their original full-reference identity rep
   }
 });
 
+test('topology work budget is bounded, configurable and fails closed', async () => {
+  const { config } = setup();
+  assert.equal((await inspect(config)).policy.topologyBudget, 2_000_000);
+  change(config, c => { c.topologyBudget = 1; });
+  await assert.rejects(inspect(config), /topology-budget-exhausted/);
+  change(config, c => { c.topologyBudget = 3_000_000; });
+  assert.equal((await inspect(config)).policy.valid, true);
+  for (const value of [0, -1, 1.5, '3000000', 100_000_001]) {
+    change(config, c => { c.topologyBudget = value; });
+    await assert.rejects(inspect(config), /topologyBudget must/);
+  }
+  change(config, c => { c.topologyBudget = 3_000_000; });
+  geometry(config, gj => { gj.features[0].geometry.coordinates[0].pop(); });
+  await assert.rejects(inspect(config), /Validation failed/);
+});
+
 test('shapefile includes attributes, all records and sidecars; conflicting CRS rejected', async () => {
   const { config, dir } = setup();
   // Minimal ESRI polygon SHP/SHX/DBF made locally, with one rectangle and no DBF fields.
@@ -221,6 +237,14 @@ test('shapefile includes attributes, all records and sidecars; conflicting CRS r
   assert.equal(ctx.subject.features, 1); assert.equal(Object.keys(ctx.subject.inputFiles).length, 4);
   const source = { ...ctx.meta, file: 'grid.shp' };
   assert.equal((await readRegion(dir, source)).features.length, 1);
+  const dd = 'GEOGCS["WGS84(DD)", DATUM["WGS84", SPHEROID["WGS84",6378137,298.257223563]], PRIMEM["Greenwich",0], UNIT["degree",0.017453292519943295]]';
+  fs.writeFileSync(path.join(dir, 'grid.prj'), dd);
+  const direct = await inspect(config);
+  assert.deepEqual(direct.collection, gj);
+  for (const invalid of [dd.replace('6378137', '6370000'), dd.replace('"Greenwich",0', '"Greenwich",1'), dd.replace('DATUM["WGS84"', 'DATUM["NAD83"'), dd.replace('"degree"', '"radian"'), 'GEOGCS["Unknown",REMARK["WGS 84"]]', 'WGS84(DD)', 'PROJCS["UTM",' + dd + ']']) {
+    fs.writeFileSync(path.join(dir, 'grid.prj'), invalid);
+    await assert.rejects(inspect(config), /geographic WGS84/);
+  }
   fs.writeFileSync(path.join(dir, 'grid.prj'), 'PROJCS["WGS 84 / UTM"]');
   await assert.rejects(inspect(config), /geographic WGS84/);
 });

@@ -1,0 +1,57 @@
+{
+  "region": "cn-ningxia",
+  "archiveSha256": "a211ee4eae463dd65fbc991defb3b6cc1a68e3c5aa3ac8d69a8c96b850a2f68d",
+  "extractor": "Installed UnRAR 7.23 x64; e -p- -o-; All OK",
+  "files": [
+    {
+      "file": "宁夏适飞网格.dbf",
+      "bytes": 18497666,
+      "sha256": "6e9d415dc111466355df067aae7026c6a21ce62fef52e74a2691edb53937c2ad"
+    },
+    {
+      "file": "宁夏适飞网格.fix",
+      "bytes": 436105,
+      "sha256": "5bc6e6596a51a96a29bf68d4ae92b7f4dc7275dcdf6ee26224003984c65cf952"
+    },
+    {
+      "file": "宁夏适飞网格.prj",
+      "bytes": 238,
+      "sha256": "00a681c97d09da0982b2634a54aafd0df99c38fa634f682d6b241d18213d5a42"
+    },
+    {
+      "file": "宁夏适飞网格.shp",
+      "bytes": 4942476,
+      "sha256": "b6444d10747f59ffeaa951789c019bb08c72f950c5fb6e1d7ad07e22bb2a2dea"
+    },
+    {
+      "file": "宁夏适飞网格.shx",
+      "bytes": 290828,
+      "sha256": "e35ef5381cd7888f448429bac190f20303a7b16e03236cdea85aed10f14e3ca9"
+    }
+  ],
+  "prj": "GEOGCS[\"WGS84(DD)\", DATUM[\"WGS84\", SPHEROID[\"WGS84\", 6378137.0, 298.257223563]], PRIMEM[\"Greenwich\", 0.0], UNIT[\"degree\", 0.017453292519943295], AXIS[\"Geodetic longitude\", EAST], AXIS[\"Geodetic latitude\", NORTH], AUTHORITY[\"EPSG\",\"4326\"]]",
+  "features": 36341,
+  "dbfRecords": 36341,
+  "shxRecords": 36341,
+  "bounds": [
+    104.28909302,
+    35.23864746,
+    107.6550293,
+    39.0083313
+  ],
+  "contentSha256": "f22275d3ad2614f1d0ce076cc1413c393b8ed0fad4b44b2f3b19ff0a2a9e3978",
+  "policy": {
+    "valid": true,
+    "errors": [],
+    "accepted": 36341
+  },
+  "geos": {
+    "valid": true,
+    "features": 36341,
+    "shapely": "2.2.0",
+    "geos": "3.14.1"
+  },
+  "effectiveDate": null,
+  "stageBlocker": "Official notice publication is not an established effective date. CLI requires source.effective; left null rather than inventing it.",
+  "approvals": "All six pending"
+}
