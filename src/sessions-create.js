@@ -99,10 +99,12 @@ export function createSessionForm({ tools, tz, onSubmit, onCancel, locale = 'en-
   const marks = (tools.markers?.() ?? []).slice(0, 200);
   const sel = el('select'); sel.setAttribute('aria-label', 'Use a saved marker'); sel.append(new Option('Use a saved marker…', ''));
   marks.forEach((m, i) => sel.append(new Option(m.name || 'Marker', String(i))));
-  sel.addEventListener('change', () => { const m = marks[+sel.value]; sel.value = ''; if (!m) return; setPoint(m.lat, m.lon); if (!draft.label && m.name) { draft.label = m.name.slice(0, 120); lab.value = draft.label; } });
+  // The option index addresses `marks`, a snapshot taken when this form was built, so it cannot drift while the form is open.
+  sel.addEventListener('change', () => { if (sel.value === '') return; const m = marks[+sel.value]; if (!m) return; setPoint(m.lat, m.lon, sel.value); if (!draft.label && m.name) { draft.label = m.name.slice(0, 120); lab.value = draft.label; } });
   pin.append(pinText, pinBtns); if (marks.length) pin.append(sel);
   const pinField = el('div', 'ses-field'); pinField.append(el('span', 'fr-label', 'Meeting point'), pin); cur.append(pinField);
-  function setPoint(lat, lng) { draft.lat = Math.round(lat * 1e6) / 1e6; draft.lng = Math.round(lng * 1e6) / 1e6; update(); }
+  // `markKey` is the saved marker the dropdown shows ('' = none). Any other way of setting the point clears it, so the dropdown never names a marker the point does not come from.
+  function setPoint(lat, lng, markKey = '') { draft.lat = Math.round(lat * 1e6) / 1e6; draft.lng = Math.round(lng * 1e6) / 1e6; sel.value = markKey; update(); }
 
   // who can see it
   section('Visibility and capacity', true);

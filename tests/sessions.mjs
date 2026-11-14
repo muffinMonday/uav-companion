@@ -156,11 +156,37 @@ await ctx.close();
 
 // ---------- an ordinary person hosts: the wording says what they cannot do; the pin picker keeps the draft; recurrence preview; private default
 ({ ctx, p } = await open('c'));
+// two saved markers for the form's "Use a saved marker…" dropdown (the page reads them on load, so reload once before anything is done)
+await p.evaluate((po) => localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po })), [
+  { id: 'lake', type: 'photo', name: 'Lake Viewpoint', note: '', lat: 30.512, lon: 114.312, created: '2026-11-01T00:00:13.000Z' },
+  { id: 'gate', type: 'photo', name: 'Main Gate', note: '', lat: 30.52, lon: 114.32, created: '2026-11-01T00:00:15.000Z' },
+]);
+await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+await p.locator('#name-dlg-skip').click({ timeout: 2500 }).catch(() => {});
 await openHub(p);
 await p.click('#ses-new');
 await p.waitForSelector('#ses-form');
 ok(await p.locator('#ses-form input[name=ses-vis][value=private]').isChecked() && !(await p.locator('#ses-form input[name=ses-vis][value=public]').isChecked()), 'the new session form starts private');
 ok(/cannot verify attendance for XP/.test(await txt(p, body)), 'the form says a host cannot verify attendance for XP unless an organiser or administrator');
+// the saved-marker dropdown: it shows the chosen marker and sets the point; the name fills an empty place name; the placeholder leaves the point; a map point clears it
+const MARK = '#ses-form select[aria-label="Use a saved marker"]', PIN = '#ses-form .ses-pin-text', PLACE = '#ses-form .ses-field:has(label:text-is("Place name (optional)")) input';
+const shownMark = () => p.$eval(MARK, (s) => s.selectedOptions[0]?.textContent ?? null);
+const pinAt = async () => (await txt(p, PIN)).match(/Point chosen: ([\d.]+), ([\d.]+)/)?.slice(1).join(' ') ?? null;
+ok(JSON.stringify(await p.$$eval(MARK + ' option', (os) => os.map((o) => [o.value, o.textContent]))) === JSON.stringify([['', 'Use a saved marker…'], ['0', 'Lake Viewpoint'], ['1', 'Main Gate']]) && (await p.inputValue(MARK)) === '', 'the saved-marker dropdown starts on the placeholder and lists each saved marker by name');
+await p.selectOption(MARK, { label: 'Lake Viewpoint' });
+ok((await pinAt()) === '30.51200 114.31200' && (await shownMark()) === 'Lake Viewpoint' && (await p.inputValue(PLACE)) === 'Lake Viewpoint', 'choosing a saved marker sets the point, keeps its name shown and fills the empty place name');
+await p.fill(PLACE, 'Meet by the bridge');
+await p.selectOption(MARK, { label: 'Main Gate' });
+ok((await pinAt()) === '30.52000 114.32000' && (await shownMark()) === 'Main Gate' && (await p.inputValue(PLACE)) === 'Meet by the bridge', 'another marker moves the point and the dropdown follows; a filled place name is kept');
+await p.selectOption(MARK, '');
+ok((await pinAt()) === '30.52000 114.32000' && (await p.inputValue(MARK)) === '', 'choosing the placeholder leaves the meeting point alone');
+await p.selectOption(MARK, { label: 'Main Gate' });
+await p.selectOption(MARK, { label: 'Main Gate' });
+ok((await pinAt()) === '30.52000 114.32000' && (await shownMark()) === 'Main Gate', 'choosing the same marker again keeps the point and the name');
+await p.click('#ses-form [data-act=centre]');
+ok((await p.inputValue(MARK)) === '' && (await shownMark()) === 'Use a saved marker…' && /Point chosen: /.test(await txt(p, PIN)), 'a point taken from the map is not shown as a saved marker');
+await p.selectOption(MARK, { label: 'Lake Viewpoint' });
+ok((await pinAt()) === '30.51200 114.31200' && (await shownMark()) === 'Lake Viewpoint', 'after a map point, choosing a saved marker again sets it and shows its name');
 await p.fill('#ses-form input[name=title]', 'Saturday group');
 await p.click('#ses-form [data-act=pick]');
 await p.waitForSelector('.ses-bar:not([hidden])');
