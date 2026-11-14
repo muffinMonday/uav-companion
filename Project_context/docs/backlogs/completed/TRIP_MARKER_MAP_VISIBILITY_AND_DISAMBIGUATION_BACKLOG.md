@@ -1,6 +1,6 @@
 # Trip Marker Map Visibility and Disambiguation
 
-**Status: IMPLEMENTED, tested; release evidence in section 11.** (2026-11-15; was FOR REVIEW the same day.)
+**Status: COMPLETED 2026-11-15 (released `8ca7933`, deployed; evidence in section 11).** (2026-11-15; was FOR REVIEW the same day.)
 
 **Status history:** 2026-11-15 for-review -> reviewed against HEAD `3aec1e3` -> owner approved D1 to D5 and authorized autonomous commit, push and deploy:live for this backlog only -> in-progress.
 
@@ -346,5 +346,7 @@ If approved and implemented:
 **Built:** `trips.js` `tripPhase`; `poi-model.js` `mapHiddenReason`, `markerLabel` (pure); `prefs.js` `showCompleted`; `poi-ui.js` `tripViewId` (page state), `setTripView`, `syncPins` (also run on every store change, so re-tagging a marker now adds or removes its pin), routes follow `tripDrawn`, `restrictionOf` branches (view, completed), `flyToItem` switches the view for a marker named from another trip, trips map button clears the view, name tag with trip line, `aria-label`; `trips-ui.js` toggle on card and detail; `poi-panel.html` switch; `styles.css` (name tag anchored by its bottom edge so a second line cannot cover the `.seq` badge; pressed state).
 
 **Tests:** new browser suite `tripview` (40 checks); unit additions in `trips-unit`, `poi-model-unit`, `visibility-unit`; `html-dom-baseline.json` regenerated (one new switch); clock pinned to 2026-11-13 in `days`, `visits`, `popswipe`, `hierarchy`, `visibility` (their fixtures end 2026-11-14). Full `npm test`: 126 of 126 suites pass (657 s); build passes.
+
+**Release (2026-11-15):** commit `8ca7933` pushed to `origin/main`; one `npm run deploy:live` (accounts enabled, no database change); live bundle `index-CEHfz7wS.js` equals the local build and the live HTML contains the new switch.
 
 **Residual risks / not verified:** real phone, Safari, screen reader (the `aria-label` is set and tested as an attribute, not read by a screen reader), 200% zoom; no screenshot baseline comparison was run; same-name trips with the same colour are not told apart in text; a tab left open past midnight keeps its old completed set until the next change or reload; existing users see completed trips leave the map on first load (switch in the Points of Interest tab).
