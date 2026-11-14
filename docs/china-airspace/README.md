@@ -1,5 +1,7 @@
 # China airspace acquisition staging
 
+[Selected operational source release](SELECTED_SOURCE_RELEASE.md): four registered API-reference datasets, with positive-only coverage and explicit confidence metadata. This separate owner-authorized policy does not assert the high-confidence approvals discussed below.
+
 [Focused follow-up](FOCUSED_FOLLOWUP.md): Hunan complete local build, Jilin direct-shapefile compatibility, and Ningxia archive/geometry inspection; source approvals remain pending.
 
 This workflow prepares evidence and reproducible local datasets for UAV Companion. It does not register regions, change point checks, or publish tiles. [Audit and plan](PLAN.md), [nationwide inventory](INVENTORY.md), [source investigation](SOURCES.md), [pilot results](PILOTS.md), [compatibility and checks](VALIDATION.md).

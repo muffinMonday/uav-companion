@@ -36,7 +36,10 @@ function validate(meta, dir) {
   if (meta.layers === undefined && meta.file === undefined) throw new Error(`${dir}/source.json: needs "file" or "layers"`);
   if (!SEMANTICS.has(meta.semantics)) throw new Error(`${meta.id}: semantics must be one of ${[...SEMANTICS].join('|')}`);
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(meta.id) || !meta.id.startsWith(`${meta.country}-`)) throw new Error(`${meta.id}: id must be lowercase and start with "${meta.country}-"`);
-  if (!meta.source.authority || !meta.source.effective) throw new Error(`${meta.id}: source.authority and source.effective are required`);
+  const selected = meta.sourceConfidence?.mode === 'selected-source';
+  if (meta.coverageMode !== undefined && meta.coverageMode !== 'positive-only') throw new Error(`${meta.id}: unsupported coverageMode`);
+  if (selected && (meta.coverageMode !== 'positive-only' || meta.semantics !== 'allow')) throw new Error(`${meta.id}: selected suitable-flight sources require positive-only coverage`);
+  if (!meta.source.authority || (!meta.source.effective && !(selected && meta.source.effective === null))) throw new Error(`${meta.id}: source.authority and source.effective are required (explicit null is supported for selected sources)`);
 }
 
 export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS) {
@@ -51,7 +54,7 @@ export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS
   const tiles = buildTiles(features, bounds, (m) => console.log(`[${id}]   ${m}`));
   const buf = writePMTiles({
     tiles, bounds, minZoom: MIN_Z, maxZoom: MAX_Z,
-    metadata: { name: meta.name, attribution: `${source.authority}, effective ${source.effective}`, vector_layers: [{ id: 'zones', fields: classes ? { c: 'String', n: 'String', d: 'String' } : {} }] },
+    metadata: { name: meta.name, attribution: `${source.authority}, effective ${source.effective ?? 'unknown'}`, vector_layers: [{ id: 'zones', fields: classes ? { c: 'String', n: 'String', d: 'String' } : {} }] },
   });
   const file = `${countryId}/${id}.${hash(buf)}.pmtiles`;
   fs.mkdirSync(path.join(OUT, countryId), { recursive: true });
@@ -85,6 +88,7 @@ export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS
     cells: features.length, minZoom: MIN_Z, maxZoom: MAX_Z,
     semantics: meta.semantics, maxHeightM: meta.maxHeightM ?? null,
     source, license: meta.license, crs: meta.crs, crsVerified: !!meta.crsVerified,
+    ...(meta.coverageMode && { coverageMode: meta.coverageMode }), ...(meta.sourceConfidence && { sourceConfidence: meta.sourceConfidence }),
     ...(classes && { classes }), ...(pointsFile && { points: pointsFile }),
     ...(meta.officialMap && { officialMap: meta.officialMap }), ...(meta.coverageMarginM && { coverageMarginM: meta.coverageMarginM }),
     ...(meta.publish ? {} : { local: true }),

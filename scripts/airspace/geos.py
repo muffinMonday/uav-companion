@@ -52,4 +52,10 @@ def audit(before, after):
 
 if __name__ == "__main__":
     payload = json.load(sys.stdin)
-    print(json.dumps(audit(payload["before"], payload["after"])))
+    result = audit(payload["before"], payload["after"])
+    if payload.get("includeInteriorWitnesses"):
+        result["interiorWitnesses"] = [
+            {"lon": p.x, "lat": p.y, "inside": True}
+            for p in (shape(f["geometry"]).representative_point() for f in payload["after"]["features"])
+        ]
+    print(json.dumps(result))

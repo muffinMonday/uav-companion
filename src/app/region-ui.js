@@ -1,5 +1,5 @@
 import { zoneFill } from '../map.js';
-import { MEANINGS } from '../legends.js';
+import { MEANINGS, SELECTED_SOURCE_MEANING } from '../legends.js';
 import { savePrefs } from '../prefs.js';
 
 const $ = (id) => document.getElementById(id);
@@ -43,18 +43,21 @@ export function renderRegionInfo({ index, regions }) {
     for (const c of r.classes) addLegend(c.color, c.points ? `${c.label}: where flying is allowed (a pin on the map).` : `${c.label}.`);
     const p = document.createElement('div'); p.className = 'legend-note'; p.textContent = `${r.name}: ${r.source.authority}, updated ${r.source.effective}. Approximate: not in a zone here does not mean flying is allowed. Check the official map.`; legend.append(p);
   }
-  for (const sem of new Set(regions.filter((r) => !r.classes).map((r) => r.semantics))) {
+  const selected = regions.filter(r => r.sourceConfidence?.mode === 'selected-source');
+  const legacy = regions.filter(r => r.sourceConfidence?.mode !== 'selected-source');
+  for (const sem of new Set(legacy.filter((r) => !r.classes).map((r) => r.semantics))) {
     const row = document.createElement('div');
     const sw = document.createElement('i');
     sw.style.background = meanings[sem][0];
-    row.append(sw, meanings[sem][1]);
+    row.append(sw, (selected.length ? legacy.filter(r => r.semantics === sem).map(r => r.name).join(', ') + ': ' : '') + meanings[sem][1]);
     legend.append(row);
   }
+  if (selected.length) addLegend(zoneFill('allow'), selected.map(r => r.name).join(', ') + ': ' + SELECTED_SOURCE_MEANING);
 
   const note = $('regions-note');
   note.textContent = '';
   const b = document.createElement('b');
   const pending = index.countries.filter((c) => !c.regions).map((c) => c.name);
-  b.textContent = `Coverage: ${regions.map((r) => r.name).join(', ') || 'none'}.${pending.length ? ` No data yet: ${pending.join(', ')}.` : ''} `;
-  note.append(b, 'Official data: ' + [...new Set(regions.map((r) => `${r.source.authority} (effective ${r.source.effective})`))].join('; ') + '.');
+  b.textContent = `Coverage: ${regions.map((r) => r.name + (r.sourceConfidence?.mode === 'selected-source' ? ' (mapped polygons only)' : '')).join(', ') || 'none'}.${pending.length ? ` No data yet: ${pending.join(', ')}.` : ''} `;
+  note.append(b, (selected.length ? 'Data sources: ' : 'Official data: ') + [...new Set(regions.map((r) => r.sourceConfidence?.mode === 'selected-source' ? `${r.source.authority} (snapshot ${r.source.snapshotAt?.slice(0, 10) || 'unknown'}; effective date ${r.source.effective || 'unknown'}; current permission unverified)` : `${r.source.authority} (effective ${r.source.effective})`))].join('; ') + '.');
 }

@@ -1,0 +1,45 @@
+{
+  "checkedOn": "2026-11-14",
+  "focused": {
+    "passed": 61,
+    "failed": 0
+  },
+  "unitImpact": {
+    "passed": 57,
+    "failed": 0,
+    "context": "normal en-US; known default-locale date assertion and parallel live-engine flake retained in earlier logs"
+  },
+  "fullApplicationRun": {
+    "passed": 123,
+    "failed": 2,
+    "total": 125,
+    "failures": [
+      "autoshare friend-pin timing under load",
+      "rain hour labels crossed the clock hour"
+    ],
+    "unchangedSequentialRerun": {
+      "autoshare": "23/23 pass",
+      "rain": "13/13 pass"
+    },
+    "all125SuitesCovered": true
+  },
+  "selectedFeatureInteriors": {
+    "passed": 373,
+    "failed": 0
+  },
+  "applicationPointCases": {
+    "passed": 40,
+    "legacyPriorityPreserved": true
+  },
+  "rendering": "all four qualifying regions pass; actual desktop/phone popups inspected",
+  "build": "account-enabled production build passes; existing large-chunk warning",
+  "latestUxReconciliation": {
+    "baseline": "0df811ea5bb498f37b3fc2e9f8a293f44ec5a532",
+    "responsive": "210/210 pass",
+    "popswipe": "25/25 pass",
+    "hierarchy": "52/52 pass",
+    "accountEnabledProductionRebuild": "pass"
+  },
+  "productionArtifactsConsistent": true,
+  "chongqingWithheld": true
+}

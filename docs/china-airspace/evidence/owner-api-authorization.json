@@ -1,0 +1,11 @@
+﻿{
+  "checkedOn": "2026-11-14",
+  "type": "owner-attested-project-authorization",
+  "provider": "KDji / kdji.cn UOM reference API",
+  "question": "Do you have KDji permission or terms covering automated provincial UOM collection and public redistribution as PMTiles? Its open-platform page says interface scope and permissions are confirmed per project; I found no published grant covering this endpoint.",
+  "ownerResponse": "yes we worked on the project together",
+  "scope": ["bounded provincial API retrieval", "public PMTiles derivatives"],
+  "basis": "Owner affirmation in this task, in response to the scoped permission question. Not represented as a public licence or independently obtained provider letter.",
+  "collectionBudget": "Initial official-priority API fallback: Jilin, Hunan, Ningxia sequentially; at most two requests per province, three-second spacing, one attempt, 25 MB per response. These are operator caps, not claims about a published provider quota.",
+  "limitations": ["No access-control bypass", "Stop on auth/rate-limit/redirect responses", "Do not imply official regulatory authority", "Unknown response contracts and geographic completeness must remain explicit", "Production approval is separate from this source-rights attestation"]
+}

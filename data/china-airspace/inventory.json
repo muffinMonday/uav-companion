@@ -176,7 +176,17 @@
       "thirdPartyProvinceId": "jilin",
       "thirdPartyAvailability": "client-index-hasData-claim-only",
       "thirdPartyPublicationMonth": "2026-05",
-      "thirdPartySnapshotMonth": "2026-09"
+      "thirdPartySnapshotMonth": "2026-09",
+      "selectedOperationalSource": {
+        "source": "KDji third-party UOM reference mirror",
+        "features": 140,
+        "snapshotAt": "2026-09-22T05:49:05.729Z",
+        "coverageMode": "positive-only",
+        "crsVerified": false,
+        "rightsBasis": "owner-attested-project-authorization",
+        "evidence": "docs/china-airspace/evidence/selected-source-release.json",
+        "highConfidenceApprovals": "unchanged; not asserted"
+      }
     },
     {
       "regionCode": "CN-23",
@@ -451,7 +461,17 @@
       "thirdPartyProvinceId": "hunan",
       "thirdPartyAvailability": "client-index-hasData-claim-only",
       "thirdPartyPublicationMonth": "2026-05",
-      "thirdPartySnapshotMonth": "2026-09"
+      "thirdPartySnapshotMonth": "2026-09",
+      "selectedOperationalSource": {
+        "source": "KDji third-party UOM reference mirror",
+        "features": 53,
+        "snapshotAt": "2026-09-22T05:49:03.681Z",
+        "coverageMode": "positive-only",
+        "crsVerified": false,
+        "rightsBasis": "owner-attested-project-authorization",
+        "evidence": "docs/china-airspace/evidence/selected-source-release.json",
+        "highConfidenceApprovals": "unchanged; not asserted"
+      }
     },
     {
       "regionCode": "CN-44",
@@ -478,7 +498,17 @@
       "thirdPartyPublicationMonth": "2026-05",
       "thirdPartySnapshotMonth": "2026-09",
       "snapshotDateStatus": "source-declared mirror timestamp, not HTTP capture time",
-      "stagingStatus": "technically-validated-reference-staging-with-policy-warnings"
+      "stagingStatus": "technically-validated-reference-staging-with-policy-warnings",
+      "selectedOperationalSource": {
+        "source": "KDji third-party UOM reference mirror",
+        "features": 101,
+        "snapshotAt": "2026-09-22T05:48:55.817Z",
+        "coverageMode": "positive-only",
+        "crsVerified": false,
+        "rightsBasis": "owner-attested-project-authorization",
+        "evidence": "docs/china-airspace/evidence/selected-source-release.json",
+        "highConfidenceApprovals": "unchanged; not asserted"
+      }
     },
     {
       "regionCode": "CN-45",
@@ -555,7 +585,8 @@
       "thirdPartyPublicationMonth": "2026-05",
       "thirdPartySnapshotMonth": "2026-09",
       "snapshotDateStatus": "source-declared mirror timestamp, not HTTP capture time",
-      "stagingStatus": "technically-validated-reference-staging-with-policy-warnings"
+      "stagingStatus": "technically-validated-reference-staging-with-policy-warnings",
+      "operationalPublicationBlocker": "Valid sub-grid source polygon lost by current tile quantization; entire 777-feature candidate withheld. See selected-source release evidence."
     },
     {
       "regionCode": "CN-51",
@@ -755,7 +786,17 @@
       "thirdPartyProvinceId": "ningxia",
       "thirdPartyAvailability": "client-index-hasData-claim-only",
       "thirdPartyPublicationMonth": "2026-05",
-      "thirdPartySnapshotMonth": "2026-09"
+      "thirdPartySnapshotMonth": "2026-09",
+      "selectedOperationalSource": {
+        "source": "KDji third-party UOM reference mirror",
+        "features": 79,
+        "snapshotAt": "2026-09-22T05:49:08.719Z",
+        "coverageMode": "positive-only",
+        "crsVerified": false,
+        "rightsBasis": "owner-attested-project-authorization",
+        "evidence": "docs/china-airspace/evidence/selected-source-release.json",
+        "highConfidenceApprovals": "unchanged; not asserted"
+      }
     },
     {
       "regionCode": "CN-65",
