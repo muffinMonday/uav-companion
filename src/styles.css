@@ -56,7 +56,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
 .btn-row .btn{flex:1 1 auto}
 
-input[type=text],input[type=url],input[type=email],input[type=number],input[type=time],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--fg)}
+input[type=text],input[type=url],input[type=email],input[type=number],input[type=time],input.poi-search,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--fg)}
 select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238a99a6' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
 input[type=range]{width:100%;accent-color:var(--accent)}
 textarea{resize:vertical;min-height:60px}
@@ -377,6 +377,10 @@ textarea{resize:vertical;min-height:60px}
 @media (pointer:coarse){.sec-toggle{min-height:36px;align-items:center}}
 @media (prefers-reduced-motion:reduce){.sec-toggle::before{transition:none}}
 .trip-head .sec-count{margin-left:auto}
+#poi-filters-clear[hidden]{display:none}
+.search-row{display:flex;gap:8px;align-items:center;margin:6px 0}
+.poi-search{flex:1 1 auto;min-width:0}
+.search-count{margin:0 0 6px}
 .out-tag{margin-left:8px;padding:1px 6px;border:1px solid var(--line);border-radius:var(--radius-pill);font-size:var(--fs-micro);font-weight:var(--fw-semibold);letter-spacing:0;text-transform:none;color:var(--muted)}
 .unlinked-head{list-style:none;margin:6px 2px 0;font-size:var(--fs-micro);font-weight:var(--fw-semibold);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .poi-none{list-style:none;color:var(--muted);font-size:var(--fs-small);padding:6px 2px}
@@ -415,7 +419,7 @@ input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.6;bo
 @media (hover:hover){input[type=date]::-webkit-calendar-picker-indicator:hover{opacity:1;background:var(--accent-soft)}}
 input[type=date]::-webkit-datetime-edit-fields-wrapper{padding:0}
 input[type=date]:disabled{opacity:var(--disabled-opacity)}
-input[type=text]:focus,input[type=email]:focus,input[type=number]:focus,input[type=date]:focus,input[type=time]:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input[type=text]:focus,input.poi-search:focus,input[type=email]:focus,input[type=number]:focus,input[type=date]:focus,input[type=time]:focus,select:focus,textarea:focus{border-color:var(--accent)}
 input[type=number]{-moz-appearance:textfield;appearance:textfield;text-align:center;font-variant-numeric:tabular-nums}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 

@@ -4,7 +4,7 @@
 // The hierarchy is Trip > day (date) > main stop > Side Quest, with "No trip" (Unassigned) and the private Home marker as
 // sections of their own. A section is a scope: a trip id, 'none' (Unassigned) or 'home'. Day groups are the list's own
 // grouping (listMode / groupKey), so the model and the list can never disagree about where a marker belongs.
-import { listMode, isSub } from './poi.js';
+import { listMode, isSub, typeOf } from './poi.js';
 import { groupKey } from './reorder.js';
 import { outsideTrip, sideQuestMap } from './trips.js';
 
@@ -93,4 +93,19 @@ export function unlinkedSideQuests(items) {
     const mode = listMode(items.filter((i) => scopeOf(i) === scope));
     return { item: o, scope, key: String(groupKey(o, mode)) };
   });
+}
+
+// ---------- search ----------
+const fold = (s) => String(s ?? '').normalize('NFKC').toLowerCase();
+/** The words of a query, folded for comparison. Empty when there is nothing to look for. */
+export const queryTerms = (query) => fold(query).split(/\s+/).filter(Boolean).slice(0, 8);
+/**
+ * Does a marker match a query? Every word must appear in its name, note, type label or trip name (case-insensitive, any order).
+ * It looks at the whole store, never at what is drawn: a marker in a folded trip, or hidden on the map, matches all the same.
+ * `tripName` is the name of the marker's trip, or '' (the Home marker has none).
+ */
+export function matches(item, terms, tripName = '') {
+  if (!terms.length) return true;
+  const hay = fold(`${item.name} ${item.note ?? ''} ${typeOf(item.type).label} ${item.type === 'residence' ? '' : tripName}`);
+  return terms.every((t) => hay.includes(t));
 }

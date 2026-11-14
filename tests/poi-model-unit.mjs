@@ -86,3 +86,17 @@ ok(find('sq-free').scope === 'none', 'one with no trip is listed under Unassigne
 ok(Object.isFrozen(lone[1]) && lone[1].isSub === true && lone[1].parentId === undefined, 'listing it changes nothing about the record');
 ok(M.unlinkedSideQuests([...items.slice(0, 3)]).length === 0, 'no Side Quests, nothing unlinked');
 ok(T.sideQuestMap([...lone]).orphans.length === 3, 'the model agrees with the Trips tab about which are orphans');
+
+// ---------- search matching
+{
+  const a = mk('a', { name: 'Yellow Crane Tower', note: 'Opens at 8, bring ND filter', tripId: 't1', type: 'attraction' });
+  const m = (it, q, tn = '') => M.matches(it, M.queryTerms(q), tn);
+  ok(m(a, 'crane') && m(a, 'CRANE') && m(a, 'tower yellow'), 'matches the name, ignoring case and word order');
+  ok(m(a, 'nd filter') && !m(a, 'nd lens'), 'matches the note; every word must match');
+  ok(m(a, 'attraction') && m(mk('f', { type: 'food' }), 'food drink') && m(mk('h', { type: 'hotel' }), 'accommodation'), 'matches the type label (Food & Drink, Accommodation), not only the id');
+  ok(m(a, 'wuhan spring', 'Wuhan spring') && !m(a, 'wuhan', 'Singapore'), 'matches the trip name');
+  ok(!m(mk('r', { type: 'residence', name: 'Flat' }), 'wuhan', 'Wuhan'), 'the Home marker is not found through a trip name');
+  ok(m(a, '') && m(a, '   ') && M.queryTerms('  A  b ').join() === 'a,b', 'an empty query matches everything; words are split and folded');
+  ok(m(mk('c', { name: '黄鹤楼' }), '黄鹤') && m(mk('e', { name: 'Café' }), 'café'), 'non-ASCII text matches');
+  ok(M.queryTerms('a b c d e f g h i j k').length === 8, 'a query is capped at eight words');
+}

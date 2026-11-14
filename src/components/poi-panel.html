@@ -18,6 +18,8 @@
 
       <div class="card">
         <h2>Saved places <span class="count" id="poi-count"></span></h2>
+        <div class="search-row"><input type="search" id="poi-search" class="poi-search" placeholder="Search name, note, type or trip" aria-label="Search saved places" autocomplete="off" maxlength="80"><button type="button" class="btn small" id="poi-filters-clear" hidden>Clear filters</button></div>
+        <p class="hint search-count" id="poi-search-count" role="status" hidden></p>
         <label class="field" id="poi-trip-filter-field" hidden><span>Trip</span><select id="poi-trip-filter"></select></label>
         <div class="chips" id="poi-filter" role="group" aria-label="Filter by type"></div>
         <div class="btn-row" id="poi-select-row" hidden><button type="button" class="btn small" id="poi-select">Select markers…</button></div>

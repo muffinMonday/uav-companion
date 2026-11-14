@@ -18,7 +18,7 @@ import { mapLinkIcons } from './maplinks-ui.js';
 import { MODES } from './maplinks.js';
 import { planMove, planSideMove, stepSideIndex, stepSlot, groupKey, addDays } from './reorder.js';
 import { initReorder } from './reorder-ui.js';
-import { newExpansion, scopeOpen, dayOpen, dayId, summarise, summaryText, isOutside, reveal as revealSection, prune as pruneSections, unlinkedSideQuests, SCOPE_HOME } from './poi-model.js';
+import { queryTerms, matches, newExpansion, scopeOpen, dayOpen, dayId, summarise, summaryText, isOutside, reveal as revealSection, prune as pruneSections, unlinkedSideQuests, SCOPE_HOME } from './poi-model.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer, toolBar } from './cards.js';
 import { onPopupSwipe } from './swipe.js';
@@ -51,6 +51,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let mode = null; // null | 'place' | 'edit'
   let filter = 'all';         // marker type filter
   let tripFilter = 'all';     // 'all' | 'none' | a trip id
+  let query = '';             // the words typed in the saved-places search (page state; never stored, never changes a marker)
   let currentTripId = null;   // the trip new markers are put in (never applies to a Home marker)
   let newTripHandler = null;  // set by the Trips tab: starts a new trip and tags a marker with it
   let suppressClick = false;
@@ -155,6 +156,20 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
 
   // ---------- list ----------
+  const searchEl = $('poi-search'), clearEl = $('poi-filters-clear'), searchCount = $('poi-search-count');
+  /** Says how many places match, and offers one button that clears the search and both filters. */
+  function paintSearchState(searching, shown, total) {
+    const filtered = filter !== 'all' || tripFilter !== 'all';
+    searchCount.hidden = !searching && !filtered;
+    searchCount.textContent = searching || filtered ? `${shown} of ${total} saved place${total === 1 ? '' : 's'} shown${searching ? ' for this search' : ' with this filter'}.` : '';
+    clearEl.hidden = !searching && !filtered;
+  }
+  let searchTimer = 0;
+  searchEl.addEventListener('input', () => { query = searchEl.value; cancelAnimationFrame(searchTimer); searchTimer = requestAnimationFrame(() => renderList()); });
+  searchEl.addEventListener('keydown', (e) => { if (e.key === 'Escape' && searchEl.value) { e.stopPropagation(); searchEl.value = ''; query = ''; renderList(); } });
+  /** Clears the search and both filters. Nothing else changes: not the folds, not a marker, not the current trip for new markers. */
+  function resetFilters() { query = ''; searchEl.value = ''; filter = 'all'; tripFilter = 'all'; renderTripSelects(); renderList(); }
+  clearEl.addEventListener('click', resetFilters);
   let renderPending = false; // a redraw asked for while a row is being dragged waits until the drag is over (the row under the finger must stay in the page)
   function renderList() {
     if (document.body.classList.contains('reordering')) { renderPending = true; return; }
@@ -179,13 +194,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     cin.unbind('poi');
     listEl.replaceChildren();
     const trips = store.trips();
+    const terms = queryTerms(query);
+    const tripName = (i) => store.getTrip(i.tripId)?.name ?? '';
     const visible = items.filter((i) => (filter === 'all' || i.type === filter)
-      && (tripFilter === 'all' || (tripFilter === 'none' ? !i.tripId : i.tripId === tripFilter)));
+      && (tripFilter === 'all' || (tripFilter === 'none' ? !i.tripId : i.tripId === tripFilter))
+      && matches(i, terms, tripName(i))); // the search looks at every saved marker, whatever is folded or drawn on the map
+    paintSearchState(terms.length > 0, visible.length, items.length);
     visibleIds = new Set(visible.map((i) => i.id));
     const nestedIds = new Set(); // Side Quests listed under their (shown) main stop instead of in the flow
     for (const [pid, subs] of sideMap.byParent) if (visibleIds.has(pid)) for (const s of subs) if (visibleIds.has(s.id)) nestedIds.add(s.id);
     if (!items.length) selecting = false;
-    listForce = selecting || filter !== 'all' || tripFilter !== 'all';
+    listForce = selecting || filter !== 'all' || tripFilter !== 'all' || terms.length > 0;
     listCollapsible = trips.length > 0;
     pruneSections(expansion, trips.map((t) => t.id));
     const orphanIds = new Set(unlinkedSideQuests(items).map((u) => u.item.id));
@@ -198,7 +217,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const renderGroup = (group, mode, head, scope = 'none') => {
       if (head) listEl.append(head);
       // dragging is for dated or day-numbered lists only, with no type filter on, and not while selecting
-      const dragOk = !selecting && filter === 'all' && mode === 'date';
+      const dragOk = !selecting && filter === 'all' && !terms.length && mode === 'date'; // no dragging in a search result
       const trip = scope === 'none' || scope === SCOPE_HOME ? null : store.getTrip(scope);
       const dayFold = listCollapsible && trip && mode !== 'plain'; // days fold inside a trip; Unassigned and Home have no day sections
       const heading = (label, key, outside) => {
@@ -265,7 +284,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       if (loose.length) renderGroup(loose, listMode(loose), heading('No trip', null, 'none', loose), 'none');
       const homes = visible.filter((i) => i.type === 'residence');
       if (homes.length) renderGroup(homes, 'plain', heading('Home', null, SCOPE_HOME, homes), SCOPE_HOME);
-      if (!listEl.children.length) listEl.append(el('li', 'poi-none', 'Nothing matches this filter.'));
+      if (!listEl.children.length) listEl.append(el('li', 'poi-none', terms.length ? 'No saved place matches that search.' : 'Nothing matches this filter.'));
     }
     syncSections();
     $('poi-drag-hint').hidden = !listEl.querySelector('li[data-drag="1"]');
