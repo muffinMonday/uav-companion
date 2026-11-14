@@ -223,6 +223,18 @@ textarea{resize:vertical;min-height:60px}
 .leaflet-bar a.locate-btn.active{color:var(--accent)!important}
 .leaflet-bar a.locate-btn .locate-icon{display:flex;align-items:center;justify-content:center}
 .leaflet-bar a.locate-btn svg,.leaflet-bar a.details-btn svg,.leaflet-bar a.map-toggle svg,.leaflet-bar a.cross-btn svg,.leaflet-bar a.sessions-btn svg{width:18px;height:18px}
+/* the tag button that names the others (map-toolbar-help.js), and the labels it shows beside them: a layer over the map that never takes a tap */
+.leaflet-bar a.labels-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
+.leaflet-bar a.labels-btn svg{width:18px;height:18px}
+.leaflet-bar a.labels-btn.on{color:var(--accent)!important}
+.tool-labels{position:absolute;inset:0;z-index:999;pointer-events:none}
+.tool-label-row{position:absolute;left:var(--tl-left);box-sizing:border-box;display:flex;align-items:center;max-width:calc(100% - var(--tl-left) - 8px);padding:0 10px;border-radius:var(--radius-sm);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-1);font-size:var(--fs-small);font-weight:var(--fw-medium);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* contextual hints (help-ui.js): one small card, in a panel pane, in the sessions dialog, or on the map */
+.help-hint{display:flex;align-items:center;gap:var(--sp-3);margin:0 0 var(--sp-3);padding:var(--sp-2) var(--sp-3);border:1px solid var(--accent);border-radius:var(--radius-sm);background:var(--accent-soft);color:var(--fg);font-size:var(--fs-small);line-height:var(--lh-meta)}
+.help-hint .help-text{margin:0;flex:1}
+.help-hint .help-ok{flex:none}
+.help-hint.on-map{position:absolute;z-index:var(--z-card);left:10px;bottom:64px;margin:0;max-width:min(340px,calc(100% - 20px));background:var(--surface);box-shadow:var(--shadow-2)}
+.ses-hub .help-hint{margin:var(--sp-2) var(--sp-4) 0}
 .leaflet-control-scale-line{background:color-mix(in srgb,var(--surface) 88%,transparent)!important;color:var(--fg);border-color:var(--muted)!important;border-radius:0 0 4px 4px}
 .leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--muted)!important}
 .leaflet-control-attribution a{color:var(--accent)!important}
@@ -1089,8 +1101,10 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
   .flip-dot{width:28px;height:28px}
   input[type=range]{height:28px}
   /* the map's own buttons: 36 px (Leaflet's touch size is 30). Not 40: the stack must stay mostly above the phone sheet, and its left edge (6 px margin) must not hide the start of a marker window's title */
-  .leaflet-touch .leaflet-bar a,.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn,.leaflet-bar a.sessions-btn{width:36px;height:36px;line-height:36px}
+  .leaflet-touch .leaflet-bar a,.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn,.leaflet-bar a.sessions-btn,.leaflet-bar a.labels-btn{width:36px;height:36px;line-height:36px}
+  .help-hint .help-ok{min-height:36px}
   .leaflet-left .leaflet-control{margin-left:6px}
+  @media (max-height:480px){.leaflet-top.leaflet-left .leaflet-control:not(.leaflet-control-zoom){margin-top:3px}} /* a short landscape screen: the nine buttons must still fit above the scale bar */
   /* 16 px in every field: below that iOS Safari zooms the page when one is focused */
   input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea,#ai-text,.maplinks-mode{font-size:max(16px,var(--fs-body))}
 }

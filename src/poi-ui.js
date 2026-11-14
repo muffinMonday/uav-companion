@@ -659,7 +659,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     onAdd() {
       const bar = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
       const a = L.DomUtil.create('a', 'details-btn', bar);
-      a.href = '#'; a.role = 'button'; a.setAttribute('aria-label', 'Open marker details when a marker is clicked');
+      a.href = '#'; a.role = 'button'; a.dataset.tool = 'details'; a.setAttribute('aria-label', 'Open marker details when a marker is clicked');
       a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-4 3v-3H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path class="slash" d="M4 3l16 18"/></svg>';
       L.DomEvent.disableClickPropagation(bar);
       L.DomEvent.on(a, 'click', (e) => { L.DomEvent.preventDefault(e); setDetails(!detailsOn); });
@@ -674,12 +674,12 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   // two map toggles on the left, under the other buttons: Side Quests (the same setting as the POI tab switch) and trip markers
   let sideBtn = null, tripBtn = null;
   // a button with a slash across it when the thing is off (same look as the ⓘ button)
-  const ToggleControl = (icon, label, onClick, onAdded) => L.Control.extend({
+  const ToggleControl = (icon, label, onClick, onAdded, tool) => L.Control.extend({
     options: { position: 'topleft' },
     onAdd() {
       const bar = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
       const a = L.DomUtil.create('a', 'map-toggle', bar);
-      a.href = '#'; a.role = 'button'; a.setAttribute('aria-label', label);
+      a.href = '#'; a.role = 'button'; a.dataset.tool = tool; a.setAttribute('aria-label', label);
       a.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icon}"/><path class="slash" d="M4 3l16 18"/></svg>`;
       L.DomEvent.disableClickPropagation(bar);
       L.DomEvent.on(a, 'click', (e) => { L.DomEvent.preventDefault(e); onClick(); });
@@ -697,8 +697,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     tripBtn.classList.toggle('off', hideTrips); tripBtn.setAttribute('aria-pressed', String(!hideTrips));
     tripBtn.title = 'Trip markers on the map: ' + (hideTrips ? 'hidden' : 'shown') + ' (click to switch)';
   }
-  new (ToggleControl('M7 21V4M7 5h10l-2 3.5 2 3.5H7', 'Show Side Quests on the map', () => setShowAllSide(!showAllSide), (a) => { sideBtn = a; }))().addTo(map);
-  new (ToggleControl('M4 8h16v11H4zM9 8V5h6v3M4 13h16', 'Show trip markers on the map', () => setHideTrips(!hideTrips), (a) => { tripBtn = a; }))().addTo(map);
+  new (ToggleControl('M7 21V4M7 5h10l-2 3.5 2 3.5H7', 'Show Side Quests on the map', () => setShowAllSide(!showAllSide), (a) => { sideBtn = a; }, 'side-quests'))().addTo(map);
+  new (ToggleControl('M4 8h16v11H4zM9 8V5h6v3M4 13h16', 'Show trip markers on the map', () => setHideTrips(!hideTrips), (a) => { tripBtn = a; }, 'trips'))().addTo(map);
   /** Takes the trip markers off the map (and their routes and Side Quest links) or puts them back. Lists and the Trips tab are unchanged. */
   function setHideTrips(on) {
     hideTrips = on; savePrefs({ hideTrips: on ? true : null });

@@ -31,3 +31,6 @@ For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map
 
 ## Backlog: Flight Sessions Map Explorer
 - `docs/FLIGHT_SESSIONS_MAP_EXPLORER.md`: product and acceptance spec for the non-modal sessions explorer (left dock or bottom sheet beside the interactive map, card selection that centres the marker in the free map area, outlined Map / Navigate / Details actions, matching outlined buttons in marker and point-check windows). Frontend, tests and docs only; no database change. Owner authorized implementation, commit, push and `deploy:live` for this feature only (2026-11-14); status is in its "Implementation status" section and in `CURRENT_STATUS.md`.
+
+## Backlog: UX & Discoverability
+- `docs/UX_DISCOVERABILITY_BACKLOG.md`: product and acceptance spec for the expandable labelled map toolbar, optional Quick Setup orientation, once-per-feature contextual hints, and task shortcuts in the dashboard Help card. Frontend, tests and docs only; no database change. Owner authorized implementation, commit, push and `deploy:live` for this feature only (2026-11-14); status is in its "Implementation status" section and in `CURRENT_STATUS.md`.

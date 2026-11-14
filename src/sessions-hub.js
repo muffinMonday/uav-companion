@@ -19,7 +19,7 @@ const SECTIONS = [['discover', 'Discover'], ['mine', 'My sessions'], ['invites',
 const asSession = (p) => ({ ...p, status: 'scheduled', visibility: 'public', iRsvped: false, myAttended: false, canManage: false, canVerify: false, isHost: false, invited: false });
 
 /** `handle` is what initSyncUI returns (handle.adapter.client, handle.sync.status().session). Returns the hub: { open(section, opts), reload(), reset(), summary(), setNearby(on), onSummary(fn), redeemFromHash(), button }. */
-export function initSessionsHub({ handle, map, toast, panel, markers = () => [] }) {
+export function initSessionsHub({ handle, map, toast, panel, onOpen = null, markers = () => [] }) {
   const api = createSessions(handle.adapter.client);
   const signedIn = () => !!handle.sync.status().session;
   const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; } })();
@@ -475,6 +475,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
     else if (opts.id && opts.fallback) openDetail(opts.fallback);
     if (section === 'discover' || opts.id) loadPublic().then(() => { if (opts.id && !detail) { const p = pub.list.find((x) => x.id === opts.id) ?? opts.fallback; if (p) openDetail(p.status ? p : asSession(p)); } });
     dlg.querySelector('.ses-tab[aria-selected=true]')?.focus();
+    onOpen?.(tabs, opts);
   }
   function reset() { seqMine++; seqPub++; mine = mineEmpty(); nearby = null; manageOpen.clear(); people.clear(); invite.clear(); newLink = null; editing = null; reporting = null; message = ''; summaryAt = 0; clearDraft(); ex.update(); if (!dlg.open) { body.replaceChildren(); if (view !== 'list') { view = 'list'; detail = null; } } /* a hidden dialog keeps no private text */ if (dlg.open) { if (view !== 'list' && section !== 'discover') { view = 'list'; detail = null; } paint(); } summaryDone(); }
 
@@ -491,7 +492,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
     options: { position: 'topleft' },
     onAdd() {
       const b = L.DomUtil.create('div', 'leaflet-bar leaflet-control'); const a = L.DomUtil.create('a', 'sessions-btn', b);
-      a.href = '#'; a.role = 'button'; a.title = 'Flight sessions'; a.setAttribute('aria-label', 'Flight sessions: find, join or plan a session'); a.innerHTML = ICON;
+      a.href = '#'; a.role = 'button'; a.dataset.tool = 'sessions'; a.title = 'Flight sessions'; a.setAttribute('aria-label', 'Flight sessions: find, join or plan a session'); a.innerHTML = ICON;
       L.DomEvent.disableClickPropagation(b);
       L.DomEvent.on(a, 'click', (e) => { L.DomEvent.preventDefault(e); open('discover'); });
       this._a = a; return b;

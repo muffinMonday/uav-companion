@@ -26,7 +26,7 @@ export function addLocateControl(map, { onError, onNotice = onError, onFollow, r
       const bar = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
       const a = L.DomUtil.create('a', 'locate-btn', bar);
       a.href = '#';
-      a.role = 'button';
+      a.role = 'button'; a.dataset.tool = 'locate';
       L.DomUtil.create('span', 'locate-icon', a).innerHTML = ICON;
       L.DomEvent.disableClickPropagation(bar);
       L.DomEvent.on(a, 'click', (e) => { L.DomEvent.preventDefault(e); press(); });
@@ -223,7 +223,7 @@ export function addCompassControl(map, { rotation, onPress }) {
     onAdd() {
       const bar = L.DomUtil.create('div', 'leaflet-bar leaflet-control compass-bar');
       const a = L.DomUtil.create('a', 'compass-btn', bar);
-      a.href = '#'; a.role = 'button'; a.title = 'Turn the map back to north'; a.setAttribute('aria-label', 'Turn the map back to north');
+      a.href = '#'; a.role = 'button'; a.dataset.tool = 'compass'; a.title = 'Turn the map back to north'; a.setAttribute('aria-label', 'Turn the map back to north');
       a.innerHTML = COMPASS;
       bar.hidden = true;
       L.DomEvent.disableClickPropagation(bar);

@@ -31,7 +31,7 @@ export function initCrosshair(map) {
     onAdd() {
       const bar = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
       const a = L.DomUtil.create('a', 'cross-btn', bar);
-      a.href = '#'; a.role = 'button'; a.setAttribute('aria-label', 'Show a crosshair at the centre of the map');
+      a.href = '#'; a.role = 'button'; a.dataset.tool = 'crosshair'; a.setAttribute('aria-label', 'Show a crosshair at the centre of the map');
       a.innerHTML = ICON;
       L.DomEvent.disableClickPropagation(bar);
       L.DomEvent.on(a, 'click', (e) => { L.DomEvent.preventDefault(e); set(!on); });

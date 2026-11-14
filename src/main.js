@@ -16,6 +16,8 @@ import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
 import { initDashboard } from './dashboard.js';
 import { initSplash } from './splash.js';
+import { initMapToolbarHelp } from './map-toolbar-help.js';
+import { initHelp } from './help-wire.js';
 import { initCrosshair } from './crosshair.js';
 import { initPOI } from './poi-ui.js';
 import { initPrivacyUI } from './privacy-ui.js';
@@ -112,12 +114,15 @@ const cross = initCrosshair(map); // a crosshair at the centre of the map (the b
 const checkHere = () => locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ });
 const cloud = { handle: null, refresh: null }; // the optional cloud copy: filled in once its code has loaded (only when this build has a project address)
 addCompassControl(map, { rotation, onPress: () => locate.northUp() }); // after the other left-hand buttons, so their places do not move
-const dash = initDashboard({ poi, panel, trips, cloud, shared: opensShareLink, splash: !opensShareLink, actions: { checkHere, crosshair: cross } });
+const helpRef = { h: null }; // the contextual hints (help-wire.js), created just below; the toolbar reports to them
+const toolbar = initMapToolbarHelp(map, { onExpand: () => helpRef.h?.labelsOpened(), onUse: () => helpRef.h?.mapToolUsed() }); // the tag button under the others: names each map button on request
+helpRef.h = initHelp({ map, panel, sessions: () => cloud.sessions });
+const dash = initDashboard({ poi, panel, trips, cloud, shared: opensShareLink, splash: !opensShareLink, actions: { checkHere, crosshair: cross, toast, help: helpRef.h } });
 cloud.openData = () => dash.open(); // the account popover's export and import link
-const splash = initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud }); // the quick setup: greets a first visit, and "Quick setup" reopens it
+const splash = initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud, toolbar }); // the quick setup: greets a first visit, and "Quick setup" reopens it
 dash.onQuickSetup(splash.open);
 if (dash.splashFirst) splash.open();
-initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); cloud.sessions = initSessionsHub({ handle: h, map, toast, panel, markers: () => poi.store.items().filter((i) => i.type !== 'home').map((i) => ({ name: i.name, lat: i.lat, lon: i.lon })) }); cloud.sessions.onSummary(() => cloud.refresh?.()); cloud.sessions.redeemFromHash(); cloud.sessions.refresh(); initFriendsUI({ panel, handle: h, toast, cloud }); initAccountUI({ handle: h, panel, toast, cloud }); splash.refresh(); cloud.refresh?.(); } }).catch((e) => log.warn('sync', 'cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
+initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); cloud.sessions = initSessionsHub({ handle: h, map, toast, panel, onOpen: (tabs, opts) => helpRef.h.hubHint(tabs, opts), markers: () => poi.store.items().filter((i) => i.type !== 'home').map((i) => ({ name: i.name, lat: i.lat, lon: i.lon })) }); cloud.sessions.onSummary(() => cloud.refresh?.()); cloud.sessions.redeemFromHash(); cloud.sessions.refresh(); initFriendsUI({ panel, handle: h, toast, cloud }); initAccountUI({ handle: h, panel, toast, cloud }); splash.refresh(); cloud.refresh?.(); } }).catch((e) => log.warn('sync', 'cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch((e) => { log.warn('map', 'point check failed', e); toast('Point check failed. Check your connection and try again.'); });
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.

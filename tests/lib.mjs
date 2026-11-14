@@ -14,6 +14,7 @@ export const CHANNEL = process.env.BROWSER_CHANNEL || 'msedge';
 // The welcome suite uses playwright-core directly to see the real thing.
 import { chromium as real } from 'playwright-core';
 import { WHATS_NEW } from '../src/whatsnew.js';
+import { HELP } from '../src/help-content.js';
 /** The id of the newest What's new entry: what a returning visitor has already seen. Suites use it so announcing something new does not reopen the dashboard in every test. */
 export const LATEST_SEEN = WHATS_NEW[0].id;
 export const chromium = {
@@ -22,7 +23,8 @@ export const chromium = {
     const newContext = browser.newContext.bind(browser);
     browser.newContext = async (opts) => {
       const ctx = await newContext({ reducedMotion: 'reduce', ...opts }); // moving elements make timing flaky; motion.mjs asks for it back
-      await ctx.addInitScript((seen) => { try { if (localStorage.getItem('uavzones.v1.dash') === null) localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: false, welcomed: true, seen })); } catch { /* ignore */ } }, LATEST_SEEN);
+      // (the contextual hints are marked as seen too, or a hint at the top of a pane would move what the suites click on; the discover suite starts without them)
+      await ctx.addInitScript(([seen, hints]) => { try { if (localStorage.getItem('uavzones.v1.dash') === null) localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: false, welcomed: true, seen })); if (localStorage.getItem('uavzones.v1.help') === null) localStorage.setItem('uavzones.v1.help', JSON.stringify({ v: 1, seen: hints })); } catch { /* ignore */ } }, [LATEST_SEEN, HELP.map((h) => h.id)]);
       return ctx;
     };
     return browser;
