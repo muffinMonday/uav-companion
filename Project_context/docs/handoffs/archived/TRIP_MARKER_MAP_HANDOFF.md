@@ -1,6 +1,6 @@
 # Claude Handoff — Trip Marker Map Visibility and Disambiguation
 
-**Status: ACTIVE — discussion first; implementation is not yet authorized.**
+**Status: ARCHIVED 2026-11-15 — executed; see the backlog section 11 for the record.**
 
 **Prepared:** 2026-11-15
 

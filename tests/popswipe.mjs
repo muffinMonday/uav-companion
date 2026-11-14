@@ -14,6 +14,7 @@ const trips = { v: 1, trips: [{ id: 't1', name: 'Wuhan', color: '#e91e63', descr
 
 async function open(vp = { width: 390, height: 780 }, mobile = true, motion = 'reduce') {
   const ctx = await b.newContext({ viewport: vp, hasTouch: true, isMobile: mobile, reducedMotion: motion });
+  await ctx.clock.install({ time: new Date('2026-11-13T10:00:00+08:00') }); await ctx.clock.resume(); // fixtures are dated around 12 to 14 Nov 2026: completed trips are off the map from 15 Nov
   await ctx.addInitScript(([po, tr, seen]) => {
     if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
     localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po }));

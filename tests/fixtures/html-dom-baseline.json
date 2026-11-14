@@ -1,6 +1,6 @@
 {
  "description": "Corrected pre-Phase-1 index.html; freeze before extraction. Normalize CRLF to LF for the source digest.",
- "sourceSha256": "69355dd368d28d21d70da8835b8cb96422c22246c8b1c49d102bc853e9caaf7f",
+ "sourceSha256": "b0cb2c15900d35e70106cd9fb32184ed703ab6ddf952a6ca60444978a900b31a",
  "elements": [
   {
    "tag": "html",
@@ -1995,17 +1995,46 @@
    "tag": "span",
    "parent": 229,
    "attrs": {},
-   "text": "Open details when I click a marker"
+   "text": "Show completed trips on the map"
   },
   {
    "tag": "small",
    "parent": 230,
    "attrs": {},
-   "text": "off: a click only selects it and shows its links"
+   "text": "off: trips that ended before today leave the map; a trip you open in Trips still shows"
   },
   {
    "tag": "input",
    "parent": 229,
+   "attrs": {
+    "id": "poi-showcompleted",
+    "type": "checkbox"
+   },
+   "text": ""
+  },
+  {
+   "tag": "label",
+   "parent": 209,
+   "attrs": {
+    "class": "switch"
+   },
+   "text": ""
+  },
+  {
+   "tag": "span",
+   "parent": 233,
+   "attrs": {},
+   "text": "Open details when I click a marker"
+  },
+  {
+   "tag": "small",
+   "parent": 234,
+   "attrs": {},
+   "text": "off: a click only selects it and shows its links"
+  },
+  {
+   "tag": "input",
+   "parent": 233,
    "attrs": {
     "checked": "",
     "id": "poi-details",
@@ -2023,13 +2052,13 @@
   },
   {
    "tag": "h2",
-   "parent": 233,
+   "parent": 237,
    "attrs": {},
    "text": "Saved places"
   },
   {
    "tag": "span",
-   "parent": 234,
+   "parent": 238,
    "attrs": {
     "class": "count",
     "id": "poi-count"
@@ -2038,7 +2067,7 @@
   },
   {
    "tag": "div",
-   "parent": 233,
+   "parent": 237,
    "attrs": {
     "class": "search-row"
    },
@@ -2046,7 +2075,7 @@
   },
   {
    "tag": "input",
-   "parent": 236,
+   "parent": 240,
    "attrs": {
     "aria-label": "Search saved places",
     "autocomplete": "off",
@@ -2060,7 +2089,7 @@
   },
   {
    "tag": "button",
-   "parent": 236,
+   "parent": 240,
    "attrs": {
     "class": "btn small",
     "hidden": "",
@@ -2071,7 +2100,7 @@
   },
   {
    "tag": "p",
-   "parent": 233,
+   "parent": 237,
    "attrs": {
     "class": "hint search-count",
     "hidden": "",
@@ -2082,7 +2111,7 @@
   },
   {
    "tag": "label",
-   "parent": 233,
+   "parent": 237,
    "attrs": {
     "class": "field",
     "hidden": "",
@@ -2092,13 +2121,13 @@
   },
   {
    "tag": "span",
-   "parent": 240,
+   "parent": 244,
    "attrs": {},
    "text": "Trip"
   },
   {
    "tag": "select",
-   "parent": 240,
+   "parent": 244,
    "attrs": {
     "id": "poi-trip-filter"
    },
@@ -2106,7 +2135,7 @@
   },
   {
    "tag": "div",
-   "parent": 233,
+   "parent": 237,
    "attrs": {
     "aria-label": "Filter by type",
     "class": "chips",
@@ -2117,7 +2146,7 @@
   },
   {
    "tag": "div",
-   "parent": 233,
+   "parent": 237,
    "attrs": {
     "class": "btn-row",
     "hidden": "",
@@ -2127,7 +2156,7 @@
   },
   {
    "tag": "button",
-   "parent": 244,
+   "parent": 248,
    "attrs": {
     "class": "btn small",
     "id": "poi-select",
@@ -2137,7 +2166,7 @@
   },
   {
    "tag": "div",
-   "parent": 233,
+   "parent": 237,
    "attrs": {
     "class": "select-bar",
     "hidden": "",
@@ -2147,7 +2176,7 @@
   },
   {
    "tag": "div",
-   "parent": 246,
+   "parent": 250,
    "attrs": {
     "class": "btn-row"
    },
@@ -2155,7 +2184,7 @@
   },
   {
    "tag": "button",
-   "parent": 247,
+   "parent": 251,
    "attrs": {
     "class": "btn small",
     "id": "sel-all",
@@ -2165,7 +2194,7 @@
   },
   {
    "tag": "button",
-   "parent": 247,
+   "parent": 251,
    "attrs": {
     "class": "btn small",
     "id": "sel-none",
@@ -2175,7 +2204,7 @@
   },
   {
    "tag": "div",
-   "parent": 246,
+   "parent": 250,
    "attrs": {
     "class": "two"
    },
@@ -2183,7 +2212,7 @@
   },
   {
    "tag": "label",
-   "parent": 250,
+   "parent": 254,
    "attrs": {
     "class": "field"
    },
@@ -2191,13 +2220,13 @@
   },
   {
    "tag": "span",
-   "parent": 251,
+   "parent": 255,
    "attrs": {},
    "text": "Add a trip"
   },
   {
    "tag": "select",
-   "parent": 251,
+   "parent": 255,
    "attrs": {
     "id": "sel-trip"
    },
@@ -2205,7 +2234,7 @@
   },
   {
    "tag": "label",
-   "parent": 250,
+   "parent": 254,
    "attrs": {
     "class": "field"
    },
@@ -2213,13 +2242,13 @@
   },
   {
    "tag": "span",
-   "parent": 254,
+   "parent": 258,
    "attrs": {},
    "text": "Add a type"
   },
   {
    "tag": "select",
-   "parent": 254,
+   "parent": 258,
    "attrs": {
     "id": "sel-type"
    },
@@ -2227,7 +2256,7 @@
   },
   {
    "tag": "div",
-   "parent": 246,
+   "parent": 250,
    "attrs": {
     "class": "btn-row"
    },
@@ -2235,7 +2264,7 @@
   },
   {
    "tag": "button",
-   "parent": 257,
+   "parent": 261,
    "attrs": {
     "class": "btn small",
     "disabled": "",
@@ -2246,7 +2275,7 @@
   },
   {
    "tag": "button",
-   "parent": 257,
+   "parent": 261,
    "attrs": {
     "class": "btn small",
     "disabled": "",
@@ -2257,7 +2286,7 @@
   },
   {
    "tag": "div",
-   "parent": 246,
+   "parent": 250,
    "attrs": {
     "class": "btn-row"
    },
@@ -2265,7 +2294,7 @@
   },
   {
    "tag": "button",
-   "parent": 260,
+   "parent": 264,
    "attrs": {
     "class": "btn small danger",
     "disabled": "",
@@ -2276,7 +2305,7 @@
   },
   {
    "tag": "button",
-   "parent": 260,
+   "parent": 264,
    "attrs": {
     "class": "btn small",
     "id": "sel-done",
@@ -2286,7 +2315,7 @@
   },
   {
    "tag": "div",
-   "parent": 246,
+   "parent": 250,
    "attrs": {
     "aria-labelledby": "sel-confirm-text",
     "class": "sel-confirm",
@@ -2298,7 +2327,7 @@
   },
   {
    "tag": "p",
-   "parent": 263,
+   "parent": 267,
    "attrs": {
     "id": "sel-confirm-text"
    },
@@ -2306,7 +2335,7 @@
   },
   {
    "tag": "div",
-   "parent": 263,
+   "parent": 267,
    "attrs": {
     "class": "btn-row"
    },
@@ -2314,7 +2343,7 @@
   },
   {
    "tag": "button",
-   "parent": 265,
+   "parent": 269,
    "attrs": {
     "class": "btn small",
     "id": "sel-export",
@@ -2324,7 +2353,7 @@
   },
   {
    "tag": "button",
-   "parent": 265,
+   "parent": 269,
    "attrs": {
     "class": "btn small",
     "id": "sel-cancel",
@@ -2334,7 +2363,7 @@
   },
   {
    "tag": "button",
-   "parent": 265,
+   "parent": 269,
    "attrs": {
     "class": "btn small danger",
     "id": "sel-confirm-delete",
@@ -2344,7 +2373,7 @@
   },
   {
    "tag": "ul",
-   "parent": 233,
+   "parent": 237,
    "attrs": {
     "class": "poi-list",
     "id": "poi-list"
@@ -2353,7 +2382,7 @@
   },
   {
    "tag": "p",
-   "parent": 233,
+   "parent": 237,
    "attrs": {
     "class": "hint",
     "hidden": "",
@@ -2363,7 +2392,7 @@
   },
   {
    "tag": "p",
-   "parent": 233,
+   "parent": 237,
    "attrs": {
     "class": "hint",
     "id": "poi-empty"
@@ -2384,7 +2413,7 @@
   },
   {
    "tag": "header",
-   "parent": 272,
+   "parent": 276,
    "attrs": {
     "class": "sp-head"
    },
@@ -2392,48 +2421,11 @@
   },
   {
    "tag": "button",
-   "parent": 273,
+   "parent": 277,
    "attrs": {
     "aria-label": "Back to the panel",
     "class": "icon-btn",
     "id": "privacy-back",
-    "type": "button"
-   },
-   "text": ""
-  },
-  {
-   "tag": "svg",
-   "parent": 274,
-   "attrs": {
-    "aria-hidden": "true",
-    "viewBox": "0 0 24 24"
-   },
-   "text": ""
-  },
-  {
-   "tag": "path",
-   "parent": 275,
-   "attrs": {
-    "d": "M15 6l-6 6 6 6"
-   },
-   "text": ""
-  },
-  {
-   "tag": "h2",
-   "parent": 273,
-   "attrs": {
-    "class": "sub-title"
-   },
-   "text": "Privacy settings"
-  },
-  {
-   "tag": "button",
-   "parent": 273,
-   "attrs": {
-    "aria-label": "Collapse the panel",
-    "class": "icon-btn",
-    "id": "privacy-close",
-    "title": "Collapse the panel",
     "type": "button"
    },
    "text": ""
@@ -2451,13 +2443,50 @@
    "tag": "path",
    "parent": 279,
    "attrs": {
+    "d": "M15 6l-6 6 6 6"
+   },
+   "text": ""
+  },
+  {
+   "tag": "h2",
+   "parent": 277,
+   "attrs": {
+    "class": "sub-title"
+   },
+   "text": "Privacy settings"
+  },
+  {
+   "tag": "button",
+   "parent": 277,
+   "attrs": {
+    "aria-label": "Collapse the panel",
+    "class": "icon-btn",
+    "id": "privacy-close",
+    "title": "Collapse the panel",
+    "type": "button"
+   },
+   "text": ""
+  },
+  {
+   "tag": "svg",
+   "parent": 282,
+   "attrs": {
+    "aria-hidden": "true",
+    "viewBox": "0 0 24 24"
+   },
+   "text": ""
+  },
+  {
+   "tag": "path",
+   "parent": 283,
+   "attrs": {
     "d": "M9 6l6 6-6 6"
    },
    "text": ""
   },
   {
    "tag": "div",
-   "parent": 272,
+   "parent": 276,
    "attrs": {
     "class": "sp-body"
    },
@@ -2465,7 +2494,7 @@
   },
   {
    "tag": "p",
-   "parent": 281,
+   "parent": 285,
    "attrs": {
     "class": "lead"
    },
@@ -2473,7 +2502,7 @@
   },
   {
    "tag": "div",
-   "parent": 281,
+   "parent": 285,
    "attrs": {
     "class": "card"
    },
@@ -2481,13 +2510,13 @@
   },
   {
    "tag": "h2",
-   "parent": 283,
+   "parent": 287,
    "attrs": {},
    "text": "Weather"
   },
   {
    "tag": "p",
-   "parent": 283,
+   "parent": 287,
    "attrs": {
     "class": "hint",
     "id": "pv-mw-status"
@@ -2496,7 +2525,7 @@
   },
   {
    "tag": "label",
-   "parent": 283,
+   "parent": 287,
    "attrs": {
     "class": "switch"
    },
@@ -2504,19 +2533,19 @@
   },
   {
    "tag": "span",
-   "parent": 286,
+   "parent": 290,
    "attrs": {},
    "text": "Fetch weather for markers automatically"
   },
   {
    "tag": "small",
-   "parent": 287,
+   "parent": 291,
    "attrs": {},
    "text": "Shows the next 5 hours in each marker window. Sent when you place a marker and when the page loads (at most every 30 minutes)."
   },
   {
    "tag": "input",
-   "parent": 286,
+   "parent": 290,
    "attrs": {
     "id": "pv-auto",
     "type": "checkbox"
@@ -2525,7 +2554,7 @@
   },
   {
    "tag": "fieldset",
-   "parent": 283,
+   "parent": 287,
    "attrs": {
     "class": "radios"
    },
@@ -2533,13 +2562,13 @@
   },
   {
    "tag": "legend",
-   "parent": 290,
+   "parent": 294,
    "attrs": {},
    "text": "Location sent for weather"
   },
   {
    "tag": "label",
-   "parent": 290,
+   "parent": 294,
    "attrs": {
     "class": "radio"
    },
@@ -2547,7 +2576,7 @@
   },
   {
    "tag": "input",
-   "parent": 292,
+   "parent": 296,
    "attrs": {
     "name": "pv-prec",
     "type": "radio",
@@ -2557,19 +2586,19 @@
   },
   {
    "tag": "span",
-   "parent": 292,
+   "parent": 296,
    "attrs": {},
    "text": "Estimated"
   },
   {
    "tag": "small",
-   "parent": 294,
+   "parent": 298,
    "attrs": {},
    "text": "Rounded to about 1 km. The forecast is the same, because its grid is 10 to 25 km. Recommended."
   },
   {
    "tag": "label",
-   "parent": 290,
+   "parent": 294,
    "attrs": {
     "class": "radio"
    },
@@ -2577,7 +2606,7 @@
   },
   {
    "tag": "input",
-   "parent": 296,
+   "parent": 300,
    "attrs": {
     "name": "pv-prec",
     "type": "radio",
@@ -2587,19 +2616,19 @@
   },
   {
    "tag": "span",
-   "parent": 296,
+   "parent": 300,
    "attrs": {},
    "text": "Precise"
   },
   {
    "tag": "small",
-   "parent": 298,
+   "parent": 302,
    "attrs": {},
    "text": "About 10 m. Shares the exact spot for no gain in forecast accuracy."
   },
   {
    "tag": "p",
-   "parent": 283,
+   "parent": 287,
    "attrs": {
     "class": "hint"
    },
@@ -2607,7 +2636,7 @@
   },
   {
    "tag": "div",
-   "parent": 281,
+   "parent": 285,
    "attrs": {
     "class": "card"
    },
@@ -2615,13 +2644,13 @@
   },
   {
    "tag": "h2",
-   "parent": 301,
+   "parent": 305,
    "attrs": {},
    "text": "Altitude"
   },
   {
    "tag": "label",
-   "parent": 301,
+   "parent": 305,
    "attrs": {
     "class": "switch"
    },
@@ -2629,19 +2658,19 @@
   },
   {
    "tag": "span",
-   "parent": 303,
+   "parent": 307,
    "attrs": {},
    "text": "Fetch ground elevation"
   },
   {
    "tag": "small",
-   "parent": 304,
+   "parent": 308,
    "attrs": {},
    "text": "Shown in marker windows and when you check a point. Always sends the exact location (about 10 m), whatever the weather setting: at 1 km the ground can differ by hundreds of metres in the mountains."
   },
   {
    "tag": "input",
-   "parent": 303,
+   "parent": 307,
    "attrs": {
     "id": "pv-alt",
     "type": "checkbox"
@@ -2650,7 +2679,7 @@
   },
   {
    "tag": "div",
-   "parent": 281,
+   "parent": 285,
    "attrs": {
     "class": "card"
    },
@@ -2658,13 +2687,13 @@
   },
   {
    "tag": "h2",
-   "parent": 307,
+   "parent": 311,
    "attrs": {},
    "text": "Place lookup"
   },
   {
    "tag": "label",
-   "parent": 307,
+   "parent": 311,
    "attrs": {
     "class": "switch"
    },
@@ -2672,19 +2701,19 @@
   },
   {
    "tag": "span",
-   "parent": 309,
+   "parent": 313,
    "attrs": {},
    "text": "Look up places by name when importing"
   },
   {
    "tag": "small",
-   "parent": 310,
+   "parent": 314,
    "attrs": {},
    "text": "For itineraries from an AI: a place that came without coordinates is searched by its name or address. Those names are sent to Photon (Komoot), or Nominatim (OpenStreetMap) if Photon fails, only when you press Add on an import. Looked-up places are marked unverified."
   },
   {
    "tag": "input",
-   "parent": 309,
+   "parent": 313,
    "attrs": {
     "id": "pv-geo",
     "type": "checkbox"
@@ -2693,7 +2722,7 @@
   },
   {
    "tag": "div",
-   "parent": 281,
+   "parent": 285,
    "attrs": {
     "class": "card"
    },
@@ -2701,13 +2730,13 @@
   },
   {
    "tag": "h2",
-   "parent": 313,
+   "parent": 317,
    "attrs": {},
    "text": "Location at launch"
   },
   {
    "tag": "label",
-   "parent": 313,
+   "parent": 317,
    "attrs": {
     "class": "switch"
    },
@@ -2715,19 +2744,19 @@
   },
   {
    "tag": "span",
-   "parent": 315,
+   "parent": 319,
    "attrs": {},
    "text": "Centre the map on me when the app opens"
   },
   {
    "tag": "small",
-   "parent": 316,
+   "parent": 320,
    "attrs": {},
    "text": "The browser asks for your location when the app opens. If you allow it for this site, the map opens on where you are; if you do not, it opens where you left off. Your position is only used on this device and is never sent anywhere."
   },
   {
    "tag": "input",
-   "parent": 315,
+   "parent": 319,
    "attrs": {
     "id": "pv-locate",
     "type": "checkbox"
@@ -2736,7 +2765,7 @@
   },
   {
    "tag": "div",
-   "parent": 281,
+   "parent": 285,
    "attrs": {
     "class": "card"
    },
@@ -2744,13 +2773,13 @@
   },
   {
    "tag": "h2",
-   "parent": 319,
+   "parent": 323,
    "attrs": {},
    "text": "Share my location automatically"
   },
   {
    "tag": "label",
-   "parent": 319,
+   "parent": 323,
    "attrs": {
     "class": "switch"
    },
@@ -2758,19 +2787,19 @@
   },
   {
    "tag": "span",
-   "parent": 321,
+   "parent": 325,
    "attrs": {},
    "text": "Start sharing by itself"
   },
   {
    "tag": "small",
-   "parent": 322,
+   "parent": 326,
    "attrs": {},
    "text": "When you are signed in and someone in a trip's party, or a friend, is online, your location is shared with them without switching anything on, only while this page is open. Nothing is sent otherwise. The Stop button on the map ends it, and a switch you turn off by hand stays off until you turn it on again. Off: sharing starts only when you switch it on."
   },
   {
    "tag": "input",
-   "parent": 321,
+   "parent": 325,
    "attrs": {
     "id": "pv-autoshare",
     "type": "checkbox"
@@ -2779,7 +2808,7 @@
   },
   {
    "tag": "label",
-   "parent": 319,
+   "parent": 323,
    "attrs": {
     "class": "switch"
    },
@@ -2787,19 +2816,19 @@
   },
   {
    "tag": "span",
-   "parent": 325,
+   "parent": 329,
    "attrs": {},
    "text": "Include friends"
   },
   {
    "tag": "small",
-   "parent": 326,
+   "parent": 330,
    "attrs": {},
    "text": "Friends who are online see you on their map, marked as a friend. Off: only trip parties are included."
   },
   {
    "tag": "input",
-   "parent": 325,
+   "parent": 329,
    "attrs": {
     "id": "pv-autoshare-friends",
     "type": "checkbox"
@@ -2808,7 +2837,7 @@
   },
   {
    "tag": "div",
-   "parent": 281,
+   "parent": 285,
    "attrs": {
     "class": "card"
    },
@@ -2816,13 +2845,13 @@
   },
   {
    "tag": "h2",
-   "parent": 329,
+   "parent": 333,
    "attrs": {},
    "text": "Check-in"
   },
   {
    "tag": "label",
-   "parent": 329,
+   "parent": 333,
    "attrs": {
     "class": "switch"
    },
@@ -2830,19 +2859,19 @@
   },
   {
    "tag": "span",
-   "parent": 331,
+   "parent": 335,
    "attrs": {},
    "text": "Check in at markers"
   },
   {
    "tag": "small",
-   "parent": 332,
+   "parent": 336,
    "attrs": {},
    "text": "Uses your position to enable a Check in button on a marker when you are within 300 m of it. Your position is read only while the panel shows markers and is never sent anywhere. A check-in saves your coordinates and the time with the marker, in this browser."
   },
   {
    "tag": "input",
-   "parent": 331,
+   "parent": 335,
    "attrs": {
     "id": "pv-checkin",
     "type": "checkbox"
@@ -2851,7 +2880,7 @@
   },
   {
    "tag": "div",
-   "parent": 281,
+   "parent": 285,
    "attrs": {
     "class": "card",
     "id": "dist-card"
@@ -2860,13 +2889,13 @@
   },
   {
    "tag": "h2",
-   "parent": 335,
+   "parent": 339,
    "attrs": {},
    "text": "Distances"
   },
   {
    "tag": "label",
-   "parent": 335,
+   "parent": 339,
    "attrs": {
     "class": "field"
    },
@@ -2874,13 +2903,13 @@
   },
   {
    "tag": "span",
-   "parent": 337,
+   "parent": 341,
    "attrs": {},
    "text": "Units"
   },
   {
    "tag": "select",
-   "parent": 337,
+   "parent": 341,
    "attrs": {
     "id": "dist-units"
    },
@@ -2888,7 +2917,7 @@
   },
   {
    "tag": "option",
-   "parent": 339,
+   "parent": 343,
    "attrs": {
     "value": "metric"
    },
@@ -2896,7 +2925,7 @@
   },
   {
    "tag": "option",
-   "parent": 339,
+   "parent": 343,
    "attrs": {
     "value": "imperial"
    },
@@ -2904,7 +2933,7 @@
   },
   {
    "tag": "label",
-   "parent": 335,
+   "parent": 339,
    "attrs": {
     "class": "field"
    },
@@ -2912,19 +2941,19 @@
   },
   {
    "tag": "span",
-   "parent": 342,
+   "parent": 346,
    "attrs": {},
    "text": "Max range"
   },
   {
    "tag": "small",
-   "parent": 343,
+   "parent": 347,
    "attrs": {},
    "text": "(optional)"
   },
   {
    "tag": "span",
-   "parent": 342,
+   "parent": 346,
    "attrs": {
     "class": "inline-input"
    },
@@ -2932,7 +2961,7 @@
   },
   {
    "tag": "input",
-   "parent": 345,
+   "parent": 349,
    "attrs": {
     "id": "dist-max",
     "inputmode": "decimal",
@@ -2945,7 +2974,7 @@
   },
   {
    "tag": "span",
-   "parent": 345,
+   "parent": 349,
    "attrs": {
     "id": "dist-max-unit"
    },
@@ -2953,7 +2982,7 @@
   },
   {
    "tag": "p",
-   "parent": 335,
+   "parent": 339,
    "attrs": {
     "class": "hint"
    },
@@ -2961,7 +2990,7 @@
   },
   {
    "tag": "div",
-   "parent": 281,
+   "parent": 285,
    "attrs": {
     "class": "card",
     "id": "diag-card"
@@ -2970,13 +2999,13 @@
   },
   {
    "tag": "h2",
-   "parent": 349,
+   "parent": 353,
    "attrs": {},
    "text": "Diagnostics"
   },
   {
    "tag": "p",
-   "parent": 349,
+   "parent": 353,
    "attrs": {
     "class": "hint"
    },
@@ -2984,7 +3013,7 @@
   },
   {
    "tag": "p",
-   "parent": 349,
+   "parent": 353,
    "attrs": {
     "aria-live": "polite",
     "class": "hint",
@@ -2994,7 +3023,7 @@
   },
   {
    "tag": "div",
-   "parent": 349,
+   "parent": 353,
    "attrs": {
     "class": "btn-row"
    },
@@ -3002,7 +3031,7 @@
   },
   {
    "tag": "button",
-   "parent": 353,
+   "parent": 357,
    "attrs": {
     "class": "btn small",
     "disabled": "",
@@ -3013,7 +3042,7 @@
   },
   {
    "tag": "button",
-   "parent": 353,
+   "parent": 357,
    "attrs": {
     "class": "btn small",
     "disabled": "",
@@ -3024,7 +3053,7 @@
   },
   {
    "tag": "div",
-   "parent": 281,
+   "parent": 285,
    "attrs": {
     "class": "card"
    },
@@ -3032,13 +3061,13 @@
   },
   {
    "tag": "h2",
-   "parent": 356,
+   "parent": 360,
    "attrs": {},
    "text": "What leaves your browser"
   },
   {
    "tag": "ul",
-   "parent": 356,
+   "parent": 360,
    "attrs": {
     "class": "plain"
    },
@@ -3046,61 +3075,61 @@
   },
   {
    "tag": "li",
-   "parent": 358,
+   "parent": 362,
    "attrs": {},
    "text": "the basemap you pick is loaded from OpenStreetMap, OpenStreetMap France (the Humanitarian and CyclOSM styles) or OpenTopoMap, which see which area you view."
   },
   {
    "tag": "b",
-   "parent": 359,
+   "parent": 363,
    "attrs": {},
    "text": "Map tiles:"
   },
   {
    "tag": "li",
-   "parent": 358,
+   "parent": 362,
    "attrs": {},
    "text": "online search sends your query to Photon or Nominatim, only when you search. Name lookup on import does the same with the names in the import, only if you turn it on above."
   },
   {
    "tag": "b",
-   "parent": 361,
+   "parent": 365,
    "attrs": {},
    "text": "Place search and lookup:"
   },
   {
    "tag": "li",
-   "parent": 358,
+   "parent": 362,
    "attrs": {},
    "text": "your position is read by the browser only while check-in is on and the panel shows markers. It is saved with the marker in this browser, included in an export, and left out of share links."
   },
   {
    "tag": "b",
-   "parent": 363,
+   "parent": 367,
    "attrs": {},
    "text": "Check-in:"
   },
   {
    "tag": "li",
-   "parent": 358,
+   "parent": 362,
    "attrs": {},
    "text": "Open-Meteo.com, only as set above."
   },
   {
    "tag": "b",
-   "parent": 365,
+   "parent": 369,
    "attrs": {},
    "text": "Weather and elevation:"
   },
   {
    "tag": "li",
-   "parent": 358,
+   "parent": 362,
    "attrs": {},
    "text": "marker names and notes, your saved markers, the wind limit, and these settings. Your location is read by the browser when you press the location button and, unless you turn it off above, once when the app opens; it stays on this device."
   },
   {
    "tag": "b",
-   "parent": 367,
+   "parent": 371,
    "attrs": {},
    "text": "Never sent:"
   },
@@ -3115,7 +3144,7 @@
   },
   {
    "tag": "div",
-   "parent": 369,
+   "parent": 373,
    "attrs": {
     "class": "hint",
     "id": "regions-note"
@@ -3124,7 +3153,7 @@
   },
   {
    "tag": "div",
-   "parent": 369,
+   "parent": 373,
    "attrs": {
     "class": "legend",
     "id": "legend"
@@ -3142,7 +3171,7 @@
   },
   {
    "tag": "button",
-   "parent": 372,
+   "parent": 376,
    "attrs": {
     "class": "btn",
     "id": "poi-export",
@@ -3152,7 +3181,7 @@
   },
   {
    "tag": "button",
-   "parent": 372,
+   "parent": 376,
    "attrs": {
     "class": "btn",
     "id": "poi-import",
@@ -3162,7 +3191,7 @@
   },
   {
    "tag": "button",
-   "parent": 372,
+   "parent": 376,
    "attrs": {
     "class": "btn",
     "id": "poi-share",
@@ -3173,7 +3202,7 @@
   },
   {
    "tag": "input",
-   "parent": 372,
+   "parent": 376,
    "attrs": {
     "accept": ".geojson,.json,application/geo+json,application/json",
     "hidden": "",
@@ -3184,7 +3213,7 @@
   },
   {
    "tag": "p",
-   "parent": 372,
+   "parent": 376,
    "attrs": {
     "class": "hint",
     "id": "poi-note"
@@ -3215,7 +3244,7 @@
   },
   {
    "tag": "span",
-   "parent": 379,
+   "parent": 383,
    "attrs": {
     "id": "banner-text"
    },
@@ -3223,7 +3252,7 @@
   },
   {
    "tag": "button",
-   "parent": 379,
+   "parent": 383,
    "attrs": {
     "class": "btn small",
     "hidden": "",
@@ -3234,7 +3263,7 @@
   },
   {
    "tag": "button",
-   "parent": 379,
+   "parent": 383,
    "attrs": {
     "class": "btn small",
     "id": "banner-action",
@@ -3256,7 +3285,7 @@
   },
   {
    "tag": "header",
-   "parent": 383,
+   "parent": 387,
    "attrs": {
     "class": "dash-head"
    },
@@ -3264,13 +3293,13 @@
   },
   {
    "tag": "h2",
-   "parent": 384,
+   "parent": 388,
    "attrs": {},
    "text": "Dashboard"
   },
   {
    "tag": "div",
-   "parent": 384,
+   "parent": 388,
    "attrs": {
     "class": "dash-tools"
    },
@@ -3278,53 +3307,13 @@
   },
   {
    "tag": "button",
-   "parent": 386,
+   "parent": 390,
    "attrs": {
     "aria-label": "How it works",
     "aria-pressed": "false",
     "class": "icon-btn",
     "id": "dash-help",
     "title": "How it works",
-    "type": "button"
-   },
-   "text": ""
-  },
-  {
-   "tag": "svg",
-   "parent": 387,
-   "attrs": {
-    "aria-hidden": "true",
-    "viewBox": "0 0 24 24"
-   },
-   "text": ""
-  },
-  {
-   "tag": "circle",
-   "parent": 388,
-   "attrs": {
-    "cx": "12",
-    "cy": "12",
-    "r": "9"
-   },
-   "text": ""
-  },
-  {
-   "tag": "path",
-   "parent": 388,
-   "attrs": {
-    "d": "M9.6 9.4a2.5 2.5 0 114 2c-.9.6-1.6 1.1-1.6 2.2M12 16.8v.1"
-   },
-   "text": ""
-  },
-  {
-   "tag": "button",
-   "parent": 386,
-   "attrs": {
-    "aria-label": "Expand the dashboard",
-    "aria-pressed": "false",
-    "class": "icon-btn dash-expand",
-    "id": "dash-expand",
-    "title": "Expand the dashboard",
     "type": "button"
    },
    "text": ""
@@ -3339,8 +3328,48 @@
    "text": ""
   },
   {
+   "tag": "circle",
+   "parent": 392,
+   "attrs": {
+    "cx": "12",
+    "cy": "12",
+    "r": "9"
+   },
+   "text": ""
+  },
+  {
    "tag": "path",
    "parent": 392,
+   "attrs": {
+    "d": "M9.6 9.4a2.5 2.5 0 114 2c-.9.6-1.6 1.1-1.6 2.2M12 16.8v.1"
+   },
+   "text": ""
+  },
+  {
+   "tag": "button",
+   "parent": 390,
+   "attrs": {
+    "aria-label": "Expand the dashboard",
+    "aria-pressed": "false",
+    "class": "icon-btn dash-expand",
+    "id": "dash-expand",
+    "title": "Expand the dashboard",
+    "type": "button"
+   },
+   "text": ""
+  },
+  {
+   "tag": "svg",
+   "parent": 395,
+   "attrs": {
+    "aria-hidden": "true",
+    "viewBox": "0 0 24 24"
+   },
+   "text": ""
+  },
+  {
+   "tag": "path",
+   "parent": 396,
    "attrs": {
     "d": "M7 11l5-5 5 5M7 18l5-5 5 5"
    },
@@ -3348,7 +3377,7 @@
   },
   {
    "tag": "button",
-   "parent": 386,
+   "parent": 390,
    "attrs": {
     "aria-label": "Collapse the dashboard",
     "class": "icon-btn",
@@ -3360,7 +3389,7 @@
   },
   {
    "tag": "svg",
-   "parent": 394,
+   "parent": 398,
    "attrs": {
     "aria-hidden": "true",
     "viewBox": "0 0 24 24"
@@ -3369,7 +3398,7 @@
   },
   {
    "tag": "path",
-   "parent": 395,
+   "parent": 399,
    "attrs": {
     "d": "M6 9l6 6 6-6"
    },
@@ -3377,7 +3406,7 @@
   },
   {
    "tag": "button",
-   "parent": 386,
+   "parent": 390,
    "attrs": {
     "aria-label": "Close the dashboard",
     "class": "icon-btn",
@@ -3389,7 +3418,7 @@
   },
   {
    "tag": "svg",
-   "parent": 397,
+   "parent": 401,
    "attrs": {
     "aria-hidden": "true",
     "viewBox": "0 0 24 24"
@@ -3398,7 +3427,7 @@
   },
   {
    "tag": "path",
-   "parent": 398,
+   "parent": 402,
    "attrs": {
     "d": "M6 6l12 12M18 6L6 18"
    },
@@ -3406,7 +3435,7 @@
   },
   {
    "tag": "div",
-   "parent": 383,
+   "parent": 387,
    "attrs": {
     "class": "dash-body",
     "id": "dash-body"
@@ -3415,7 +3444,7 @@
   },
   {
    "tag": "footer",
-   "parent": 383,
+   "parent": 387,
    "attrs": {
     "class": "dash-foot"
    },
@@ -3423,7 +3452,7 @@
   },
   {
    "tag": "small",
-   "parent": 401,
+   "parent": 405,
    "attrs": {
     "class": "dash-reminder"
    },
@@ -3431,7 +3460,7 @@
   },
   {
    "tag": "button",
-   "parent": 401,
+   "parent": 405,
    "attrs": {
     "class": "btn small",
     "id": "dash-snooze",
@@ -3453,7 +3482,7 @@
   },
   {
    "tag": "svg",
-   "parent": 404,
+   "parent": 408,
    "attrs": {
     "aria-hidden": "true",
     "viewBox": "0 0 24 24"
@@ -3462,7 +3491,7 @@
   },
   {
    "tag": "path",
-   "parent": 405,
+   "parent": 409,
    "attrs": {
     "d": "M6 15l6-6 6 6"
    },
@@ -3470,7 +3499,7 @@
   },
   {
    "tag": "span",
-   "parent": 404,
+   "parent": 408,
    "attrs": {
     "id": "dash-peek-text"
    },
@@ -3491,7 +3520,7 @@
   },
   {
    "tag": "svg",
-   "parent": 408,
+   "parent": 412,
    "attrs": {
     "aria-hidden": "true",
     "viewBox": "0 0 24 24"
@@ -3500,7 +3529,7 @@
   },
   {
    "tag": "path",
-   "parent": 409,
+   "parent": 413,
    "attrs": {
     "d": "M6 15l6-6 6 6"
    },

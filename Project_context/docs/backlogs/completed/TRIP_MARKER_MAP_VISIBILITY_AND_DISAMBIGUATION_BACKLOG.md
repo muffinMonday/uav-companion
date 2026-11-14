@@ -1,14 +1,16 @@
 # Trip Marker Map Visibility and Disambiguation
 
-**Status: FOR REVIEW — discussion and owner decisions required.**
+**Status: IMPLEMENTED, tested; release evidence in section 11.** (2026-11-15; was FOR REVIEW the same day.)
+
+**Status history:** 2026-11-15 for-review -> reviewed against HEAD `3aec1e3` -> owner approved D1 to D5 and authorized autonomous commit, push and deploy:live for this backlog only -> in-progress.
 
 **Prepared:** 2026-11-15
 
-**Related handoff:** [`docs/handoffs/active/TRIP_MARKER_MAP_HANDOFF.md`](../../handoffs/active/TRIP_MARKER_MAP_HANDOFF.md)
+**Related handoff:** [`docs/handoffs/archived/TRIP_MARKER_MAP_HANDOFF.md`](../../handoffs/archived/TRIP_MARKER_MAP_HANDOFF.md)
 
 **Scope:** frontend behavior, UI, accessibility, tests and documentation only. No database schema, RLS, Supabase RPC, marker storage format or shared-trip protocol change is proposed.
 
-**Execution authorization:** not granted by this document. Claude must discuss unresolved choices with the owner before editing code. Commit, push and deployment require separate explicit authorization.
+**Execution authorization:** granted by the owner on 2026-11-15 for this backlog only (commit, push, `deploy:live`). Original text: not granted by this document. Claude must discuss unresolved choices with the owner before editing code. Commit, push and deployment require separate explicit authorization.
 
 ## 1. Problem statement
 
@@ -334,3 +336,15 @@ If approved and implemented:
 - No new tooltip framework.
 - No new map toolbar button unless current controls cannot support the approved behavior.
 - No automatic commit, push or production deployment authorization.
+
+## 11. Review outcome, decisions and implementation record (2026-11-15)
+
+**Owner decisions (approved):** D1 `Show markers` becomes the toggle `Show this trip` / `Showing this trip`, stays on the Trips tab, toast `Showing only <trip>` with `Show all`. D2 the view clears when the Trips tab is left (any tab), not when the panel closes. D3/D4 completed trips are off the global map by default; switch `Show completed trips` in the Points of Interest tab (default off, `showCompleted` in `uavzones.v1.prefs`). D5 no new Upcoming/Active badge (the card countdown already says it).
+
+**Corrections to sections above found in review:** the popup already shows the trip name (`.pop-trip`); `Show markers` was a POI list filter that opened the POI tab (`showTrip`, removed); a start-only trip counts as a one-day trip (`tripPhase` follows `tripStatus`/`isPastTrip`, not "no complete range = undated"); precedence is view > `hideTrips` > `tripHidden` > completed; Home is always drawn; Unassigned is hidden during a view; the tooltip `title` stays the marker name (changing it broke many suites), the accessible name is `aria-label` = name, trip.
+
+**Built:** `trips.js` `tripPhase`; `poi-model.js` `mapHiddenReason`, `markerLabel` (pure); `prefs.js` `showCompleted`; `poi-ui.js` `tripViewId` (page state), `setTripView`, `syncPins` (also run on every store change, so re-tagging a marker now adds or removes its pin), routes follow `tripDrawn`, `restrictionOf` branches (view, completed), `flyToItem` switches the view for a marker named from another trip, trips map button clears the view, name tag with trip line, `aria-label`; `trips-ui.js` toggle on card and detail; `poi-panel.html` switch; `styles.css` (name tag anchored by its bottom edge so a second line cannot cover the `.seq` badge; pressed state).
+
+**Tests:** new browser suite `tripview` (40 checks); unit additions in `trips-unit`, `poi-model-unit`, `visibility-unit`; `html-dom-baseline.json` regenerated (one new switch); clock pinned to 2026-11-13 in `days`, `visits`, `popswipe`, `hierarchy`, `visibility` (their fixtures end 2026-11-14). Full `npm test`: 126 of 126 suites pass (657 s); build passes.
+
+**Residual risks / not verified:** real phone, Safari, screen reader (the `aria-label` is set and tested as an attribute, not read by a screen reader), 200% zoom; no screenshot baseline comparison was run; same-name trips with the same colour are not told apart in text; a tab left open past midnight keeps its old completed set until the next change or reload; existing users see completed trips leave the map on first load (switch in the Points of Interest tab).

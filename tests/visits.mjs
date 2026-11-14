@@ -26,6 +26,7 @@ function respond(url) {
 const b = await chromium.launch({ channel: CHANNEL });
 async function session({ prefs = null, viewport = { width: 1200, height: 800 } } = {}) {
   const ctx = await b.newContext({ viewport });
+  await ctx.clock.install({ time: new Date('2026-11-13T10:00:00+08:00') }); await ctx.clock.resume(); // fixtures are dated around 12 to 14 Nov 2026: completed trips are off the map from 15 Nov
   await ctx.addInitScript(([po, tr, pr]) => { if (!sessionStorage.__seeded) { sessionStorage.__seeded = '1'; localStorage.setItem('uavzones.v1.pois', JSON.stringify(po)); localStorage.setItem('uavzones.v1.trips', JSON.stringify(tr)); if (pr) localStorage.setItem('uavzones.v1.prefs', JSON.stringify(pr)); } }, [pois, trips, prefs]);
   const s = { ctx, reqs: [] };
   await ctx.route('**/api.open-meteo.com/**', (route) => { s.reqs.push(route.request().url()); return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(respond(route.request().url())) }); });

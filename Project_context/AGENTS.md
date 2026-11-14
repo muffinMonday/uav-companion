@@ -75,3 +75,6 @@ For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map
 
 ## Backlog: Dashboard, Toolbar & Visual Refinement
 - `docs/backlogs/completed/DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md`: two-wave visual spec. **Completed 2026-11-15.** Wave 1 (`4015de5`) and Wave 2 Trips and panel header (`0df811e`) were released on 2026-11-14; Wave 2 P2 and P3 were released 2026-11-15 (`99607ef`, merge `bd9b948`, deployed; evidence in its section 16; design record `DESIGN.md` sections 20 to 22). Residual risks are listed in its header.
+
+## Backlog: Trip Marker Map Visibility
+- `docs/backlogs/completed/TRIP_MARKER_MAP_VISIBILITY_AND_DISAMBIGUATION_BACKLOG.md`: trip-only map view, completed-trip policy, trip text on name tag and pin labels. Frontend only. Status and evidence in its section 11 and `CURRENT_STATUS.md`.

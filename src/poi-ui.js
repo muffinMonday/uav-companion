@@ -10,7 +10,7 @@ import { reduced, EASE } from './motion.js';
 import { getWindLimit } from './weather.js';
 import { getDistanceSettings, setDistanceSettings, onDistanceSettings } from './units.js';
 import { BASE_TYPES, needsDistance, nearestBases, beyondRange, fmtDistance, compass, toDisplay, fromDisplay, haversineM } from './distance.js';
-import { sortTrips, tripSummary, tripDatesLabel, outsideTrip } from './trips.js';
+import { sortTrips, tripSummary, tripDatesLabel, outsideTrip, todayISO, tripPhase } from './trips.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { visitGroups, visitLabel } from './places.js';
 import { dayInfo, dayText, tripSequence, defaultParent, sideQuestPatch, mainStopPatch, sideQuestMap } from './trips.js';
@@ -18,7 +18,7 @@ import { mapLinkIcons } from './maplinks-ui.js';
 import { MODES } from './maplinks.js';
 import { planMove, planSideMove, stepSideIndex, stepSlot, groupKey, addDays } from './reorder.js';
 import { initReorder } from './reorder-ui.js';
-import { queryTerms, matches, newExpansion, scopeOpen, dayOpen, dayId, summarise, summaryText, isOutside, reveal as revealSection, prune as pruneSections, unlinkedSideQuests, SCOPE_HOME } from './poi-model.js';
+import { queryTerms, matches, newExpansion, scopeOpen, dayOpen, dayId, summarise, summaryText, isOutside, reveal as revealSection, prune as pruneSections, unlinkedSideQuests, SCOPE_HOME, mapHiddenReason, markerLabel } from './poi-model.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer, toolBar } from './cards.js';
 import { zoneExplanation } from './legends.js';
@@ -71,6 +71,10 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   // the map by hand. Device-local preferences (prefs.js); never part of a marker, a trip or a shared trip. The Home marker is never affected.
   const tripHidden = new Set(loadPrefs().tripHidden ?? []);
   let unassignedHidden = !!loadPrefs().unassignedHidden;
+  let showCompleted = !!loadPrefs().showCompleted; // markers of completed trips are drawn on the map (off by default; this device only)
+  // A trip shown on its own (Trips tab: Show this trip): page state only, never stored, never touches the switches above. null = the normal rules.
+  let tripViewId = null;
+  const viewListeners = new Set();
   const saveHidden = () => { while (tripHidden.size > 200) tripHidden.delete(tripHidden.values().next().value); savePrefs({ tripHidden: tripHidden.size ? [...tripHidden] : null, unassignedHidden: unassignedHidden ? true : null }); };
   let pickId = null;          // a card was just tapped: its marker is on its way (the map is moving), so the card is marked at once
   const revealListeners = new Set(); // the Trips tab hears that a marker was clicked on the map, to bring its row into view
@@ -283,7 +287,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
         v.setAttribute('aria-label', `${text}: ${on ? 'shown' : 'hidden'} on the map. ${on ? 'Hide' : 'Show'} on map`);
         v.title = on ? 'Hide these markers on the map' : 'Show these markers on the map';
         h.append(v);
-        const why = !on ? '' : !map.hasLayer(layer) ? 'Markers are switched off on the map (Show markers on map).' : hideTrips && scope !== 'none' ? 'Hidden for now by the trip markers button on the map.' : '';
+        const why = !on ? '' : !map.hasLayer(layer) ? 'Markers are switched off on the map (Show markers on map).' : tripViewId && scope !== tripViewId ? 'Not drawn while one trip is shown on its own (Trips tab).' : hideTrips && scope !== 'none' ? 'Hidden for now by the trip markers button on the map.' : scope !== 'none' && !tripViewId && !showCompleted && tripPhase(trip, todayISO()) === 'completed' ? 'Completed trip: hidden on the map. Turn on Show completed trips to draw it.' : '';
         if (why) h.append(el('small', 'vis-note', why));
       }
       return h;
@@ -724,10 +728,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const stopDates = (tripId) => [...new Set(store.items().filter((i) => i.tripId === tripId && i.date && isMain(i) && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence').map((i) => i.date))].sort();
   function redrawRoutes() {
     routes.clearLayers(); dayLayer.clearLayers();
-    if (hideTrips) return; // trip routes are off with the trip markers
-    if (shownDay && !tripHidden.has(shownDay.tripId)) { const chain = chainOf(shownDay.tripId, shownDay.date); if (chain.length >= 2) drawChain(dayLayer, chain, null, tripColour(shownDay.tripId)); }
+    if (shownDay && tripDrawn(shownDay.tripId)) { const chain = chainOf(shownDay.tripId, shownDay.date); if (chain.length >= 2) drawChain(dayLayer, chain, null, tripColour(shownDay.tripId)); }
     const it = viewId && store.get(viewId);
-    if (!it?.tripId || !it.date || tripHidden.has(it.tripId)) return; // nor outlive a hidden trip
+    if (!it?.tripId || !it.date || !tripDrawn(it.tripId)) return; // nor outlive a hidden trip
     const color = tripColour(it.tripId), chain = chainOf(it.tripId, it.date);
     if (chain.length >= 2) drawChain(routes, chain, it.id, color);
     const dates = stopDates(it.tripId);
@@ -768,7 +771,11 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     tagLayer.clearLayers();
     pickId = null; viewId = id; relink();
     const box = el('div', 'name-tag');
-    box.append(el('b', '', it.name));
+    const txt = el('span', 'name-tag-text');
+    txt.append(el('b', '', it.name));
+    const tripName = store.getTrip(it.tripId)?.name;
+    if (tripName) txt.append(el('small', 'name-tag-trip', tripName)); // which trip, in text: two trips can both have a D1·1
+    box.append(txt);
     const info = el('button', 'name-tag-info', 'ⓘ'); info.type = 'button';
     info.setAttribute('aria-label', 'Open details for ' + it.name); info.title = 'Open details';
     info.addEventListener('click', (e) => { L.DomEvent.stop(e); openPopup(id); });
@@ -834,13 +841,15 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
   function tripBtnPaint() {
     if (!tripBtn) return;
-    tripBtn.classList.toggle('off', hideTrips); tripBtn.setAttribute('aria-pressed', String(!hideTrips));
-    tripBtn.title = 'Trip markers on the map: ' + (hideTrips ? 'hidden' : 'shown') + ' (click to switch)';
+    const off = hideTrips && !tripViewId;
+    tripBtn.classList.toggle('off', off); tripBtn.setAttribute('aria-pressed', String(!off));
+    tripBtn.title = tripViewId ? 'Only one trip is shown on the map (click to show all)' : 'Trip markers on the map: ' + (hideTrips ? 'hidden' : 'shown') + ' (click to switch)';
   }
   new (ToggleControl('M7 21V4M7 5h10l-2 3.5 2 3.5H7', 'Show Side Quests on the map', () => setShowAllSide(!showAllSide), (a) => { sideBtn = a; }, 'side-quests'))().addTo(map);
-  new (ToggleControl('M4 8h16v11H4zM9 8V5h6v3M4 13h16', 'Show trip markers on the map', () => setHideTrips(!hideTrips), (a) => { tripBtn = a; }, 'trips'))().addTo(map);
+  new (ToggleControl('M4 8h16v11H4zM9 8V5h6v3M4 13h16', 'Show trip markers on the map', () => (tripViewId ? setTripView(null) : setHideTrips(!hideTrips)), (a) => { tripBtn = a; }, 'trips'))().addTo(map);
   /** Takes the trip markers off the map (and their routes and Side Quest links) or puts them back. Lists and the Trips tab are unchanged. */
   function setHideTrips(on) {
+    setTripView(null);
     hideTrips = on; savePrefs({ hideTrips: on ? true : null });
     tripBtnPaint();
     applyMarkerVisibility(); renderList(); // the list explains an override
@@ -979,8 +988,18 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     refreshIcons(); renderList();
     for (const fn of expandListeners) { try { fn(); } catch (e) { log.error('poi', 'a listener failed', e); } }
   }
+  /** The pin's name for screen readers: the marker's name, then its trip. */
+  const pinLabel = (it) => markerLabel(it.name, store.getTrip(it.tripId)?.name);
+  /** The icon's content is only the badge text (D1·1), so the name goes in aria-label. Run after a pin is drawn and whenever a name or trip changes. */
+  function labelPin(m, id) {
+    const it = store.get(id), e = m.getElement();
+    if (!it || !e) return;
+    const l = pinLabel(it);
+    e.setAttribute('aria-label', l); // the tooltip (title) stays the marker's own name
+  }
   function addMarker(item) {
     const m = L.marker([item.lat, item.lon], { icon: iconOf(item), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
+    m.on('add', () => labelPin(m, item.id));
     m._sig = sigOf(item);
     m.on('click', () => {
       if (suppressClick) return;
@@ -992,32 +1011,58 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (shownOnMap(item)) layer.addLayer(m);
     paintPins();
   }
-  /** One answer to "is this marker drawn on the map?", besides the POI layer switch: hideTrips first, then the trip's own setting, then Unassigned. */
-  function shownOnMap(it) {
-    if (!it || it.type === 'residence') return !!it;
-    if (it.tripId) return !hideTrips && !tripHidden.has(it.tripId);
-    return !unassignedHidden;
-  }
+  const mapState = () => ({ viewId: tripViewId, hideTrips, tripHidden, unassignedHidden, showCompleted, getTrip: (id) => store.getTrip(id), today: todayISO() });
+  /** Why a marker is off the map (poi-model.js mapHiddenReason), or null when it is drawn. */
+  const hiddenReason = (it) => mapHiddenReason(it, mapState());
+  /** One answer to "is this marker drawn on the map?", besides the POI layer switch: a trip shown on its own, hideTrips, the trip's own setting, completed trips, then Unassigned. */
+  const shownOnMap = (it) => !!it && hiddenReason(it) === null;
+  /** Would the markers of this trip be drawn? (Routes follow their trip.) */
+  const tripDrawn = (tripId) => mapHiddenReason({ tripId, type: 'other' }, mapState()) === null;
   /** What keeps a marker off the map, first match only, with the one action that lifts exactly that: { text, label, run } or null. Changes nothing itself. */
   function restrictionOf(it) {
-    if (!it || shownOnMap(it)) return null;
-    const trip = store.getTrip(it.tripId);
-    if (it.tripId && hideTrips) return { text: 'Trip markers are switched off on the map.', label: 'Show on map', run: () => setHideTrips(false) };
-    if (it.tripId) return { text: `"${trip?.name ?? 'This trip'}" is hidden on the map.`, label: 'Show on map', run: () => setTripShown(it.tripId, true) };
+    const why = it && hiddenReason(it), trip = it && store.getTrip(it.tripId);
+    if (!why) return null;
+    if (why === 'view') return { text: `Only "${store.getTrip(tripViewId)?.name ?? 'one trip'}" is shown on the map.`, label: 'Show all', run: () => setTripView(null) };
+    if (why === 'hideTrips') return { text: 'Trip markers are switched off on the map.', label: 'Show on map', run: () => setHideTrips(false) };
+    if (why === 'tripHidden') return { text: `"${trip?.name ?? 'This trip'}" is hidden on the map.`, label: 'Show on map', run: () => setTripShown(it.tripId, true) };
+    if (why === 'completed') return { text: `"${trip?.name ?? 'This trip'}" is a completed trip, so it is hidden on the map.`, label: 'Show on map', run: () => setShowCompleted(true) };
     return { text: 'Markers with no trip are hidden on the map.', label: 'Show on map', run: () => setTripShown('none', true) };
   }
-  /** Draws or removes every pin to match the rules above, closes a window whose marker went, and redraws routes and links. */
-  function applyMarkerVisibility() {
+  /** Draws or removes every pin to match the rules above and closes a window whose marker went (no redraw of routes and links). */
+  function syncPins() {
     for (const [id, m] of markers) {
       const on = shownOnMap(store.get(id));
       if (!on && layer.hasLayer(m)) layer.removeLayer(m);
       else if (on && !layer.hasLayer(m)) layer.addLayer(m);
       if (!on && viewId === id) { map.closePopup(); tagLayer.clearLayers(); viewId = null; }
     }
+  }
+  /** syncPins, then routes, Side Quest links and pin badges. */
+  function applyMarkerVisibility() {
+    syncPins();
     redrawRoutes(); refreshIcons(); paintPins();
+  }
+  /** Shows one trip's markers, routes and links on the map and nothing else (null: back to the normal rules). Not stored; the switches are not touched. */
+  function setTripView(id, { announce = true } = {}) {
+    const next = id && store.getTrip(id) ? id : null;
+    if (next === tripViewId) return;
+    tripViewId = next;
+    applyMarkerVisibility(); relink(); renderList(); tripBtnPaint();
+    for (const fn of viewListeners) { try { fn(); } catch (e) { log.error('poi', 'a listener failed', e); } }
+    if (next && announce) {
+      const n = store.items().filter((i) => i.tripId === next).length;
+      toast(`Showing only "${store.getTrip(next).name}" on the map.${n ? '' : ' It has no markers yet.'}`, 8000, { label: 'Show all', run: () => setTripView(null) });
+    }
+  }
+  /** Completed trips on or off the map (the switch in the Points of Interest tab). Remembered on this device. */
+  function setShowCompleted(on) {
+    showCompleted = on; savePrefs({ showCompleted: on ? true : null });
+    $('poi-showcompleted').checked = on;
+    applyMarkerVisibility(); renderList();
   }
   /** The map switch for a trip (or 'none': markers with no trip). Remembered on this device. */
   function setTripShown(scope, on) {
+    setTripView(null);
     if (scope === 'none') unassignedHidden = !on; else if (on) tripHidden.delete(scope); else tripHidden.add(scope);
     saveHidden();
     applyMarkerVisibility(); renderList();
@@ -1031,6 +1076,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     for (const it of items) {
       const m = markers.get(it.id);
       if (m && m._sig !== sigOf(it)) { m.setIcon(iconOf(it)); m._sig = sigOf(it); }
+      if (m && m.getElement()?.getAttribute('aria-label') !== pinLabel(it)) labelPin(m, it.id); // a rename of the marker or its trip
     }
     paintPins();
     drawSideLinks();
@@ -1505,6 +1551,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
   $('poi-showside').checked = showAllSide;
   $('poi-showside').addEventListener('change', (e) => setShowAllSide(e.target.checked));
+  $('poi-showcompleted').checked = showCompleted;
+  $('poi-showcompleted').addEventListener('change', (e) => setShowCompleted(e.target.checked));
+  panel.onChange?.(() => { if (tripViewId && panel.getTab() !== 'trips') setTripView(null); }); // a trip shown on its own lasts while the Trips tab is the open tab
   showSwitch.addEventListener('change', () => {
     if (showSwitch.checked) map.addLayer(layer); else { map.removeLayer(layer); map.closePopup(); }
     renderList(); // the list explains an override
@@ -1580,6 +1629,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function flyToItem(id) {
     const it = store.get(id);
     if (!it) return;
+    if (['view', 'completed'].includes(hiddenReason(it))) setTripView(it.tripId ?? null); // asked for by name: that trip is shown on its own (no trip: back to all)
     const why = restrictionOf(it); // hidden by hand or by the trip switch: say why, offer to show it, do not open a window on a marker that is not there
     if (why) { toast(`"${it.name}" is not on the map. ${why.text}`, 8000, { label: why.label, run: () => { why.run(); flyToItem(id); } }); return; }
     pickId = id; paintCards(); // the card is marked at once; the marker follows when the map has moved
@@ -1679,16 +1729,12 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const had = currentTripId;
     renderTripSelects();
     if (had !== currentTripId) savePrefs({ currentTrip: currentTripId }); // the current trip was deleted
+    if (tripViewId && !store.getTrip(tripViewId)) setTripView(null); // the trip shown on its own was deleted
+    syncPins(); // a marker moved to another trip, or a trip's dates changed, may enter or leave the map
     refreshIcons(); renderList(); renderNote(); wxLine?.render(); relink();
   });
   mw.init(); // refreshes now if automatic weather is on and the last bulk refresh is more than 30 minutes old
 
-  /** Shows only this trip's markers in the Points of Interest tab. */
-  function showTrip(id) {
-    tripFilter = store.getTrip(id) ? id : 'all';
-    renderTripSelects(); renderList();
-    panel.open('poi');
-  }
   /** Zooms to the markers that are drawn; if none are, says why (and offers to show them) instead of moving the map to nothing. */
   function fitShown(list) {
     if (fitToItems(list) !== false) return true;
@@ -1707,7 +1753,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     store,
     route: routeApi,
     checkin: cin,
-    showTrip, fitTrip,
+    fitTrip,
+    /** The trip shown on its own on the map (Trips tab), or null; set it (null clears), and hear about changes. */
+    getTripView: () => tripViewId, setTripView, onTripViewChange: (fn) => viewListeners.add(fn),
     /** Changes the type chosen in the Add a marker picker (and opens the group it is in). */
     setSelectedType,
     /** Unfolds Add a marker (the dashboard’s Save a place) without changing the chosen type, the search, the filters or the folds of the saved list. */

@@ -89,7 +89,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     const acts = el('div', 'btn-row trip-acts');
     const btn = (text, fn, cls = '') => { const b = el('button', ('btn small ' + cls).trim(), text); b.type = 'button'; b.addEventListener('click', fn); acts.append(b); return b; };
     btn('Open', () => openDetail(t.id), 'primary');
-    btn('Show markers', () => poi.showTrip(t.id));
+    tripViewBtn(btn, t);
     btn('Fit map', () => { if (poi.fitTrip(t.id)) panel.closeIfPhone(); });
     if (!isCurrent) btn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast('New markers will go into “' + t.name + '”.', 4000); });
     btn('Edit', () => openForm(t));
@@ -97,6 +97,14 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     li.append(acts);
     li.addEventListener('click', (e) => { if (!e.target.closest('button, a, input')) openDetail(t.id); });
     return li;
+  }
+  /** Show this trip on the map on its own (a toggle; the map shows every other trip again when it is off). Fit map is a separate button. */
+  function tripViewBtn(btn, t) {
+    const on = poi.getTripView() === t.id;
+    const b = btn(on ? 'Showing this trip' : 'Show this trip', () => poi.setTripView(on ? null : t.id));
+    b.setAttribute('aria-pressed', String(on));
+    b.title = on ? 'The map shows only this trip. Press to show all trips again.' : 'Show only this trip on the map';
+    return b;
   }
   /** Delete for a trip of your own; Leave for a shared trip you were invited to (only the owner deletes a shared trip). */
   function deleteOrLeave(btn, t, n) {
@@ -183,7 +191,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     if (t.description) detail.append(el('p', 'trip-card-desc full', t.description));
     const acts = el('div', 'btn-row trip-acts');
     const btn = (text, fn, cls = '') => { const x = el('button', ('btn small ' + cls).trim(), text); x.type = 'button'; x.addEventListener('click', fn); acts.append(x); return x; };
-    btn('Show markers', () => poi.showTrip(t.id));
+    tripViewBtn(btn, t);
     btn('Fit map', () => { if (poi.fitTrip(t.id)) panel.closeIfPhone(); });
     if (poi.getCurrentTrip() !== t.id) btn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast('New markers will go into “' + t.name + '”.', 4000); });
     const n = items.filter((i) => i.tripId === t.id).length;
@@ -433,6 +441,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
 
   poi.setNewTripHandler((markerId) => openForm(null, { assign: markerId }));
   store.onChange(render);
+  poi.onTripViewChange?.(render); // the Show this trip buttons follow the map
   poi.sideState.onChange(render); // a card was unfolded or folded in a list
   poi.cards.onReveal((id, tab) => { if (tab === 'trips') revealStop?.(id); }); // a marker was clicked on the map while this tab is open
   // Hold a stop on a day page for 1 s and drag it to another place the same day (moving between days is done in the Points of Interest tab).

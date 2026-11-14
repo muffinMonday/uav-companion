@@ -1,5 +1,9 @@
 # Session Checkpoint
 
+## Latest: trip marker map view (2026-11-15; owner authorized commit, push, deploy:live for this backlog)
+- Backlog `backlogs/completed/TRIP_MARKER_MAP_VISIBILITY_AND_DISAMBIGUATION_BACKLOG.md` (section 11: decisions, built, tests, residual risks). Frontend only, no database change.
+- Built: `Show this trip` toggle (Trips tab), completed trips hidden by default with a Points of Interest switch, trip name in the name tag, `aria-label` on pins. Full `npm test` 126/126, build passes. Not verified: real phone, Safari, screen reader, screenshots.
+
 ## Chongqing / Chengdu express release (2026-11-14; Chongqing released, Chengdu withheld)
 - Isolated branch/worktree: feature/express-chongqing-chengdu, latest main 7758fe2. Owner expressly authorizes normal review/merge and deploy:live. Existing owner checkout edits preserved.
 - Chongqing: original 777-feature checksum-bound source retained; GEOS, all 777 tile interiors, 13 point cases and tiny triangle desktop/mobile pixel-location tests pass. Opt-in standard MVT extent 65536 only at regional z14; runtime/default/lower zooms unchanged. Registered candidate PMTiles a1d54094 (full hash in release evidence).

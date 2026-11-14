@@ -829,7 +829,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .route-arrow.bold svg{opacity:1}
 .seg-label{border-width:2px}
 .name-tag-box{background:none;border:0}
-.name-tag{position:absolute;transform:translate(-50%,-82px);display:flex;align-items:center;gap:2px;padding:3px 4px 3px 11px;border-radius:var(--radius-pill);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-1);font-size:var(--fs-small);white-space:nowrap}
+.name-tag{position:absolute;transform:translate(-50%,calc(-100% - 54px));display:flex;align-items:center;gap:2px;max-width:min(260px,70vw);padding:3px 4px 3px 11px;border-radius:var(--radius-pill);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-1);font-size:var(--fs-small);white-space:nowrap}
 .name-tag-info{width:22px;height:22px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--accent);cursor:pointer;font-size:15px;line-height:1}
 @media (hover:hover){.name-tag-info:hover{background:var(--accent-soft)}}
 .poi-pin.focused svg{scale:1.18;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
@@ -1429,3 +1429,11 @@ body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}
 /* ---------- Wave 2, P2d sessions dialog and P2e AI import card: soft secondary actions; the outlined Navigate/Map actions of Wave 1 (.map-action) are kept ---------- */
 #ses-hub .btn:not(.primary):not(.danger):not(.map-action),#ai-card .btn:not(.primary):not(.danger){border-color:transparent;background:var(--surface-2)}
 @media (hover:hover){#ses-hub .btn:not(.primary):not(.danger):not(.map-action):hover,#ai-card .btn:not(.primary):not(.danger):hover{border-color:var(--accent)}}
+
+/* Trip marker view: the pressed state of Show this trip (same selected treatment as the other toggles: accent border and soft surface) */
+.trip-acts .btn[aria-pressed=true]:not(.primary):not(.danger){border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semibold)}
+
+/* Name tag: the marker's name, and under it the trip's name in muted text. Anchored by its bottom edge (54px above the pin point), so a second line grows upward and never covers the .seq badge */
+.name-tag-text{display:flex;flex-direction:column;min-width:0}
+.name-tag-text b,.name-tag-trip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.name-tag-trip{color:var(--muted);font-size:var(--fs-meta);line-height:1.2}

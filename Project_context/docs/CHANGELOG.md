@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-11-15 (trip marker map view)
+- Trips: `Show this trip` shows one trip's pins, routes and Side Quest links on the map (page state only; clears when the Trips tab is left). Completed trips are off the global map unless `Show completed trips` (Points of Interest tab) is on. Name tag shows the trip name under the marker name; pins carry an `aria-label` with the trip. Backlog `TRIP_MARKER_MAP_VISIBILITY_AND_DISAMBIGUATION_BACKLOG.md` (`completed/`).
+
 ## 2026-11-14 (Chongqing airspace release)
 - PR #8 / source 3fb4f1a, production 8018ea0: all 777 original polygons preserved using regional z14 MVT precision. GEOS, exhaustive presence, point and desktop/mobile checks pass; previous regions unchanged. Chengdu captures retain 57 valid unique polygons locally, withheld pending a reviewed city coverage mask. [Release and rollback](../../docs/china-airspace/EXPRESS_CHONGQING_CHENGDU.md).
 

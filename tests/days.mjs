@@ -12,6 +12,7 @@ const toastText = (p) => p.evaluate(() => { const t = document.getElementById('t
 const b = await chromium.launch({ channel: CHANNEL });
 async function session({ items, tripsData = trips(), viewport = { width: 1200, height: 800 }, tab = 'poi' } = {}) {
   const ctx = await b.newContext({ viewport });
+  await ctx.clock.install({ time: new Date('2026-11-13T10:00:00+08:00') }); await ctx.clock.resume(); // fixtures are dated around 12 to 14 Nov 2026: completed trips are off the map from 15 Nov
   await ctx.addInitScript(([po, tr]) => { if (!sessionStorage.__seeded) { sessionStorage.__seeded = '1'; localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po })); localStorage.setItem('uavzones.v1.trips', JSON.stringify(tr)); } }, [items, tripsData]);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
