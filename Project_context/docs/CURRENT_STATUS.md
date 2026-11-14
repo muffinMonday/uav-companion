@@ -1,5 +1,11 @@
 # Session Checkpoint
 
+## Latest: Flight Sessions 2.0 in progress (2026-11-14; owner authorized autonomous commit/push/additive migrations/final deploy:live for this feature only)
+- Decisions: `DECISIONS.md` ("Flight Sessions 2.0"). Plan: `FLIGHT_SESSIONS_2_PLAN.md`. Owner constraints: hosted target `tgptrtcuaryyyfzhrffm` (verify the linked project first); dry run + data backup before any hosted migration; public discovery stays off until phase 6 checks pass; ONE final `npm run deploy:live`; never create/delete real users in live checks. Migrations are pushed once, at release, together with the deploy (the old client calls the old `create_session`/`list_sessions` signatures, which the migration replaces).
+- **Phase 1 (backend safety) done and tested:** `20261118100000_sessions_v2_core.sql`; `db-sessions-v2-unit` (114 checks) + updated `db-sessions-unit`; unit suites 50/50 pass. Source `src/sessions.js`/`sessions-ui.js` still use the old RPC shapes: phase 2 updates them (create needs a map point). An uncommitted `.gitignore` change (`.env*`) was already in the tree and is not part of this work.
+- Decision recorded: an organiser verifies attendance only at sessions they host (admins anywhere); ordinary hosts never.
+- Next: phase 2 (creation UX: map pin picker, visibility, capacity, draft; `src/sessions-create.js`, `sessions.js` wrapper).
+
 ## Latest: HTML/main.js refactor Phases 2-5 complete (2026-11-14; committed, pushed; Phase 2 deployed)
 - Commits: `7cb0347` (Phase 2, deployed with `deploy:live`, live bundle `index-Bz0SQplN.js` verified), `7046ad5` (ownership map in `MODULES.md`), `4617476` (`AGENTS.md` pointer), plus the final handoff commit. No database change.
 - Results and caveats: backlog sections 13-14. Full `npm test` green (107) before commit; the repeat after docs-only commits had one `autoshare` load flake (3/3 alone). Screenshots 298/298 identical to same-day HEAD; the Phase 1 image set is stale (date comma drift), use `refactor-phase2b-20261114`.

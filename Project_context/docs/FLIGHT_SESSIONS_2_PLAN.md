@@ -1,6 +1,6 @@
 # Flight Sessions 2.0 — Product and Implementation Backlog
 
-**Status: PLANNED, NOT IMPLEMENTED.** Prepared 2026-11-14. The owner wants Claude to clarify unresolved policies before starting, then (only after explicit approval) implement, test, commit, push and deploy autonomously. See `FLIGHT_SESSIONS_2_AGENT_HANDOFF.md` for the authorization boundary.
+**Status: IN PROGRESS (owner authorized autonomous implementation 2026-11-14; answers to section 2 are in `DECISIONS.md`; phase status is in `CURRENT_STATUS.md`).** Prepared 2026-11-14. The owner wants Claude to clarify unresolved policies before starting, then (only after explicit approval) implement, test, commit, push and deploy autonomously. See `FLIGHT_SESSIONS_2_AGENT_HANDOFF.md` for the authorization boundary.
 
 ## 1. Confirmed requirements
 

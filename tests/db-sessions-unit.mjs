@@ -21,7 +21,7 @@ await one(A, `public.grant_role($1, 'organiser')`, [cB]); // B is an organiser; 
 
 // a session with chosen times, made by `by`
 async function mk(by, startH, endH, title = 'Session', status = 'scheduled') {
-  return (await sql(`insert into public.flight_sessions (title, starts_at, ends_at, created_by, status) values ($1, $2, $3, $4, $5) returning id`, [title, hr(startH), hr(endH), by, status]))[0].id;
+  return (await sql(`insert into public.flight_sessions (title, starts_at, ends_at, created_by, status, visibility, latitude, longitude) values ($1, $2, $3, $4, $5, 'public', 30.5, 114.3) returning id`, [title, hr(startH), hr(endH), by, status]))[0].id;
 }
 const open = await mk(B, -1, 2, 'Open now');      // started an hour ago, still open: attendance can be marked
 const future = await mk(B, 24, 27, 'Tomorrow');   // not started
@@ -32,15 +32,15 @@ const rsvps = (u, s) => one(u, 'public.list_session_rsvps($1)', [s]);
 // ---------- no direct access, visitors, ordinary people
 for (const t of ['flight_sessions', 'session_rsvps', 'session_attendance']) ok(/permission denied/.test(await refused(db, C, `select * from public.${t}`)) && /permission denied/.test(await refused(db, null, `select * from public.${t}`)), t + ' cannot be read directly');
 ok(/permission denied/.test(await refused(db, C, `insert into public.session_attendance (session_id, user_id, source) values ('${open}', '${C}', 'rsvp')`)), 'nobody can write attendance directly (no way to award oneself)');
-for (const f of [`public.list_sessions()`, `public.rsvp_session('${open}')`, `public.withdraw_rsvp('${open}')`, `public.mark_attended('${open}', 'code', 'x')`, `public.list_session_rsvps('${open}')`, `public.create_session('t', null, null, now(), now() + interval '1 hour')`, `public.close_session('${open}')`, `public.cancel_session('${open}')`, `public.update_session('${open}', '{}')`, `public.revoke_attendance('${open}', '${open}', 'x')`, `public.can_manage_session('${A}', '${open}')`]) {
+for (const f of [`public.list_sessions()`, `public.rsvp_session('${open}')`, `public.withdraw_rsvp('${open}')`, `public.mark_attended('${open}', 'code', 'x')`, `public.list_session_rsvps('${open}')`, `public.create_session('t', null, null, 30, 114, now(), now() + interval '1 hour')`, `public.close_session('${open}')`, `public.cancel_session('${open}')`, `public.update_session('${open}', '{}')`, `public.revoke_attendance('${open}', '${open}', 'x')`, `public.can_manage_session('${A}', '${open}')`]) {
   ok(/permission denied/.test(await refused(db, null, `select ${f}`)), f.split('(')[0] + ' is closed to a visitor');
 }
 ok(/permission denied/.test(await refused(db, C, `select public.can_manage_session('${A}', '${open}')`)), 'can_manage_session is internal');
 
 // ---------- creating a session
-const create = (u, t, d, l, s, e) => one(u, 'public.create_session($1, $2, $3, $4, $5)', [t, d, l, s, e]);
-const badCreate = (u, t, d, l, s, e) => refused(db, u, 'select public.create_session($1, $2, $3, $4, $5)', [t, d, l, s, e]);
-ok(/not allowed/.test(await badCreate(C, 'Mine', null, null, hr(5), hr(7))), 'an ordinary user cannot create a session');
+const create = (u, t, d, l, s, e, lat = 30.5, lng = 114.3) => one(u, 'public.create_session($1, $2, $3, $4, $5, $6, $7)', [t, d, l, lat, lng, s, e]);
+const badCreate = (u, t, d, l, s, e, lat = 30.5, lng = 114.3) => refused(db, u, 'select public.create_session($1, $2, $3, $4, $5, $6, $7)', [t, d, l, lat, lng, s, e]);
+// (any signed-in person with a profile may host since Flight Sessions 2.0; see db-sessions-v2-unit)
 const made = await create(B, '  Saturday   field  day ', '  Bring batteries\nand goggles ', ' Wuhan East Lake ', hr(48), hr(52));
 const row = (await sql('select * from public.flight_sessions where id = $1', [made.id]))[0];
 ok(row.title === 'Saturday field day' && row.description === 'Bring batteries and goggles' && row.location === 'Wuhan East Lake' && row.created_by === B && row.status === 'scheduled', 'an organiser creates a session; the text is tidied and the creator recorded');
@@ -58,7 +58,7 @@ let ls = await listFor(C);
 const lo = ls.find((x) => x.id === open);
 ok(lo && lo.title === 'Open now' && lo.rsvp_count === 0 && lo.i_rsvped === false && lo.my_attended === false && lo.can_manage === false, 'anyone signed in sees scheduled sessions, with a count and no management rights');
 ok((await listFor(B)).find((x) => x.id === open).can_manage === true && (await listFor(A)).find((x) => x.id === open).can_manage === true, 'the organiser who made it and an administrator can manage it');
-const aSession = (await sql(`select id from public.flight_sessions where created_by = $1`, [A]))[0].id;
+const aSession = await mk(A, 30, 32, 'Admin public');
 ok((await listFor(B)).find((x) => x.id === aSession).can_manage === false && (await listFor(A)).find((x) => x.id === aSession).can_manage === true, "an organiser does not manage another person's session");
 ok(!Object.keys(lo).some((k) => /user|created_by|rsvp_id/.test(k)), 'and no identities appear in the list');
 
@@ -139,7 +139,7 @@ const badUpd = (u, s, patch) => refused(db, u, 'select public.update_session($1,
 ok((await upd(B, future, { title: ' New  title ', description: null, location: 'Somewhere' })).status === 'updated' && (await sql('select title, description, location from public.flight_sessions where id = $1', [future]))[0].title === 'New title', 'an organiser edits their scheduled session');
 ok(/session not found/.test(await badUpd(C, future, { title: 'x' }) ?? '') && /session not found/.test(await badUpd(D, future, { title: 'x' }) ?? '') && (await upd(A, future, { title: 'Admin edit' })).status === 'updated', 'only its managers edit it');
 ok(/unknown session field/.test(await badUpd(B, future, { status: 'closed' }) ?? '') && /unknown session field/.test(await badUpd(B, future, { created_by: C }) ?? ''), 'status and creator cannot be set');
-ok(/ends after/.test(await badUpd(B, future, { ends_at: hr(1) }) ?? '') && /title/.test(await badUpd(B, future, { title: '' }) ?? '') && /must be times/.test(await badUpd(B, future, { starts_at: 'tomorrow-ish' }) ?? '') && /must be an object/.test(await badUpd(B, future, [1]) ?? ''), 'a bad edit is refused');
+ok(/ends after/.test(await badUpd(B, future, { ends_at: hr(1) }) ?? '') && /title/.test(await badUpd(B, future, { title: '' }) ?? '') && /wrong type/.test(await badUpd(B, future, { starts_at: 'tomorrow-ish' }) ?? '') && /must be an object/.test(await badUpd(B, future, [1]) ?? ''), 'a bad edit is refused');
 ok(/only a scheduled/.test(await badUpd(B, closedS, { title: 'x' }) ?? ''), 'a closed session cannot be edited');
 
 // ---------- revoking a mistaken mark: administrators only, ledger kept

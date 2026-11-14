@@ -101,6 +101,19 @@ Current, constraining decisions only; superseded ones are removed (history: git,
 
 **New number/date inputs are plain inputs; `controls.js` enhances them (`data-plain` opts out).**
 
+## Flight Sessions 2.0 (owner decisions 2026-11-14; plan `FLIGHT_SESSIONS_2_PLAN.md`)
+**Any signed-in person with a profile can host; hosting never grants XP authority.** Only an administrator, or an organiser who hosts the session, can mark attendance (`can_verify_session`); an ordinary host manages (edit, cancel, close, RSVP list, remove a person). The UI must say which of the two a person has.
+
+**Public sessions: immediate publication with reporting, rate limits and admin unpublish; instant RSVP; host display name + preset avatar; exact coordinates shown with an explicit confirmation.** The feature is gated by `progression_settings.public_sessions_enabled` (0) until the phase 6 safeguards pass. Existing sessions migrate as private, keeping participants, attendance and XP.
+
+**Recurrence:** 2 to 12 occurrences (default 4); weekly (Saturday preset), biweekly, monthly; local wall time kept across DST (nonexistent time moves forward, ambiguous time takes the first); a monthly 29th to 31st clamps only that occurrence and later months return to the preferred day; occurrence edits keep RSVPs and notify people in-app.
+
+**Blocking prevents interaction and private access in both directions; public sessions stay visible to guests** (no promise of invisibility). Hosts can remove participants (a removed person cannot rejoin that session). Admin moderation is RPC-only at first.
+
+**Public to private** is refused once the session has started and anyone has RSVP'd; before that, participants keep access and are told in-app.
+
+**Release:** additive migrations only (dry run, data backup, linked project verified), one final `npm run deploy:live`, no real users created or deleted during live checks.
+
 ## Testing and process
 **Tests live in `tests/`; browser suites need the dev server on :5173 and Edge; external services mocked; Supabase tests run the real SQL on PGlite.** Suites must be parallel-safe (rules in `DEVELOPMENT.md`).
 
