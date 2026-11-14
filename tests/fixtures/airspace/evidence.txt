@@ -1,0 +1,7 @@
+SYNTHETIC TEST FIXTURE ONLY. Reviewer: automated regression fixture, 2026-11-14.
+Semantics: allow polygons for testing; holes are excluded. No real airspace meaning.
+CRS alignment: invented WGS84 coordinates, no source alignment claim.
+Completeness: exactly two invented features, all components and holes included.
+Effective dates: fixture version 2026-11-14, no regulatory validity.
+Redistribution: project-authored synthetic coordinates, CC0-1.0.
+Production: approved only as a regression fixture. Synthetic flag MUST block promotion.

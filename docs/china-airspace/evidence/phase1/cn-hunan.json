@@ -1,0 +1,130 @@
+{
+  "region": "cn-hunan",
+  "features": 102483,
+  "dbfRecordCount": 102483,
+  "shxRecordCount": 102483,
+  "shpRecordCount": 102483,
+  "shpFileLengthMatches": true,
+  "shpEofAligned": true,
+  "uniqueGridNames": 102483,
+  "nullGeometries": 0,
+  "geometryTypes": {
+    "Polygon": 102483
+  },
+  "holes": 0,
+  "axisAlignedRectangles": 102483,
+  "allGeosValid": true,
+  "centresOutsideDiagnosticBoundary": 15155,
+  "boundaryGeosValid": true,
+  "boundaryBounds": [
+    108.7879130391554,
+    24.64265635770471,
+    114.23429894434071,
+    30.0983956978032
+  ],
+  "boundaryStatus": "Natural Earth diagnostic only; no production coverage approval",
+  "archiveSha256": "60c5eab1adffda18f336c98ef2ae2ff9b5291ac3c9e87c0ca5181348f8edbf39",
+  "checkedOn": "2026-11-14",
+  "sourceContentSha256": "7b00a66ad0b1c77bf244a095b309eac6cccad3fd0e4d288af76cadbde59fc8cd",
+  "sourceBounds": [
+    108.78662109,
+    24.63821411,
+    114.25643921,
+    30.13000488
+  ],
+  "sourcePrj": "GEOGCS[\"WGS84(DD)\", DATUM[\"WGS84\", SPHEROID[\"WGS84\", 6378137.0, 298.257223563]], PRIMEM[\"Greenwich\", 0.0], UNIT[\"degree\", 0.017453292519943295], AXIS[\"Geodetic longitude\", EAST], AXIS[\"Geodetic latitude\", NORTH], AUTHORITY[\"EPSG\",\"4326\"]]",
+  "crsAlignment": "unverified; numeric ranges and PRJ are insufficient",
+  "sourceEvidenceVerified": false,
+  "promotionCandidateReady": false,
+  "productionRegistered": false,
+  "liveDeployed": false,
+  "originals": [
+    {
+      "path": "planning/china-airspace/phase1/cn-hunan/extracted/附件2.湖南省微型、轻型、小型无人驾驶航空器适飞空域范围图（dbf、fix、prj、shp、shx）/湖南适飞网格.dbf",
+      "bytes": 52163944,
+      "sha256": "87d0239841c91677b466fe8b97adeab8113d6cded107849a9a0d2de6f16d2894"
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-hunan/extracted/附件2.湖南省微型、轻型、小型无人驾驶航空器适飞空域范围图（dbf、fix、prj、shp、shx）/湖南适飞网格.fix",
+      "bytes": 1229809,
+      "sha256": "2cee1ad192262a8ff11349ad8cb85c89de4c9480fa8b8f3c5006aee475fa008a"
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-hunan/extracted/附件2.湖南省微型、轻型、小型无人驾驶航空器适飞空域范围图（dbf、fix、prj、shp、shx）/湖南适飞网格.prj",
+      "bytes": 238,
+      "sha256": "00a681c97d09da0982b2634a54aafd0df99c38fa634f682d6b241d18213d5a42"
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-hunan/extracted/附件2.湖南省微型、轻型、小型无人驾驶航空器适飞空域范围图（dbf、fix、prj、shp、shx）/湖南适飞网格.shp",
+      "bytes": 13937788,
+      "sha256": "92a561c4e337759f612d59b4e3d415ae6218139e11a5770dcbc14bf91deeaa0a"
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-hunan/extracted/附件2.湖南省微型、轻型、小型无人驾驶航空器适飞空域范围图（dbf、fix、prj、shp、shx）/湖南适飞网格.shx",
+      "bytes": 819964,
+      "sha256": "9acadf909411e6e2dd2bda7bd92609b8ec3f94be610cf6b66828368b907085fb"
+    }
+  ],
+  "windingDerivative": {
+    "path": "planning/china-airspace/phase1/cn-hunan/winding.geojson",
+    "bytes": 28875435,
+    "sha256": "fc6ebfd6c53cba653aebe0e07c4ec7f0966f824c19f1907d099c88b78086bb5e"
+  },
+  "localConfig": {
+    "path": "planning/china-airspace/phase1/cn-hunan/config.json",
+    "bytes": 1281,
+    "sha256": "c9ef88519f61ce452fdc456bd7982ef979a9f9216e0457332dd9b88e7bcca049"
+  },
+  "approvalGates": {
+    "semantics": {
+      "status": "pending",
+      "reviewer": null
+    },
+    "crsAlignment": {
+      "status": "pending",
+      "reviewer": null
+    },
+    "completeness": {
+      "status": "pending",
+      "reviewer": null
+    },
+    "effectiveDates": {
+      "status": "pending",
+      "reviewer": null
+    },
+    "redistribution": {
+      "status": "pending",
+      "reviewer": null
+    },
+    "production": {
+      "status": "pending",
+      "reviewer": null
+    }
+  },
+  "technicalStatus": "all original records and winding independently audited; CLI stage/build blocked by default work budget",
+  "geos": {
+    "valid": true,
+    "features": 102483,
+    "shapely": "2.2.0",
+    "geos": "3.14.1"
+  },
+  "defaultPolicy": {
+    "valid": false,
+    "errorCount": 1,
+    "errors": [
+      "topology-budget-exhausted"
+    ],
+    "accepted": 83333
+  },
+  "fullPolicy": {
+    "valid": true,
+    "errorCount": 0,
+    "errors": [],
+    "features": 102483,
+    "accepted": 102483,
+    "topologyBudget": 3000000,
+    "note": "Diagnostic use of existing API option only; unchanged integration CLI still blocks at its default 2,000,000 budget. No subset used."
+  },
+  "stageProbe": "Rejected: Validation failed: topology-budget-exhausted",
+  "pmtiles": null
+}
