@@ -233,3 +233,26 @@ When explicitly authorized by the owner:
 **Stop and consult the owner** if changes require backend permissions, migration, destructive operations, security-sensitive policy changes, conflicting agent work, unresolved test failures or an uncertain deployment target.
 
 **Final handoff:** controls inventoried, UX changes, tests, screenshots, files/commits, deployment evidence, limitations and follow-ups.
+
+## 14. Implementation status (2026-11-14)
+
+Owner authorized implementation, commit, push and `deploy:live` for this feature only. Frontend, tests and docs; no database, RLS, secret or flag change.
+
+**Phase 0 inventory (left-hand Leaflet controls, top to bottom):** zoom +/- (Leaflet; no `data-tool`, not labelled); `locate` (`locate.js`, three states, aria-label carries the action); `details` (`poi-ui.js`, marker details on/off); `side-quests` and `trips` (`poi-ui.js` `ToggleControl`, aria-pressed); `crosshair` (`crosshair.js`, aria-pressed); `sessions` (`sessions-hub.js`, added after the cloud code loads, only when accounts exist); `compass` (`locate.js`, hidden while north-up); then the new `labels` toggle. Existing guidance before the change: Quick Setup (`splash.js`: Plan a trip, Plan a flight, guest/profile, Skip), the dashboard Help card (four steps, "Run the quick setup again"), and a one-off toast about press-and-hold. Baseline screenshots: `~/UAV_UI_Screenshots/ux-before-20261114` (298).
+
+**Built:** `map-toolbar-help.js` + `map-tool-labels.js` (phase 1), orientation in `splash.js` (phase 2), `help-content.js`, `help-state.js`, `help-ui.js`, `help-wire.js` (phase 3), task shortcuts and Tips list in `dashboard.js` (phase 4), CSS in `styles.css`, `data-tool` attributes on the controls, an `onOpen` callback on `initSessionsHub`.
+
+**Deviations and decisions**
+- The +/- zoom buttons are not labelled: their meaning is plain and their labels would sit under the search button.
+- Label wording, checked against the code: the "map display" toggles are the Side Quests and trip-marker buttons, so the labels are Hide/Show Side Quests (off state: "Show all Side Quests") and Hide/Show trip markers; "Show/Hide marker details" belongs to the speech-bubble button. Locate reads My location, Follow me, Stop following.
+- A hint counts as shown after 1.5 s on screen or when dismissed, so one flicked past by switching tabs is not used up. Replay never changes the seen list.
+- `map-tools` is also marked seen when the visitor presses the tag button; `point-check` shows on the first point-check window.
+- The Sessions hint sits under the hub's tabs (not for a deep link to one session). The orientation is a link under the task cards, not a fourth card, so the task choices stay primary.
+- The Help card shows the sessions shortcut and the Friends/Sessions tips only where accounts exist.
+- Short coarse screens (max-height 480 px): left buttons are 3 px apart so the extra button fits above the scale bar.
+- Progressive-disclosure audit (Map Config, Trips, POI, Friends, Sessions): no secondary control was hidden. Each already sits under a clear heading and hiding any would add a step for a common action; the shortcuts and hints address discoverability instead. Click counts: check a location 2 (Help, shortcut) as before 0 steps of guidance; save a place 2; plan a trip 2 (the existing "Plan a trip" link stays at 1); customize 2; none of the existing paths gained a step.
+- Test harness: `tests/lib.mjs` and `scripts/ui-baseline.mjs` mark hints as seen so other suites and the screenshot set are not shifted by a first-visit hint; `discover` starts without them.
+
+**Tests:** unit `help-unit` (37); browser `toolbar` (74), `discover` (62); see `CURRENT_STATUS.md` for the full-run and screenshot results.
+
+**Not verified:** a real foldable or phone, Safari, a screen reader, real 200% browser text zoom (only a larger root font was tested).

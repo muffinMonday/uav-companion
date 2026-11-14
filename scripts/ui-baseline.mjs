@@ -13,6 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { chromium, CHANNEL, LATEST_SEEN } from '../tests/lib.mjs';
+import { HELP } from '../src/help-content.js';
 
 const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i >= 0 ? process.argv[i + 1] : d; };
 const OUT_ROOT = arg('out', path.join(os.homedir(), 'UAV_UI_Screenshots'));
@@ -211,6 +212,7 @@ const seedInit = ([ref, sess, o]) => {
   localStorage.clear(); // a page opened earlier in this context must leave nothing behind
   const set = (k, v) => localStorage.setItem('uavzones.v1.' + k, JSON.stringify(v));
   if (o.dash) set('dash', { v: 1, ...o.dash }); else localStorage.removeItem('uavzones.v1.dash');
+  set('help', { v: 1, seen: o.help }); // contextual hints already seen: they would sit at the top of every panel screen
   set('prefs', { view: { lat: 30.6, lon: 114.3, zoom: 11 }, basemap: 'osm', holdHint: true, ...o.prefs });
   if (o.data) { set('pois', { v: 1, items: o.pois }); set('trips', { v: 1, trips: o.trips }); }
   if (sess) localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify(sess));
@@ -230,7 +232,7 @@ async function openPage(ctx, theme, { stress = false, signed = false, dash = { s
   if (a) await ctx.route(new RegExp('^' + a.URL_.replace(/[.]/g, '\\.') + '/'), a.mock);
   const p = await ctx.newPage();
   p.on('request', (q) => { if (q.url().includes("/deps/leaflet.js")) p.leafletUrl = q.url(); }); // the app's own Leaflet module, for screens that draw on a map of their own
-  await p.addInitScript(seedInit, [a?.REF, a?.sess ?? null, { dash, prefs: { theme, themeAt: 1, ...prefs }, data: data && !signed, pois: stress ? STRESS_POIS : POIS, trips: stress ? STRESS_TRIPS : TRIPS }]);
+  await p.addInitScript(seedInit, [a?.REF, a?.sess ?? null, { dash, help: HELP.map((h) => h.id), prefs: { theme, themeAt: 1, ...prefs }, data: data && !signed, pois: stress ? STRESS_POIS : POIS, trips: stress ? STRESS_TRIPS : TRIPS }]);
   await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
   await p.waitForTimeout(1300);
   if (signed) await p.locator('#name-dlg-skip').click({ timeout: 2500 }).catch(() => {});

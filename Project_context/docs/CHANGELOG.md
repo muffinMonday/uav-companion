@@ -2,6 +2,13 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-14 (UX and discoverability)
+- Map: a tag button under the left-hand buttons writes the name of each one beside it (current action: Show/Hide crosshair, Follow me, Hide trip markers and so on; the compass only while it shows). Collapsed after every reload; nothing is stored. New `map-toolbar-help.js`, `map-tool-labels.js`; the controls got `data-tool` attributes.
+- Quick Setup: optional three-step *Learn the map* (official information is not permission to fly, how to check a spot, where the tools are), skippable at every step; asks for no permission. `splash.js`.
+- Once-per-feature hints for Map buttons, Checking a spot, Points of Interest, Trips, Friends, Map Configs and Flight Sessions (`help-*.js`, key `uavzones.v1.help`); one at a time, never while a dialog is open or a marker is being placed, replayable from the dashboard.
+- Dashboard Help card: shortcuts for checking a location, saving a place, planning a trip, finding flight sessions and customizing the map; *Tips for each feature*.
+- Tests: new unit suite `help-unit`, browser suites `toolbar` and `discover`; the shared harness marks hints as seen. Spec: `UX_DISCOVERABILITY_BACKLOG.md`.
+
 ## 2026-11-14 (Flight Sessions map explorer)
 - New `src/sessions-map-explorer.js`: a non-modal dock beside the interactive map (left panel from about 620 px wide, bottom sheet below) listing sessions as compact cards; tapping a card selects that occurrence and centres its marker in the unobstructed map area (rotation-aware); one marker per place with a count badge for recurring occurrences; Expand, Collapse and Close; Escape; relayout on resize, fold and rotation; the main side panel steps aside temporarily (`panel.suspend()`) without touching the saved choice.
 - Hub: **Explore on map** on Discover, My sessions and Invitations; every session card has outlined **Map** (internal) and **Navigate** (external, Maps settings apply) plus Details; cards without a meeting point say so. The old "Show these on the map" bar is replaced by the explorer; the picker bar stays.

@@ -2,6 +2,7 @@
 //   Plan a trip   -> a short form, or an itinerary link, that becomes a prompt to copy into any AI; then the AI's answer is pasted and previewed here
 //   Plan a flight -> use my location, and centre the map on it (the Fly in buttons if the position cannot be had)
 //   Skip          -> the dashboard opens with How it works showing
+//   Learn the map -> an optional three-step orientation (official information, checking a spot, finding the tools); every step can be skipped and it ends back here
 // The link is never fetched: it is only put in the prompt text. The choice is saved as prefs.mode for the flight planner that will open itself.
 import { el } from './cards.js';
 import { buildTripPrompt, buildLinkPrompt, checkUrl, LIMITS } from './aiprompt.js';
@@ -9,7 +10,7 @@ import { save as saveDash, load as loadDash } from './dashstate.js';
 import { savePrefs } from './prefs.js';
 import { focusField, showModalQuiet } from './touch.js';
 
-export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud = {} }) {
+export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud = {}, toolbar = null }) {
   const dlg = document.createElement('dialog');
   dlg.className = 'splash'; dlg.id = 'splash';
   dlg.setAttribute('aria-labelledby', 'splash-title');
@@ -54,8 +55,32 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
       card('splash-flight', 'Plan a flight', 'Centre the map on where you are and check whether you can fly there.', flightIntro),
     );
     introEl = el('p', 'hint'); acctBox = el('div', 'splash-account'); acctBox.id = 'splash-account'; paintAccount();
-    show(heading('Where do you want to start?'), introEl, choices, acctBox,
-      Object.assign(btn('Skip, just show me the map', skip, 'dash-link'), { id: 'splash-skip' }));
+    const learn = Object.assign(btn('Learn the map (optional, about a minute)', () => orient(0), 'dash-link'), { id: 'splash-learn' });
+    const skipB = Object.assign(btn('Skip, just show me the map', skip, 'dash-link'), { id: 'splash-skip' });
+    const links = el('div', 'splash-links'); links.append(learn, skipB);
+    show(heading('Where do you want to start?'), introEl, choices, acctBox, links);
+  }
+
+  // ---------- learn the map (optional): nothing is requested here, and every step can be skipped ----------
+  const ORIENT = [
+    { title: 'Official information, not permission', text: 'The coloured zones come from official sources where data exists. A zone colour is information, not permission to fly: check the official platform before every flight.' },
+    { title: 'Check a location', text: 'Press and hold the map for 2 seconds, or right-click, to check a spot. A check is not saved: use Add as marker in the check window to keep the place. Search also takes places and coordinates.' },
+    { title: 'Find your tools', text: 'The buttons on the left show your location, the crosshair and marker details. The tag button under them writes the name of each one beside it. Trips, Points of Interest and Flight Sessions are in the side panel and on the map.' },
+  ];
+  function orient(i) {
+    const step = ORIENT[i];
+    const nodes = [heading(step.title), el('p', 'hint', `Learn the map, step ${i + 1} of ${ORIENT.length}. This is optional.`), el('p', 'splash-orient-text', step.text)];
+    const last = i === ORIENT.length - 1;
+    const row = el('div', 'btn-row');
+    const next = btn(last ? 'Done' : 'Next', () => (last ? choose() : orient(i + 1)), 'btn primary'); next.id = 'orient-next';
+    const prev = btn('Back', () => (i ? orient(i - 1) : choose()), 'btn small'); prev.id = 'orient-back';
+    const skipO = btn('Skip', choose, 'btn small'); skipO.id = 'orient-skip';
+    row.append(next, prev, skipO);
+    if (last && toolbar) {
+      const labels = btn('Show the labels on the map', () => { finish(); dash.fold(); toolbar.expand(); }, 'btn small'); labels.id = 'orient-labels';
+      row.append(labels);
+    }
+    show(...nodes, row);
   }
 
   // ---------- plan a trip ----------

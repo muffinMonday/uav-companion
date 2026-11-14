@@ -341,11 +341,44 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     }
     return c;
   }
+  /** Common tasks, one press each, through the same panel and hub calls the rest of the page uses. A shortcut is only shown where its feature exists. */
+  function taskShortcuts() {
+    const box = el('div', 'dash-tasks');
+    box.append(el('h4', '', 'What do you want to do?'));
+    const grid = el('div', 'dash-btns');
+    const mk = (id, text, fn) => {
+      const b = el('button', 'btn small', text); b.type = 'button'; b.id = id;
+      b.addEventListener('click', () => { if (isPhone()) setState('peek'); fn(); }); // on a phone the map needs the room
+      grid.append(b);
+    };
+    mk('task-check', 'Check a flying location', () => { setState('peek'); actions.toast?.('Press and hold on the map for 2 seconds (or right-click) to check a spot. Search takes places and coordinates.', 8000); });
+    mk('task-save', 'Save a place', () => panel.open('poi'));
+    mk('task-trip', 'Plan a trip', () => { panel.open('trips'); $('trip-new').click(); });
+    if (cloud.sessions) mk('task-sessions', 'Find flight sessions', () => cloud.sessions.open('discover'));
+    mk('task-customize', 'Customize the map', () => panel.open('config'));
+    box.append(grid);
+    return box;
+  }
+  /** Replay of the one-time feature hints (they show once by themselves; this shows one again without changing what has been seen). */
+  function tipsList() {
+    const list = actions.help?.replayable() ?? [];
+    if (!list.length) return document.createDocumentFragment();
+    const box = el('details', 'dash-tips'); box.id = 'dash-tips';
+    box.append(el('summary', '', 'Tips for each feature'));
+    const grid = el('div', 'dash-btns');
+    for (const h of list) {
+      const b = el('button', 'btn small', h.replay); b.type = 'button'; b.dataset.replay = h.id;
+      b.addEventListener('click', () => { if (isPhone()) setState('peek'); actions.help.replay(h.id); });
+      grid.append(b);
+    }
+    box.append(grid);
+    return box;
+  }
   /** How it works: opened by the ? button in the header, at the top of the cards. */
   function guideCard() {
     if (!guideOpen) return null;
     const d = el('section', 'dash-card dash-guide wide');
-    d.append(el('h3', '', 'How it works'));
+    d.append(el('h3', '', 'How it works'), taskShortcuts());
     const ol = el('ol', 'w-steps');
     for (const t of [
       ['Check a spot.', 'Press and hold on the map for 2 seconds (or right-click) to see whether you can fly there. Search takes places and coordinates.'],
@@ -353,7 +386,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
       ['See the conditions.', 'Open a marker for its zone verdict and its distance to your hotel and Home. Open a trip for a plan of each day and, if you turn weather on, a forecast.'],
       ['Your data stays yours.', 'Markers and trips are saved only in this browser. Weather, elevation and name lookups are off until you allow them (shield button). Export a backup now and then.'],
     ]) { const li = el('li'); li.append(el('b', '', t[0] + ' '), t[1]); ol.append(li); }
-    d.append(ol);
+    d.append(ol, tipsList());
     const names = regions.countries.map((k) => k.name);
     const again = el('button', 'btn small', 'Run the quick setup again'); again.type = 'button'; again.id = 'dash-setup';
     again.addEventListener('click', () => quickSetup?.());

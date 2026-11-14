@@ -18,7 +18,7 @@
   --control-h:36px; --control-h-sm:30px; /* buttons: the height they now reach (min-height is not used: fixed-size icon buttons keep their own size) */
   --icon:18px; --icon-sm:16px; --icon-lg:22px;
   --lh-tight:1.2; --lh-meta:1.35; --lh-body:1.45;
-  --z-crosshair:450; --z-hold:700; --z-panel:1000; --z-dock:1001; --z-search:1002; --z-live-chip:1003; --z-dash:1004; --z-card:1050; --z-banner:1060; --z-sheet:1070; --z-popover:1080; --z-toast:1100; --z-drag:3000;
+  --z-crosshair:450; --z-tool-labels:999; --z-hold:700; --z-panel:1000; --z-dock:1001; --z-search:1002; --z-live-chip:1003; --z-dash:1004; --z-card:1050; --z-banner:1060; --z-sheet:1070; --z-popover:1080; --z-toast:1100; --z-drag:3000;
   --ok:#0a7a4b; --ok-bg:#e3f4ec; --no:#b3261e; --no-bg:#fdebe9; --unk:#8a5a00; --unk-bg:#fff2d3;
   --radius:14px; --radius-sm:9px;
   --shadow-2:0 6px 24px rgba(15,30,45,.18), 0 1px 3px rgba(15,30,45,.12);
@@ -227,7 +227,7 @@ textarea{resize:vertical;min-height:60px}
 .leaflet-bar a.labels-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
 .leaflet-bar a.labels-btn svg{width:18px;height:18px}
 .leaflet-bar a.labels-btn.on{color:var(--accent)!important}
-.tool-labels{position:absolute;inset:0;z-index:999;pointer-events:none}
+.tool-labels{position:absolute;inset:0;z-index:var(--z-tool-labels);pointer-events:none}
 .tool-label-row{position:absolute;left:var(--tl-left);box-sizing:border-box;display:flex;align-items:center;max-width:calc(100% - var(--tl-left) - 8px);padding:0 10px;border-radius:var(--radius-sm);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-1);font-size:var(--fs-small);font-weight:var(--fw-medium);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* contextual hints (help-ui.js): one small card, in a panel pane, in the sessions dialog, or on the map */
 .help-hint{display:flex;align-items:center;gap:var(--sp-3);margin:0 0 var(--sp-3);padding:var(--sp-2) var(--sp-3);border:1px solid var(--accent);border-radius:var(--radius-sm);background:var(--accent-soft);color:var(--fg);font-size:var(--fs-small);line-height:var(--lh-meta)}
@@ -829,6 +829,11 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 
 /* ---------- more on the dashboard ---------- */
 .dash-btns{display:flex;flex-wrap:wrap;gap:6px}
+.dash-tasks{margin:12px 0}
+.dash-tasks h4{margin:0 0 6px;font-size:var(--fs-body)}
+.dash-tips{margin:10px 0}
+.dash-tips summary{cursor:pointer;color:var(--accent);font-weight:var(--fw-semibold)}
+.dash-tips .dash-btns{margin-top:8px}
 .dash-check{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:3px;font-size:var(--fs-small)}
 .dash-check li{display:flex;align-items:center;gap:8px}
 .dash-check span.done{color:var(--muted);text-decoration:line-through}
@@ -861,6 +866,8 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .cloud-dialog::backdrop,.account-dialog::backdrop,.splash::backdrop{background:var(--scrim)}
 .splash{max-height:calc(100dvh - 32px);overflow-y:auto}
 .splash-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.splash-links{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px}
+.splash-orient-text{margin:8px 0 14px;font-size:var(--fs-body);line-height:var(--lh-body)}
 .splash-choice{display:grid;gap:4px;align-content:start;padding:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);color:var(--fg);font:inherit;text-align:left;cursor:pointer}
 .splash-choice:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
 @media (hover:hover){.splash-choice:hover{border-color:var(--accent);background:var(--accent-soft)}}
