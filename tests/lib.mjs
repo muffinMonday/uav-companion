@@ -47,7 +47,17 @@ export async function pickType(p, id) {
 export async function dashClick(p, selector) {
   if (await p.locator('#dash').isHidden()) await p.locator('#dash-tab:visible, #dash-peek:visible').first().click();
   await p.waitForSelector('#dash:not([hidden])');
+  if (await p.locator('#dash-back').count()) await p.click('#dash-back'); // back from Help to the default view
+  await p.evaluate(() => { const d = document.querySelector('#dash .dash-data'); if (d) d.open = true; }); // import, export and share live in the folded data row
   await p.click(selector);
   await p.waitForTimeout(150);
   await p.click('#dash-collapse');
+}
+
+/** Presses one of the tools in the More tools menu (opening the menu first), then puts the menu away again unless `keepOpen`. */
+export async function moreTool(p, tool, { keepOpen = false } = {}) {
+  const isOpen = () => p.evaluate(() => !document.getElementById('more-tools-menu').hidden);
+  if (!(await isOpen())) await p.click('.more-btn');
+  await p.click(`#more-tools-menu .more-row[data-tool="${tool}"]`);
+  if (!keepOpen && tool !== 'sessions' && (await isOpen())) await p.click('.more-btn');
 }

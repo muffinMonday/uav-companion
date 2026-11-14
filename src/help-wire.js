@@ -52,8 +52,8 @@ export function initHelp({ map, panel, sessions = () => null, state = createHelp
     help, state,
     /** The first press of any map button (called by the toolbar). */
     mapToolUsed: () => help.auto('map-tools', mapPlace),
-    /** The visitor found the tag button themselves: nothing left to explain. */
-    labelsOpened: () => help.done('map-tools'),
+    /** The visitor opened More tools themselves: nothing left to explain. */
+    moreToolsOpened: () => help.done('map-tools'),
     /** A newer marker type was just put into a shared trip (create, edit, bulk change or import): the one notice a visitor must dismiss. */
     newTypeShared() { // unlike a tip, this waits (a marker window or a drag is up right after creating) and tries again until it can be shown, or the visitor has dismissed it
       if (state.has('newtype-shared') || pendingTimer) return;

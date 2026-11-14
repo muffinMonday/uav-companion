@@ -1,7 +1,7 @@
 // Flight sessions in the browser (the Sessions hub): discovering public sessions, RSVP and capacity, reporting, hosting as an ordinary person (private by default, the map pin picker keeping the draft,
 // the repeat preview, invitations and private links, the wording that a host cannot verify attendance for XP), marking attendance as an organiser, the administrator, the dashboard card and a phone width.
 // The real Supabase client talks to a mocked HTTP server whose functions run the real SQL on an in-memory Postgres (PGlite), so the screen is tested against the real rules.
-import { chromium, CHANNEL } from './lib.mjs';
+import { chromium, CHANNEL, moreTool } from './lib.mjs';
 import { makeDb, as, A, B, C, D } from './lib-db.mjs';
 import fs from 'node:fs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
@@ -80,7 +80,7 @@ const txt = async (p, sel) => (await p.textContent(sel).catch(() => '')) ?? '';
 const hub = '#ses-hub';
 const body = hub + ' .ses-hub-inner';
 const rowOf = (p, title) => p.locator(`${body} .ses-row`, { hasText: title });
-const openHub = async (p, tab = 'discover') => { if (await p.locator(hub + '[open]').count() === 0) await p.click('.sessions-btn'); await p.waitForSelector(hub + '[open]'); if (tab !== 'discover') await p.click(`${hub} .ses-tab[data-section=${tab}]`); await p.waitForTimeout(250); };
+const openHub = async (p, tab = 'discover') => { if (await p.locator(hub + '[open]').count() === 0) await moreTool(p, 'sessions'); await p.waitForSelector(hub + '[open]'); if (tab !== 'discover') await p.click(`${hub} .ses-tab[data-section=${tab}]`); await p.waitForTimeout(250); };
 const goTab = async (p, tab) => { await p.click(`${hub} .ses-tab[data-section=${tab}]`); await p.waitForTimeout(250); };
 const say = async (p, re) => p.waitForFunction(([sel, s]) => new RegExp(s).test(document.querySelector(sel)?.textContent ?? ''), [body + ' .ses-message', re.source], { timeout: 6000 });
 const lat0 = 30.6, lng0 = 114.3;
@@ -88,8 +88,11 @@ await db.exec(`update public.progression_settings set value = 1 where key = 'pub
 
 // ---------- the map button, and the hub for someone with nothing planned
 let { ctx, p } = await open('c');
-ok(await p.locator('.sessions-btn').count() === 1 && await p.getAttribute('.sessions-btn', 'aria-label').then((t) => /Flight sessions/.test(t)), 'the map has a Flight sessions button');
-ok(await p.evaluate(() => { const v = document.querySelector('.sessions-btn svg'); const c = getComputedStyle(v); return c.fill === 'none' && c.stroke !== 'none' && v.getBoundingClientRect().width >= 16; }), 'its icon is drawn as an outline, not a filled block');
+ok(await p.locator('.sessions-btn').count() === 1 && await p.getAttribute('.sessions-btn', 'aria-label').then((t) => /Flight sessions/.test(t)) && !(await p.locator('.sessions-btn').isVisible()), 'the Flight sessions control is kept, folded into More tools');
+await p.click('.more-btn');
+ok(await p.locator('#more-tools-menu .more-row[data-tool=sessions]').isVisible() && /Flight Sessions/.test(await p.textContent('#more-tools-menu .more-row[data-tool=sessions]')), 'More tools has a Flight Sessions row');
+await p.click('.more-btn');
+ok(await p.evaluate(() => { const v = document.querySelector('.sessions-btn svg'); const c = getComputedStyle(v); return c.fill === 'none' && c.stroke !== 'none'; }), 'its icon is still drawn as an outline, not a filled block');
 await openHub(p);
 ok(/No public sessions match/.test(await txt(p, body)) && await p.locator('#ses-new').count() === 1, 'Discover with nothing public says so, and anyone signed in can plan a session');
 ok(await p.locator(hub + ' .ses-tab').count() === 3 && await p.locator(hub + ' .ses-tab[aria-selected=true]').textContent().then((t) => /Discover/.test(t)), 'three tabs: Discover, My sessions, Invitations');
@@ -307,15 +310,19 @@ await p.evaluate(() => { localStorage.setItem('uavzones.v1.dash', JSON.stringify
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1500);
 await p.locator('#name-dlg-skip').click({ timeout: 1500 }).catch(() => {});
 await p.evaluate(() => document.getElementById('dash-peek')?.click());
-await p.waitForSelector('.dash-sessions', { timeout: 6000 });
-ok(await p.locator('.dash-sessions').count() === 1 && /Flight sessions/.test(await txt(p, '.dash-sessions')), 'the dashboard has a Flight sessions card');
-await p.locator('.dash-sessions .btn.primary').click();
+await p.waitForSelector('#task-sessions', { timeout: 6000 });
+ok(await p.locator('#task-sessions').count() === 1 && /Find sessions/.test(await txt(p, '#task-sessions')) && await p.locator('.dash-sessions').count() === 0, 'the dashboard has the Find sessions shortcut and no empty Flight sessions card');
+await p.locator('#task-sessions').click();
 await p.waitForSelector(hub + '[open]', { timeout: 4000 });
 ok(await p.locator(hub + '[open]').count() === 1, 'its button opens the hub');
 await p.keyboard.press('Escape');
 ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}').sessionsNearby)) !== true, 'nearby discovery is off until the person asks for it');
-await p.check('.dash-sessions .ses-nearby input'); await p.waitForTimeout(900);
-ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}').sessionsNearby)) === true, 'ticking the box saves the opt-in (it uses the map centre, never the position)');
+await p.evaluate(() => document.getElementById('help-open').click());
+await p.evaluate(() => document.querySelectorAll('.dash-topic').forEach((d) => { d.open = true; }));
+await p.check('.dash-help-view .ses-nearby input'); await p.waitForTimeout(900);
+ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}').sessionsNearby)) === true, 'ticking the box in Help saves the opt-in (it uses the map centre, never the position)');
+await p.evaluate(() => document.getElementById('dash-back').click()); await p.waitForTimeout(300);
+ok(await p.locator('.dash-sessions').count() <= 1, 'with it on, the dashboard card may appear when sessions are nearby');
 await ctx.close();
 
 // ---------- a phone

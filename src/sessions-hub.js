@@ -6,7 +6,7 @@ import { createSessions, sessionState, whenText, capacityText, roleText, seriesT
 import { createSessionForm, clearDraft } from './sessions-create.js';
 import { localDate, localTime } from './sessions-recurrence.js';
 import { createExplorer } from './sessions-map-explorer.js';
-import { sessionMapActions } from './maplinks-ui.js';
+import { sessionMapActions, hasPoint } from './maplinks-ui.js';
 import { avatarEl } from './avatars.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { log } from './log.js';
@@ -176,13 +176,21 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   // ---- drawing
   function rowFor(s, extra = []) {
     const st = sessionState(s), r = el('div', 'ses-row'); r.dataset.id = s.id; r.dataset.status = s.status;
-    const top = el('div', 'ses-top'); top.append(el('b', 'ses-title', s.title));
+    // the card body opens the map explorer on this session: the title is the one real control (a stretched ::after makes the whole card its target), so no control sits inside another
+    const point = hasPoint(s.lat, s.lng);
+    r.classList.toggle('has-open', true); r.dataset.point = String(point);
+    const open = el('button', 'ses-row-open'); open.type = 'button'; open.dataset.act = point ? 'focus-map' : 'details-instead';
+    open.setAttribute('aria-label', point ? `${s.title}: show on the map` : `${s.title}: open the details (no meeting point is set)`);
+    open.title = point ? 'Show on the map' : 'No meeting point is set, so this opens the details';
+    open.append(el('b', 'ses-title', s.title));
+    open.addEventListener('click', () => { if (point) explore(section, { focus: s.id }); else openDetail(s); });
+    const top = el('div', 'ses-top'); top.append(open);
     top.append(el('span', 'badge', s.visibility === 'public' ? 'Public' : 'Private'));
     if (s.status !== 'scheduled') top.append(el('span', 'badge', s.status === 'closed' ? 'Closed' : 'Cancelled')); else if (st.started && !st.over) top.append(el('span', 'badge ok', 'Under way')); if (st.full && s.status === 'scheduled' && !s.iRsvped) top.append(el('span', 'badge', 'Full'));
     r.append(top, el('small', 'ses-when', whenText(s.startsAt, s.endsAt) + (s.location ? ' · ' + s.location : '')));
     const meta = [seriesText(s), capacityText(s), Number.isFinite(s.distanceKm) ? `${s.distanceKm.toFixed(1)} km away` : ''].filter(Boolean);
     r.append(el('small', 'ses-count', meta.join(' · ')), hostBadge(s));
-    const bs = el('div', 'btn-row'); const d = btn('Details'); d.dataset.act = 'details'; d.addEventListener('click', () => openDetail(s)); bs.append(sessionMapActions({ lat: s.lat, lng: s.lng, title: s.title, onMap: () => explore(section, { focus: s.id }) }), d, ...extra); r.append(bs);
+    const bs = el('div', 'btn-row'); const d = btn('Details'); d.dataset.act = 'details'; d.addEventListener('click', (e) => { e.stopPropagation(); openDetail(s); }); bs.append(sessionMapActions({ lat: s.lat, lng: s.lng, title: s.title }), d, ...extra); r.append(bs);
     return r;
   }
   const empty = (t) => el('p', 'hint ses-empty', t);

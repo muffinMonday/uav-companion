@@ -1,5 +1,5 @@
 // Selecting a marker: the day's route with the selected stop's arrows in bold, and the switch that stops the details window opening.
-import { chromium, CHANNEL, ROOT } from './lib.mjs';
+import { chromium, CHANNEL, ROOT, moreTool } from './lib.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 const { haversineM, fmtDistance } = await import(pathToFileURL(path.join(ROOT, 'src/distance.js')).href);
@@ -62,9 +62,9 @@ await ctx.close();
 
 // ================= the switch
 ({ ctx, p } = await open());
-ok(await p.locator('.details-btn').isVisible() && (await p.locator('.details-btn').boundingBox()).y > (await p.locator('.locate-btn').boundingBox()).y, 'the button on the map sits below the location button');
+ok(!(await p.locator('.details-btn').isVisible()) && await p.locator('.more-btn').isVisible() && (await p.locator('.more-btn').boundingBox()).y > (await p.locator('.locate-btn').boundingBox()).y, 'the switch is a row of More tools, whose button sits below the location button');
 ok((await p.locator('.details-btn').getAttribute('title')).includes('on'), 'it says details are on');
-await p.click('.details-btn'); await p.waitForTimeout(200);
+await moreTool(p, 'details'); await p.waitForTimeout(200);
 ok(await p.locator('.details-btn.off').count() === 1 && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).markerDetails)) === false, 'one tap turns details off and it is remembered');
 await pin(p, 'Bravo').click(); await p.waitForTimeout(500);
 ok(await popup(p) === 0, 'a click on a marker opens no window');

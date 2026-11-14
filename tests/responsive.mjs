@@ -2,7 +2,7 @@
 // Checks that titles, close buttons, tabs and the Create/Cancel row stay inside the visible viewport, that nothing scrolls sideways, that the header stays put while the body scrolls,
 // that the sheet follows a (simulated) visual viewport when the keyboard opens, and that the map point picker, Escape and focus restoration still work.
 // Emulated only: touch and viewport sizes (Playwright). A real foldable, the real Android toolbar and the real keyboard are NOT exercised. Screenshots go to tests/out/responsive/.
-import { chromium, CHANNEL, OUT } from './lib.mjs';
+import { chromium, CHANNEL, OUT, moreTool } from './lib.mjs';
 import { makeDb, as, A, B, C } from './lib-db.mjs';
 import fs from 'node:fs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
@@ -79,8 +79,8 @@ const hub = '#ses-hub';
 for (const vp of VPS) {
   const [name, w, h, touch] = vp, tag = `${name} ${w}x${h}`, slug = `${w}x${h}`;
   const { ctx, p } = await open(vp);
-  await p.focus('.sessions-btn');
-  await p.keyboard.press('Enter'); await p.waitForSelector(hub + '[open]'); await p.waitForSelector(hub + ' .ses-row', { timeout: 5000 }); await p.waitForTimeout(300);
+  await p.focus('.more-btn');
+  await p.keyboard.press('Enter'); await p.waitForSelector('#more-tools-menu .more-row[data-tool=sessions]'); await p.focus('#more-tools-menu .more-row[data-tool=sessions]'); await p.keyboard.press('Enter'); await p.waitForSelector(hub + '[open]'); await p.waitForSelector(hub + ' .ses-row', { timeout: 5000 }); await p.waitForTimeout(300);
   ok(inside(await rect(p, hub), w, h), `${tag}: the hub dialog is inside the viewport`);
   ok(inside(await rect(p, '.ses-hub-head h2'), w, h) && inside(await rect(p, '#ses-hub-close'), w, h), `${tag}: the title and the close button are inside the viewport`);
   const tabsOk = await p.evaluate(([w, h, touch]) => [...document.querySelectorAll('.ses-tab')].every((t) => { const r = t.getBoundingClientRect(); return r.left >= -0.5 && r.right <= w + 0.5 && r.bottom <= h + 0.5 && r.height >= (touch ? 44 : 30); }), [w, h, touch]);
@@ -138,14 +138,14 @@ for (const vp of VPS) {
   await p.keyboard.press('Escape'); await p.waitForTimeout(200);
   ok(await p.locator('#ses-form').count() === 0 && await p.locator(hub + '[open]').count() === 1, `${tag}: Escape leaves the form and keeps the hub`);
   await p.keyboard.press('Escape'); await p.waitForTimeout(250);
-  ok(await p.locator(hub + '[open]').count() === 0 && await p.evaluate(() => document.activeElement?.classList.contains('sessions-btn')), `${tag}: Escape closes the hub and focus returns to the calendar button`);
+  ok(await p.locator(hub + '[open]').count() === 0 && await p.evaluate(() => document.activeElement?.classList.contains('more-btn')), `${tag}: Escape closes the hub and focus returns to the More tools button`);
   await ctx.close();
 }
 
 // dark theme: the same checks hold and the dialog is drawn with the dark surface
 {
   const vp = VPS[2], [, w, h] = vp, { ctx, p } = await open(vp, { dark: true });
-  await p.click('.sessions-btn'); await p.waitForSelector(hub + '[open]'); await p.waitForTimeout(400);
+  await moreTool(p, 'sessions'); await p.waitForSelector(hub + '[open]'); await p.waitForTimeout(400);
   ok(await p.evaluate(() => document.documentElement.dataset.theme === 'dark' && getComputedStyle(document.getElementById('ses-hub')).backgroundColor !== 'rgb(255, 255, 255)'), 'dark theme: the hub uses the dark surface');
   ok(inside(await rect(p, '#ses-hub-close'), w, h), 'dark theme: the close button is inside the viewport');
   await shot(p, 'hub-dark-700x850');
@@ -156,7 +156,7 @@ for (const vp of VPS) {
 // The old clipping mechanism: a dialog sized from a 100vh taller than the visible area. The hub uses no vh, so a visible area shorter than its maximum height still fits.
 {
   const vp = ['visible area 850x560 (toolbar showing)', 850, 560, false], [, w, h] = vp, { ctx, p } = await open(vp);
-  await p.click('.sessions-btn'); await p.waitForSelector(hub + '[open]'); await p.waitForTimeout(300);
+  await moreTool(p, 'sessions'); await p.waitForSelector(hub + '[open]'); await p.waitForTimeout(300);
   ok(inside(await rect(p, hub), w, h) && inside(await rect(p, '#ses-hub-close'), w, h) && inside(await rect(p, '.ses-hub-head h2'), w, h), 'a visible area shorter than the maximum dialog height: the title and close button stay inside (the old rule put them above the top)');
   ok(await p.evaluate(() => !/vh/.test([...document.styleSheets].flatMap((s) => [...s.cssRules]).filter((r) => r.selectorText === '.ses-hub').map((r) => r.cssText).join(''))), 'the hub rules contain no vh units');
   await ctx.close();

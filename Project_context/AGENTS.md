@@ -37,3 +37,6 @@ For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map
 
 ## Backlog: UX & Discoverability
 - `docs/UX_DISCOVERABILITY_BACKLOG.md`: product and acceptance spec for the expandable labelled map toolbar, optional Quick Setup orientation, once-per-feature contextual hints, and task shortcuts in the dashboard Help card. Frontend, tests and docs only; no database change. Owner authorized implementation, commit, push and `deploy:live` for this feature only (2026-11-14); status is in its "Implementation status" section and in `CURRENT_STATUS.md`.
+
+## Backlog: Dashboard, Toolbar & Visual Refinement
+- `docs/DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md`: two-wave spec. **Wave 1** (focused dashboard, Help subview, More tools, Sessions cards, single Navigate, contextual legends) is implemented locally and **not committed, pushed or deployed**; owner decision on the old-client POI downcast comes first. **Wave 2** (section 12) is a deferred backlog: do not start it without a separate owner prompt.

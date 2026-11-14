@@ -23,7 +23,7 @@ const type = async (p, text) => { await openSearch(p); await p.fill('#q', ''); a
 const rows = (p) => p.$$eval('#results li[role=option]', (l) => l.map((x) => ({ main: x.querySelector('span').textContent, sub: x.querySelector('small').textContent })));
 const msgText = (p) => p.evaluate(() => document.querySelector('#results li.msg')?.textContent || '');
 const pin = (p) => p.evaluate(() => { const e = document.querySelector('img.leaflet-marker-icon'); if (!e) return null; const r = e.getBoundingClientRect(); const m = document.getElementById('map').getBoundingClientRect(); return { n: document.querySelectorAll('img.leaflet-marker-icon').length, x: r.x + r.width / 2, bottom: r.bottom, top: r.top, mx: m.x + m.width / 2, my: m.y + m.height / 2 }; });
-const win = (p) => p.evaluate(() => { const w = document.querySelector('.leaflet-popup-content-wrapper'); if (!w) return null; const r = w.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: r.height, text: w.innerText, amap: !!w.querySelector('a.maplink[href*="amap.com/marker"]'), nav: !!w.querySelector('a.maplink[href*="amap.com/navigation"]'), google: !!w.querySelector('a.maplink[href*="google.com"]'), add: [...w.querySelectorAll('button')].some((x) => x.textContent === 'Add as marker'), remove: [...w.querySelectorAll('button')].some((x) => x.textContent === 'Remove pin'), href: w.querySelector('a.maplink[href*="amap.com/marker"], a.maplink[href*="google.com/maps/search"]')?.getAttribute('href') || '' }; });
+const win = (p) => p.evaluate(() => { const w = document.querySelector('.leaflet-popup-content-wrapper'); if (!w) return null; const r = w.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: r.height, text: w.innerText, amap: !!w.querySelector('a.maplink[href*="amap.com/navigation"]'), nav: !!w.querySelector('a.maplink[href*="amap.com/navigation"]') && w.querySelectorAll('a.maplink').length === 1, google: !!w.querySelector('a.maplink[href*="google.com"]'), add: [...w.querySelectorAll('button')].some((x) => x.textContent === 'Add as marker'), remove: [...w.querySelectorAll('button')].some((x) => x.textContent === 'Remove pin'), href: w.querySelector('a.maplink[href*="amap.com/navigation"], a.maplink[href*="google.com/maps"]')?.getAttribute('href') || '' }; });
 const waitWin = async (p) => { await p.waitForSelector('.leaflet-popup .maplinks', { timeout: 8000 }); await p.waitForTimeout(900); };
 
 // ================= coordinates in China
@@ -38,16 +38,17 @@ let pn = await pin(p), w = await win(p);
 ok(pn && pn.n === 1 && Math.abs(pn.x - pn.mx) < 14 && Math.abs(pn.bottom - pn.my) < 14, 'Enter drops a blue pin on the point and centres it: pin at (' + Math.round(pn && pn.x) + ',' + Math.round(pn && pn.bottom) + '), map centre (' + Math.round(pn && pn.mx) + ',' + Math.round(pn && pn.my) + ')');
 ok(w && w.bottom <= pn.top + 2 && w.top >= 0, 'the window sits above the pin and fully on screen');
 ok(w && /Suitable-flight zone|Outside the suitable-flight zone|No suitable-flight|zone/i.test(w.text), 'it is the point-check window: it gives the zone verdict');
-ok(w.amap && w.nav && !w.google && w.add && w.remove, 'with Open and Navigate in Amap, and the Add as marker and Remove pin tools');
-ok(!/30\.59280, 114\.30550|Latitude/.test('') && /position=114\.305500,30\.592800/.test(w.href), 'its Open link points at the typed coordinates: ' + w.href);
+ok(w.amap && w.nav && !w.google && w.add && w.remove, 'with the one Navigate action in Amap, and the Add as marker and Remove pin tools');
+ok(!/30\.59280, 114\.30550|Latitude/.test('') && /navigation\?to=114\.3\d+,30\.5\d+/.test(w.href), 'its Navigate link points at the typed coordinates: ' + w.href);
 ok(online.length === 0, 'nothing was sent to an online search');
 
 // the second reading
 await type(p, '30.5928, 114.3055');
 await p.locator('#results li[role=option]').nth(1).dispatchEvent('mousedown'); await waitWin(p);
 w = await win(p); pn = await pin(p);
-const m = (w.href.match(/position=([\d.]+),([\d.]+)/) || []).map(Number); [m[1], m[2]] = [m[2], m[1]];
-ok(pn.n === 1 && m && Math.abs(+m[1] - 30.5928) > 0.001 && Math.abs(+m[1] - 30.5928) < 0.01 && Math.abs(+m[2] - 114.3055) > 0.003, 'choosing the Amap reading moves the pin (still one pin) to the converted point: ' + (m && `${m[1]}, ${m[2]}`));
+const m = (w.href.match(/navigation\?to=([\d.]+),([\d.]+)/) || []).map(Number); [m[1], m[2]] = [m[2], m[1]];
+// the Navigate link is in Amap's own coordinates (GCJ-02): for the Amap reading the pin sits at the converted WGS point, so the link's coordinates come back to what was typed
+ok(pn.n === 1 && m && Math.abs(+m[1] - 30.5928) < 0.0005 && Math.abs(+m[2] - 114.3055) < 0.0005, 'choosing the Amap reading keeps one pin, at the converted point (its Amap link returns the typed numbers): ' + (m && `${m[1]}, ${m[2]}`));
 await ctx.close();
 
 // ================= coordinates outside China, links, errors

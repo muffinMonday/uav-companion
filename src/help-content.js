@@ -7,7 +7,7 @@
 // `replay` is the label of the entry in the dashboard's "Tips" list. A future feature (Community Flying Areas) adds an entry here and a trigger; nothing else changes.
 // Hints explain how to use a feature. They never replace the flight-safety warnings or the privacy confirmations, which are separate and always shown.
 export const HELP = [
-  { id: 'map-tools', where: 'map', replay: 'Map buttons', text: 'The buttons on the left each do one thing. The last one, the tag button, writes the name of every button beside it.' },
+  { id: 'map-tools', where: 'map', replay: 'Map buttons', text: 'Zoom, My location and More tools are on the left. More tools holds marker details, Side Quests, trip markers, the crosshair and Flight Sessions.' },
   { id: 'point-check', where: 'map', replay: 'Checking a spot', text: 'A spot check is not saved. To keep the place, use Add as marker in the check window. To check another spot, press and hold the map for 2 seconds or right-click.' },
   { id: 'poi', where: 'panel', tab: 'poi', replay: 'Points of Interest', text: 'Open Add a marker to choose a type and place it. Search all saved places, and open a trip to see its days. Pins you save stay in this browser.' },
   { id: 'poi-types', where: 'poi', anchor: 'type', replay: 'Choose a marker type', text: 'Markers are grouped: Travel & Places, Transportation, Drone & Safety and Special. Pick a group, then a type. Accommodation is what Hotel was called; saved ones are unchanged.' },

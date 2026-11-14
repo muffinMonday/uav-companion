@@ -7,7 +7,7 @@ const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 
 const { HELP, helpById } = await load('src/help-content.js');
 const S = await load('src/help-state.js');
-const { toolLabel, TOOLS } = await load('src/map-tool-labels.js');
+const { toolRow, FOLDED, DIRECT, TOOLS } = await load('src/map-tool-labels.js');
 
 // ---------- registry
 ok(HELP.length >= 7, 'the registry lists the seven planned hints');
@@ -53,16 +53,13 @@ ok(S.createHelpState(st).list().length === 64, 'the list is capped');
 h = S.createHelpState(fake()); h.mark('BAD ID'); h.mark('x'.repeat(50));
 ok(h.list().length === 0, 'malformed ids are not stored');
 
-// ---------- labels
-ok(TOOLS.every((t) => typeof toolLabel(t, {}) === 'string'), 'every tool has a label');
-ok(toolLabel('nope') === null, 'an unknown tool has none');
-ok(!TOOLS.includes('zoom-in') && toolLabel('zoom-in') === null, 'zoom buttons are not labelled');
-ok(toolLabel('locate', { text: 'Show my location' }) === 'My location', 'locate: off');
-ok(toolLabel('locate', { text: 'Follow me' }) === 'Follow me' && toolLabel('locate', { text: 'Follow me and turn the map with the way the phone points' }) === 'Follow me', 'locate: located');
-ok(toolLabel('locate', { text: 'Stop following and turn the map back to north' }) === 'Stop following', 'locate: following');
-ok(toolLabel('crosshair', { pressed: true }) === 'Hide crosshair' && toolLabel('crosshair', { pressed: false }) === 'Show crosshair', 'crosshair follows its state');
-ok(toolLabel('details', { pressed: true }) === 'Hide marker details' && toolLabel('details', { pressed: false }) === 'Show marker details', 'marker details follows its state');
-ok(toolLabel('side-quests', { pressed: true }) === 'Hide Side Quests' && toolLabel('side-quests', { pressed: false }) === 'Show all Side Quests', 'Side Quests follows its state');
-ok(toolLabel('trips', { pressed: true }) === 'Hide trip markers' && toolLabel('trips', { pressed: false }) === 'Show trip markers', 'trip markers follows its state');
-ok(toolLabel('compass') === 'Reset to north' && toolLabel('sessions') === 'Browse flight sessions', 'compass and sessions');
-ok(toolLabel('labels', { pressed: true }) === 'Hide labels' && toolLabel('labels', { pressed: false }) === 'Show map tool labels', 'the toggle names its own action');
+// ---------- More tools rows
+ok(FOLDED.every((x) => { const r = toolRow(x, { pressed: true }); return r && typeof r.name === 'string' && r.name.length > 0; }), 'every folded tool has a row');
+ok(toolRow('nope') === null && toolRow('locate') === null && toolRow('compass') === null, 'unknown tools and the direct buttons (locate, compass) have no row');
+ok(!FOLDED.includes('zoom-in') && DIRECT.join() === 'locate,compass' && TOOLS.includes('more'), 'zoom buttons are not rows; locate and compass stay direct');
+ok(FOLDED.join() === 'details,side-quests,trips,crosshair,sessions', 'the rows come in a fixed order');
+ok(toolRow('crosshair', { pressed: true }).state === 'On' && toolRow('crosshair', { pressed: false }).state === 'Off', 'crosshair row follows its state');
+ok(toolRow('details', { pressed: true }).name === 'Marker details' && toolRow('details', { pressed: false }).state === 'Off', 'marker details row follows its state');
+ok(toolRow('side-quests', { pressed: true }).state === 'All shown' && toolRow('side-quests', { pressed: false }).state === 'Open stop only', 'Side Quests row says what the switch does');
+ok(toolRow('trips', { pressed: true }).state === 'Shown' && toolRow('trips', { pressed: false }).state === 'Hidden', 'trip markers row follows its state');
+ok(toolRow('sessions').name === 'Flight Sessions' && toolRow('sessions').state === null, 'Flight Sessions is an action with no state');

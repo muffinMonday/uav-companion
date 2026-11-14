@@ -47,7 +47,7 @@ ok(/Today/.test(txt) && /Today stop/.test(txt) && /Second stop/.test(txt), 'a tr
 ok(/1 of 2/.test(txt), 'with ‹ 1 of 2 › to move through the coming trips');
 ok(/Back up your markers/.test(txt) && /45 days ago/.test(txt), 'a backup 45 days old gets a reminder');
 ok(/Fly in/.test(txt) && (await p.locator('#dash-body .btn', { hasText: 'Singapore' }).count()) === 1, 'there is a button for each covered region');
-ok((await p.locator('.dash-guide').count()) === 0 && !/What’s new/.test(txt), 'the guide is not showing and there is no What\'s new for a visitor who has seen it');
+ok((await p.locator('.dash-guide').count()) === 0 && !/What’s new/.test(txt), 'Help is not showing and there is no What\'s new for a visitor who has seen it');
 await p.locator('#dash-body .dash-stop', { hasText: 'Today stop' }).click(); await p.waitForSelector('.poi-pop h3', { timeout: 8000 });
 ok((await p.textContent('.poi-pop h3')) === 'Today stop', 'tapping a stop opens it on the map');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(300);
@@ -68,7 +68,7 @@ await p.locator('#dash-body .btn', { hasText: 'Singapore' }).click(); await p.wa
 const view = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).view);
 ok(Math.abs(view.lat - 1.35) < 0.5 && Math.abs(view.lon - 103.8) < 0.5, 'the Singapore button centres the map there: ' + JSON.stringify(view));
 await p.click('#tab-config'); await p.click('#help-open'); await p.waitForTimeout(300);
-ok((await p.locator('#dash-body .dash-guide').count()) === 1 && (await p.getAttribute('#dash-help', 'aria-pressed')) === 'true', 'How it works (Map Configs) opens the dashboard with the guide showing');
+ok((await p.locator('#dash-body .dash-help-view').count()) === 1 && (await p.locator('#dash-body .dash-tasks').count()) === 0 && (await p.getAttribute('#dash-help', 'aria-pressed')) === 'true', 'Help (Map Configs) opens the dashboard straight into the Help subview');
 
 // the three states
 const scaleY = () => p.$eval('.leaflet-control-scale', (e) => Math.round(e.getBoundingClientRect().y));
@@ -105,7 +105,7 @@ ok((await dashSaved(p)).showOnStart === true, 'turning it on is remembered');
 await ctx.close();
 
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: { showOnStart: true, welcomed: true, seen: null, hideUntil: TODAY } }));
-ok(await stateOf(p) === 'expanded' && /What’s new/.test(await p.textContent('#dash-body')) && /Singapore no-fly zones/.test(await p.textContent('#dash-body')), 'a What\'s new entry the visitor has not seen opens it, even after "not for today"');
+ok(await stateOf(p) === 'expanded' && /What’s new/.test(await p.textContent('#dash-body')), 'a What\'s new entry the visitor has not seen opens it, even after "not for today"');
 ok(/Ranks and achievements/.test(await p.textContent('#dash-body')) && /Side Quests/.test(await p.textContent('#dash-body')) && /Quick setup/.test(await p.textContent('#dash-body')), 'the newest entries are announced to a visitor who has not seen them (at most three are shown)');
 await p.click('#dash-collapse'); await p.waitForTimeout(250);
 ok((await dashSaved(p)).seen === LATEST_SEEN, 'putting it away marks the entry as seen');
@@ -116,9 +116,9 @@ await ctx.close();
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: null, data: false }));
 ok(await stateOf(p) === 'peek' && await p.$eval('#splash', (d) => d.open), 'a first visit starts with the quick setup over the strip');
 await p.click('#splash-skip'); await p.waitForTimeout(300);
-ok(await stateOf(p) === 'expanded' && (await p.locator('#dash-body .dash-guide').count()) === 1 && /Create your first trip/.test(await p.textContent('#dash-body')), 'skipping it opens the dashboard with the guide and a first-trip button');
-await p.locator('#dash-body .btn', { hasText: 'Create your first trip' }).click(); await p.waitForTimeout(400);
-ok(await p.isVisible('#trip-form-card'), 'which starts a new trip');
+ok(await stateOf(p) === 'expanded' && (await p.locator('#dash-body .dash-guide').count()) === 0 && (await p.locator('#task-check, #task-trip, #task-save').count()) === 3 && (await p.locator('#dash-body .dash-tasks .btn').count()) <= 4, 'skipping it opens the dashboard with the task shortcuts (Sessions only with an account build) and no guide');
+await p.locator('#task-trip').click(); await p.waitForTimeout(400);
+ok(await p.isVisible('#trip-form-card'), 'Plan a trip starts a new trip');
 await ctx.close();
 
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: { showOnStart: true, welcomed: true, seen: null }, hash: '#import=zz' }));
@@ -168,33 +168,30 @@ ok((await p.$eval('#dash .dash-hello', (e) => parseFloat(getComputedStyle(e).fon
 await ctx.close();
 // ================= more on the dashboard: quick actions, layers, your data, the map key, the checklist, today with check-in, the forecast
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false));
-const cards = await p.$$eval('#dash-body .dash-card h3', (e) => e.map((x) => x.textContent));
-ok(['Quick actions', 'Layers', 'Your data', 'Map key'].every((c) => cards.includes(c)), 'the dashboard has Quick actions, Layers, Your data and Map key: ' + cards.join(' · '));
+ok((await p.locator('#task-check, #task-trip, #task-save').count()) === 3 && (await p.locator('#dash-body > .dash-tasks').count()) === 1, 'the task row is always on the default dashboard (Sessions needs an account build)');
+ok(!(await p.locator('#dash .dash-guide, #dash .dash-key, #dash .dash-layers, #dash .dash-actions').count()), 'the guide, Map key, Layers and Quick actions cards are no longer on the default dashboard');
 ok(!(await p.locator('#panel h2:has-text("About this map")').count()) && !(await p.locator('#panel h2:has-text("Backup")').count()), 'the cards they came from are gone from the side panel');
-ok((await p.locator('#dash .dash-key #legend > div').count()) >= 2 && (await p.locator('#dash .dash-key .key-line').count()) === 4 && /Coverage/.test(await p.textContent('#dash .dash-key #regions-note')), 'the Map key holds the zone legend, the coverage note and four line samples');
+ok((await p.locator('#dash .dash-data > summary').count()) === 1 && !(await p.locator('#dash .dash-data').evaluate((e) => e.open)), 'Your data (export, import, share) is a folded row at the end');
 // the checklist, to tick here
 await p.locator('#dash-body .dash-trip-nav .btn').nth(1).click(); await p.waitForTimeout(200);
 ok((await p.locator('#dash .dash-check li').count()) === 2, 'the next trip shows its checklist');
 await p.locator('#dash .dash-check li', { hasText: 'Permit' }).locator('input').check(); await p.waitForTimeout(250);
 ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.trips')).trips.find((x) => x.id === 't1').checklist[1].done)) === true && /2 of 2 checked/.test(await p.textContent('#dash .dash-trip')), 'ticking an item here saves it in the trip');
 // your data
+await p.click('#dash .dash-data > summary');
 const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#dash .dash-data #poi-export')]);
 await p.waitForTimeout(300);
-ok(/\.geojson$/.test(dl.suggestedFilename()) && /Last backup/.test(await p.textContent('#dash .dash-data #poi-note')), 'Export in Your data downloads the file, and the card shows the date of the last backup');
-// layers, mirrored
-await p.locator('#dash .dash-layers select').selectOption('hot'); await p.waitForTimeout(200);
-ok((await p.inputValue('#base')) === 'hot' && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).basemap)) === 'hot', 'a basemap chosen on the dashboard changes the map\'s setting and is remembered');
-await p.evaluate(() => { const s = document.getElementById('base'); s.value = 'topo'; s.dispatchEvent(new Event('change')); });
-ok((await p.locator('#dash .dash-layers select').inputValue()) === 'topo', 'and a change made in Map Configs shows on the dashboard');
-await p.locator('#dash .dash-layers input[type=checkbox]').uncheck(); await p.waitForTimeout(150);
-ok(!(await p.locator('#show').isChecked()), 'Show zones on the dashboard turns the zones off');
-// quick actions
+ok(/\.geojson$/.test(dl.suggestedFilename()) && /Last backup/.test(await p.textContent('#dash .dash-data #poi-note')), 'Export in Your data downloads the file, and the row shows the date of the last backup');
+await p.click('#dash .dash-data > summary');
+// Save a place opens the POI explorer with Add a marker unfolded; the placing buttons are in it
 const count0 = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length);
-await p.locator('#dash .dash-actions .btn', { hasText: 'Place at map centre' }).click(); await p.waitForTimeout(500);
-ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length)) === count0 + 1, 'Place at map centre adds a marker');
+await p.click('#task-save'); await p.waitForTimeout(500);
+ok(await p.isVisible('#pane-poi') && await p.$eval('#poi-add', (e) => e.open), 'Save a place opens the Points of Interest explorer with Add a marker unfolded');
+await p.click('#poi-center'); await p.waitForTimeout(500);
+ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length)) === count0 + 1, 'At map centre in the explorer adds a marker');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
-await p.locator('#dash .dash-actions .btn', { hasText: 'Select markers' }).click(); await p.waitForTimeout(300);
-ok(/Tap pins/.test(await p.textContent('#banner-text')), 'Select markers starts selecting');
+await p.click('#poi-select'); await p.waitForTimeout(300);
+ok(/Tap pins/.test(await p.textContent('#banner-text')), 'Select markers is still in the explorer');
 await ctx.close();
 
 async function openX({ prefs = {}, geo = null, weather = false } = {}) {
@@ -223,9 +220,10 @@ async function openX({ prefs = {}, geo = null, weather = false } = {}) {
 // check my spot: the zone verdict for where I am
 {
   const { c, pg } = await openX({ geo: { latitude: 30.5928, longitude: 114.3055, accuracy: 20 } });
-  await pg.locator('#dash .dash-actions .btn', { hasText: 'Check my spot' }).click();
+  await pg.click('#dash-help'); await pg.evaluate(() => { document.querySelector('#dash-body details[data-topic=map]').open = true; });
+  await pg.locator('#dash-body .btn', { hasText: 'Check where I am' }).click();
   await pg.waitForSelector('.leaflet-popup', { timeout: 15000 }); await pg.waitForTimeout(800);
-  ok(/zone/i.test(await pg.textContent('.leaflet-popup')) && /Your location/.test(await pg.textContent('.leaflet-popup')), 'Check my spot opens the zone verdict for where I am: ' + (await pg.textContent('.leaflet-popup')).replace(/\s+/g, ' ').slice(0, 70));
+  ok(/zone/i.test(await pg.textContent('.leaflet-popup')) && /Your location/.test(await pg.textContent('.leaflet-popup')), 'Check where I am (Help, Map basics) opens the zone verdict for where I am: ' + (await pg.textContent('.leaflet-popup')).replace(/\s+/g, ' ').slice(0, 70));
   await c.close();
 }
 
@@ -259,7 +257,7 @@ let cr = await cross();
 ok(!cr.hidden && Math.abs(cr.x) <= 1 && Math.abs(cr.y) <= 1, 'a crosshair marks the centre of the map by default');
 ok(/^\d+\.\d{5}, \d+\.\d{5}$/.test(cr.label), 'with the coordinates of the centre under it: ' + cr.label);
 const placedBefore = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length);
-await p.locator('#dash .dash-actions .btn', { hasText: 'Place at map centre' }).click(); await p.waitForTimeout(500);
+await p.click('#task-save'); await p.click('#poi-center'); await p.waitForTimeout(500);
 const placed = await p.evaluate(() => { const it = JSON.parse(localStorage.getItem('uavzones.v1.pois')).items; return it.slice().sort((a, b) => String(b.created).localeCompare(String(a.created)))[0]; });
 const [la, lo] = cr.label.split(', ').map(Number);
 ok(Math.abs(placed.lat - la) < 2e-5 && Math.abs(placed.lon - lo) < 2e-5 && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length)) === placedBefore + 1, 'Place at map centre puts the marker exactly where the cross is');
@@ -267,41 +265,35 @@ ok((await cross()).hidden, 'the crosshair steps aside while a window is open');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
 ok(!(await cross()).hidden, 'and returns when it closes');
 ok((await p.$eval('.crosshair', (e) => getComputedStyle(e).pointerEvents)) === 'none', 'it never takes a click');
-ok(/Hide crosshair/.test(await p.textContent('#dash .dash-actions')), 'Quick actions offers to hide it');
-await p.locator('#dash .dash-actions .btn', { hasText: 'Hide crosshair' }).click(); await p.waitForTimeout(250);
-ok((await cross()).hidden && await p.locator('.cross-btn.off').count() === 1 && /Show crosshair/.test(await p.textContent('#dash .dash-actions')) && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).crosshair)) === false, 'hiding it from the dashboard also updates the map button, and is remembered');
-await p.click('.cross-btn'); await p.waitForTimeout(250);
-ok(!(await cross()).hidden && /Hide crosshair/.test(await p.textContent('#dash .dash-actions')), 'the map button brings it back, and the dashboard follows');
-// the grid
-const grid = await p.evaluate(() => {
-  const body = document.getElementById('dash-body'), r = body.getBoundingClientRect(), cs = getComputedStyle(body);
-  const inner = { l: r.left + parseFloat(cs.paddingLeft), r: r.right - parseFloat(cs.paddingRight) };
-  const cards = [...body.querySelectorAll(':scope > .dash-card')].map((c) => { const b = c.getBoundingClientRect(); return { top: Math.round(b.top), bottom: Math.round(b.bottom), left: b.left, right: b.right }; });
-  const rows = {}; for (const c of cards) (rows[c.top] ??= []).push(c);
-  return { inner, rows: Object.values(rows) };
-});
-ok(grid.rows.length >= 2 && grid.rows.every((row) => Math.abs(Math.max(...row.map((c) => c.right)) - grid.inner.r) <= 2 && Math.abs(Math.min(...row.map((c) => c.left)) - grid.inner.l) <= 2), 'the cards fill their rows edge to edge: ' + grid.rows.map((r) => r.length).join(' + ') + ' cards in ' + grid.rows.length + ' rows');
-ok(grid.rows.every((row) => new Set(row.map((c) => c.bottom)).size === 1), 'and the cards in a row are the same height');
-ok(await p.locator('#dash .dash-guide').count() === 0 && await p.locator('#dash .dash-fly .btn', { hasText: 'Singapore' }).count() === 1, 'How it works is not in the Fly in card; it waits behind the ? button');
+await p.click('#dash-help'); await p.evaluate(() => { document.querySelector('#dash-body details[data-topic=map]').open = true; });
+ok(/Hide crosshair/.test(await p.textContent('#help-crosshair')), 'Help (Map basics) offers to hide it');
+await p.click('#help-crosshair'); await p.waitForTimeout(250);
+ok((await cross()).hidden && await p.locator('.cross-btn.off').count() === 1 && /Show crosshair/.test(await p.textContent('#help-crosshair')) && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).crosshair)) === false, 'hiding it from Help also updates the map button and is remembered');
+await p.evaluate(() => document.querySelector('.cross-btn').click()); await p.waitForTimeout(250);
+ok(!(await cross()).hidden && /Hide crosshair/.test(await p.textContent('#help-crosshair')), 'the map control brings it back, and Help follows');
+await p.click('#dash-back'); await p.waitForTimeout(200);
+// the Help subview: same drawer, own heading and Back, topics, nothing lost on the way back
+await p.locator('#dash .dash-trip-nav .btn').nth(1).click(); await p.waitForTimeout(200);
 const heads = await p.$$eval('.dash-tools button', (bs) => bs.filter((b) => b.offsetParent).map((b) => b.id));
-ok(heads[0] === 'dash-help' && heads.slice(-2).join() === 'dash-collapse,dash-close', 'the ? button is the first of the header buttons, left of the collapse chevron and the X: ' + heads.join(', '));
+ok(heads[0] === 'dash-help' && heads.slice(-2).join() === 'dash-collapse,dash-close', 'the ? button is the first of the header buttons: ' + heads.join(', '));
+const h0 = await rect(p, '#dash');
 await p.click('#dash-help'); await p.waitForTimeout(250);
-const gBox = await p.$eval('#dash-body .dash-guide', (e) => { const r = e.getBoundingClientRect(), f = document.querySelector('.dash-welcome').getBoundingClientRect(); return { w: r.width, top: r.top, welcomeBottom: f.bottom }; });
-const bodyW = await p.$eval('#dash-body', (e) => e.clientWidth);
-ok(gBox.w >= bodyW - 30 && gBox.top >= gBox.welcomeBottom - 1 && await p.getAttribute('#dash-help', 'aria-pressed') === 'true', 'it opens as a full-width card at the top of the dashboard');
-await p.click('#dash-help'); await p.waitForTimeout(200);
-ok(await p.locator('#dash .dash-guide').count() === 0 && await p.getAttribute('#dash-help', 'aria-pressed') === 'false', 'and the same button puts it away');
-// the Map key shows about half of itself, with See more / See less
-const keyH = () => p.$eval('.key-body', (e) => ({ shown: e.clientHeight, full: e.scrollHeight }));
-const k0 = await keyH();
-ok(k0.shown < k0.full * 0.65 && k0.shown >= 100 && (await p.textContent('.key-more')) === 'See more', 'the Map key shows about half (' + k0.shown + ' of ' + k0.full + ' px), with See more');
-await p.click('.key-more'); await p.waitForTimeout(200);
-const k1 = await keyH();
-ok(k1.shown >= k1.full - 1 && (await p.textContent('.key-more')) === 'See less' && await p.getAttribute('.key-more', 'aria-expanded') === 'true' && (await p.locator('.key-line').count()) === 4, 'See more shows all of it, with the four line samples');
-await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(900);
-ok((await keyH()).shown >= (await keyH()).full - 1, 'the choice is remembered after a reload');
-await p.click('.key-more'); await p.waitForTimeout(200);
-ok((await keyH()).shown < k0.full * 0.65 && (await p.textContent('.key-more')) === 'See more', 'See less puts it back to half');
+const h1 = await rect(p, '#dash');
+ok(await p.getAttribute('#dash-help', 'aria-pressed') === 'true' && (await p.locator('#dash-body .dash-help-view').count()) === 1 && (await p.locator('#dash-body .dash-tasks, #dash-body .dash-trip').count()) === 0 && /Help/.test(await p.textContent('#dash-help-title')), 'Help replaces the default view inside the same drawer');
+ok(Math.abs(h0.y + h0.h - (h1.y + h1.h)) < 2, 'the drawer stays on the same bottom line');
+ok((await p.$$eval('#dash-body details.dash-topic > summary', (e) => e.map((x) => x.textContent))).length === 6, 'six collapsible topics');
+ok(await p.evaluate(() => document.activeElement?.id) === 'dash-help-title', 'focus moves to the Help heading');
+await p.click('#dash-back'); await p.waitForTimeout(250);
+ok(await p.getAttribute('#dash-help', 'aria-pressed') === 'false' && (await p.locator('#dash-body .dash-help-view').count()) === 0 && /2 of 2/.test(await p.textContent('#dash-body .dash-trip-nav')), 'Back returns to the dashboard with the same trip showing');
+ok(await p.evaluate(() => document.activeElement?.id) === 'dash-help', 'and focus returns to the ? button');
+await p.click('#dash-help'); await p.waitForTimeout(150); await p.click('#dash-help'); await p.waitForTimeout(150);
+ok(await p.getAttribute('#dash-help', 'aria-pressed') === 'false', 'the ? button also toggles it back');
+await p.click('#dash-help'); await p.evaluate(() => { document.querySelector('#dash-body details[data-topic=map]').open = true; }); await p.click('#dash-body details[data-topic=map] .dash-subtopic > summary');
+ok((await p.locator('#dash #legend > div').count()) >= 2 && (await p.locator('#dash .key-line').count()) === 4, 'Help: the colours and the four line samples show on request');
+await p.evaluate(() => { document.querySelector('#dash-body details[data-topic=data]').open = true; });
+ok(/Coverage/.test(await p.textContent('#dash #regions-note')) && /not flight advice/i.test(await p.textContent('#dash-body details[data-topic=data]')) && /never permission/.test(await p.textContent('#dash-body details[data-topic=data]')), 'Help: the coverage note and the safety wording are there, with "never permission"');
+await p.click('#dash-back'); await p.waitForTimeout(150);
+ok((await p.locator('#dash .dash-lines > summary').count()) === 1, 'the trip card has a contextual explanation of the lines on the map');
 await ctx.close();
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: RETURNING }));
 await p.evaluate(() => localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ ...JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}'), crosshair: false })));

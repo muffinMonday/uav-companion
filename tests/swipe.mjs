@@ -111,6 +111,7 @@ if (dscroll) await p.waitForFunction(() => document.querySelector('#dash-body').
 d = await box(p, '#dash-body');
 await swipe([d.cx, d.y + 30], [d.cx, d.y + 200]);
 ok(!dscroll || await dashState(p) === 'expanded', 'but not when the cards are scrolled down' + (dscroll ? '' : ' (not scrollable at this size)'));
+if (await dashState(p) === 'hidden') await dashOpen(p); // a short dashboard is not scrollable, so that swipe started at the top and put it away
 await p.$eval('#dash-body', (e) => { e.scrollTop = 0; }); await p.waitForFunction(() => document.querySelector('#dash-body').scrollTop === 0); await p.waitForTimeout(150);
 await p.tap('#dash-expand'); await p.waitForTimeout(350);
 d = await box(p, '.dash-head');

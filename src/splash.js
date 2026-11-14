@@ -18,7 +18,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
   let settled = false; // the dialog was closed on purpose (an answer, or Skip); a close without it (Escape) counts as Skip
 
   const finish = () => { settled = true; saveDash({ welcomed: true }); if (dlg.open) dlg.close(); };
-  const skip = () => { finish(); dash.open({ guide: true }); };
+  const skip = () => { finish(); dash.open(); };
   dlg.addEventListener('close', () => { if (!settled) skip(); });
   dlg.addEventListener('cancel', () => { /* Escape: the close event follows and skips */ });
 
@@ -65,7 +65,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
   const ORIENT = [
     { title: 'Official information, not permission', text: 'The coloured zones come from official sources where data exists. A zone colour is information, not permission to fly: check the official platform before every flight.' },
     { title: 'Check a location', text: 'Press and hold the map for 2 seconds, or right-click, to check a spot. A check is not saved: use Add as marker in the check window to keep the place. Search also takes places and coordinates.' },
-    { title: 'Find your tools', text: 'The buttons on the left show your location, the crosshair and marker details. The tag button under them writes the name of each one beside it. Trips, Points of Interest (save, search and sort places, and show or hide a trip) and Flight Sessions are in the side panel and on the map.' },
+    { title: 'Find your tools', text: 'Zoom and your location are on the left of the map. More tools under them holds marker details, Side Quests, trip markers, the crosshair and Flight Sessions. Trips, Points of Interest (save, search and sort places, and show or hide a trip) and Flight Sessions are in the side panel and on the map.' },
   ];
   function orient(i) {
     const step = ORIENT[i];
@@ -77,7 +77,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
     const skipO = btn('Skip', choose, 'btn small'); skipO.id = 'orient-skip';
     row.append(next, prev, skipO);
     if (last && toolbar) {
-      const labels = btn('Show the labels on the map', () => { finish(); dash.fold(); toolbar.expand(); }, 'btn small'); labels.id = 'orient-labels';
+      const labels = btn('Show More tools', () => { finish(); dash.fold(); toolbar.open(); }, 'btn small'); labels.id = 'orient-labels';
       row.append(labels);
     }
     show(...nodes, row);

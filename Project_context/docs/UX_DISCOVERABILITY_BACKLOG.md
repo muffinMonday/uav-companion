@@ -256,3 +256,5 @@ Owner authorized implementation, commit, push and `deploy:live` for this feature
 **Tests:** unit `help-unit` (37); browser `toolbar` (74), `discover` (62); see `CURRENT_STATUS.md` for the full-run and screenshot results.
 
 **Not verified:** a real foldable or phone, Safari, a screen reader, real 200% browser text zoom (only a larger root font was tested).
+
+> **Superseded in part (Wave 1, 2026-11-14):** the tag button and its label layer were replaced by the More tools menu, and the dashboard Help card and Tips list by the Help subview. See `DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md` and `DESIGN.md` section 20. Hints, orientation and the once-per-feature rules are unchanged.

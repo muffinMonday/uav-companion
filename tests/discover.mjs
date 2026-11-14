@@ -1,7 +1,7 @@
 // UX discoverability, phases 2 to 4: the optional orientation inside Quick Setup (skippable at every step, no permission asked, returning users go straight to the tasks),
 // the once-per-feature hints (once, dismiss, replay, one at a time, blocked storage, not while busy) and the task shortcuts and Tips list in the dashboard Help card.
 // Screenshots go to tests/out/discover/.
-import { chromium, CHANNEL, LATEST_SEEN, OUT } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN, OUT, moreTool } from './lib.mjs';
 import fs from 'node:fs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
@@ -62,7 +62,7 @@ ok(/Check a location/.test(await heading(p)) && /hold/i.test(await p.$eval('.spl
 ok(await vis(p, '#orient-skip'), 'Skip is on step 2');
 await p.click('#orient-back'); ok(/Official/.test(await heading(p)), 'Back returns to step 1');
 await p.click('#orient-next'); await p.click('#orient-next');
-ok(/tools/i.test(await heading(p)) && await vis(p, '#orient-labels') && await vis(p, '#orient-skip'), 'step 3 introduces the tools, with a Show labels action and Skip');
+ok(/tools/i.test(await heading(p)) && await vis(p, '#orient-labels') && await vis(p, '#orient-skip'), 'step 3 introduces the tools, with a Show More tools action and Skip');
 await p.screenshot({ path: `${shots}/orient-3.png` });
 await p.click('#orient-skip');
 ok(await splashOpen(p) && /Where do you want to start/.test(await heading(p)), 'Skip returns to the task choice, Quick Setup still open');
@@ -79,9 +79,9 @@ await ctx.close();
 // ---- the labels action
 ({ ctx, p } = await open({ dash: null }));
 await p.click('#splash-learn'); await p.click('#orient-next'); await p.click('#orient-next'); await p.click('#orient-labels'); await p.waitForTimeout(300);
-ok(!(await splashOpen(p)) && await p.locator('#map-tool-labels').isVisible(), 'Show the labels on the map closes Quick Setup and expands the labels');
+ok(!(await splashOpen(p)) && await p.locator('#more-tools-menu').isVisible(), 'Show More tools closes Quick Setup and opens the menu');
 ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.dash') || 'null')?.welcomed)) === true, 'and the setup counts as done');
-ok((await seenList(p) || []).includes('map-tools'), 'the map-tools hint is not shown later: the visitor found the tag button');
+ok((await seenList(p) || []).includes('map-tools'), 'the map-tools hint is not shown later: the visitor found More tools');
 ok(await asked(p) === '', 'still nothing asked of the browser');
 await ctx.close();
 
@@ -124,9 +124,10 @@ ok((await hints(p)).length === 0, 'after a reload the seen hints stay seen');
 // ---- replay
 await p.evaluate(() => document.getElementById('help-open').click()); await p.waitForSelector('.dash-guide');
 const storedBefore = JSON.stringify(await seenList(p));
-await p.click('#dash-tips summary');
-ok(await p.locator('#dash-tips [data-replay]').count() >= 5, 'the Help card lists the hints that can be replayed');
-await p.click('#dash-tips [data-replay=trips]'); await p.waitForTimeout(200);
+await p.waitForSelector('.dash-help-view');
+await p.evaluate(() => document.querySelectorAll('.dash-topic').forEach((d) => { d.open = true; }));
+ok(await p.locator('.dash-help-view [data-replay]').count() >= 5, 'the Help card lists the hints that can be replayed');
+await p.click('.dash-help-view [data-replay=trips]'); await p.waitForTimeout(200);
 ok((await hints(p)).join() === 'trips' && (await selected(p)) === 'trips', 'replay opens Trips and shows its hint again');
 ok(JSON.stringify(await seenList(p)) === storedBefore, 'replay leaves the seen list unchanged');
 await p.click('.help-hint .help-ok');
@@ -166,11 +167,8 @@ ok((await hints(p)).length === 0, 'Escape on the hint dismisses it');
 await p.keyboard.press('Escape');
 await p.mouse.click(m.x + 500, m.y + 300, { button: 'right' }); await p.waitForTimeout(1300);
 ok((await hints(p)).length === 0, 'the second check shows no hint');
-await p.click('.leaflet-top.leaflet-left a[data-tool="crosshair"]'); await p.waitForTimeout(150);
-ok((await hints(p)).join() === 'map-tools' && /tag button/.test(await p.$eval('.help-hint', (e) => e.textContent)), 'the first press of a map button shows the map-tools hint');
-const cx = '.leaflet-top.leaflet-left a[data-tool="crosshair"]';
-const pr1 = await p.getAttribute(cx, 'aria-pressed'); await p.click(cx); await p.waitForTimeout(100);
-ok(pr1 === 'false' && (await p.getAttribute(cx, 'aria-pressed')) === 'true', 'and the button still did its job (' + pr1 + ' then on again)');
+await p.evaluate(() => document.querySelector('.locate-btn').click()); await p.waitForTimeout(150);
+ok((await hints(p)).join() === 'map-tools' && /More tools/.test(await p.$eval('.help-hint', (e) => e.textContent)), 'the first press of a map button shows the map-tools hint, which names More tools');
 await p.screenshot({ path: `${shots}/hint-map-tools.png` });
 await ctx.close();
 
@@ -196,23 +194,25 @@ await ctx.close();
 
 // ================= phase 4: the Help card
 ({ ctx, p } = await open());
-await p.evaluate(() => document.getElementById('help-open').click()); await p.waitForSelector('.dash-guide');
-ok(await p.locator('.dash-tasks button').count() >= 4, 'the Help card has task shortcuts');
-ok((await p.$$eval('.dash-tasks button', (bs) => bs.map((x) => x.textContent))).slice(0, 3).join('|') === 'Check a flying location|Save a place|Plan a trip', 'in the order check, save, plan');
+const toDash = async () => { await p.evaluate(() => document.getElementById('help-open').click()); await p.waitForSelector('#dash-back'); await p.evaluate(() => document.getElementById('dash-back').click()); await p.waitForSelector('.dash-tasks'); };
+await toDash();
+ok(await p.locator('.dash-tasks button').count() >= 3, 'the dashboard has the task shortcuts');
+ok((await p.$$eval('.dash-tasks button', (bs) => bs.map((x) => x.textContent))).slice(0, 3).join('|') === 'Check a location|Plan a trip|Save a place', 'in the order check, plan, save');
 await p.screenshot({ path: `${shots}/help-card-desk.png` });
 await p.click('#task-save'); await p.waitForTimeout(250);
-ok(await selected(p) === 'poi' && await p.locator('#panel').isVisible(), 'Save a place opens Points of Interest');
-await p.evaluate(() => document.getElementById('help-open').click()); await p.waitForSelector('.dash-guide');
+ok(await selected(p) === 'poi' && await p.locator('#panel').isVisible() && await p.$eval('#poi-add', (e) => e.open), 'Save a place opens Points of Interest with Add a marker unfolded');
+await toDash();
 await p.click('#task-trip'); await p.waitForTimeout(250);
 ok(await selected(p) === 'trips', 'Plan a trip opens Trips');
 await p.evaluate(() => document.getElementById('help-open').click()); await p.waitForSelector('.dash-guide');
-await p.click('#task-customize'); await p.waitForTimeout(250);
-ok(await selected(p) === 'config', 'Customize the map opens Map Configs');
-await p.evaluate(() => document.getElementById('help-open').click()); await p.waitForSelector('.dash-guide');
+await p.evaluate(() => document.querySelectorAll('.dash-topic').forEach((d) => { d.open = true; }));
+await p.locator('.dash-help-view .btn', { hasText: 'Open Map Configs' }).click(); await p.waitForTimeout(250);
+ok(await selected(p) === 'config', 'Open Map Configs (Help, Map settings) opens Map Configs');
+await toDash();
 await p.click('#task-check'); await p.waitForTimeout(300);
-ok(/hold/i.test(await p.evaluate(() => document.getElementById('toast').textContent)) && await p.evaluate(() => document.body.dataset.dash) === 'peek', 'Check a flying location folds the dashboard and says how (press and hold)');
+ok(/hold/i.test(await p.evaluate(() => document.getElementById('toast').textContent)) && await p.evaluate(() => document.body.dataset.dash) === 'peek', 'Check a location folds the dashboard and says how (press and hold)');
 const hasSessions = await p.locator('#task-sessions').count();
-if (hasSessions) { await p.evaluate(() => document.getElementById('help-open').click()); await p.click('#task-sessions'); await p.waitForTimeout(300); ok(await p.$eval('#ses-hub', (d) => d.open), 'Find flight sessions opens the sessions hub'); }
+if (hasSessions) { await toDash(); await p.waitForSelector('#task-sessions'); await p.click('#task-sessions'); await p.waitForTimeout(300); ok(await p.$eval('#ses-hub', (d) => d.open), 'Find sessions opens the sessions hub'); }
 else ok(true, 'no accounts in this build: the sessions shortcut is not offered (not tested)');
 await ctx.close();
 

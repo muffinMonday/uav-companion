@@ -16,7 +16,7 @@ import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
 import { initDashboard } from './dashboard.js';
 import { initSplash } from './splash.js';
-import { initMapToolbarHelp } from './map-toolbar-help.js';
+import { initMapMoreTools } from './map-more-tools.js';
 import { initHelp } from './help-wire.js';
 import { initCrosshair } from './crosshair.js';
 import { initPOI } from './poi-ui.js';
@@ -115,11 +115,11 @@ const checkHere = () => locate.request().then((ll) => showCheck(ll, 'Your locati
 const cloud = { handle: null, refresh: null }; // the optional cloud copy: filled in once its code has loaded (only when this build has a project address)
 addCompassControl(map, { rotation, onPress: () => locate.northUp() }); // after the other left-hand buttons, so their places do not move
 const helpRef = { h: null }; // the contextual hints (help-wire.js), created just below; the toolbar reports to them
-const toolbar = initMapToolbarHelp(map, { onExpand: () => helpRef.h?.labelsOpened(), onUse: () => helpRef.h?.mapToolUsed() }); // the tag button under the others: names each map button on request
+const toolbar = initMapMoreTools(map, { onOpen: () => helpRef.h?.moreToolsOpened(), onUse: () => helpRef.h?.mapToolUsed() }); // the More tools button under Zoom, Locate and Compass: the other map tools in one menu
 helpRef.h = initHelp({ map, panel, sessions: () => cloud.sessions });
 poi.onNewTypeShared(() => helpRef.h?.newTypeShared()); // a newer marker type went into a shared trip
 const dash = initDashboard({ poi, panel, trips, cloud, shared: opensShareLink, splash: !opensShareLink, actions: { checkHere, crosshair: cross, toast, help: helpRef.h } });
-cloud.openData = () => dash.open(); // the account popover's export and import link
+cloud.openData = () => dash.open({ data: true }); // the account popover's export and import link: opens the dashboard with the folded data row unfolded
 const splash = initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud, toolbar }); // the quick setup: greets a first visit, and "Quick setup" reopens it
 dash.onQuickSetup(splash.open);
 if (dash.splashFirst) splash.open();

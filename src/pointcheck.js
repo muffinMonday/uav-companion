@@ -3,6 +3,7 @@ import { PMTiles } from 'pmtiles';
 import { zonesInArchive } from './zones.js';
 import { regionUrl } from './config.js';
 import { el, statusEl, disclaimer } from './cards.js';
+import { zoneExplanation } from './legends.js';
 
 const archives = new Map();
 const boundaries = new Map();
@@ -142,6 +143,7 @@ export function describeCheck(res, title, note) {
   if (note) box.append(el('p', 'check-note', note));
   box.append(statusEl(zoneSummary(res)));
   if (res.status === 'inside' && res.region.classes) box.append(zoneList(res));
+  box.append(zoneExplanation(res)); // folded; the verdict and the disclaimer around it stay visible
   box.append(disclaimer());
   return box;
 }

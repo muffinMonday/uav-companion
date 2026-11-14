@@ -2,7 +2,7 @@
 // buttons, rapid selection, manual panning, recurring occurrences at one place, cards without a meeting point, the guest / signed-in boundary, sign-out clean-up, keyboard, foldable sizes and a turned map.
 // The real Supabase client talks to a mocked HTTP server whose functions run the real SQL on an in-memory Postgres (PGlite), as in sessions.mjs.
 // Emulated only: touch and viewport sizes (Playwright). A real foldable and a real phone are NOT exercised. Screenshots go to tests/out/explorer/.
-import { chromium, CHANNEL, OUT } from './lib.mjs';
+import { chromium, CHANNEL, OUT, moreTool } from './lib.mjs';
 import { makeDb, as, A, B, C } from './lib-db.mjs';
 import fs from 'node:fs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
@@ -70,7 +70,7 @@ async function open(who, { vp = { width: 1300, height: 850 }, touch = false, mot
 const hub = '#ses-hub', body = hub + ' .ses-hub-inner', X = '#ses-explorer';
 const rowOf = (p, title, n = 0) => p.locator(`${body} .ses-row`, { hasText: title }).nth(n);
 const cardOf = (p, id) => p.locator(`${X} .ses-xcard[data-id="${id}"]`);
-const openHub = async (p, tab = 'discover') => { await p.click('.sessions-btn'); await p.waitForSelector(hub + '[open]'); if (tab !== 'discover') await p.click(`${hub} .ses-tab[data-section=${tab}]`); await p.waitForSelector(body + ' .ses-row', { timeout: 6000 }).catch(() => {}); await p.waitForTimeout(300); };
+const openHub = async (p, tab = 'discover') => { await moreTool(p, 'sessions'); await p.waitForSelector(hub + '[open]'); if (tab !== 'discover') await p.click(`${hub} .ses-tab[data-section=${tab}]`); await p.waitForSelector(body + ' .ses-row', { timeout: 6000 }).catch(() => {}); await p.waitForTimeout(300); };
 const explore = async (p, tab = 'discover') => { await openHub(p, tab); await p.click(body + ' [data-act=explore]'); await p.waitForSelector(X + ':not([hidden])'); await p.waitForTimeout(500); };
 const closeX = async (p) => { await p.click('#ses-x-close'); await p.waitForTimeout(200); };
 const settle = (p, ms = 800) => p.waitForTimeout(ms);
@@ -96,15 +96,25 @@ await openHub(p);
 const rowsHub = await p.locator(body + ' .ses-row').count();
 ok(rowsHub === 9, `Discover lists the nine public sessions (${rowsHub}) and never the private ones`);
 const r0 = rowOf(p, 'Beta lake');
-ok(await r0.locator('button[data-act=map]').count() === 1 && await r0.locator('a[data-act=navigate]').count() === 1 && await r0.locator('[data-act=details]').count() === 1, 'a session card has Map, Navigate and Details');
+ok(await r0.locator('[data-act=map]').count() === 0 && await p.locator(body + ' [data-act=map]').count() === 0 && await r0.locator('a[data-act=navigate]').count() === 1 && await r0.locator('[data-act=details]').count() === 1 && await r0.locator('.ses-row-open').count() === 1, 'a session card has Navigate and Details, a title control that opens the map, and no per-card Map button');
+ok(await p.locator(body + ' .ses-row button button, ' + body + ' .ses-row button a, ' + body + ' .ses-row a button, ' + body + ' .ses-row a a').count() === 0, 'no control is nested inside another in the hub cards');
 const nav = r0.locator('a[data-act=navigate]');
 const href = await nav.getAttribute('href');
 ok(await nav.getAttribute('target') === '_blank' && /noopener/.test(await nav.getAttribute('rel')) && /noreferrer/.test(await nav.getAttribute('rel')), 'Navigate is an external link in a new tab (noopener noreferrer)');
 ok(/^https:\/\/uri\.amap\.com\/navigation\?to=114\.35\d+,30\.64\d+,Beta%20lake&mode=car&/.test(href), 'inside China the automatic Maps setting gives Amap navigation, driving: ' + href);
-ok(await r0.locator('button[data-act=map]').evaluate((e) => e.tagName === 'BUTTON' && !e.classList.contains('maplink')) && /\bMap\b/.test(await r0.locator('button[data-act=map]').textContent()) && /Navigate/.test(await nav.textContent()), 'Map is an internal button, Navigate an external link, both with visible text');
-ok(await r0.locator('.map-action').first().evaluate((e) => { const c = getComputedStyle(e); return parseFloat(c.borderTopWidth) >= 1 && c.borderTopStyle === 'solid' && e.querySelector('svg') && e.getBoundingClientRect().width > 50; }), 'the buttons are outlined, with an icon and text');
+ok(/^Navigate$/.test((await nav.textContent()).trim()) && await nav.getAttribute('aria-label') === 'Navigate to Beta lake in Amap' && await nav.locator('svg').evaluate((s) => { const r = s.getBoundingClientRect(); return Math.abs(r.width - r.height) < 0.5 && r.width >= 15; }), 'Navigate is one short external link with an accessible name that says the place and the app, and a square icon');
+ok(await r0.locator('.ses-row-open').evaluate((e) => e.tagName === 'BUTTON' && /show on the map/.test(e.getAttribute('aria-label'))) , 'the title control is a button named for what it does');
+ok(await r0.locator('.map-action').first().evaluate((e) => { const c = getComputedStyle(e); return parseFloat(c.borderTopWidth) >= 1 && c.borderTopStyle === 'solid' && e.querySelector('svg') && e.getBoundingClientRect().width > 50; }), 'Navigate is outlined, with an icon and text');
 await nav.click(); await p.waitForTimeout(500);
-ok(external.some((u) => /uri\.amap\.com\/navigation\?to=114\.35/.test(u)) && await p.locator(hub + '[open]').count() === 1, 'tapping Navigate opens the directions and leaves the hub as it was');
+ok(external.some((u) => /uri\.amap\.com\/navigation\?to=114\.35/.test(u)) && await p.locator(hub + '[open]').count() === 1 && await p.locator(X).isHidden(), 'tapping Navigate opens the directions and leaves the hub as it was (the card was not selected: no explorer)');
+await r0.locator('[data-act=details]').click(); await p.waitForTimeout(300);
+ok(await p.locator(X).isHidden() && await p.locator(body + ' .ses-row').count() === 0, 'tapping Details opens the details and not the explorer');
+await p.click('#ses-hub-close'); await p.waitForTimeout(300);
+await openHub(p); await p.click(hub + ' .ses-tab[data-section=discover]'); await p.waitForSelector(body + ' .ses-row');
+await r0.locator('.ses-row-open').focus(); await p.keyboard.press('Enter'); await p.waitForSelector(X + ':not([hidden])'); await settle(p);
+ok((await selectedId(p)) !== null && await offBy(p, '.ses-map-pin.sel') <= 16, 'Enter on the title control (keyboard) opens the explorer on that session, centred');
+await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+await openHub(p); await p.click(hub + ' .ses-tab[data-section=discover]'); await p.waitForSelector(body + ' .ses-row');
 
 // the general entry: no card selected, the map does not move
 await p.click(body + ' [data-act=explore]'); await p.waitForSelector(X + ':not([hidden])'); await p.waitForTimeout(500);
@@ -158,13 +168,13 @@ ok(Math.hypot(still.x - dragged.x, still.y - dragged.y) < 1 && await selectedId(
 const gap = () => p.evaluate(() => { const r = [...document.querySelectorAll('.ses-map-pin')].map((e) => e.getBoundingClientRect()); return Math.hypot(r[0].x - r[1].x, r[0].y - r[1].y); });
 const gap0 = await gap(); await p.click('.leaflet-control-zoom-out'); await p.waitForFunction(([g]) => { const r = [...document.querySelectorAll('.ses-map-pin')].map((e) => e.getBoundingClientRect()); return Math.hypot(r[0].x - r[1].x, r[0].y - r[1].y) < g * 0.75; }, [gap0], { timeout: 6000 }).catch(() => {}); await settle(p, 400);
 ok(await gap() < gap0 * 0.75, 'the map zoom control works beside the dock (the markers moved closer together)');
-await p.locator(`${X} .ses-xcard`, { hasText: 'Delta ridge' }).locator('[data-act=map]').click(); await settle(p);
-ok(await offBy(p, '.ses-map-pin.sel') <= 16, 'the card\'s Map button brings the marker back to the middle after a manual pan');
+await p.locator(`${X} .ses-xcard`, { hasText: 'Delta ridge' }).locator('.ses-xsel').click(); await settle(p);
+ok(await offBy(p, '.ses-map-pin.sel') <= 16, 'selecting the card brings the marker back to the middle after a manual pan');
 
 // card actions do not select twice, and Navigate / Details do not select at all
 await watchSelections(p);
-await p.locator(`${X} .ses-xcard`, { hasText: 'Golf pier' }).locator('[data-act=map]').click(); await settle(p, 500);
-ok(await p.evaluate(() => window.__sel) === 1, 'the Map button selects the card exactly once (the click does not also reach the card)');
+await p.locator(`${X} .ses-xcard`, { hasText: 'Golf pier' }).locator('.ses-xsel').click(); await settle(p, 500);
+ok(await p.evaluate(() => window.__sel) === 1, 'a click selects the card exactly once');
 const sel2 = await selectedId(p); const ext = external.length;
 await p.locator(`${X} .ses-xcard`, { hasText: 'Foxtrot dam' }).locator('a[data-act=navigate]').click(); await settle(p, 400);
 ok(await selectedId(p) === sel2 && await p.evaluate(() => window.__sel) === 1 && external.length > ext, 'Navigate opens the directions and does not select the card');
@@ -203,14 +213,14 @@ ok(await p.locator(`${X} .ses-xcard`).count() === 3 && await p.locator('.ses-map
 await p.click('#ses-x-expand'); await p.waitForSelector(hub + '[open]'); await p.waitForTimeout(400);
 ok(await p.inputValue('#ses-q') === 'Saturday' && await p.locator(body + ' .ses-row').count() === 3 && await p.locator(X).isHidden() && await p.locator('.ses-map-pin').count() === 0, 'Expand returns to the hub with the same filter and removes the dock and markers');
 ok(await p.evaluate(() => document.activeElement?.classList.contains('ses-tab')), 'focus lands on the hub tab');
-// the Map button on a hub card selects that occurrence
-await rowOf(p, 'Saturday meetup', 2).locator('[data-act=map]').click(); await p.waitForSelector(X + ':not([hidden])'); await settle(p);
-ok(await selectedId(p) === rec[2] && await offBy(p, '.ses-map-pin.sel') <= 16, 'the Map button on a hub card opens the explorer with that occurrence selected and centred');
+// the body of a hub card opens the explorer on that occurrence
+await rowOf(p, 'Saturday meetup', 2).locator('.ses-row-open').click(); await p.waitForSelector(X + ':not([hidden])'); await settle(p);
+ok(await selectedId(p) === rec[2] && await offBy(p, '.ses-map-pin.sel') <= 16, 'the title control of a hub card opens the explorer with that occurrence selected and centred');
 
 // Escape and Close: exit, clean up, focus back on the launching control
 await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 ok(await p.locator(X).isHidden() && await p.locator('.ses-map-pin').count() === 0 && await p.evaluate(() => !document.body.dataset.sesx && !document.documentElement.style.getPropertyValue('--ses-x-w')), 'Escape closes the explorer, removes the markers and the layout variables');
-ok(await p.evaluate(() => document.activeElement?.classList.contains('sessions-btn')), 'focus returns to the control that opened the sessions');
+ok(await p.evaluate(() => document.activeElement?.classList.contains('more-btn')), 'focus returns to the control that opened the sessions (More tools)');
 for (let i = 0; i < 3; i++) { await explore(p); await closeX(p); }
 await explore(p);
 ok(await p.locator('.ses-map-pin').count() === 1 && await p.locator(`${X} .ses-xcard`).count() === 3 && await p.locator('.ses-map-pin .ses-pin-n').count() === 1, 'opening and closing three times leaves no duplicate markers or cards (the Saturday filter is still applied)');
@@ -321,7 +331,7 @@ await openHub(p, 'mine');
 const mineRows = await p.locator(body + ' .ses-row').count();
 ok(mineRows >= 11 && await p.locator(body + ' [data-act=explore]').count() === 1, `My sessions lists what B hosts (${mineRows} cards) with an Explore on map button`);
 const draftRow = rowOf(p, 'Draft idea');
-ok(await draftRow.locator('button[data-act=map]').count() === 0 && await draftRow.locator('a[data-act=navigate]').count() === 0 && /No meeting point set/.test(await draftRow.textContent()) && await draftRow.locator('[data-act=details]').count() === 1, 'a session with no meeting point shows no Map or Navigate, says why, and keeps Details');
+ok(await draftRow.locator('a[data-act=navigate]').count() === 0 && /No meeting point set/.test(await draftRow.textContent()) && await draftRow.locator('[data-act=details]').count() === 1 && await draftRow.locator('.ses-row-open[data-act=details-instead]').count() === 1, 'a session with no meeting point shows no Navigate, says why, keeps Details, and its title control opens the details instead of pretending to centre a marker');
 await p.click(body + ' [data-act=explore]'); await p.waitForSelector(X + ':not([hidden])'); await settle(p, 500);
 ok(await p.locator(`${X} .ses-xcard`).count() === mineRows && await p.locator(`${X} .ses-xcard`, { hasText: 'Private club' }).count() === 1, 'the explorer shows the private session to its host');
 const dcard = p.locator(`${X} .ses-xcard`, { hasText: 'Draft idea' });
@@ -329,7 +339,7 @@ ok(await dcard.locator('.map-action').count() === 0 && await dcard.locator('[dat
 const markersBefore = await p.locator('.ses-map-pin').count();
 await dcard.locator('.ses-xsel').click(); await settle(p, 400);
 ok(await selectedId(p) !== null && await p.locator('.ses-map-pin').count() === markersBefore && await p.locator('.ses-map-pin.sel').count() === 0, 'selecting it works without moving the map or adding a marker');
-await cardOf(p, priv).locator('[data-act=map]').click(); await settle(p);
+await cardOf(p, priv).locator('.ses-xsel').click(); await settle(p);
 ok(await selectedId(p) === priv && await offBy(p, '.ses-map-pin.sel') <= 16, 'the private session is selectable and centred for its host');
 // sign out while the explorer is open: private cards and markers go at once, the selection is cleared
 await goProfile(p);
@@ -349,9 +359,9 @@ const codeC = (await as(db, C, 'select public.ensure_profile() as r'))[0].r.frie
 await as(db, B, 'select public.invite_to_session($1, $2) as r', [priv, codeC]);
 ({ ctx, p } = await open('c'));
 await openHub(p, 'invites');
-ok(await p.locator(body + ' .ses-row').count() === 1 && await rowOf(p, 'Private club').locator('button[data-act=map]').count() === 1, 'an invitation card has Map, Navigate and Details');
-await rowOf(p, 'Private club').locator('[data-act=map]').click(); await p.waitForSelector(X + ':not([hidden])'); await settle(p);
-ok(await selectedId(p) === priv && await p.locator(`${X} .ses-xcard`).count() === 1 && await offBy(p, '.ses-map-pin.sel') <= 16, 'its Map button opens the explorer on the invitations with that session selected and centred');
+ok(await p.locator(body + ' .ses-row').count() === 1 && await rowOf(p, 'Private club').locator('.ses-row-open[data-act=focus-map]').count() === 1 && await rowOf(p, 'Private club').locator('[data-act=map]').count() === 0, 'an invitation card has a title control that opens the map, Navigate and Details, and no Map button');
+await rowOf(p, 'Private club').locator('.ses-row-open').click(); await p.waitForSelector(X + ':not([hidden])'); await settle(p);
+ok(await selectedId(p) === priv && await p.locator(`${X} .ses-xcard`).count() === 1 && await offBy(p, '.ses-map-pin.sel') <= 16, 'its title control opens the explorer on the invitations with that session selected and centred');
 await closeX(p);
 await ctx.close();
 

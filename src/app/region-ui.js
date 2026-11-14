@@ -1,4 +1,5 @@
 import { zoneFill } from '../map.js';
+import { MEANINGS } from '../legends.js';
 import { savePrefs } from '../prefs.js';
 
 const $ = (id) => document.getElementById(id);
@@ -36,10 +37,7 @@ export function initRegionUI({ map, panel, dash, prefs, index, toast }) {
 /** The map legend and the coverage note. Called once the zones are on the map. */
 export function renderRegionInfo({ index, regions }) {
   const legend = $('legend');
-  const meanings = {
-    allow: [zoneFill('allow'), 'Teal: suitable-flight airspace (flying permitted within the stated height); everything else is controlled.'],
-    restrict: [zoneFill('restrict'), 'Red: restricted area. Elsewhere there is no restriction in this data, which is not the same as permission to fly.'],
-  };
+  const meanings = { allow: [zoneFill('allow'), MEANINGS.allow.text], restrict: [zoneFill('restrict'), MEANINGS.restrict.text] }; // the wording is shared with the explanation beside each verdict (legends.js)
   const addLegend = (colour, text) => { const row = document.createElement('div'); const sw = document.createElement('i'); sw.style.background = colour; row.append(sw, text); legend.append(row); };
   for (const r of regions.filter((x) => x.classes)) {
     for (const c of r.classes) addLegend(c.color, c.points ? `${c.label}: where flying is allowed (a pin on the map).` : `${c.label}.`);

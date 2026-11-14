@@ -18,7 +18,7 @@
   --control-h:36px; --control-h-sm:30px; /* buttons: the height they now reach (min-height is not used: fixed-size icon buttons keep their own size) */
   --icon:18px; --icon-sm:16px; --icon-lg:22px;
   --lh-tight:1.2; --lh-meta:1.35; --lh-body:1.45;
-  --z-crosshair:450; --z-tool-labels:999; --z-hold:700; --z-panel:1000; --z-dock:1001; --z-search:1002; --z-live-chip:1003; --z-dash:1004; --z-card:1050; --z-banner:1060; --z-sheet:1070; --z-popover:1080; --z-toast:1100; --z-drag:3000;
+  --z-crosshair:450; --z-hold:700; --z-panel:1000; --z-dock:1001; --z-search:1002; --z-live-chip:1003; --z-dash:1004; --z-card:1050; --z-banner:1060; --z-sheet:1070; --z-popover:1080; --z-toast:1100; --z-drag:3000;
   --ok:#0a7a4b; --ok-bg:#e3f4ec; --no:#b3261e; --no-bg:#fdebe9; --unk:#8a5a00; --unk-bg:#fff2d3;
   --radius:14px; --radius-sm:9px;
   --shadow-2:0 6px 24px rgba(15,30,45,.18), 0 1px 3px rgba(15,30,45,.12);
@@ -235,12 +235,24 @@ textarea{resize:vertical;min-height:60px}
 .leaflet-bar a.locate-btn.active{color:var(--accent)!important}
 .leaflet-bar a.locate-btn .locate-icon{display:flex;align-items:center;justify-content:center}
 .leaflet-bar a.locate-btn svg,.leaflet-bar a.details-btn svg,.leaflet-bar a.map-toggle svg,.leaflet-bar a.cross-btn svg,.leaflet-bar a.sessions-btn svg{width:18px;height:18px}
-/* the tag button that names the others (map-toolbar-help.js), and the labels it shows beside them: a layer over the map that never takes a tap */
-.leaflet-bar a.labels-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
-.leaflet-bar a.labels-btn svg{width:18px;height:18px}
-.leaflet-bar a.labels-btn.on{color:var(--accent)!important}
-.tool-labels{position:absolute;inset:0;z-index:var(--z-tool-labels);pointer-events:none}
-.tool-label-row{position:absolute;left:var(--tl-left);box-sizing:border-box;display:flex;align-items:center;max-width:calc(100% - var(--tl-left) - 8px);padding:0 10px;border-radius:var(--radius-sm);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-1);font-size:var(--fs-small);font-weight:var(--fw-medium);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the More tools button and its menu (map-more-tools.js). The tools it holds keep their own Leaflet controls, taken off the map with .tool-folded; a row presses the control. */
+.leaflet-bar a.more-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
+.leaflet-bar a.more-btn svg{width:18px;height:18px}
+.leaflet-bar a.more-btn.on{color:var(--accent)!important}
+.leaflet-control.tool-folded{display:none!important}
+.more-menu{position:absolute;z-index:var(--z-popover);box-sizing:border-box;min-width:230px;max-width:min(300px,calc(100% - 24px));background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2);padding:var(--sp-2)}
+.more-menu[hidden]{display:none}
+.more-head{display:flex;align-items:center;justify-content:space-between;padding:2px var(--sp-2) var(--sp-1)}
+.more-title{font-size:var(--fs-meta);font-weight:var(--fw-bold);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.more-close{border:0;background:transparent;color:var(--muted);font:inherit;font-size:20px;line-height:1;width:28px;height:28px;border-radius:var(--radius-sm);cursor:pointer}
+.more-list{display:grid;gap:2px}
+.more-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);width:100%;box-sizing:border-box;min-height:var(--control-h);padding:6px var(--sp-2);border:0;border-radius:var(--radius-sm);background:transparent;color:var(--fg);font:inherit;font-size:var(--fs-body);text-align:left;cursor:pointer}
+.more-row[aria-pressed=true]{background:var(--accent-soft)}
+@media (hover:hover){.more-row:hover,.more-close:hover{background:var(--surface-2)}}
+.more-state{flex:none;color:var(--muted);font-size:var(--fs-meta)}
+.more-row[aria-pressed=true] .more-state{color:var(--accent);font-weight:var(--fw-semibold)}
+/* a narrow phone: a compact sheet along the bottom, above the safe area (left/top are set inline for the popover and cleared here) */
+.more-menu.sheet{position:fixed;left:0!important;right:0;top:auto!important;bottom:0;max-width:none;min-width:0;border-radius:var(--radius) var(--radius) 0 0;border-bottom:0;padding-bottom:calc(var(--sp-2) + env(safe-area-inset-bottom,0px));z-index:var(--z-sheet)}
 /* contextual hints (help-ui.js): one small card, in a panel pane, in the sessions dialog, or on the map */
 .help-hint{display:flex;align-items:center;gap:var(--sp-3);margin:0 0 var(--sp-3);padding:var(--sp-2) var(--sp-3);border:1px solid var(--accent);border-radius:var(--radius-sm);background:var(--accent-soft);color:var(--fg);font-size:var(--fs-small);line-height:var(--lh-meta)}
 .help-hint .help-text{margin:0;flex:1}
@@ -704,8 +716,6 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .dash-card.wide{flex-basis:100%}
 .dash-guide .w-steps{margin-top:6px}
 .key-body{overflow:hidden}
-.key-body.clamped{-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
-.key-more{margin-top:6px}
 .dash-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 10px;border-top:1px solid var(--line)}
 .dash-peek,.dash-tab{position:absolute;z-index:var(--z-dash);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;width:fit-content;bottom:36px;background:var(--surface);box-shadow:var(--shadow-1);color:var(--fg);cursor:pointer}
 .dash-peek{display:flex;align-items:center;gap:8px;max-width:max(200px,calc(100% - 464px - var(--panel-w,0px)));padding:7px 14px 7px 10px;border:0;border-radius:var(--radius-pill);font-weight:var(--fw-semibold)}
@@ -859,11 +869,21 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 
 /* ---------- more on the dashboard ---------- */
 .dash-btns{display:flex;flex-wrap:wrap;gap:6px}
-.dash-tasks{margin:12px 0}
-.dash-tasks h4{margin:0 0 6px;font-size:var(--fs-body)}
-.dash-tips{margin:10px 0}
-.dash-tips summary{cursor:pointer;color:var(--accent);font-weight:var(--fw-semibold)}
-.dash-tips .dash-btns{margin-top:8px}
+.dash-tasks{flex:1 1 100%;margin:0}
+.dash-tasks .dash-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.dash-tasks .btn{justify-content:center;min-height:var(--control-h);font-weight:var(--fw-semibold)}
+.dash-warn{border-color:var(--no);background:var(--no-bg)}
+.dash-warn .hint{color:var(--no)}
+.dash-help-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.dash-help-head h3{margin:0;font-size:var(--fs-title)}
+.dash-topic,.dash-subtopic{border-top:1px solid var(--line);padding:2px 0}
+.dash-topic>summary,.dash-subtopic>summary,.dash-data>summary,.dash-lines>summary{cursor:pointer;padding:8px 0;color:var(--fg);font-weight:var(--fw-semibold)}
+.dash-subtopic>summary,.dash-data>summary,.dash-lines>summary{color:var(--accent);font-size:var(--fs-small)}
+.dash-topic-body{display:grid;gap:8px;padding:0 0 10px}
+.dash-topic-body .hint,.dash-topic-body p{margin:0}
+.dash-data{flex-basis:100%;padding:4px 12px}
+.dash-data[open]>summary{margin-bottom:4px}
+.dash-lines{margin-top:8px;padding:0}
 .dash-check{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:3px;font-size:var(--fs-small)}
 .dash-check li{display:flex;align-items:center;gap:8px}
 .dash-check span.done{color:var(--muted);text-decoration:line-through}
@@ -875,7 +895,6 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .key-line{display:flex;align-items:center;gap:8px}
 .key-sample{flex:none;width:44px;height:12px;color:var(--accent)}
 .key-sample svg{display:block;width:44px;height:12px}
-.dash-layers .switch,.dash-layers .field{margin-top:6px}
 .dash-data .hint{margin-top:8px}
 
 /* ---------- the crosshair at the centre of the map ---------- */
@@ -1106,6 +1125,14 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .ses-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ses-title{font-size:var(--fs-body)}
 .ses-when,.ses-desc,.ses-count{color:var(--muted)}.ses-desc{overflow-wrap:anywhere}
 .ses-row .btn-row{margin:6px 0 0}.ses-row .badge{align-self:center}
+/* the card body opens the map explorer (sessions-hub.js): the title button's ::after covers the card; everything else that can be pressed sits above it */
+.ses-row{position:relative}
+.ses-row-open{display:block;min-width:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ses-row-open::after{content:"";position:absolute;inset:0;border-radius:inherit}
+.ses-row-open:focus-visible{outline:none}
+.ses-row:has(.ses-row-open:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+@media (hover:hover){.ses-hub .ses-row:has(.ses-row-open):hover{background:var(--surface-2)}}
+.ses-row .btn-row,.ses-row .ses-host{position:relative;z-index:1}
 .ses-manage{margin-top:6px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--surface-2)}
 .ses-manage h3{margin:0 0 6px;font-size:var(--fs-micro);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .ses-person{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0}.ses-person b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.ses-person small{color:var(--muted)}
@@ -1138,10 +1165,12 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
   .flip-dot{width:28px;height:28px}
   input[type=range]{height:28px}
   /* the map's own buttons: 36 px (Leaflet's touch size is 30). Not 40: the stack must stay mostly above the phone sheet, and its left edge (6 px margin) must not hide the start of a marker window's title */
-  .leaflet-touch .leaflet-bar a,.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn,.leaflet-bar a.sessions-btn,.leaflet-bar a.labels-btn{width:36px;height:36px;line-height:36px}
+  .leaflet-touch .leaflet-bar a,.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn,.leaflet-bar a.sessions-btn,.leaflet-bar a.more-btn{width:36px;height:36px;line-height:36px}
+  .more-row,.more-close{min-height:44px}
+  .more-close{width:44px}
   .help-hint .help-ok{min-height:36px}
   .leaflet-left .leaflet-control{margin-left:6px}
-  @media (max-height:480px){.leaflet-top.leaflet-left .leaflet-control:not(.leaflet-control-zoom){margin-top:3px}} /* a short landscape screen: the nine buttons must still fit above the scale bar */
+  @media (max-height:480px){.leaflet-top.leaflet-left .leaflet-control:not(.leaflet-control-zoom){margin-top:3px}} /* a short landscape screen: the buttons must still fit above the scale bar */
   /* 16 px in every field: below that iOS Safari zooms the page when one is focused */
   input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea,#ai-text,.maplinks-mode{font-size:max(16px,var(--fs-body))}
 }
@@ -1361,3 +1390,11 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 body[data-sesx=side] .leaflet-top.leaflet-left,body[data-sesx=side] .leaflet-bottom.leaflet-left{margin-left:var(--ses-x-off)}
 body[data-sesx=side] .search{left:calc(56px + var(--ses-x-off));width:min(340px,calc(100% - 56px - 72px - var(--ses-x-off)))}
 body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}
+
+/* the folded "What does this mean?" beside a zone verdict (legends.js): quiet, under the verdict, never replacing it */
+.zone-meaning{margin:6px 0 0;font-size:var(--fs-meta)}
+.zone-meaning>summary{cursor:pointer;color:var(--accent);font-weight:var(--fw-semibold);padding:2px 0}
+.mean-body{display:grid;gap:6px;padding:6px 0 2px;color:var(--muted);line-height:var(--lh-meta)}
+.mean-body p{margin:0}
+.mean-row{display:flex;align-items:flex-start;gap:8px;color:var(--fg)}
+.mean-swatch{flex:none;width:14px;height:14px;margin-top:1px;border-radius:3px;border:1px solid var(--line)}

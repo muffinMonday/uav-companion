@@ -1,5 +1,5 @@
-// The dashboard: a drawer along the bottom of the map with What's new, the next trip (and today's stops while it is under way), a backup
-// reminder, buttons for the regions the map covers and a short guide. It never blocks the map. Three states: expanded, the one-line
+// The dashboard: a drawer along the bottom of the map with four task shortcuts, the route being built, the next trip (and today's stops while it is under
+// way), what needs attention (invitations, backup, storage, What's new) and a folded data row. Help is a second subview of the same drawer (the ? button). It never blocks the map. Three states: expanded, the one-line
 // peek strip (V), and hidden behind a small ^ tab (close). How it starts is decided in dashstate.js.
 import { comingTrips, countdownLabel, tripSummary, todayISO, tripLength, tripStatus, planDays, tripWarnings } from './trips.js';
 import { WHATS_NEW } from './whatsnew.js';
@@ -27,13 +27,16 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
   const dataNodes = [$('poi-export'), $('poi-import'), $('poi-share'), $('poi-file'), $('poi-note')];
   const park = () => { keystore.append(...keyNodes); datastore.append(...dataNodes); };
   let todayShown = false;  // the Today card, with its check-in buttons, is on show
-  const layerEls = {};     // the layer controls mirrored here, so changes made in Map Configs show
+  let view = 'dash';       // the subview: 'dash' (default) or 'help'; page memory only, never stored
+  let freshShown = false;  // What's new has been on screen (only then does leaving the dashboard count as having seen it)
+  const topicOpen = new Set(); // Help topics the visitor has unfolded, kept across redraws
+  let dataOpen = false;    // the folded data row, kept open across redraws
+  const scrollOf = { dash: 0, help: 0 };
   const saved = load();
   const firstRun = !saved.welcomed && store.items().length === 0 && store.trips().length === 0;
   let fresh = unseenEntries(WHATS_NEW, saved.seen);   // entries to show until the visitor has seen them
-  let state = null, stateToken = 0;
+  let state = null, stateToken = 0, renderedView = 'dash';
   const splashFirst = firstRun && splash;           // a first visit that the quick-setup splash will greet: the dashboard waits as its strip
-  let guideOpen = firstRun && !splashFirst;
   let quickSetup = null;                             // opens the quick setup again (set by the page once it exists)
   let tripFade = false;                              // the trip card eases in after ‹ or ›
   let tripIx = 0;                                    // which of the coming trips the trip card shows
@@ -98,6 +101,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
   }
   function whatsNewCard() {
     if (!fresh.length) return null;
+    freshShown = true;
     const c = el('section', 'dash-card dash-new');
     c.append(el('h3', '', 'What’s new'));
     for (const e of fresh) {
@@ -116,14 +120,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     const c = el('section', 'dash-card dash-trip');
     if (tripFade) { c.classList.add('swap'); tripFade = false; }
     if (!coming.length) {
-      if (store.items().length || store.trips().length) return null;
-      c.append(el('h3', '', 'Get started'), el('p', 'hint', 'Create a trip, then drop markers for accommodation, takeoff spots and photo spots. Or place a marker straight away.'));
-      const row = el('div', 'btn-row');
-      const mk = (text, fn, cls) => { const b = el('button', 'btn small ' + cls, text); b.type = 'button'; b.addEventListener('click', fn); row.append(b); };
-      mk('Create your first trip', () => { panel.open('trips'); $('trip-new').click(); }, 'primary');
-      mk('Place a marker', () => panel.open('poi'), '');
-      c.append(row);
-      return c;
+      return null; // nothing planned: the task shortcuts above are the way in, so no empty card
     }
     tripIx = Math.max(0, Math.min(tripIx, coming.length - 1));
     const { trip, status } = coming[tripIx];
@@ -182,57 +179,36 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     open.addEventListener('click', () => trips.openDetail(trip.id));
     row.append(open);
     c.append(row);
+    const lines = el('details', 'dash-subtopic dash-lines'); lines.append(el('summary', '', 'What do the lines on the map mean?'), routeLinesKey());
+    c.append(lines);
     return c;
   }
-  function actionsCard() {
-    const c = el('section', 'dash-card dash-actions');
-    c.append(el('h3', '', 'Quick actions'));
-    const grid = el('div', 'dash-btns');
-    const mk = (text, fn, disabled = false, keep = false) => {
-      const b = el('button', 'btn small', text); b.type = 'button'; b.disabled = disabled;
-      b.addEventListener('click', () => { if (isPhone() && !keep) setState('peek'); fn(); }); // on a phone the map needs the room
-      grid.append(b);
-    };
-    mk('Place at map centre', () => $('poi-center').click());
-    mk('Place at my location', () => $('poi-here').click());
-    mk('Select markers', () => $('poi-select').click(), !store.items().length);
-    mk('Check my spot', () => actions.checkHere?.(), !actions.checkHere);
-    if (actions.crosshair) mk(actions.crosshair.on ? 'Hide crosshair' : 'Show crosshair', () => actions.crosshair.toggle(), false, true);
-    c.append(grid);
+  /** Storage nearly full: a visible alert on the default dashboard (the one actionable warning that stays out of Help and the data section). */
+  function storageCard() {
+    let use = null;
+    try { use = storageUse(localStorage); } catch { /* storage blocked: no readout */ }
+    if (!use?.warn) return null;
+    const c = el('section', 'dash-card dash-warn');
+    c.append(el('h3', '', 'Storage is nearly full'));
+    const p = el('p', 'hint storage-use warn', 'Using ' + sizeLabel(use.chars) + ' of about 5 MB of this browser’s storage. It is nearly full: export a backup and remove markers or trips you no longer need, or the browser may refuse to save new ones.');
+    p.setAttribute('role', 'alert');
+    c.append(p);
+    const b = el('button', 'btn small', 'Export now'); b.type = 'button';
+    b.addEventListener('click', () => $('poi-export').click());
+    c.append(b);
     return c;
   }
-  function layersCard() {
-    const c = el('section', 'dash-card dash-layers');
-    c.append(el('h3', '', 'Layers'));
-    const sw = el('label', 'switch'), cb = el('input'); cb.type = 'checkbox'; cb.checked = $('show').checked;
-    cb.addEventListener('change', () => { $('show').checked = cb.checked; $('show').dispatchEvent(new Event('change')); });
-    sw.append(el('span', '', 'Show zones'), cb);
-    const op = el('label', 'field'), rg = el('input'); rg.type = 'range'; rg.min = '0.1'; rg.max = '0.9'; rg.step = '0.05'; rg.value = $('op').value;
-    rg.addEventListener('input', () => { $('op').value = rg.value; $('op').dispatchEvent(new Event('input')); });
-    rg.addEventListener('change', () => $('op').dispatchEvent(new Event('change')));
-    op.append(el('span', '', 'Zone opacity'), rg);
-    const bs = el('label', 'field'), sel = el('select');
-    for (const o of $('base').options) { const n = el('option', '', o.textContent); n.value = o.value; sel.append(n); }
-    sel.value = $('base').value;
-    sel.addEventListener('change', () => { $('base').value = sel.value; $('base').dispatchEvent(new Event('change')); });
-    bs.append(el('span', '', 'Basemap'), sel);
-    Object.assign(layerEls, { cb, rg, sel });
-    c.append(sw, op, bs);
-    return c;
-  }
-  function dataCard() {
-    const c = el('section', 'dash-card dash-data');
-    c.append(el('h3', '', 'Your data'));
+  /** Import, export, share link and cloud status: one folded row at the end of the dashboard, so they keep a place without taking one. */
+  function dataSection() {
+    const c = el('details', 'dash-card dash-data'); c.open = dataOpen;
+    c.addEventListener('toggle', () => { dataOpen = c.open; });
+    c.append(el('summary', '', 'Your data: export, import, share'));
     const row = el('div', 'btn-row');
     row.append(...dataNodes.slice(0, 4)); // export, import, share link and the (hidden) file chooser
     c.append(row, dataNodes[4]);
     let use = null;
     try { use = storageUse(localStorage); } catch { /* storage blocked: no readout */ }
-    if (use) {
-      const p = el('p', 'hint storage-use' + (use.warn ? ' warn' : ''), 'Using ' + sizeLabel(use.chars) + ' of about 5 MB of this browser’s storage.' + (use.warn ? ' It is nearly full: export a backup and remove markers or trips you no longer need, or the browser may refuse to save new ones.' : ''));
-      if (use.warn) p.setAttribute('role', 'alert');
-      c.append(p);
-    }
+    if (use && !use.warn) c.append(el('p', 'hint storage-use', 'Using ' + sizeLabel(use.chars) + ' of about 5 MB of this browser’s storage.'));
     const line = cloud.handle?.line();
     if (line) { // signed in to the optional cloud copy: one line of status that opens its settings
       const b = el('button', 'btn small cloud-line', 'Cloud copy: ' + line); b.type = 'button';
@@ -240,38 +216,6 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
       c.append(b);
     }
     return c;
-  }
-  function keyCard() {
-    const c = el('section', 'dash-card dash-key');
-    const kb = el('div', 'key-body');
-    c.append(el('h3', '', 'Map key'), kb);
-    kb.append(keyNodes[0], keyNodes[1]);
-    const lines = el('div', 'key-lines');
-    lines.append(el('small', 'key-title', 'Lines on the map'));
-    const arrow = (attrs) => '<svg viewBox="0 0 44 12" aria-hidden="true"><line x1="2" y1="6" x2="33" y2="6" ' + attrs + '/><path d="M31 2l10 4-10 4z" fill="currentColor"/></svg>'; // built from constants only
-    const row = (svg, text) => { const r = el('div', 'key-line'), s = el('span', 'key-sample'); s.innerHTML = svg; r.append(s, text); lines.append(r); };
-    row(arrow('stroke="currentColor" stroke-width="2" opacity=".45"'), 'A day\'s stops, in order');
-    row(arrow('stroke="currentColor" stroke-width="5"'), 'Into and out of the selected stop, with the distance');
-    row(arrow('stroke="currentColor" stroke-width="5" stroke-dasharray="8 5"'), 'Overnight: through the accommodation, or on to the next day');
-    row('<svg viewBox="0 0 44 12" aria-hidden="true"><line x1="2" y1="6" x2="42" y2="6" stroke="currentColor" stroke-width="3" stroke-dasharray="6 5" opacity=".85"/></svg>', 'Straight-line distance to the nearest Home point or accommodation');
-    kb.append(lines, el('p', 'hint', 'Arrows take the colour of their trip. A planning aid, not flight advice: zones can change, so check the official platform for the place you are flying (for China, UOM) before every flight.'));
-    const more = el('button', 'dash-link key-more', 'See more'); more.type = 'button'; more.hidden = true;
-    more.addEventListener('click', () => { const open = !loadPrefs().keyOpen; savePrefs({ keyOpen: open || null }); fitKey(c); });
-    c.append(more);
-    return c;
-  }
-  /** Show the first half of the Map key (never less than ~110 px) with See more / See less, unless it is short or the visitor opened it. Needs the card on the page. */
-  function fitKey(c = body.querySelector('.dash-key')) {
-    const kb = c?.querySelector('.key-body'), more = c?.querySelector('.key-more');
-    if (!kb || !more) return;
-    const open = !!loadPrefs().keyOpen;
-    kb.style.maxHeight = ''; kb.classList.remove('clamped');
-    const full = kb.scrollHeight;
-    const half = Math.max(110, Math.round(full / 2));
-    const clampable = full > 160;
-    more.hidden = !clampable;
-    more.textContent = open ? 'See less' : 'See more'; more.setAttribute('aria-expanded', String(open));
-    if (clampable && !open) { kb.style.maxHeight = half + 'px'; kb.classList.add('clamped'); }
   }
   function friendsCard() { // friend requests waiting (only when signed in to the optional cloud features)
     const n = cloud.friends?.incoming ?? 0, v = cloud.friends?.invites ?? 0;
@@ -303,17 +247,17 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
       c.dataset.kind = 'nearby';
       c.append(el('p', 'hint', `${s.nearby.count}${s.nearby.more ? '+' : ''} public ${s.nearby.count === 1 ? 'session' : 'sessions'} within 10 km of the map centre.`));
       row.append(go('See them', () => hub.open('discover', { near: 10 }), 'btn small primary'));
-    } else {
-      c.dataset.kind = 'generic';
-      c.append(el('p', 'hint', 'Find a flying session near you, or plan your own.'));
-      row.append(go('Browse sessions', () => hub.open('discover'), 'btn small primary'));
-    }
+    } else return null; // nothing to act on: Find sessions in the task row is the way in, and Help has the nearby switch
     c.append(row);
+    if (s.nearbyOn) c.append(nearbySwitch(hub, s));
+    return c;
+  }
+  /** The opt-in for the nearby line on the dashboard (it uses the map centre, never the position). */
+  function nearbySwitch(hub, s = hub.summary()) {
     const lab = el('label', 'ses-check ses-nearby'); const cb = el('input'); cb.type = 'checkbox'; cb.checked = s.nearbyOn;
     cb.addEventListener('change', () => hub.setNearby(cb.checked));
     lab.append(cb, el('span', '', 'Show sessions within 10 km of the map centre here (uses the map centre, never your position)'));
-    c.append(lab);
-    return c;
+    return lab;
   }
   function backupCard() {
     const due = backupDue(store.lastBackup(), store.items().length);
@@ -341,72 +285,134 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     }
     return c;
   }
-  /** Common tasks, one press each, through the same panel and hub calls the rest of the page uses. A shortcut is only shown where its feature exists. */
+  /** The four task shortcuts, always on the default dashboard. Each goes through the same panel, POI and hub calls the rest of the page uses; Sessions only where this build has it. */
   function taskShortcuts() {
     const box = el('div', 'dash-tasks');
-    box.append(el('h4', '', 'What do you want to do?'));
     const grid = el('div', 'dash-btns');
     const mk = (id, text, fn) => {
       const b = el('button', 'btn small', text); b.type = 'button'; b.id = id;
       b.addEventListener('click', () => { if (isPhone()) setState('peek'); fn(); }); // on a phone the map needs the room
       grid.append(b);
     };
-    mk('task-check', 'Check a flying location', () => { setState('peek'); actions.toast?.('Press and hold on the map for 2 seconds (or right-click) to check a spot. Search takes places and coordinates.', 8000); });
-    mk('task-save', 'Save a place', () => panel.open('poi'));
+    mk('task-check', 'Check a location', checkHint);
     mk('task-trip', 'Plan a trip', () => { panel.open('trips'); $('trip-new').click(); });
-    if (cloud.sessions) mk('task-sessions', 'Find flight sessions', () => cloud.sessions.open('discover'));
-    mk('task-customize', 'Customize the map', () => panel.open('config'));
-    mk('task-find', 'Find saved places', () => { panel.open('poi'); setTimeout(() => $('poi-search')?.focus(), 150); });
-    mk('task-types', 'Choose a marker type', () => actions.help?.replay('poi-types'));
-    mk('task-pins', 'Show or hide trip pins', () => actions.help?.replay('trip-visibility'));
+    mk('task-save', 'Save a place', saveAPlace);
+    if (cloud.sessions) mk('task-sessions', 'Find sessions', () => cloud.sessions.open('discover'));
     box.append(grid);
     return box;
   }
-  /** Replay of the one-time feature hints (they show once by themselves; this shows one again without changing what has been seen). */
-  function tipsList() {
-    const list = actions.help?.replayable() ?? [];
-    if (!list.length) return document.createDocumentFragment();
-    const box = el('details', 'dash-tips'); box.id = 'dash-tips';
-    box.append(el('summary', '', 'Tips for each feature'));
-    const grid = el('div', 'dash-btns');
-    for (const h of list) {
-      const b = el('button', 'btn small', h.replay); b.type = 'button'; b.dataset.replay = h.id;
-      b.addEventListener('click', () => { if (isPhone()) setState('peek'); actions.help.replay(h.id); });
-      grid.append(b);
-    }
-    box.append(grid);
-    return box;
-  }
-  /** How it works: opened by the ? button in the header, at the top of the cards. */
-  function guideCard() {
-    if (!guideOpen) return null;
-    const d = el('section', 'dash-card dash-guide wide');
-    d.append(el('h3', '', 'How it works'), taskShortcuts());
-    const ol = el('ol', 'w-steps');
-    for (const t of [
-      ['Check a spot.', 'Press and hold on the map for 2 seconds (or right-click) to see whether you can fly there. Search takes places and coordinates.'],
-      ['Plan your trip.', 'Create a trip under Trips, then drop markers for accommodation, takeoff spots and photo spots, or paste an AI-made itinerary. Press and hold a saved place to move it to another day.'],
-      ['See the conditions.', 'Open a marker for its zone verdict and its distance to your accommodation and Home. Open a trip for a plan of each day and, if you turn weather on, a forecast.'],
-      ['Your data stays yours.', 'Markers and trips are saved only in this browser. Weather, elevation and name lookups are off until you allow them (shield button). Export a backup now and then.'],
-    ]) { const li = el('li'); li.append(el('b', '', t[0] + ' '), t[1]); ol.append(li); }
-    d.append(ol, tipsList());
+  const checkHint = () => { setState('peek'); actions.toast?.('Press and hold on the map for 2 seconds (or right-click) to check a spot. Search takes places and coordinates.', 8000); };
+  /** Opens the Points of Interest explorer with its Add a marker section unfolded. The selected type, search and folds stay as they were. */
+  const saveAPlace = () => { panel.open('poi'); poi.openAdd?.(); };
+  /** Opens the explorer at its search box, without touching the query, filters, folds or what is shown on the map. */
+  const findPlaces = () => { panel.open('poi'); setTimeout(() => poi.focusSearch?.(), 150); };
+
+  // The Help subview: topics hold the existing hint replays (help-content.js owns the ids and texts) and the actions that moved off the dashboard.
+  const HELP_TOPICS = [
+    { id: 'start', title: 'Getting started', ids: [] },
+    { id: 'map', title: 'Map basics and location checking', ids: ['map-tools', 'point-check'] },
+    { id: 'trips', title: 'Trips, saved places and Side Quests', ids: ['poi', 'poi-types', 'trip-visibility', 'newtype-shared', 'trips'] },
+    { id: 'social', title: 'Flight Sessions and Friends', ids: ['sessions', 'friends'] },
+    { id: 'settings', title: 'Map settings', ids: ['map-config'] },
+    { id: 'data', title: 'Data, privacy and safety', ids: [] },
+  ];
+  function helpView() {
+    const d = el('section', 'dash-card dash-guide dash-help-view wide');
+    const head = el('div', 'dash-help-head');
+    const back = el('button', 'btn small dash-back', '‹ Back to the dashboard'); back.type = 'button'; back.id = 'dash-back';
+    back.addEventListener('click', () => showView('dash'));
+    const h = el('h3', '', 'Help'); h.id = 'dash-help-title'; h.tabIndex = -1;
+    head.append(back, h);
+    d.append(head);
+    const replayable = actions.help?.replayable() ?? [];
+    const claimed = new Set(HELP_TOPICS.flatMap((t) => t.ids));
+    const act = (text, fn, id, keep = false) => { const b = el('button', 'btn small', text); b.type = 'button'; if (id) b.id = id; b.addEventListener('click', () => { if (isPhone() && !keep) setState('peek'); fn(); }); return b; };
     const names = regions.countries.map((k) => k.name);
-    const again = el('button', 'btn small', 'Run the quick setup again'); again.type = 'button'; again.id = 'dash-setup';
-    again.addEventListener('click', () => quickSetup?.());
-    d.append(again);
-    d.append(el('p', 'w-note', 'A planning aid, not flight advice: check the official platform before every flight. Zone data covers ' + (names.length ? names.join(' and ') : 'a few regions') + '. Singapore’s no-fly zones are approximate; every window links to the official OneMap Drone Query.'));
+    for (const t of HELP_TOPICS) {
+      const box = el('details', 'dash-topic'); box.dataset.topic = t.id; box.open = topicOpen.has(t.id);
+      box.addEventListener('toggle', () => { if (box.open) topicOpen.add(t.id); else topicOpen.delete(t.id); });
+      box.append(el('summary', '', t.title));
+      const inner = el('div', 'dash-topic-body'); box.append(inner);
+      const buttons = el('div', 'dash-btns');
+      if (t.id === 'start') {
+        const ol = el('ol', 'w-steps');
+        for (const s of [
+          ['Check a spot.', 'Press and hold on the map for 2 seconds (or right-click) to see whether you can fly there. Search takes places and coordinates.'],
+          ['Plan your trip.', 'Create a trip under Trips, then drop markers for accommodation, takeoff spots and photo spots, or paste an AI-made itinerary. Press and hold a saved place to move it to another day.'],
+          ['See the conditions.', 'Open a marker for its zone verdict and its distance to your accommodation and Home. Open a trip for a plan of each day and, if you turn weather on, a forecast.'],
+          ['Your data stays yours.', 'Markers and trips are saved only in this browser. Weather, elevation and name lookups are off until you allow them (shield button). Export a backup now and then.'],
+        ]) { const li = el('li'); li.append(el('b', '', s[0] + ' '), s[1]); ol.append(li); }
+        inner.append(ol);
+        buttons.append(act('Run the quick setup again', () => quickSetup?.(), 'dash-setup', true));
+        // hints that belong to no topic (a future feature adds one declaratively) still show up here
+        for (const r of replayable) if (!claimed.has(r.id)) buttons.append(replayBtn(r));
+      }
+      if (t.id === 'map') {
+        if (actions.checkHere) buttons.append(act('Check where I am', () => actions.checkHere()));
+        if (actions.crosshair) buttons.append(act(actions.crosshair.on ? 'Hide crosshair' : 'Show crosshair', () => actions.crosshair.toggle(), 'help-crosshair', true));
+        inner.append(el('p', 'hint', 'Zoom, My location and More tools are on the left of the map. More tools holds marker details, Side Quests, trip markers, the crosshair and Flight Sessions.'));
+        const key = el('details', 'dash-subtopic'); key.append(el('summary', '', 'What the colours and lines mean'));
+        const kb = el('div', 'key-body'); kb.append(keyNodes[1], routeLinesKey()); key.append(kb);
+        inner.append(key);
+      }
+      if (t.id === 'trips') {
+        buttons.append(act('Save a place', saveAPlace, 'task-save-help'), act('Find saved places', findPlaces, 'task-find'), act('Plan a trip', () => { panel.open('trips'); $('trip-new').click(); }));
+      }
+      if (t.id === 'social' && cloud.sessions) { buttons.append(act('Find sessions', () => cloud.sessions.open('discover'))); inner.append(nearbySwitch(cloud.sessions)); }
+      if (t.id === 'settings') {
+        inner.append(el('p', 'hint', 'Basemap, zone display and opacity, theme, units and the Maps app live in Map Configs.'));
+        buttons.append(act('Open Map Configs', () => panel.open('config')));
+      }
+      if (t.id === 'data') {
+        inner.append(el('p', 'hint', 'A planning aid, not flight advice: check the official platform before every flight. Zone data covers ' + (names.length ? names.join(' and ') : 'a few regions') + '. Singapore’s no-fly zones are approximate; every window links to the official OneMap Drone Query. Not being inside a mapped zone, or being outside the data, is never permission to fly.'), keyNodes[0]);
+      }
+      for (const r of replayable.filter((x) => t.ids.includes(x.id))) buttons.append(replayBtn(r));
+      if (buttons.children.length) inner.append(buttons);
+      d.append(box);
+    }
     return d;
+  }
+  function replayBtn(h) {
+    const b = el('button', 'btn small', h.replay); b.type = 'button'; b.dataset.replay = h.id;
+    b.addEventListener('click', () => { if (isPhone()) setState('peek'); actions.help.replay(h.id); });
+    return b;
+  }
+  /** The lines the trip plan draws on the map, explained next to where they show (the trip card, and Help). Built from constants only. */
+  function routeLinesKey() {
+    const lines = el('div', 'key-lines');
+    lines.append(el('small', 'key-title', 'Lines on the map'));
+    const arrow = (attrs) => '<svg viewBox="0 0 44 12" aria-hidden="true"><line x1="2" y1="6" x2="33" y2="6" ' + attrs + '/><path d="M31 2l10 4-10 4z" fill="currentColor"/></svg>';
+    const row = (svg, text) => { const r = el('div', 'key-line'), s = el('span', 'key-sample'); s.innerHTML = svg; r.append(s, text); lines.append(r); };
+    row(arrow('stroke="currentColor" stroke-width="2" opacity=".45"'), 'A day\'s stops, in order');
+    row(arrow('stroke="currentColor" stroke-width="5"'), 'Into and out of the selected stop, with the distance');
+    row(arrow('stroke="currentColor" stroke-width="5" stroke-dasharray="8 5"'), 'Overnight: through the accommodation, or on to the next day');
+    row('<svg viewBox="0 0 44 12" aria-hidden="true"><line x1="2" y1="6" x2="42" y2="6" stroke="currentColor" stroke-width="3" stroke-dasharray="6 5" opacity=".85"/></svg>', 'Straight-line distance to the nearest Home point or accommodation');
+    lines.append(el('p', 'hint', 'Arrows take the colour of their trip.'));
+    return lines;
   }
 
   function render() {
+    scrollOf[renderedView] = body.scrollTop;
     park(); poi.checkin.unbind('dash'); todayShown = false;
     body.replaceChildren();
-    body.append(welcomeLine());
-    for (const card of [guideCard(), routeCard(), whatsNewCard(), friendsCard(), sessionsCard(), tripCard(), actionsCard(), layersCard(), backupCard(), dataCard(), keyCard(), regionsCard()]) if (card) body.append(card);
-    fitKey();
+    renderedView = view;
+    if (view === 'help') body.append(helpView());
+    else {
+      body.append(welcomeLine(), taskShortcuts());
+      for (const card of [routeCard(), tripCard(), friendsCard(), sessionsCard(), storageCard(), backupCard(), whatsNewCard(), regionsCard(), dataSection()]) if (card) body.append(card);
+    }
+    body.scrollTop = scrollOf[view];
     syncHelp();
     updatePeek();
     poi.checkin.sync(); // the position is wanted while Today shows check-in buttons
+  }
+  /** Switches between the default dashboard and Help inside the same drawer; scroll, route, trip and What's new state stay as they are. */
+  function showView(next, { focus = true } = {}) {
+    if (view === next) return;
+    view = next; render();
+    if (!focus) return;
+    if (next === 'help') $('dash-help-title')?.focus();
+    else helpBtn.focus();
   }
   function updatePeek() {
     const coming = comingTrips(store.trips(), todayISO());
@@ -419,9 +425,8 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
   // ---------- the three states ----------
   // On a phone the dashboard can grow to 90% of the screen (the button beside close). The choice is remembered (prefs.dashTall).
   const helpBtn = $('dash-help');
-  function syncHelp() { helpBtn.setAttribute('aria-pressed', String(guideOpen)); }
-  helpBtn.addEventListener('click', () => { guideOpen = !guideOpen; render(); });
-  window.addEventListener('resize', () => { if (state === 'expanded') fitKey(); });
+  function syncHelp() { helpBtn.setAttribute('aria-pressed', String(view === 'help')); }
+  helpBtn.addEventListener('click', () => showView(view === 'help' ? 'dash' : 'help'));
   const expandBtn = $('dash-expand');
   function setTall(on, { save = true } = {}) {
     dash.classList.toggle('tall', on);
@@ -438,12 +443,13 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
   const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(lift) : null;
   ro?.observe(dash);
 
-  function setState(next, { guide = false, instant = false } = {}) {
+  function setState(next, { guide = false, instant = false, data = false } = {}) {
     const leaving = state === 'expanded' && next !== 'expanded';
-    if (leaving && fresh.length) { save({ seen: fresh[0].id }); fresh = []; } // seen once they have been on screen and put away
+    if (leaving && fresh.length && freshShown) { save({ seen: fresh[0].id }); fresh = []; } // seen once they have been on screen and put away
     state = next;
     if (next === 'expanded') {
-      if (guide) guideOpen = true;
+      if (guide) view = 'help';
+      if (data) { view = 'dash'; dataOpen = true; } // export, import and share live in the folded data row
       if (isPhone()) panel.closeIfPhone();
       render();
       if (!load().welcomed) save({ welcomed: true });
@@ -480,11 +486,6 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
   poi.checkin.also(() => state === 'expanded' && todayShown);
   actions.crosshair?.onChange(() => { if (state === 'expanded') render(); });
   trips.onForecast?.(() => { if (state === 'expanded') render(); });
-  // Map Configs changes show in the mirrored layer controls
-  $('show').addEventListener('change', () => { if (layerEls.cb) layerEls.cb.checked = $('show').checked; });
-  $('op').addEventListener('input', () => { if (layerEls.rg) layerEls.rg.value = $('op').value; });
-  $('base').addEventListener('change', () => { if (layerEls.sel) layerEls.sel.value = $('base').value; });
-
   // a route being built: a desktop opens the dashboard at the second stop, a phone brings up the strip (the map needs the room); both go
   // back to how they were when selecting ends
   let beforeRoute = null;

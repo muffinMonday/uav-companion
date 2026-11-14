@@ -105,7 +105,7 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
     if (s.location) sel.append(el('span', 'ses-xplace', s.location));
     sel.append(el('span', 'ses-xmeta', [seriesText(s), capacityText(s)].filter(Boolean).join(' · ')));
     const acts = el('div', 'ses-xactions');
-    acts.append(sessionMapActions({ lat: s.lat, lng: s.lng, title: s.title, onMap: () => select(s.id) }));
+    acts.append(sessionMapActions({ lat: s.lat, lng: s.lng, title: s.title }));
     const d = el('button', 'btn small ses-xdetails', 'Details'); d.type = 'button'; d.dataset.act = 'details'; d.setAttribute('aria-label', `Details: ${s.title}`);
     d.addEventListener('click', (e) => { e.stopPropagation(); onDetails?.(s); });
     acts.append(d);

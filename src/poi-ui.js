@@ -21,6 +21,7 @@ import { initReorder } from './reorder-ui.js';
 import { queryTerms, matches, newExpansion, scopeOpen, dayOpen, dayId, summarise, summaryText, isOutside, reveal as revealSection, prune as pruneSections, unlinkedSideQuests, SCOPE_HOME } from './poi-model.js';
 import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer, toolBar } from './cards.js';
+import { zoneExplanation } from './legends.js';
 import { onPopupSwipe } from './swipe.js';
 
 const $ = (id) => document.getElementById(id);
@@ -1185,7 +1186,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       zone.append(el('div', 'status skeleton', 'Checking zone…'));
       root.append(zone);
       checkPoint(it.lat, it.lon)
-        .then((res) => { zone.replaceChildren(statusEl(zoneSummary(res))); popup?.update(); })
+        .then((res) => { zone.replaceChildren(statusEl(zoneSummary(res)), zoneExplanation(res)); popup?.update(); })
         .catch(() => { zone.replaceChildren(el('div', 'status unk', 'Zone check unavailable right now.')); });
 
       // the numbers (elevation and the 5-hour weather, when enabled), then how far this is from the nearest home point and hotel
@@ -1709,6 +1710,10 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     showTrip, fitTrip,
     /** Changes the type chosen in the Add a marker picker (and opens the group it is in). */
     setSelectedType,
+    /** Unfolds Add a marker (the dashboard’s Save a place) without changing the chosen type, the search, the filters or the folds of the saved list. */
+    openAdd() { addCard.open = true; addCard.scrollIntoView?.({ block: "nearest" }); addCard.querySelector("summary")?.focus({ preventScroll: true }); },
+    /** Puts the cursor in the saved-places search box; the query and everything else stay as they are. */
+    focusSearch() { searchEl.focus({ preventScroll: false }); },
     onNewTypeShared: (fn) => newerListeners.add(fn),
     /** Whether a marker is drawn on the map under the trip rules (not counting the POI layer switch). */
     isShownOnMap: (id) => shownOnMap(store.get(id)),

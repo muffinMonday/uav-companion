@@ -162,8 +162,8 @@ ok((await S.page.locator('.leaflet-popup .stat[data-k=elev] .v').count()) === 1 
 await closePopup(S.page);
 await S.page.click('.locate-btn'); await S.page.waitForSelector('.you-dot', { timeout: 8000 }); await S.page.waitForTimeout(1200);
 ok((await S.page.locator('.leaflet-popup').count()) === 0, '3: locating no longer runs a point check or opens a popup by itself');
-await dashClick(S.page, 'text=Check my spot'); await S.page.waitForSelector('.leaflet-popup .stat[data-k=elev]', { timeout: 8000 });
-ok(true, '3: "Check my spot" shows a popup for where you are, with elevation');
+await S.page.evaluate(() => document.getElementById('help-open').click()); await S.page.evaluate(() => document.querySelectorAll('.dash-topic').forEach((d) => { d.open = true; })); await S.page.locator('.dash-help-view .btn', { hasText: 'Check where I am' }).click(); await S.page.waitForSelector('.leaflet-popup .stat[data-k=elev]', { timeout: 8000 });
+ok(true, '3: "Check where I am" shows a popup for where you are, with elevation');
 await closePopup(S.page);
 
 // turning altitude off forgets and hides
