@@ -1,0 +1,160 @@
+{
+  "checkedOn": "2026-11-14",
+  "sourceUrl": "https://kdji.cn/assets/nfz-map-20261010/miniapp-index.json",
+  "sha256": "ad098a00c5e74b3fc052bf0710e44d11d589def71d0daf138e2f482628bf1ef7",
+  "sourceClaims": "用户小程序随包公开地理数据",
+  "coordinateSystemClaim": "WGS84",
+  "provinceIds": [
+    {
+      "id": "anhui",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "chongqing",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "fujian",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "gansu",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "guangdong",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "guangxi",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "guizhou",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "hainan",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "hebei",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "heilongjiang",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "henan",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "hubei",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "hunan",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "jiangsu",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "jilin",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "liaoning",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "neimenggu",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "ningxia",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "qinghai",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "shaanxi",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "shandong",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "shanghai",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "shanxi",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "sichuan",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "tianjin",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "xinjiang",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "xizang",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "yunnan",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "zhejiang",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    },
+    {
+      "id": "jiangxi",
+      "hasData": true,
+      "publishDate": "2026年5月"
+    }
+  ],
+  "note": "Metadata-only observation. hasData is not a completeness, currency, access permission or licence assertion. airport coordinate declaration does not establish polygon CRS."
+}

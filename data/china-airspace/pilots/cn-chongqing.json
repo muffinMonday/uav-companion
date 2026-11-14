@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "cn-chongqing",
+  "checkedOn": "2026-11-14",
+  "bbox": [
+    105.2,
+    28.1,
+    110.3,
+    32.3
+  ],
+  "boundaryFile": null,
+  "boundaryNote": "User-supplied query envelope only, not an authoritative municipality or airspace coverage boundary.",
+  "endpoint": "https://kdji.cn/nfz-api.php?action=uom&province=chongqing",
+  "partition": {
+    "columns": 3,
+    "rows": 3,
+    "overlap": 0.05,
+    "maxRequests": 9
+  },
+  "access": {
+    "status": "unverified",
+    "evidence": null,
+    "checkedOn": "2026-11-14",
+    "maxRequests": 0
+  },
+  "responsePolicy": {
+    "pagination": "unknown",
+    "wholeFeatures": null,
+    "featureLimit": null,
+    "evidence": null
+  },
+  "transport": {
+    "intervalMs": 3000,
+    "attempts": 3,
+    "timeoutMs": 30000,
+    "maxBytes": 25000000
+  },
+  "validation": {
+    "crs": "unknown",
+    "topologyBudget": 2000000
+  },
+  "quality": "unverified-reference",
+  "provenance": {
+    "sourceType": "third-party-reference",
+    "mapUrl": "https://kdji.cn/support/nfz-map.html",
+    "governmentContextUrl": "https://www.cq.gov.cn/zwgk/zfxxgkml/szfwj/zfgz/zfgz/202312/t20231205_12655876.html",
+    "publicationMonthClaim": "2026-05",
+    "snapshotMonthClaim": "2026-09",
+    "effectiveDate": null,
+    "semantics": "unknown",
+    "crsDeclared": null,
+    "crsClientInference": "Client transforms incoming longitude/latitude to GCJ-02 for display; WGS84 is an unverified inference.",
+    "redistribution": "unknown",
+    "fixtureStatus": "User-supplied endpoint lead; saved response file not located locally.",
+    "crsProviderClaim": "Client code comment describes WGS84 data; polygon declaration and alignment not verified."
+  }
+}

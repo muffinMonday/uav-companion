@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "region": "cn-guangdong",
+  "checkedOn": "2026-11-14",
+  "status": "blocked-no-source-fixture",
+  "quality": "unverified-reference",
+  "provenance": {
+    "sourceType": "third-party-reference",
+    "mapUrl": "https://kdji.cn/support/nfz-map.html",
+    "governmentContextUrl": "https://www.jiangmen.gov.cn/home/bmdt/content/post_3495659.html",
+    "publicationMonthClaim": "2026-05",
+    "snapshotMonthClaim": "2026-09",
+    "effectiveDate": null,
+    "semantics": "unknown",
+    "crsDeclared": null,
+    "crsClientInference": "Client transforms incoming longitude/latitude to GCJ-02 for display; WGS84 is an unverified inference.",
+    "redistribution": "unknown",
+    "fixtureStatus": "User reports successful GeoJSON response; saved file not located locally.",
+    "crsProviderClaim": "Client code comment describes WGS84 data; polygon declaration and alignment not verified."
+  },
+  "queryBounds": [
+    [
+      109.5,
+      20.1,
+      111.57374999999999,
+      22.025
+    ],
+    [
+      111.37625,
+      20.1,
+      113.54875,
+      22.025
+    ],
+    [
+      113.35125000000001,
+      20.1,
+      115.52375,
+      22.025
+    ],
+    [
+      115.32625000000002,
+      20.1,
+      117.4,
+      22.025
+    ],
+    [
+      109.5,
+      21.84166666666667,
+      111.57374999999999,
+      23.858333333333334
+    ],
+    [
+      111.37625,
+      21.84166666666667,
+      113.54875,
+      23.858333333333334
+    ],
+    [
+      113.35125000000001,
+      21.84166666666667,
+      115.52375,
+      23.858333333333334
+    ],
+    [
+      115.32625000000002,
+      21.84166666666667,
+      117.4,
+      23.858333333333334
+    ],
+    [
+      109.5,
+      23.675000000000004,
+      111.57374999999999,
+      25.6
+    ],
+    [
+      111.37625,
+      23.675000000000004,
+      113.54875,
+      25.6
+    ],
+    [
+      113.35125000000001,
+      23.675000000000004,
+      115.52375,
+      25.6
+    ],
+    [
+      115.32625000000002,
+      23.675000000000004,
+      117.4,
+      25.6
+    ]
+  ],
+  "technical": {
+    "valid": null,
+    "geometry": "not-tested",
+    "crsAlignment": "unverified"
+  },
+  "overlapReproduction": "not-tested",
+  "provincialCompleteness": "unverified",
+  "regulatoryValidity": "unverified",
+  "integrationReady": false,
+  "blockers": [
+    "No previously obtained GeoJSON located in repository or Downloads",
+    "Live API permission/limits are unverified; automated acquisition disabled",
+    "Semantics, CRS alignment, geometry and provincial completeness require source evidence",
+    "Redistribution and effective date not established"
+  ]
+}
