@@ -114,6 +114,8 @@ Current, constraining decisions only; superseded ones are removed (history: git,
 
 **Release:** additive migrations only (dry run, data backup, linked project verified), one final `npm run deploy:live`, no real users created or deleted during live checks.
 
+**Sessions hub front end (2026-11-14, deviations from the plan file):** the hub is built in JavaScript as a native `<dialog>` (`sessions-hub.js`), not as an HTML fragment, because the frozen DOM baseline (`html-dom`) and the dynamic Friends/account dialogs already work this way; the plan listed `sessions-hub.html` as a candidate only. Nearby discovery is opt-in per browser and uses the map centre, never geolocation. The Friends tab keeps a short summary card that opens the hub; creating a session is only inside the hub. The Saturday preset is a button, not a default. Edits of a series change this and the following not-individually-edited sessions (the database rule).
+
 ## Testing and process
 **Tests live in `tests/`; browser suites need the dev server on :5173 and Edge; external services mocked; Supabase tests run the real SQL on PGlite.** Suites must be parallel-safe (rules in `DEVELOPMENT.md`).
 

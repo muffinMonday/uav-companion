@@ -57,6 +57,7 @@ All reads are validated; damaged entries fall back to defaults. If storage is bl
 | `uavzones.v1.sharedwho` | `party-ui.js` | Email of whoever was signed in at last shared sync; a different person resets the links (trips stay) |
 | `uavzones.v1.livehide` | `party-ui.js` | Trip ids whose party is hidden on the map, and `friends` when friends' pins are hidden. Sharing one's own location is never stored |
 | `uavzones.v1.prefs` (`autoShare`, `shareFriends`, `shareOff`) | `privacy.js`, `autoshare.js` | Automatic sharing: `on`/`off` (absent = not asked yet), friends included (absent = yes), trips and `friends` the person stopped by hand. Additive, no version bump; not synced |
+| `uavzones.v1.prefs` (`sessionsNearby`) | `prefs.js`, `sessions-hub.js` | Opt-in (true or absent) for the dashboard to look up public flight sessions within 10 km of the map centre (rounded to 0.01 degree). Additive, no version bump; not synced. The session link token waits in `sessionStorage` key `uavzones.session-link` for the tab only |
 | `uavzones.windLimit` | `weather.js` | Older key without `v1`, kept |
 | supabase-js session | supabase-js | Stored by the library under its own `sb-…` key |
 

@@ -219,10 +219,10 @@ textarea{resize:vertical;min-height:60px}
 .leaflet-bar{border:0!important;border-radius:var(--radius-sm)!important;box-shadow:var(--shadow-1)!important;overflow:hidden}
 .leaflet-bar a{background:var(--surface)!important;color:var(--fg)!important;border-bottom-color:var(--line)!important}
 @media (hover:hover){.leaflet-bar a:hover{background:var(--surface-2)!important}}
-.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
+.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn,.leaflet-bar a.sessions-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
 .leaflet-bar a.locate-btn.active{color:var(--accent)!important}
 .leaflet-bar a.locate-btn .locate-icon{display:flex;align-items:center;justify-content:center}
-.leaflet-bar a.locate-btn svg,.leaflet-bar a.details-btn svg,.leaflet-bar a.map-toggle svg,.leaflet-bar a.cross-btn svg{width:18px;height:18px}
+.leaflet-bar a.locate-btn svg,.leaflet-bar a.details-btn svg,.leaflet-bar a.map-toggle svg,.leaflet-bar a.cross-btn svg,.leaflet-bar a.sessions-btn svg{width:18px;height:18px}
 .leaflet-control-scale-line{background:color-mix(in srgb,var(--surface) 88%,transparent)!important;color:var(--fg);border-color:var(--muted)!important;border-radius:0 0 4px 4px}
 .leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--muted)!important}
 .leaflet-control-attribution a{color:var(--accent)!important}
@@ -1093,7 +1093,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
   .flip-dot{width:28px;height:28px}
   input[type=range]{height:28px}
   /* the map's own buttons: 36 px (Leaflet's touch size is 30). Not 40: the stack must stay mostly above the phone sheet, and its left edge (6 px margin) must not hide the start of a marker window's title */
-  .leaflet-touch .leaflet-bar a,.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn{width:36px;height:36px;line-height:36px}
+  .leaflet-touch .leaflet-bar a,.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn,.leaflet-bar a.sessions-btn{width:36px;height:36px;line-height:36px}
   .leaflet-left .leaflet-control{margin-left:6px}
   /* 16 px in every field: below that iOS Safari zooms the page when one is focused */
   input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea,#ai-text,.maplinks-mode{font-size:max(16px,var(--fs-body))}
@@ -1116,6 +1116,50 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 /* sessions: the next action leads, Manage steps back */
 .ses-title{font-weight:var(--fw-semibold)}
 .ses-row [data-act=manage]{background:transparent;border-color:transparent;color:var(--muted)}
+/* Sessions hub: a dialog (960 px at most; a full-screen sheet on a phone), the floating bar over the map, the map pin */
+.ses-hub{width:min(960px,calc(100vw - 32px));max-width:none;height:min(720px,calc(100vh - 32px));max-height:none;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-2);flex-direction:column;overflow:hidden}
+.ses-hub[open]{display:flex}
+.ses-hub::backdrop{background:var(--scrim)}
+.ses-hub-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--line);background:var(--surface)}
+.ses-hub-head h2{margin:0;font-size:var(--fs-title);line-height:var(--lh-tight)}
+.ses-tabs{display:flex;gap:2px;padding:0 var(--sp-3);border-bottom:1px solid var(--line)}
+.ses-tabs[hidden]{display:none}
+.ses-tab{position:relative;padding:10px 14px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font:inherit;font-weight:var(--fw-semibold);cursor:pointer}
+.ses-tab[aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent)}
+.ses-tab .tab-badge{position:static;display:inline-block;margin-left:6px;vertical-align:middle}
+.ses-hub-body{flex:1;min-height:0;overflow-y:auto;padding:var(--sp-4)}
+.ses-hub-inner{display:flex;flex-direction:column;gap:8px;max-width:720px;margin-inline:auto}
+.ses-hub-inner>.btn,.ses-hub-inner>.ses-signin{align-self:flex-start}
+.ses-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ses-filters input[type=search]{flex:1 1 200px;min-width:0;box-sizing:border-box}
+.ses-check{display:flex;align-items:center;gap:6px;font-size:var(--fs-small)}
+.ses-group{margin:12px 0 0;font-size:var(--fs-micro);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ses-host{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.ses-hub .ses-row{padding:12px;border:1px solid var(--line);border-radius:var(--radius-sm)}
+.ses-hub .ses-row:last-of-type{border-bottom:1px solid var(--line)}
+.ses-notices,.ses-report,.ses-invites,.ses-newlink{padding:8px 10px;border-radius:var(--radius-sm);background:var(--surface-2)}
+.ses-notices h3,.ses-invites h3,.ses-report h3{margin:0 0 6px;font-size:var(--fs-micro);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ses-role{padding:8px 10px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:var(--radius-sm)}
+.ses-noverify{font-weight:var(--fw-semibold)}
+.ses-times{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ses-times input,.ses-hub .ses-form select,.ses-form select{width:100%;box-sizing:border-box}
+.ses-vis{border:0;margin:4px 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ses-radio{display:flex;align-items:flex-start;gap:8px}
+.ses-public-warn{padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--surface-2)}
+.ses-public-warn[hidden],.ses-repeat[hidden]{display:none}
+.ses-repeat,.ses-pin{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--surface-2)}
+.ses-preview ul{margin:4px 0;padding-left:18px}
+.ses-invite-form,.ses-link-form{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.ses-newlink{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.ses-newlink input{flex:1 1 200px;min-width:0}
+.ses-bar{position:fixed;z-index:var(--z-sheet);left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;max-width:min(560px,calc(100vw - 24px));padding:10px 12px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2)}
+.ses-bar[hidden]{display:none}
+.ses-bar-text{flex:1 1 100%;text-align:center}
+.ses-map-pin span{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);font:var(--fw-bold) var(--fs-small)/1 var(--font)}
+@media (max-width:520px){
+  .ses-hub{width:100vw;height:100dvh;max-height:100dvh;border-radius:0;border:0}
+  .ses-hub-body{padding:var(--sp-3);padding-bottom:calc(var(--sp-3) + env(safe-area-inset-bottom,0px))}
+  .ses-times{grid-template-columns:1fr 1fr}
+}
 /* friends and account rows: one comfortable row height */
 .fr-row{padding:10px 0;min-height:52px}
 .fr-who b{font-weight:var(--fw-semibold)}

@@ -21,6 +21,7 @@ import { initPOI } from './poi-ui.js';
 import { initPrivacyUI } from './privacy-ui.js';
 import { initSyncUI } from './sync-ui.js';
 import { initFriendsUI } from './friends-ui.js';
+import { initSessionsHub } from './sessions-hub.js';
 import { initAccountUI } from './account-ui.js';
 import { initPartyUI } from './party-ui.js';
 import { initPresence } from './presence.js';
@@ -116,7 +117,7 @@ cloud.openData = () => dash.open(); // the account popover's export and import l
 const splash = initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud }); // the quick setup: greets a first visit, and "Quick setup" reopens it
 dash.onQuickSetup(splash.open);
 if (dash.splashFirst) splash.open();
-initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); initFriendsUI({ panel, handle: h, toast, cloud }); initAccountUI({ handle: h, panel, toast, cloud }); splash.refresh(); cloud.refresh?.(); } }).catch((e) => log.warn('sync', 'cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
+initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); cloud.sessions = initSessionsHub({ handle: h, map, toast, panel, markers: () => poi.store.items().filter((i) => i.type !== 'home').map((i) => ({ name: i.name, lat: i.lat, lon: i.lon })) }); cloud.sessions.onSummary(() => cloud.refresh?.()); cloud.sessions.redeemFromHash(); cloud.sessions.refresh(); initFriendsUI({ panel, handle: h, toast, cloud }); initAccountUI({ handle: h, panel, toast, cloud }); splash.refresh(); cloud.refresh?.(); } }).catch((e) => log.warn('sync', 'cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch((e) => { log.warn('map', 'point check failed', e); toast('Point check failed. Check your connection and try again.'); });
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.

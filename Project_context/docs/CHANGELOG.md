@@ -2,6 +2,9 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-14 (Flight Sessions 2.0 front end)
+- Sessions hub dialog (Discover, My sessions, Invitations, detail, host tools), New session form with map pin picker, repeat preview, visibility, capacity; reporting; invitations and private links; dashboard card with opt-in 10 km discovery; calendar button on the map; hosting vs "can verify attendance for XP" wording. Backend: earlier commits `adb918a`, `bb78261` (migrations `20261118*` not yet pushed to the hosted project at the time of this entry).
+
 ## 2026-11-14 (HTML/main.js refactor Phases 2-5)
 - `main.js` (327 -> 171 lines) delegates to `src/app/point-check.js`, `map-settings.js`, `region-loader.js`, `region-ui.js`; startup order, concurrent cloud/data loading, launch flags and error handling unchanged. New `region-loader-unit`; `launchloc` gained slow-data checks. Commit `7cb0347`, published with `deploy:live`.
 - `MODULES.md` has the component ownership map; `AGENTS.md` points to it. Docs-only commits for Phases 3 and 4. No database change.

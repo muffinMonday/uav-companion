@@ -11,6 +11,7 @@ import { routeLinks } from './maplinks-ui.js';
 import { MODES, MAX_STOPS } from './maplinks.js';
 import { typeOf } from './poi.js';
 import { checkinCell } from './checkin-ui.js';
+import { whenText } from './sessions.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
@@ -283,6 +284,37 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     c.append(b);
     return c;
   }
+  function sessionsCard() { // flight sessions: what is soonest for this person, else invitations, else public sessions near the map centre (opt-in), else a way in
+    const hub = cloud.sessions;
+    if (!hub) return null;
+    const s = hub.summary(), c = el('section', 'dash-card dash-sessions');
+    const go = (label, fn, cls = 'btn small') => { const b = el('button', cls, label); b.type = 'button'; b.addEventListener('click', () => { fn(); if (isPhone()) setState('peek'); }); return b; };
+    const row = el('div', 'btn-row');
+    c.append(el('h3', '', 'Flight sessions'));
+    if (s.soon) {
+      c.dataset.kind = 'soon';
+      c.append(el('p', 'hint', `${s.soon.isHost ? 'You host' : 'You are going to'} “${s.soon.title}”, ${whenText(s.soon.startsAt, s.soon.endsAt)}.`));
+      row.append(go('Open session', () => hub.open('detail', { id: s.soon.id, fallback: s.soon }), 'btn small primary'));
+    } else if (s.invites || s.updates) {
+      c.dataset.kind = 'invites';
+      c.append(el('p', 'hint', [s.invites && (s.invites === 1 ? '1 private invitation' : s.invites + ' private invitations'), s.updates && (s.updates === 1 ? '1 update' : s.updates + ' updates')].filter(Boolean).join(' and ') + ' waiting for you.'));
+      row.append(go(s.invites ? 'See invitations' : 'See updates', () => hub.open(s.invites ? 'invites' : 'mine'), 'btn small primary'));
+    } else if (s.nearbyOn && s.nearby?.count) {
+      c.dataset.kind = 'nearby';
+      c.append(el('p', 'hint', `${s.nearby.count}${s.nearby.more ? '+' : ''} public ${s.nearby.count === 1 ? 'session' : 'sessions'} within 10 km of the map centre.`));
+      row.append(go('See them', () => hub.open('discover', { near: 10 }), 'btn small primary'));
+    } else {
+      c.dataset.kind = 'generic';
+      c.append(el('p', 'hint', 'Find a flying session near you, or plan your own.'));
+      row.append(go('Browse sessions', () => hub.open('discover'), 'btn small primary'));
+    }
+    c.append(row);
+    const lab = el('label', 'ses-check ses-nearby'); const cb = el('input'); cb.type = 'checkbox'; cb.checked = s.nearbyOn;
+    cb.addEventListener('change', () => hub.setNearby(cb.checked));
+    lab.append(cb, el('span', '', 'Show sessions within 10 km of the map centre here (uses the map centre, never your position)'));
+    c.append(lab);
+    return c;
+  }
   function backupCard() {
     const due = backupDue(store.lastBackup(), store.items().length);
     if (!due) return null;
@@ -334,7 +366,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     park(); poi.checkin.unbind('dash'); todayShown = false;
     body.replaceChildren();
     body.append(welcomeLine());
-    for (const card of [guideCard(), routeCard(), whatsNewCard(), friendsCard(), tripCard(), actionsCard(), layersCard(), backupCard(), dataCard(), keyCard(), regionsCard()]) if (card) body.append(card);
+    for (const card of [guideCard(), routeCard(), whatsNewCard(), friendsCard(), sessionsCard(), tripCard(), actionsCard(), layersCard(), backupCard(), dataCard(), keyCard(), regionsCard()]) if (card) body.append(card);
     fitKey();
     syncHelp();
     updatePeek();

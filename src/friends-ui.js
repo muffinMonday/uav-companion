@@ -20,7 +20,7 @@ export function initFriendsUI({ panel, handle, toast, cloud }) {
   const social = createSocial(handle.adapter.client);
   const progression = getProgression(handle.adapter.client);
   setProgressionSource(progression);
-  const sessions = createSessionsCard({ client: handle.adapter.client });
+  const sessions = createSessionsCard({ hub: cloud.sessions });
   const sesSlot = el('div'); sessions.mount(sesSlot); // kept between redraws of the tab so an open manage panel or form is not lost
   const pane = el('section'); pane.id = 'pane-friends';
   const tab = panel.addTab({ key: 'friends', label: 'Friends', icon: ICON, pane });
