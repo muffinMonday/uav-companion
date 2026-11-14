@@ -1,5 +1,10 @@
 # Guangdong and Chongqing pilot results
 
+Historical pilot record. Later selected-source publication supersedes its production
+blockers: [four-region release](SELECTED_SOURCE_RELEASE.md),
+[Chongqing precision follow-up](EXPRESS_CHONGQING_CHENGDU.md). Original source identities
+and conservative-policy findings below remain valid.
+
 Checked 2026-11-14. Both pilots have advanced to **technically validated reference staging with conservative-policy warnings**. Original geometry is archived and independently GEOS-valid. Both remain **unverified reference**, with `integrationReady: false`. No production registrations, PMTiles, live API requests, merge or deployment.
 
 ## Supplied originals

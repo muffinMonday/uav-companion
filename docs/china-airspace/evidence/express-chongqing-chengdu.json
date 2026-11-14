@@ -1,0 +1,306 @@
+{
+  "checkedOn": "2026-11-14",
+  "baselineSource": "7758fe2",
+  "previousProduction": "ceffda1254bf8a1d39db92373686e28fe052b1da",
+  "rollback": {
+    "file": "planning/express/previous-production-ceffda1.zip",
+    "sha256": "3513b889b24afa9eb857e903a2a8538a6670a2fb6596b9e232d50a87979a9d74"
+  },
+  "chongqing": {
+    "features": 777,
+    "sourceSnapshots": [
+      {
+        "file": "../../../../nationwide-airspace-rollout/planning/china-airspace/fixtures/78f86e54c762c008b78effc89e7ee0aa561b9d1405f7ba20587f80ab74c510a3/chongqing-full.geojson",
+        "sha256": "78f86e54c762c008b78effc89e7ee0aa561b9d1405f7ba20587f80ab74c510a3",
+        "features": 777
+      }
+    ],
+    "contentSha256": "fe74a3a59558df666907c7af40a28a03b6ae121dac75f7fad515bb34044e9f89",
+    "subjectSha256": "d1495298c5d05252e3c7266337a78f369f3b92bc173b781edc3ab976441feb9a",
+    "pmtiles": "cn/cn-chongqing.a1d54094.pmtiles",
+    "sha256": "a1d54094a434af96b73d973c7bc0d1267f69404cb0f36d5ee3aef0d795b828f3",
+    "geos": {
+      "valid": true,
+      "features": 777,
+      "shapely": "2.2.0",
+      "geos": "3.14.1"
+    },
+    "smoke": {
+      "points": 13,
+      "tiles": 18038,
+      "featureInteriorChecks": 777,
+      "rendering": {
+        "renderer": "leaflet/protomaps-leaflet",
+        "painted": true,
+        "pageErrors": 0
+      }
+    },
+    "tinyFeature": {
+      "id": "chongqing-271-0",
+      "bounds": [
+        106.482239,
+        28.568573,
+        106.482241,
+        28.568576
+      ],
+      "cause": "z14/4096 integer tile coordinates collapse the original triangle",
+      "resolution": "opt-in extent 65536 for Chongqing z14 only, encoded in standard MVT; original source geometry retained; unchanged renderer and extent-aware point reader",
+      "inside": {
+        "lon": 106.4822395,
+        "lat": 28.56857375
+      },
+      "outside": {
+        "lon": 106.4822405,
+        "lat": 28.5685755
+      }
+    },
+    "candidate": "planning/express/chongqing-candidate"
+  },
+  "chengdu": {
+    "status": "withheld-city-coverage-mask-required",
+    "acquisitionEnvelope": [
+      102.85,
+      30,
+      104.95,
+      31.5
+    ],
+    "bboxBasis": "Padded envelope around government-published extent 102°54′–104°53′ E / 30°05′–31°26′ N; query envelope is not an administrative boundary.",
+    "bboxSource": "https://www.mee.gov.cn/ywdt/gsgg/gongshi/wqgs_1/202510/W020251011570084473852.pdf",
+    "officialCheck": {
+      "notice": "https://www.sc.gov.cn/10462/10778/10876/2026/5/12/ee71fce56e6c4c5abf9a59258bedafcc.shtml",
+      "result": "Targeted official-domain downloadable-vector searches found no usable dataset; notice inaccessible. No image digitization."
+    },
+    "endpoint": "https://kdji.cn/nfz-api.php?action=uom&province=sichuan",
+    "rights": "Existing owner attestation covers bounded provincial retrieval/public PMTiles derivatives; collection operator cap two requests, one attempt each, three-second spacing, 25 MB cap.",
+    "features": 57,
+    "occurrences": 59,
+    "duplicates": 2,
+    "conflicts": [],
+    "captures": [
+      {
+        "file": "planning/express/chengdu-capture-network/responses/0-0.json",
+        "sha256": "ea31059ccb0e2f1a09e1023a177a22eb41d7d2c552eb0b17c73fe4623fc9b64b",
+        "summary": {
+          "features": 3,
+          "uniqueIds": 3,
+          "missingIds": 0,
+          "duplicateIds": [],
+          "duplicateGeometryGroups": [],
+          "geometryTypes": [
+            "Polygon"
+          ],
+          "extent": [
+            97.382812,
+            26.563568,
+            105.816193,
+            34.314628
+          ],
+          "positions": 25104,
+          "rings": 224,
+          "holes": 221,
+          "sourceWinding": {
+            "clockwiseShells": 3,
+            "counterclockwiseHoles": 221,
+            "preservedUnmodified": true
+          },
+          "structuralIssues": [],
+          "query": [
+            102.85,
+            30,
+            103.9525,
+            31.5
+          ],
+          "sourceDeclaresCrs": "WGS84",
+          "coordinateRangeValid": true,
+          "bboxIntersectionMatches": 3,
+          "geometryNonIntersectionIds": [
+            "sichuan-170-0"
+          ],
+          "featuresExtendingBeyondQuery": 2
+        }
+      },
+      {
+        "file": "planning/express/chengdu-capture-network/responses/0-1.json",
+        "sha256": "f5d7d7cfc3da631206353e24492b10112cb84ed7c0ac1201c3f6a8f33a1d3c71",
+        "summary": {
+          "features": 56,
+          "uniqueIds": 56,
+          "missingIds": 0,
+          "duplicateIds": [],
+          "duplicateGeometryGroups": [],
+          "geometryTypes": [
+            "Polygon"
+          ],
+          "extent": [
+            97.382812,
+            26.563568,
+            105.816193,
+            34.314628
+          ],
+          "positions": 38647,
+          "rings": 418,
+          "holes": 362,
+          "sourceWinding": {
+            "clockwiseShells": 56,
+            "counterclockwiseHoles": 362,
+            "preservedUnmodified": true
+          },
+          "structuralIssues": [],
+          "query": [
+            103.84750000000001,
+            30,
+            104.95,
+            31.5
+          ],
+          "sourceDeclaresCrs": "WGS84",
+          "coordinateRangeValid": true,
+          "bboxIntersectionMatches": 56,
+          "geometryNonIntersectionIds": [],
+          "featuresExtendingBeyondQuery": 9
+        }
+      }
+    ],
+    "comparison": {
+      "sharedIds": 2,
+      "identicalSharedGeometry": 2,
+      "geometryConflictIds": [],
+      "onlyA": [
+        "sichuan-177-0"
+      ],
+      "onlyB": [
+        "sichuan-169-0",
+        "sichuan-171-0",
+        "sichuan-172-0",
+        "sichuan-173-0",
+        "sichuan-174-0",
+        "sichuan-175-0",
+        "sichuan-176-0",
+        "sichuan-178-0",
+        "sichuan-179-0",
+        "sichuan-180-0",
+        "sichuan-181-0",
+        "sichuan-182-0",
+        "sichuan-183-0",
+        "sichuan-184-0",
+        "sichuan-185-0",
+        "sichuan-186-0",
+        "sichuan-187-0",
+        "sichuan-188-0",
+        "sichuan-189-0",
+        "sichuan-190-0",
+        "sichuan-191-0",
+        "sichuan-192-0",
+        "sichuan-193-0",
+        "sichuan-194-0",
+        "sichuan-195-0",
+        "sichuan-196-0",
+        "sichuan-197-0",
+        "sichuan-198-0",
+        "sichuan-238-0",
+        "sichuan-239-0",
+        "sichuan-240-0",
+        "sichuan-241-0",
+        "sichuan-242-0",
+        "sichuan-243-0",
+        "sichuan-244-0",
+        "sichuan-245-0",
+        "sichuan-246-0",
+        "sichuan-247-0",
+        "sichuan-248-0",
+        "sichuan-249-0",
+        "sichuan-250-0",
+        "sichuan-251-0",
+        "sichuan-252-0",
+        "sichuan-253-0",
+        "sichuan-254-0",
+        "sichuan-255-0",
+        "sichuan-256-0",
+        "sichuan-257-0",
+        "sichuan-258-0",
+        "sichuan-259-0",
+        "sichuan-260-0",
+        "sichuan-261-0",
+        "sichuan-302-0",
+        "sichuan-303-0"
+      ],
+      "commonQuery": [
+        103.84750000000001,
+        30,
+        103.9525,
+        31.5
+      ],
+      "bboxSelectedOverlap": {
+        "a": 2,
+        "b": 2,
+        "onlyA": [],
+        "onlyB": []
+      },
+      "provesUniversalFiltering": false,
+      "provesProvincialCompleteness": false
+    },
+    "filtering": [
+      {
+        "knownUniverseFeatures": 57,
+        "received": 3,
+        "predictedByBoundingBox": 3,
+        "missing": [],
+        "unexpected": [],
+        "exactSampleMatch": true,
+        "scope": "Observed fixture union only; does not test unknown/missing source features or prove a universal API contract."
+      },
+      {
+        "knownUniverseFeatures": 57,
+        "received": 56,
+        "predictedByBoundingBox": 56,
+        "missing": [],
+        "unexpected": [],
+        "exactSampleMatch": true,
+        "scope": "Observed fixture union only; does not test unknown/missing source features or prove a universal API contract."
+      }
+    ],
+    "geos": {
+      "valid": true,
+      "features": 57,
+      "shapely": "2.2.0",
+      "geos": "3.14.1"
+    },
+    "limitations": [
+      "Universal pagination, freshness and completeness remain unverified; no truncation markers observed, full captured overlap identities and bbox filtering agree.",
+      "Whole source feature sichuan-66-0 extends to [97.382812,26.563568,105.816193,34.314628]. A city registration without a reviewed administrative mask would paint much of Sichuan.",
+      "No Chengdu registration or PMTiles publication. Originals and complete 57-feature union retained locally without geometry changes."
+    ],
+    "acquisitionAttempts": {
+      "successfulHTTP": 2,
+      "locallyNetworkDenied": 1,
+      "accessRestrictionBypass": false
+    }
+  },
+  "existingArtifacts": {
+    "cn/cn-guangdong.550bc53c.pmtiles": "550bc53c423dc86ea38f1b99ee2e71b2f56307289e989ff73f052c203c8a512d",
+    "cn/cn-hubei.566a4850.pmtiles": "566a485009c6d44e9b234ecdcbce2858b840f2040e59de204d7de0c286f12ec5",
+    "cn/cn-hubei.boundary.d51de41d.json": "d51de41db7ce7f2ad8eb5b00cc5ea42c9444710961ca210e47b84ef4713feaab",
+    "cn/cn-hunan.b0935b4d.pmtiles": "b0935b4d7c0846832bb63839048d435f0668cd2212e8c58388f2aaf28f96dc81",
+    "cn/cn-jilin.f11867c2.pmtiles": "f11867c2b6a59fce26290b4e7d8ebf18cfc176cc14a7658ec41fe46c163e6117",
+    "cn/cn-ningxia.99868b1d.pmtiles": "99868b1d8e0d3a16055aca8b564bdc14a987336ecf17c6a134e4d036da9028b4",
+    "sg/sg-nofly.52266140.pmtiles": "52266140f9d2c092f23c5ee5323c678feeffadfbe0da34e6c34de977ec241102",
+    "sg/sg-nofly.boundary.8621758d.json": "8621758df002c24f8a98e2e5f95dded1051037a69256100eb45ee6ee31f831a2",
+    "sg/sg-nofly.points.c137b1a4.json": "c137b1a4b89e8b1a2063cda48af6c110f7bb81adad67b6a85c3e793396343057"
+  },
+  "existingArtifactsUnchanged": true,
+  "validation": {
+    "focused": "19/19 passed, two optional original-fixture checks rerun separately: 2/2 pass",
+    "precision": "2/2 pass including desktop/mobile pixel location",
+    "units": "All 57 suites covered successfully: sandbox en-SG places-unit locale failure passed 23/23 on normal en-US host; full host run passed 56/57, known live-engine timing failure passed 35/35 alone. No test expectations changed.",
+    "fullBrowserSuite": "Not repeated: runtime unchanged; selected-source runtime and real renderer tests run.",
+    "application": {
+      "points": 56,
+      "desktopMobileRegionRenders": 14,
+      "pageErrors": 0,
+      "proof": "planning/express/local-verification.json"
+    },
+    "build": "npm run build passed; existing bundle-size warning"
+  },
+  "publication": {
+    "status": "prepared-pending-review-and-deployment"
+  }
+}

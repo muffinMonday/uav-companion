@@ -1,5 +1,13 @@
 # Session Checkpoint
 
+## Chongqing / Chengdu express release (2026-11-14; implementation qualified, review/deployment pending)
+- Isolated branch/worktree: feature/express-chongqing-chengdu, latest main 7758fe2. Owner expressly authorizes normal review/merge and deploy:live. Existing owner checkout edits preserved.
+- Chongqing: original 777-feature checksum-bound source retained; GEOS, all 777 tile interiors, 13 point cases and tiny triangle desktop/mobile pixel-location tests pass. Opt-in standard MVT extent 65536 only at regional z14; runtime/default/lower zooms unchanged. Registered candidate PMTiles a1d54094 (full hash in release evidence).
+- Chengdu: two bounded API captures, 59 occurrences / 57 unique originals, two exact repeats, zero conflicts, complete GEOS passes. Withheld: whole returned Sichuan polygon spans far beyond city; reviewed administrative coverage mask required before registration/publication. No Chengdu data published.
+- Verification: 56 application points and 14 desktop/mobile regional render checks pass; all previous artifacts byte-identical; build passes. All 57 unit suites covered with existing locale/timing failures passing targeted normal-host reruns. Focused integration 19/19, optional complete-pilot geometry 2/2, precision 2/2. No full browser repeat because runtime unchanged.
+- Evidence, source hashes, candidate and rollback: [express follow-up](../../docs/china-airspace/EXPRESS_CHONGQING_CHENGDU.md). Previous production ceffda1 complete ZIP retained under planning/express/; no deployment yet.
+
+
 ## Selected operational airspace rollout (2026-11-14; isolated production registration)
 - Owner revised the publication policy, then directed API fallback and affirmed KDji joint-project rights for bounded retrieval/public PMTiles. Exact attestation: `../../docs/china-airspace/evidence/owner-api-authorization.json`; not a published open licence. PRs #1–#5 merged; base refreshed to latest UX release `0df811e`; branch/worktree `feature/nationwide-airspace-rollout` / `.worktrees/nationwide-airspace-rollout`. Active owner checkout preserved.
 - Six API requests produced complete capture unions: Jilin 140, Hunan 53, Ningxia 79 polygons. Existing Guangdong 101 / Chongqing 777 complete fixtures reused. All 1,150 captured source features pass independent full GEOS/winding/overlap audit and retain their original geometry/contact cases. Four provinces qualify after exhaustive tile-presence checks; Chongqing is withheld as below. These are API snapshots, not official-grid counts or proven complete provinces.
