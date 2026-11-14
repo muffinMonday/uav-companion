@@ -2,6 +2,8 @@
 
 This workflow prepares evidence and reproducible local datasets for UAV Companion. It does not register regions, change point checks, or publish tiles. [Audit and plan](PLAN.md), [nationwide inventory](INVENTORY.md), [source investigation](SOURCES.md), [pilot results](PILOTS.md), [compatibility and checks](VALIDATION.md).
 
+For the separate stage/build/approved-registration-candidate CLI, batch commands and rollback procedure, see [Express regional integration](INTEGRATE.md). Neither workflow automatically activates or publishes data.
+
 ## Run
 
 **Integration warning:** `normalized.geojson` is a diagnostic subset: Guangdong **89 of 101**, Chongqing **756 of 777**. Never substitute it for the complete `deduplicated-reference.geojson`. Both remain unapproved for production. Read the [mandatory artifact identity guard, winding procedure and investigation checklist](INTEGRATION_GATES.md) first.

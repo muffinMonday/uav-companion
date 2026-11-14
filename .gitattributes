@@ -1,0 +1,2 @@
+# Approval fixtures bind exact bytes across Windows and Unix checkouts.
+tests/fixtures/airspace/* text eol=lf
