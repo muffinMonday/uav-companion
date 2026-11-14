@@ -1,6 +1,6 @@
 # UAV Companion — Dashboard, Map Tools, Sessions & Marker UI Refinement
 
-**Status:** COMPLETED 2026-11-15. Wave 1 released 2026-11-14 (`4015de5`, deployed). Wave 2 slices Trips and shared panel header released 2026-11-14 (`0df811e`; gh-pages `a221631` published 10 s later). Wave 2 P2 and P3 closed 2026-11-15: release commit and deploy evidence in section 16. Residual risks: older-client shared-trip POI downcast (owner-accepted at the 2026-11-14 POI release); not verified on a real phone, Safari, a screen reader or at 200% zoom; `trips` and `sidedrag` browser suites use fixed fixture dates and fail from 2026-11-15 on (test-side, see section 16). Status history: in progress 2026-11-14 (moved from `completed/`), completed 2026-11-15.  
+**Status:** COMPLETED 2026-11-15. Wave 1 released 2026-11-14 (`4015de5`, deployed). Wave 2 slices Trips and shared panel header released 2026-11-14 (`0df811e`; gh-pages `a221631` published 10 s later). Wave 2 P2 and P3 closed 2026-11-15: release `99607ef` / merge `bd9b948`, deployed with deploy:live (evidence in section 16). Residual risks: older-client shared-trip POI downcast (owner-accepted at the 2026-11-14 POI release); not verified on a real phone, Safari, a screen reader or at 200% zoom; `trips` and `sidedrag` browser suites use fixed fixture dates and fail from 2026-11-15 on (test-side, see section 16). Status history: in progress 2026-11-14 (moved from `completed/`), completed 2026-11-15.  
 **Prepared:** 2026-11-14  
 **Repository:** `muffinMonday/uav-companion`  
 **Destination:** `Project_context/docs/backlogs/completed/DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md`  
@@ -225,4 +225,4 @@ Owner authorized Wave 2 (commit, push, one `deploy:live` per run). **Run 1 (2026
 
 **Not verified:** real phone or foldable, Safari, screen reader, 200% zoom.
 
-**Release:** RELEASE_EVIDENCE_PLACEHOLDER
+**Release:** commit `99607ef` merged with origin/main (airspace PRs 7 to 9, data, docs and scripts only) in `bd9b948`, pushed to `origin/main`; one `npm run deploy:live` (accounts enabled, no database change), gh-pages `401e6af`. Live `index-Tt9qCazc.js` and `index-Z_diX6ql.css` are byte-identical to the local build; live `index.html` equals it apart from CR characters. Live guest smoke (read-only, no sign-in, backend writes blocked): account button present, dock has 8 buttons, the new CSS rules are loaded, no page errors. Unit suites re-run on the merged tree: all pass; build passes.
