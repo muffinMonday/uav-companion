@@ -1,0 +1,268 @@
+{
+  "region": "cn-jilin",
+  "features": 79784,
+  "dbfRecordCount": 79784,
+  "shxRecordCount": 79784,
+  "shpRecordCount": 79784,
+  "shpFileLengthMatches": true,
+  "shpEofAligned": true,
+  "uniqueGridNames": 79784,
+  "nullGeometries": 0,
+  "geometryTypes": {
+    "Polygon": 79784
+  },
+  "holes": 0,
+  "axisAlignedRectangles": 79784,
+  "allGeosValid": true,
+  "centresOutsideDiagnosticBoundary": 5029,
+  "boundaryGeosValid": true,
+  "boundaryBounds": [
+    121.64950524317237,
+    40.85919462483207,
+    131.281836386,
+    46.2934536812424
+  ],
+  "boundaryStatus": "Natural Earth diagnostic only; no production coverage approval",
+  "archiveSha256": "04211e891698153926cf547575bfe0dbd3efcc52ad5efc394aa79b82cb2b692b",
+  "pointChecks": [
+    {
+      "lon": 131.000976565,
+      "lat": 43.28613281,
+      "inside": true
+    },
+    {
+      "lon": 125.787277225,
+      "lat": 43.987197875,
+      "inside": true
+    },
+    {
+      "lon": 125.90744018500001,
+      "lat": 44.040069579999994,
+      "inside": true
+    },
+    {
+      "lon": 126.559066775,
+      "lat": 42.100296025,
+      "inside": true
+    },
+    {
+      "lon": 125.682907105,
+      "lat": 41.023635865,
+      "inside": true
+    },
+    {
+      "lon": 121.53787842000001,
+      "lat": 40.88175049,
+      "inside": false
+    },
+    {
+      "lon": 125.32,
+      "lat": 43.82,
+      "inside": false
+    },
+    {
+      "lon": 122.43278503583333,
+      "lat": 44.9357986475,
+      "inside": false
+    },
+    {
+      "lon": 122.43278503583333,
+      "lat": 45.814476015833336,
+      "inside": false
+    },
+    {
+      "lon": 123.22769165166667,
+      "lat": 44.496459963333336,
+      "inside": false
+    },
+    {
+      "lon": 123.22769165166667,
+      "lat": 45.375137331666664,
+      "inside": false
+    },
+    {
+      "lon": 124.10636901499998,
+      "lat": 43.24836731,
+      "inside": true
+    },
+    {
+      "lon": 121.63925171000001,
+      "lat": 45.751190185,
+      "inside": true
+    },
+    {
+      "lon": 131.176071165,
+      "lat": 43.42277526499999,
+      "inside": true
+    },
+    {
+      "lon": 125.80581665,
+      "lat": 40.98312378,
+      "inside": true
+    },
+    {
+      "lon": 123.31398010500001,
+      "lat": 46.25312805499999,
+      "inside": true
+    }
+  ],
+  "checkedOn": "2026-11-14",
+  "sourceContentSha256": "578df46a282248902891f9faa2a197591f173f76ccaea029d7b442d554197624",
+  "sourceBounds": [
+    121.63787842,
+    40.98175049,
+    131.17675781,
+    46.2538147
+  ],
+  "sourcePrj": "GEOGCS[\"WGS84(DD)\", DATUM[\"WGS84\", SPHEROID[\"WGS84\", 6378137.0, 298.257223563]], PRIMEM[\"Greenwich\", 0.0], UNIT[\"degree\", 0.017453292519943295], AXIS[\"Geodetic longitude\", EAST], AXIS[\"Geodetic latitude\", NORTH], AUTHORITY[\"EPSG\",\"4326\"]]",
+  "crsAlignment": "unverified; numeric ranges and PRJ are insufficient",
+  "sourceEvidenceVerified": false,
+  "promotionCandidateReady": false,
+  "productionRegistered": false,
+  "liveDeployed": false,
+  "originals": [
+    {
+      "path": "planning/china-airspace/phase1/cn-jilin/extracted/吉林适飞网格/吉林适飞网格.dbf",
+      "bytes": 40610154,
+      "sha256": "aeed9f5d805d01196799de4fcf21cf905c5b0f74d54de8cd84593e2eac1af5ff"
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-jilin/extracted/吉林适飞网格/吉林适飞网格.fix",
+      "bytes": 957757,
+      "sha256": "f1ba5d894b49034007c0ee64f356bb8ed9d49c7f4cfa937fd72021c20c77b46b"
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-jilin/extracted/吉林适飞网格/吉林适飞网格.prj",
+      "bytes": 238,
+      "sha256": "00a681c97d09da0982b2634a54aafd0df99c38fa634f682d6b241d18213d5a42"
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-jilin/extracted/吉林适飞网格/吉林适飞网格.shp",
+      "bytes": 10850724,
+      "sha256": "f43381ab42546ec96d84924139f1c5ad48e43d8694c9a352049a0c47007c862b"
+    },
+    {
+      "path": "planning/china-airspace/phase1/cn-jilin/extracted/吉林适飞网格/吉林适飞网格.shx",
+      "bytes": 638372,
+      "sha256": "843cd6ef4a4822a0788d1fa0cbc5952beefc7739e190a6c2df99959b8ca51283"
+    }
+  ],
+  "windingDerivative": {
+    "path": "planning/china-airspace/phase1/cn-jilin/winding.geojson",
+    "bytes": 22499543,
+    "sha256": "cfb80f99c8a06e6bc54397fc79adc3c47b3e016ca0151afd045abb7d92405dc8"
+  },
+  "localConfig": {
+    "path": "planning/china-airspace/phase1/cn-jilin/config.json",
+    "bytes": 2261,
+    "sha256": "4dbb918313bf87166def20735ff2a9b966e06e38fb2b4c34d859c18abd47c6b1"
+  },
+  "approvalGates": {
+    "semantics": {
+      "status": "pending",
+      "reviewer": null
+    },
+    "crsAlignment": {
+      "status": "pending",
+      "reviewer": null
+    },
+    "completeness": {
+      "status": "pending",
+      "reviewer": null
+    },
+    "effectiveDates": {
+      "status": "pending",
+      "reviewer": null
+    },
+    "redistribution": {
+      "status": "pending",
+      "reviewer": null
+    },
+    "production": {
+      "status": "pending",
+      "reviewer": null
+    }
+  },
+  "technicalStatus": "complete local build and smoke; production evidence pending",
+  "integrationReport": {
+    "path": "planning/china-airspace/phase1/jilin-build-reviewed-points/report.json",
+    "bytes": 4237,
+    "sha256": "d816da0ce25c947b61a5dc499e18c51094123843ab5e7a7159c691e2a734cbd5"
+  },
+  "integrationSubjectSha256": "e50254addb2221769e8ea07b5851dd7a037005e50c4e1a226b04953a7b641ef3",
+  "geos": {
+    "valid": true,
+    "features": 79784,
+    "shapely": "2.2.0",
+    "geos": "3.14.1"
+  },
+  "policy": {
+    "valid": true,
+    "errors": [],
+    "errorCount": 0
+  },
+  "smoke": {
+    "points": 16,
+    "tiles": 41455,
+    "rendering": {
+      "renderer": "leaflet/protomaps-leaflet",
+      "painted": true,
+      "pageErrors": 0
+    }
+  },
+  "manifest": {
+    "id": "cn-jilin",
+    "country": "cn",
+    "name": "Jilin",
+    "file": "cn/cn-jilin.1a61ce2c.pmtiles",
+    "boundary": "cn/cn-jilin.boundary.b414af7f.json",
+    "bounds": [
+      121.63787842,
+      40.98175049,
+      131.17675781,
+      46.2538147
+    ],
+    "coverageBounds": [
+      121.63787842,
+      40.85919462483207,
+      131.281836386,
+      46.2934536812424
+    ],
+    "cells": 79784,
+    "minZoom": 3,
+    "maxZoom": 14,
+    "semantics": "allow",
+    "maxHeightM": null,
+    "source": {
+      "authority": "Jilin Department of Transportation",
+      "effective": "2026-05-14",
+      "url": "https://jtyst.jl.gov.cn/zw_133208/tzgg/202605/t20260512_9599843.html"
+    },
+    "license": "Unknown; no redistribution permission established",
+    "crs": "wgs84",
+    "crsVerified": false,
+    "local": true
+  },
+  "pmtiles": {
+    "path": "planning/china-airspace/phase1/jilin-build-reviewed-points/tiles/cn/cn-jilin.1a61ce2c.pmtiles",
+    "bytes": 6780461,
+    "sha256": "1a61ce2cc4bd45209966314cdc4a038c87de71e73b9aaff11dde5555cc0fc007"
+  },
+  "completionMarker": {
+    "path": "planning/china-airspace/phase1/jilin-build-reviewed-points/COMPLETE.json",
+    "bytes": 446,
+    "sha256": "bb0257349ce3beb6f31b65ec60d8eb431bae3d532c7e536771dd857acae90561"
+  },
+  "checksums": {
+    "path": "planning/china-airspace/phase1/jilin-build-reviewed-points/checksums.json",
+    "bytes": 1088,
+    "sha256": "c834d136728d8047b7f55a7d080df6cd945751b64089d8a25dbb8958030c21e7"
+  },
+  "render": {
+    "path": "planning/china-airspace/phase1/jilin-build-reviewed-points/render.png",
+    "bytes": 23607,
+    "sha256": "fa8f653c6de16fdd0e7d73d41aea6d95be864fd81a57e457723cc7c4fa4ff9c0"
+  },
+  "promotionProbe": "Rejected: crsVerified must be explicitly true for promotion",
+  "stagingMethod": "Lossless shapefile.read FeatureCollection exported to raw-read.geojson. Original SHP/SHX/DBF/PRJ/FIX preserved separately. Direct shapefile mode rejects the valid source WGS84(DD) spelling; no reprojection or relabelling of an unknown CRS."
+}
