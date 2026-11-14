@@ -17,6 +17,9 @@ const b = await chromium.launch({ channel: CHANNEL });
 const errs = [];
 const watch = (p) => { p.on('pageerror', (e) => errs.push('pageerror ' + e.message)); p.on('console', (m) => m.type() === 'error' && errs.push('console ' + m.text())); };
 const ctx = await b.newContext({ viewport: { width: 1200, height: 800 } });
+// the fixtures are dated around 12 to 14 Nov 2026: pin the page clock so the trip stays current after that day (a real clock made it a past trip from 15 Nov)
+const pinClock = async (c) => { await c.clock.install({ time: new Date('2026-11-13T10:00:00+08:00') }); await c.clock.resume(); };
+await pinClock(ctx);
 await ctx.addInitScript(([pois, trips]) => {
   if (!localStorage.getItem('uavzones.v1.pois')) { localStorage.setItem('uavzones.v1.pois', JSON.stringify(pois)); localStorage.setItem('uavzones.v1.trips', JSON.stringify(trips)); }
 }, [seedPois, seedTrips]);
@@ -106,6 +109,7 @@ await ctx.close();
 
 // ---------- phone width
 const pc = await b.newContext({ viewport: { width: 360, height: 740 }, hasTouch: true, isMobile: true });
+await pinClock(pc);
 await pc.addInitScript(([pois, trips]) => { localStorage.setItem('uavzones.v1.pois', JSON.stringify(pois)); localStorage.setItem('uavzones.v1.trips', JSON.stringify(trips)); }, [seedPois, seedTrips]);
 const q = await pc.newPage(); watch(q);
 await q.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await q.waitForTimeout(800);

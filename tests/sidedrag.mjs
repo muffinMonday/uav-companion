@@ -18,6 +18,9 @@ const trips = { v: 1, trips: [{ id: 't1', name: 'Wuhan', color: '#e91e63', descr
 
 const b = await chromium.launch({ channel: CHANNEL });
 const ctx = await b.newContext({ viewport: { width: 1200, height: 900 } });
+// the fixtures are dated around 12 to 14 Nov 2026: pin the page clock so the trip stays current after that day (a real clock made it a past trip from 15 Nov)
+const pinClock = async (c) => { await c.clock.install({ time: new Date('2026-11-13T10:00:00+08:00') }); await c.clock.resume(); };
+await pinClock(ctx);
 await ctx.addInitScript(([po, tr]) => { if (!sessionStorage.__seeded) { sessionStorage.__seeded = '1'; localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po })); localStorage.setItem('uavzones.v1.trips', JSON.stringify(tr)); } }, [items, trips]);
 const p = await ctx.newPage();
 p.on('pageerror', (e) => errs.push('pageerror ' + e.message));

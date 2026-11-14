@@ -25,3 +25,5 @@ Patterns learned from corrections. One line each: what went wrong, the rule that
 - Folding a Leaflet control into a menu: keep the control and press it from the row (`a.click()`), hide its bar with a class, and move focus to the visible trigger before a dialog opens, so the dialog's "return focus to the opener" lands on something visible (`map-more-tools.js`).
 - Unit `contrast` requires every `:hover` rule inside `@media (hover:hover)`, so a "selected and not hovered" style cannot use `:not(:hover)`: put the selected rule before the hover rule so hover wins by order.
 - Moving an action behind a collapsed `<details>` (Help topics) breaks tests that click it: open the topics first (`document.querySelectorAll('.dash-topic').forEach(d => d.open = true)`), or the click times out as "not visible".
+
+- Browser tests with fixtures dated around "today" go red when the calendar day rolls over (`trips`, `sidedrag` failed from 2026-11-15: a trip ending 14 Nov became a past trip). Pin the page clock in the test (`ctx.clock.install` + `resume`) instead of moving every date. Check a red suite against the unmodified file before blaming the change.
