@@ -1,20 +1,5 @@
 # Session Checkpoint
 
-# Session Checkpoint
-
-<<<<<<< HEAD
-## China airspace data staging (2026-11-14; isolated branch, no merge/deploy)
-- Review: draft PR https://github.com/muffinMonday/uav-companion/pull/1 opened; implementation commit `535b474` pushed on the isolated feature branch. PR creation used the repository's configured Git account after the connector reported insufficient integration permission.
-- Branch/worktree: `feature/china-airspace-data`, `.worktrees/china-airspace-data`, base `e0a6d64`; Claude's active UX checkout untouched. Audit, run instructions, sources, 31-division inventory and validation: `../../docs/china-airspace/README.md`.
-- Added independent serial/local acquisition, checksum archives, resumable checkpoints, cumulative request budgets, geometry/CRS validation, exact deduplication, overlapping-query comparison and offline previews. No production region, application, package, test registry or existing build changes.
-- Guangdong/Chongqing stay unverified reference and blocked: prior GeoJSON not located; API access/limits, geometry semantics, alignment, provincial completeness, exact dates and redistribution unverified. Public metadata index identifies 30 divisions (Beijing absent); no geometry API requests. Jilin official grid ZIP download returned 403; no bypass.
-- Checks: 35 focused tests; all 53 existing unit suites passed under normal en-US Windows account (sandbox en-SG date-label baseline failure documented); app build passed; offline Edge preview smoke passed. Hubei's unchanged reader returned 84,863 cells, zero per-feature geometry failures. Full provincial PMTiles rebuild and imagery/regulatory verification not performed.
-- Completed upstream main remained `e0a6d64` at fetch; Claude's UX work is unfinished. Retain both checkpoint blocks when reconciling. Next: review the data-only PR, obtain ordinary source fixtures/permission evidence, then complete pilot validation before any separate production proposal.
-
-## Latest: UX & Discoverability in progress (2026-11-14; owner authorized implementation, commit, push and deploy:live for this feature only)
-- Spec: `UX_DISCOVERABILITY_BACKLOG.md` (registered in `AGENTS.md`; the untracked file was named `UAV_COMPANION_UX_DISCOVERABILITY_BACKLOG.md` and was renamed to its canonical name, content unchanged). Frontend only: no migration, RLS or flag change.
-- Phase 0 inventory done; baseline screenshots `~/UAV_UI_Screenshots/ux-before-20261114`. Phases 1 to 5 not yet recorded here: see the backlog's "Implementation status" when it exists.
-=======
 ## Latest: UX & Discoverability (2026-11-14; owner authorized commit/push/deploy:live for this feature only)
 - Spec and status: `UX_DISCOVERABILITY_BACKLOG.md` (registered in `AGENTS.md`; section 14 lists the inventory, deviations and the progressive-disclosure audit). Design: `DESIGN.md` section 18. Frontend only: no migration, RLS or flag change.
 - Built: tag button + labels for the left map buttons (`map-toolbar-help.js`, `map-tool-labels.js`, `data-tool` on each control; collapsed after reload, nothing stored); optional 3-step *Learn the map* in Quick Setup (`splash.js`); once-per-feature hints (`help-content/state/ui/wire.js`, key `uavzones.v1.help`, one at a time, marked seen after 1.5 s or dismissal, replay from the dashboard); task shortcuts and a Tips list in the dashboard Help card (`dashboard.js`).
