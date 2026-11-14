@@ -24,7 +24,9 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
   const mineEmpty = () => ({ status: 'idle', sessions: [], roles: { admin: false, organiser: false }, notices: [], takedowns: [], invites: [] });
   let mine = mineEmpty(), section = 'discover', view = 'list', detail = null, message = '', busy = false, seqMine = 0, seqPub = 0, summaryAt = 0, nearby = null;
   let pub = { status: 'idle', list: [], more: false, query: '', near: 'any', when: 'any', space: false, offset: 0 };
-  let manageOpen = new Set(), people = new Map(), invite = new Map(), newLink = null, editing = null, reporting = null, suspended = false;
+  let manageOpen = new Set(), people = new Map(), invite = new Map(), newLink = null, editing = null, reporting = null;
+  let quietClose = false; // the close event is queued and fires later; this marks the close that only steps aside for the map
+  let opener = null; // the element that had focus when the hub was opened
   const listeners = new Set();
   const scroll = new Map();
 
@@ -40,15 +42,20 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
   closeB.addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener('cancel', (e) => { if (view !== 'list') { e.preventDefault(); back(); } }); // Escape closes the detail or the form before the hub
-  dlg.addEventListener('close', () => { if (!suspended) { scroll.clear(); } });
+  dlg.addEventListener('close', () => { dlg.style.removeProperty('--ses-vvh'); dlg.style.removeProperty('--ses-vvtop'); if (quietClose) { quietClose = false; return; } scroll.clear(); const o = opener; opener = null; if (o?.isConnected && !o.closest('[inert]')) o.focus?.({ preventScroll: true }); }); // focus goes back to what opened the hub, also after the map picker closed and reopened it
+  // The sheet (a touch screen up to 900 px wide, styles.css) follows the visual viewport, so the on-screen keyboard and a moving browser toolbar never cover its header, tabs or the Create / Cancel row.
+  const vv = window.visualViewport;
+  const fit = () => { if (!dlg.open || !vv || vv.scale > 1.01) return; dlg.style.setProperty('--ses-vvh', vv.height + 'px'); dlg.style.setProperty('--ses-vvtop', vv.offsetTop + 'px'); };
+  vv?.addEventListener('resize', fit); vv?.addEventListener('scroll', fit);
+  dlg.addEventListener('focusin', (e) => { fit(); if (matchMedia('(pointer:coarse)').matches && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) setTimeout(() => e.target.scrollIntoView?.({ block: 'center', behavior: 'instant' }), 350); });
 
   // ---- the bar that floats over the map while the dialog is out of the way (picking a point, or showing sessions on the map)
   const bar = el('div', 'ses-bar'); bar.hidden = true; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'Sessions on the map'); document.body.append(bar);
   const barShow = (text, buttons) => { bar.replaceChildren(el('span', 'ses-bar-text', text)); for (const [label, cls, fn] of buttons) { const b = btn(label, cls); b.addEventListener('click', fn); bar.append(b); } bar.hidden = false; };
   const barHide = () => { bar.hidden = true; bar.replaceChildren(); };
   let keepTop = 0; // the form behind the closed dialog is kept as it is (nothing is redrawn), so what was typed stays
-  const suspend = () => { keepTop = body.scrollTop; suspended = true; dlg.close(); suspended = false; panel?.closeIfPhone?.(); };
-  const resume = () => { if (!dlg.open) dlg.showModal(); body.scrollTop = keepTop; };
+  const suspend = () => { keepTop = body.scrollTop; quietClose = dlg.open; dlg.close(); panel?.closeIfPhone?.(); };
+  const resume = () => { if (!dlg.open) { dlg.showModal(); fit(); } body.scrollTop = keepTop; };
 
   function pickPoint(initial) {
     return new Promise((resolve) => {
@@ -244,7 +251,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
     group('Hosting', upcoming.filter((s) => s.isHost), 'You are not hosting anything upcoming.');
     group('Joined', upcoming.filter((s) => !s.isHost), 'You have not joined any session yet.');
     if (history.length) group('History (last 90 days)', history, '');
-    f.append(el('p', 'hint', `Public sessions you host count against a limit of five active hosted sessions; a repeating series counts once.`));
+    f.append(el('p', 'hint', `You can have five active hosted sessions at a time, public or private. A repeating series counts once, however many dates it has.`));
   }
 
   function drawInvites(f) {
@@ -445,7 +452,7 @@ export function initSessionsHub({ handle, map, toast, panel, markers = () => [] 
   function open(sec = 'discover', opts = {}) {
     section = sec === 'detail' ? 'mine' : sec; view = 'list'; detail = null; message = ''; editing = null; reporting = null;
     if (opts.near) pub = { ...pub, near: String(opts.near) };
-    if (!dlg.open) dlg.showModal();
+    if (!dlg.open) { opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : opener; dlg.showModal(); fit(); }
     paint();
     if (signedIn()) loadMine({ quiet: mine.status === 'ready' }).then(() => { if (opts.id) { const s = mine.sessions.find((x) => x.id === opts.id) ?? opts.fallback; if (s) openDetail(s); } });
     else if (opts.id && opts.fallback) openDetail(opts.fallback);

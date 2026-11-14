@@ -947,7 +947,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .avatar{flex:none;overflow:hidden;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font:var(--fw-bold) var(--fs-small)/1 var(--font)}
 .avatar.big{width:44px;height:44px;font-size:20px;flex:none}
 .dock button.account-btn .avatar{position:static;width:28px;height:28px;overflow:visible;clip:auto;white-space:normal}
-.account-pop{position:fixed;z-index:var(--z-popover);top:56px;right:12px;width:min(380px,calc(100vw - 16px));max-height:calc(100vh - 24px);overflow-y:auto;padding:var(--sp-4);background:var(--surface);color:var(--fg);border-radius:var(--radius);box-shadow:var(--shadow-2);border:1px solid var(--line)}
+.account-pop{position:fixed;z-index:var(--z-popover);top:56px;right:12px;width:min(380px,calc(100vw - 16px));max-height:calc(100vh - 68px);max-height:calc(100dvh - 68px);overflow-y:auto;padding:var(--sp-4);background:var(--surface);color:var(--fg);border-radius:var(--radius);box-shadow:var(--shadow-2);border:1px solid var(--line)}
 .account-pop[hidden]{display:none}
 .account-pop h2{margin:0 28px 6px 0;font-size:var(--fs-title)}
 .account-pop .account-close{position:absolute;top:6px;right:6px}
@@ -961,7 +961,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .pane-sec .pane-body{padding:0 12px 12px}
 .link-btn{display:block;margin-top:10px;padding:0;border:0;background:none;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer}
 @media (max-width:520px){
-  .account-pop{left:0!important;right:0!important;top:auto!important;bottom:0;width:auto;max-height:85vh;border-radius:18px 18px 0 0;padding-bottom:calc(var(--sp-4) + env(safe-area-inset-bottom,0px))}
+  .account-pop{left:0!important;right:0!important;top:auto!important;bottom:0;width:auto;max-height:85vh;max-height:85dvh;border-radius:18px 18px 0 0;padding-bottom:calc(var(--sp-4) + env(safe-area-inset-bottom,0px))}
 }
 @media (max-width:520px){
   .sp-head{gap:4px;padding-right:6px}
@@ -992,7 +992,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .profile-card .switch{margin-top:10px}
 .profile-card #pf-save{margin-top:10px}
 .account-dialog input[type=text]{width:100%;box-sizing:border-box;margin:4px 0 8px}
-.profile-dialog{max-height:calc(100vh - 32px);overflow-y:auto;width:min(440px,calc(100vw - 32px))}
+.profile-dialog{max-height:calc(100% - 32px);overflow-y:auto;width:min(440px,calc(100vw - 32px))}
 .profile-dialog .profile-card{border:0;box-shadow:none;padding:0;margin:8px 0 0;background:none}
 .profile-dialog .profile-card>h2{display:none}
 .fr-me{display:flex;align-items:center;gap:10px;margin:4px 0 10px}.fr-me b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1117,21 +1117,24 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .ses-title{font-weight:var(--fw-semibold)}
 .ses-row [data-act=manage]{background:transparent;border-color:transparent;color:var(--muted)}
 /* Sessions hub: a dialog (960 px at most; a full-screen sheet on a phone), the floating bar over the map, the map pin */
-.ses-hub{width:min(960px,calc(100vw - 32px));max-width:none;height:min(720px,calc(100vh - 32px));max-height:none;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-2);flex-direction:column;overflow:hidden}
+/* Sizes are % of the dialog's containing block (the visible viewport), never vh: on Android Chrome 100vh is the toolbar-hidden height, so a centred dialog taller than the visible area got negative auto margins and its header and close button moved off the top (DESIGN.md "Dialog sizing"). */
+.ses-hub{width:min(960px,calc(100% - 32px));max-width:none;height:min(720px,calc(100% - 32px));max-height:none;margin:auto;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-2);flex-direction:column;overflow:hidden}
 .ses-hub[open]{display:flex}
 .ses-hub::backdrop{background:var(--scrim)}
-.ses-hub-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--line);background:var(--surface)}
+.ses-hub-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--line);background:var(--surface)}
 .ses-hub-head h2{margin:0;font-size:var(--fs-title);line-height:var(--lh-tight)}
-.ses-tabs{display:flex;gap:2px;padding:0 var(--sp-3);border-bottom:1px solid var(--line)}
+.ses-tabs{flex:none;display:flex;gap:2px;padding:0 var(--sp-3);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 .ses-tabs[hidden]{display:none}
 .ses-tab{position:relative;padding:10px 14px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font:inherit;font-weight:var(--fw-semibold);cursor:pointer}
 .ses-tab[aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent)}
 .ses-tab .tab-badge{position:static;display:inline-block;margin-left:6px;vertical-align:middle}
-.ses-hub-body{flex:1;min-height:0;overflow-y:auto;padding:var(--sp-4)}
+.ses-hub-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:var(--sp-4);container:ses/inline-size}
 .ses-hub-inner{display:flex;flex-direction:column;gap:8px;max-width:720px;margin-inline:auto}
 .ses-hub-inner>.btn,.ses-hub-inner>.ses-signin{align-self:flex-start}
-.ses-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.ses-filters input[type=search]{flex:1 1 200px;min-width:0;box-sizing:border-box}
+.ses-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:center}
+.ses-filters input[type=search]{grid-column:1/-1;min-width:0;box-sizing:border-box}
+.ses-filters select{min-width:0;width:100%}
+.ses-filters .ses-check{grid-column:1/-1}
 .ses-check{display:flex;align-items:center;gap:6px;font-size:var(--fs-small)}
 .ses-group{margin:12px 0 0;font-size:var(--fs-micro);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .ses-host{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
@@ -1155,10 +1158,38 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .ses-bar[hidden]{display:none}
 .ses-bar-text{flex:1 1 100%;text-align:center}
 .ses-map-pin span{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);font:var(--fw-bold) var(--fs-small)/1 var(--font)}
-@media (max-width:520px){
-  .ses-hub{width:100vw;height:100dvh;max-height:100dvh;border-radius:0;border:0}
-  .ses-hub-body{padding:var(--sp-3);padding-bottom:calc(var(--sp-3) + env(safe-area-inset-bottom,0px))}
-  .ses-times{grid-template-columns:1fr 1fr}
+/* a touch-first screen up to 900 px wide (a phone, an unfolded foldable, a small tablet) or a short landscape one gets a full-screen sheet; the dialog stays for a mouse and for big tablets.
+   --ses-vvh/--ses-vvtop are set by sessions-hub.js from visualViewport while it is open, so the sheet ends above the on-screen keyboard. */
+@media (max-width:520px), (pointer:coarse) and (max-width:900px), (pointer:coarse) and (max-height:520px){
+  .ses-hub{width:100%;height:var(--ses-vvh,100%);top:var(--ses-vvtop,0px);bottom:auto;left:0;right:0;margin:0;border-radius:0;border:0}
+  .ses-hub-head{padding-top:calc(var(--sp-3) + env(safe-area-inset-top,0px));padding-inline:max(var(--sp-4),env(safe-area-inset-left,0px)) max(var(--sp-4),env(safe-area-inset-right,0px))}
+  .ses-hub-body{padding:var(--sp-3);padding-inline:max(var(--sp-3),env(safe-area-inset-left,0px)) max(var(--sp-3),env(safe-area-inset-right,0px));padding-bottom:calc(var(--sp-3) + env(safe-area-inset-bottom,0px))}
+}
+.ses-tab{flex:0 0 auto;white-space:nowrap}
+@media (pointer:coarse){
+  .ses-tab{min-height:44px}
+  .ses-hub .btn,.ses-hub select,.ses-hub input:not([type=checkbox]):not([type=radio]){min-height:40px}
+}
+/* inside the hub, columns follow the room the hub has (container query), not the screen */
+@container ses (min-width:560px){
+  .ses-filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ses-filters .ses-check{grid-column:auto}
+  .ses-hub-inner{gap:10px}
+}
+.ses-hub-inner>.ses-empty{padding:var(--sp-4);border:1px dashed var(--line);border-radius:var(--radius-sm);text-align:center;margin:0}
+.ses-group{margin:var(--sp-3) 0 0;padding-bottom:4px;border-bottom:1px solid var(--line)}
+/* the New session form: sections, and two columns where the hub is wide */
+.ses-sec{display:flex;flex-direction:column;gap:4px;padding:var(--sp-3);border:1px solid var(--line);border-radius:var(--radius-sm);min-width:0}
+.ses-sec>h4{margin:0 0 2px;font-size:var(--fs-micro);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ses-sec>.fr-label:first-of-type{margin-top:0}
+.ses-create{gap:var(--sp-3);margin-top:var(--sp-2)}
+.ses-when{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px}
+.ses-when>.ses-date{grid-column:1/-1}
+.ses-when .fr-label{margin-top:0}
+.ses-actions{position:sticky;bottom:calc(-1 * var(--sp-3));z-index:1;margin:0 calc(-1 * var(--sp-3)) calc(-1 * var(--sp-3));padding:var(--sp-3);background:var(--surface);border-top:1px solid var(--line)}
+@container ses (min-width:600px){
+  .ses-create{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  .ses-create>.ses-sec-wide,.ses-create>.ses-message,.ses-create>.ses-actions{grid-column:1/-1}
 }
 /* friends and account rows: one comfortable row height */
 .fr-row{padding:10px 0;min-height:52px}

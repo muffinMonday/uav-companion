@@ -119,7 +119,7 @@ All CSS is in `src/styles.css` (tokens and rules: `DESIGN.md`); find a feature's
 | Marker windows, name tags, pins | dynamic | `poi-ui.js`, `livemap.js` | `.poi-pin`, `.name-tag`, `.live-pin` | `poi1`, `poi2`, `popswipe`, `live` |
 | Legend, coverage note, zone layers | `map-config.html` nodes moved by `dashboard.js` | `app/region-ui.js` (`renderRegionInfo`), `map.js` | `.legend` | `dashboard`, `prefs`, `smoke` |
 | Locate, compass, rotation | dynamic Leaflet controls | `locate.js`, `maprotate.js` | `.locate-btn` | `launchloc`, `locatemode`, `maprotate` |
-| Friends, party, sessions, account pane, progression, Steam | dynamic | `friends-ui.js`, `party-ui.js`, `sessions-ui.js`, `account-ui.js`, `progression-ui.js`, `steam-ui.js` | `.fr-`, `.ses-`, `.account-pop`, `.profile-dialog` | `friends`, `party`, `live`, `sessions`, `progression`, `steam`, `autoshare` |
+| Friends, party, sessions, account pane, progression, Steam | dynamic | `friends-ui.js`, `party-ui.js`, `sessions-ui.js`, `account-ui.js`, `progression-ui.js`, `steam-ui.js` | `.fr-`, `.ses-`, `.account-pop`, `.profile-dialog` | `friends`, `party`, `live`, `sessions`, `responsive`, `progression`, `steam`, `autoshare` |
 | Toast, banner, weather card | `index.html` (`#toast`, `#banner`, `#weather`) | `main.js` (toast), `weather.js`, `whatsnew.js` | `.toast`, `.wx` | `smoke`, `mw`, `rain` |
 
 The two weather/elevation status lines are `#mw-status` (Map Configs) and `#pv-mw-status` (Privacy); `poi-ui.js` writes both.

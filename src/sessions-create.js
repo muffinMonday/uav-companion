@@ -55,18 +55,22 @@ export function draftToRequest(d, tz) {
 export function createSessionForm({ tools, tz, onSubmit, onCancel, locale = 'en-GB' }) {
   draft = draft ?? blankDraft();
   const f = el('form', 'ses-form ses-create'); f.id = 'ses-form'; f.noValidate = true;
-  let n = 0;
-  const field = (label, input, hint) => { const l = el('label', 'fr-label', label); const id = 'sc-' + (++n); input.id = id; l.setAttribute('for', id); f.append(l, input); if (hint) f.append(el('small', 'hint', hint)); return input; };
+  let n = 0, cur = f;
+  /** Starts a titled group; the fields that follow go inside it. `wide` groups span both columns when the hub is wide. */
+  const section = (name, wide = false) => { const g = el('div', 'ses-sec' + (wide ? ' ses-sec-wide' : '')); g.append(el('h4', '', name)); f.append(g); cur = g; return g; };
+  const field = (label, input, hint, into = cur) => { const l = el('label', 'fr-label', label); const id = 'sc-' + (++n); input.id = id; l.setAttribute('for', id); into.append(l, input); if (hint) into.append(el('small', 'hint', hint)); return input; };
   const input = (type, key, extra = {}) => { const i = el('input'); i.type = type; i.value = draft[key] ?? ''; Object.assign(i, extra); i.addEventListener('input', () => { draft[key] = i.value; update(); }); return i; };
 
+  section('Basics', true);
   const title = field('Title', input('text', 'title', { maxLength: 80 })); title.name = 'title';
   const desc = field('Details (optional)', el('textarea')); desc.rows = 2; desc.maxLength = 500; desc.value = draft.description; desc.addEventListener('input', () => { draft.description = desc.value; });
-  const date = field('Date', input('date', 'date')); date.name = 'date';
-  const times = el('div', 'ses-times');
+  section('When');
+  const times = el('div', 'ses-when'); const dateBox = el('div', 'ses-date'); times.append(dateBox);
+  const date = field('Date', input('date', 'date'), undefined, dateBox); date.name = 'date';
   const start = input('time', 'start'), end = input('time', 'end');
   for (const [lab, i] of [['Starts', start], ['Ends', end]]) { const l = el('label', 'fr-label', lab); i.id = 'sc-' + lab.toLowerCase(); l.setAttribute('for', i.id); const w = el('div'); w.append(l, i); times.append(w); }
-  f.append(times);
-  const endHint = el('small', 'hint ses-endhint'); f.append(endHint);
+  cur.append(times);
+  const endHint = el('small', 'hint ses-endhint'); cur.append(endHint);
 
   // repeat
   const rep = el('select'); rep.append(new Option('Does not repeat', 'none'));
@@ -79,9 +83,10 @@ export function createSessionForm({ tools, tz, onSubmit, onCancel, locale = 'en-
   count.addEventListener('input', () => { draft.count = count.value; update(); });
   const countRow = el('div', 'ses-count-row'); const cl = el('label', 'fr-label', 'Number of sessions (2 to 12)'); cl.setAttribute('for', 'sc-count'); count.id = 'sc-count'; countRow.append(cl, count);
   const preview = el('div', 'ses-preview'); preview.setAttribute('aria-live', 'polite');
-  repBox.append(countRow, preview); f.append(preset, repBox);
+  repBox.append(countRow, preview); cur.append(preset, repBox);
 
   // where
+  section('Where');
   const lab = field('Place name (optional)', input('text', 'label', { maxLength: 120 }), 'Shown with the session; the map point below is what people navigate to.');
   const pin = el('div', 'ses-pin');
   const pinText = el('p', 'ses-pin-text'); pinText.setAttribute('role', 'status');
@@ -95,10 +100,11 @@ export function createSessionForm({ tools, tz, onSubmit, onCancel, locale = 'en-
   marks.forEach((m, i) => sel.append(new Option(m.name || 'Marker', String(i))));
   sel.addEventListener('change', () => { const m = marks[+sel.value]; sel.value = ''; if (!m) return; setPoint(m.lat, m.lon); if (!draft.label && m.name) { draft.label = m.name.slice(0, 120); lab.value = draft.label; } });
   pin.append(pinText, pinBtns); if (marks.length) pin.append(sel);
-  f.append(el('span', 'fr-label', 'Meeting point'), pin);
+  cur.append(el('span', 'fr-label', 'Meeting point'), pin);
   function setPoint(lat, lng) { draft.lat = Math.round(lat * 1e6) / 1e6; draft.lng = Math.round(lng * 1e6) / 1e6; update(); }
 
   // who can see it
+  section('Who can see it');
   const vis = el('fieldset', 'ses-vis'); vis.append(el('legend', 'fr-label', 'Who can see it'));
   const radios = {};
   for (const [v, t, h] of [['private', 'Private', 'Only you, people you invite and people you give a link to.'], ['public', 'Public', 'Anyone, signed in or not, can find it and see the exact meeting point.']]) {
@@ -109,12 +115,14 @@ export function createSessionForm({ tools, tz, onSubmit, onCancel, locale = 'en-
   const warn = el('div', 'ses-public-warn'); warn.append(el('p', '', 'Publishing makes the exact meeting point visible to anyone. It does not share your live location and it does not mean flying there is allowed: check the zone rules for that spot.'));
   const ackL = el('label', 'ses-radio'); const ack = el('input'); ack.type = 'checkbox'; ack.checked = draft.ack; ack.id = 'sc-ack';
   ack.addEventListener('change', () => { draft.ack = ack.checked; update(); }); ackL.append(ack, el('span', '', 'I understand that anyone can see the exact meeting point.')); warn.append(ackL);
-  f.append(vis, warn);
+  cur.append(vis, warn);
 
+  section('Capacity');
   const cap = field('Capacity (optional)', input('number', 'capacity', { min: 1, max: 500, step: 1 }), 'Leave empty for no limit. People who RSVP after it is full are turned away.'); cap.name = 'capacity';
 
+  cur = f;
   const msg = el('p', 'hint ses-message'); msg.setAttribute('role', 'status'); f.append(msg);
-  const row = el('div', 'btn-row');
+  const row = el('div', 'btn-row ses-actions');
   const go = btn('Create session', 'btn small primary'); go.type = 'submit'; go.id = 'ses-create';
   const cancel = btn('Cancel'); cancel.id = 'ses-create-cancel'; cancel.addEventListener('click', () => onCancel());
   row.append(go, cancel); f.append(row);

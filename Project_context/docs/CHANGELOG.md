@@ -2,6 +2,9 @@
 
 History only. **Do not load at session start**; open it when you need to know when or why something shipped. Current state: `CURRENT_STATUS.md`. Newest first. Work-board IDs (W1 to W24) come from the retired work board; commits are on `main`.
 
+## 2026-11-14 (responsive dialogs for unfolded phones)
+- Sessions hub: sized in % instead of `vh` (header and close button no longer end up above the screen when the visible area is shorter than the dialog), full-screen sheet on touch screens up to 900 px wide, follows `visualViewport` for the keyboard, sticky Create/Cancel row, Discover filters and the New session form in columns by container width, sectioned form, calmer empty states, hosting-limit text corrected (five active hosted sessions, public or private, a series counts once), focus returns to the calendar button after the map picker. `.profile-dialog` and `.account-pop` heights no longer use `100vh`. New browser suite `responsive`. Details and measurements: `DESIGN.md` section 9, `CURRENT_STATUS.md`.
+
 ## 2026-11-14 (Flight Sessions 2.0 front end)
 - Sessions hub dialog (Discover, My sessions, Invitations, detail, host tools), New session form with map pin picker, repeat preview, visibility, capacity; reporting; invitations and private links; dashboard card with opt-in 10 km discovery; calendar button on the map; hosting vs "can verify attendance for XP" wording. Backend: earlier commits `adb918a`, `bb78261` (migrations `20261118*` not yet pushed to the hosted project at the time of this entry).
 
