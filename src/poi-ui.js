@@ -66,6 +66,11 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let showAllSide = !!loadPrefs().showSide;
   let hideTrips = !!loadPrefs().hideTrips; // trip markers, their routes and Side Quest links are taken off the map
   const expandListeners = new Set();
+  // What is on the map, besides the whole POI layer (#poi-show) and the global trip switch (hideTrips): a trip, or the markers with no trip, can be taken off
+  // the map by hand. Device-local preferences (prefs.js); never part of a marker, a trip or a shared trip. The Home marker is never affected.
+  const tripHidden = new Set(loadPrefs().tripHidden ?? []);
+  let unassignedHidden = !!loadPrefs().unassignedHidden;
+  const saveHidden = () => { while (tripHidden.size > 200) tripHidden.delete(tripHidden.values().next().value); savePrefs({ tripHidden: tripHidden.size ? [...tripHidden] : null, unassignedHidden: unassignedHidden ? true : null }); };
   let pickId = null;          // a card was just tapped: its marker is on its way (the map is moving), so the card is marked at once
   const revealListeners = new Set(); // the Trips tab hears that a marker was clicked on the map, to bring its row into view
   const visitCount = (id) => visitMap.get(id)?.length ?? 0;
@@ -270,6 +275,16 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       else h.append(label);
       if (trip && tripSummary(trip)) h.append(el('small', '', tripSummary(trip)));
       if (scope !== SCOPE_HOME) h.append(el('small', 'sec-count', summaryText(summarise(group, trip))));
+      if (scope !== SCOPE_HOME) { // whether this trip's markers are drawn on the map (this device only)
+        const on = scope === 'none' ? !unassignedHidden : !tripHidden.has(scope);
+        const v = el('button', 'vis-toggle', on ? 'On map' : 'Off map'); v.type = 'button'; v.dataset.visScope = scope;
+        v.setAttribute('aria-pressed', String(on));
+        v.setAttribute('aria-label', `${text}: ${on ? 'shown' : 'hidden'} on the map. ${on ? 'Hide' : 'Show'} on map`);
+        v.title = on ? 'Hide these markers on the map' : 'Show these markers on the map';
+        h.append(v);
+        const why = !on ? '' : !map.hasLayer(layer) ? 'Markers are switched off on the map (Show markers on map).' : hideTrips && scope !== 'none' ? 'Hidden for now by the trip markers button on the map.' : '';
+        if (why) h.append(el('small', 'vis-note', why));
+      }
       return h;
     };
 
@@ -319,6 +334,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     }
   }
   listEl.addEventListener('click', (e) => {
+    const vis = e.target.closest?.('.vis-toggle');
+    if (vis) { setTripShown(vis.dataset.visScope, vis.getAttribute('aria-pressed') !== 'true'); return; }
     const b = e.target.closest?.('.sec-toggle');
     if (!b || b.disabled) return;
     const scope = b.dataset.section, day = b.dataset.day;
@@ -707,9 +724,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function redrawRoutes() {
     routes.clearLayers(); dayLayer.clearLayers();
     if (hideTrips) return; // trip routes are off with the trip markers
-    if (shownDay) { const chain = chainOf(shownDay.tripId, shownDay.date); if (chain.length >= 2) drawChain(dayLayer, chain, null, tripColour(shownDay.tripId)); }
+    if (shownDay && !tripHidden.has(shownDay.tripId)) { const chain = chainOf(shownDay.tripId, shownDay.date); if (chain.length >= 2) drawChain(dayLayer, chain, null, tripColour(shownDay.tripId)); }
     const it = viewId && store.get(viewId);
-    if (!it?.tripId || !it.date) return;
+    if (!it?.tripId || !it.date || tripHidden.has(it.tripId)) return; // nor outlive a hidden trip
     const color = tripColour(it.tripId), chain = chainOf(it.tripId, it.date);
     if (chain.length >= 2) drawChain(routes, chain, it.id, color);
     const dates = stopDates(it.tripId);
@@ -824,15 +841,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   /** Takes the trip markers off the map (and their routes and Side Quest links) or puts them back. Lists and the Trips tab are unchanged. */
   function setHideTrips(on) {
     hideTrips = on; savePrefs({ hideTrips: on ? true : null });
-    for (const [id, m] of markers) {
-      const it = store.get(id);
-      const hidden = hideTrips && !!it?.tripId;
-      if (hidden && layer.hasLayer(m)) layer.removeLayer(m);
-      else if (!hidden && !layer.hasLayer(m)) layer.addLayer(m);
-      if (hidden && viewId === id) map.closePopup();
-    }
     tripBtnPaint();
-    redrawRoutes(); refreshIcons();
+    applyMarkerVisibility(); renderList(); // the list explains an override
   }
   sideBtnPaint(); tripBtnPaint();
 
@@ -870,11 +880,11 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     refreshIcons(); // the open or selected marker decides which Side Quests are on show
     redrawRoutes(); paintFocus(); paintCards();
     const it = viewId && store.get(viewId);
-    if (!it || !needsDistance(it)) return;
+    if (!it || !needsDistance(it) || !shownOnMap(it)) return;
     const b = nearestBases(it, store.items()), { units } = getDistanceSettings();
     for (const t of BASE_TYPES) {
       const f = b[t.id].found;
-      if (!f) continue;
+      if (!f || !shownOnMap(f.item)) continue;
       const color = typeOf(t.id).color;
       L.polyline([[it.lat, it.lon], [f.item.lat, f.item.lon]], { color, weight: 3, opacity: 0.85, dashArray: '7 7', interactive: false }).addTo(links);
       const label = el('span', 'dist-label-text', `${f.approx ? '≈ ' : ''}${fmtDistance(f.m, units)}`);
@@ -955,7 +965,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const parent = pid && store.get(pid);
       if (!parent) continue;
       for (const s of sideMap.byParent.get(pid) ?? []) {
-        if (sideHidden(s) || (hideTrips && (parent.tripId || s.tripId))) continue;
+        if (sideHidden(s) || !shownOnMap(parent) || !shownOnMap(s)) continue; // a link never outlives either end
         L.polyline([[parent.lat, parent.lon], [s.lat, s.lon]], { color: tripColor(parent) ?? '#546e7a', weight: 2, opacity: 0.8, dashArray: '2 6', interactive: false }).addTo(sideLinks);
       }
     }
@@ -978,8 +988,38 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       revealCard(item.id); // the open panel scrolls to this marker's card
     });
     markers.set(item.id, m);
-    if (!(hideTrips && item.tripId)) layer.addLayer(m);
+    if (shownOnMap(item)) layer.addLayer(m);
     paintPins();
+  }
+  /** One answer to "is this marker drawn on the map?", besides the POI layer switch: hideTrips first, then the trip's own setting, then Unassigned. */
+  function shownOnMap(it) {
+    if (!it || it.type === 'residence') return !!it;
+    if (it.tripId) return !hideTrips && !tripHidden.has(it.tripId);
+    return !unassignedHidden;
+  }
+  /** What keeps a marker off the map, first match only, with the one action that lifts exactly that: { text, label, run } or null. Changes nothing itself. */
+  function restrictionOf(it) {
+    if (!it || shownOnMap(it)) return null;
+    const trip = store.getTrip(it.tripId);
+    if (it.tripId && hideTrips) return { text: 'Trip markers are switched off on the map.', label: 'Show on map', run: () => setHideTrips(false) };
+    if (it.tripId) return { text: `"${trip?.name ?? 'This trip'}" is hidden on the map.`, label: 'Show on map', run: () => setTripShown(it.tripId, true) };
+    return { text: 'Markers with no trip are hidden on the map.', label: 'Show on map', run: () => setTripShown('none', true) };
+  }
+  /** Draws or removes every pin to match the rules above, closes a window whose marker went, and redraws routes and links. */
+  function applyMarkerVisibility() {
+    for (const [id, m] of markers) {
+      const on = shownOnMap(store.get(id));
+      if (!on && layer.hasLayer(m)) layer.removeLayer(m);
+      else if (on && !layer.hasLayer(m)) layer.addLayer(m);
+      if (!on && viewId === id) { map.closePopup(); tagLayer.clearLayers(); viewId = null; }
+    }
+    redrawRoutes(); refreshIcons(); paintPins();
+  }
+  /** The map switch for a trip (or 'none': markers with no trip). Remembered on this device. */
+  function setTripShown(scope, on) {
+    if (scope === 'none') unassignedHidden = !on; else if (on) tripHidden.delete(scope); else tripHidden.add(scope);
+    saveHidden();
+    applyMarkerVisibility(); renderList();
   }
   /** Redraws any pin whose type or trip colour changed (a trip was edited or deleted, a marker was re-tagged). */
   function refreshIcons() {
@@ -1395,8 +1435,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const parent = sub ? defaultParent({ lat: ll.lat, lon: ll.lng, tripId }, store.items()) : null; // the nearest main stop of that trip
     const res = store.add({ type: t.id, name: (name || t.label).slice(0, 80), note: '', lat: ll.lat, lon: ll.lng, tripId, ...(sub && { isSub: true, parentId: parent?.id, date: parent?.date }) });
     if (!res.item) { toast('Could not add that marker.'); return; }
-    if (!res.ok) toast('Added for now, but the browser would not store it. Export your markers to keep them.');
-    else if (switched) toast("Side Quests can't be Home point, Accommodation or Home (residence), so the type is now Other.", 6000);
+    const why = restrictionOf(res.item); // a marker made into a hidden trip is saved, but not drawn: say so, one message
+    const said = [!res.ok && 'Added for now, but the browser would not store it. Export your markers to keep them.', switched && "Side Quests can't be Home point, Accommodation or Home (residence), so the type is now Other.", why && `Saved, but not on the map: ${why.text}`].filter(Boolean);
+    if (said.length) toast(said.join(' '), 8000, why ? { label: why.label, run: why.run } : null);
     ensureVisible();
     addMarker(res.item);
     revealRow(res.item.id); // its trip and day open in the list
@@ -1417,13 +1458,16 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       addMarker(res.item);
     }
     for (const it of added) revealRow(it.id); // the trips and days they went into are open in the list
-    if (added.length) { ensureVisible(); mw.refreshMissing(); }
-    return { added, stored };
+    if (added.length) mw.refreshMissing(); // an import never switches the POI layer on or lifts a hide: it says what keeps the markers off the map
+    const hidden = added.filter((it) => !shownOnMap(it));
+    const why = hidden.length ? restrictionOf(hidden[0]) : !map.hasLayer(layer) && added.length ? { text: 'Markers are switched off on the map.', label: 'Show on map', run: () => { map.addLayer(layer); showSwitch.checked = true; renderList(); } } : null;
+    return { added, stored, notice: why && { text: hidden.length && hidden.length < added.length ? `${hidden.length} of them are not on the map: ${why.text}` : `Not on the map: ${why.text}`, label: why.label, run: why.run }, anyShown: added.some((it) => shownOnMap(it)) && map.hasLayer(layer) };
   }
 
   /** Zooms the map to show the given markers, clear of a docked panel. */
-  function fitToItems(list) {
-    if (!list.length) return;
+  function fitToItems(all) {
+    const list = all.filter(shownOnMap); // never zoom to markers that are not drawn
+    if (!list.length) return false;
     panel.closeIfPhone();
     const sideways = panel.isOpen() ? $('panel').offsetWidth + 24 : 0;
     map.fitBounds(L.latLngBounds(list.map((i) => [i.lat, i.lon])), { maxZoom: 14, paddingTopLeft: [60, 90], paddingBottomRight: [sideways + 60, 60], animate: true });
@@ -1462,6 +1506,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   $('poi-showside').addEventListener('change', (e) => setShowAllSide(e.target.checked));
   showSwitch.addEventListener('change', () => {
     if (showSwitch.checked) map.addLayer(layer); else { map.removeLayer(layer); map.closePopup(); }
+    renderList(); // the list explains an override
   });
 
   $('poi-place').addEventListener('click', () => setMode(mode === 'place' ? null : 'place'));
@@ -1534,6 +1579,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function flyToItem(id) {
     const it = store.get(id);
     if (!it) return;
+    const why = restrictionOf(it); // hidden by hand or by the trip switch: say why, offer to show it, do not open a window on a marker that is not there
+    if (why) { toast(`"${it.name}" is not on the map. ${why.text}`, 8000, { label: why.label, run: () => { why.run(); flyToItem(id); } }); return; }
     pickId = id; paintCards(); // the card is marked at once; the marker follows when the map has moved
     ensureVisible();
     const wasOpen = panel.isOpen();
@@ -1630,12 +1677,18 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     renderTripSelects(); renderList();
     panel.open('poi');
   }
+  /** Zooms to the markers that are drawn; if none are, says why (and offers to show them) instead of moving the map to nothing. */
+  function fitShown(list) {
+    if (fitToItems(list) !== false) return true;
+    const why = restrictionOf(list[0]);
+    toast(why ? `Nothing to show: ${why.text}` : 'Nothing to show on the map for this page.', 6000, why ? { label: why.label, run: () => { why.run(); fitToItems(list); } } : null);
+    return false;
+  }
   /** Zooms the map to a trip's markers. */
   function fitTrip(id) {
     const list = store.items().filter((i) => i.tripId === id);
     if (!list.length) { toast('This trip has no markers yet.'); return false; }
-    fitToItems(list);
-    return true;
+    return fitShown(list);
   }
 
   return {
@@ -1645,13 +1698,16 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     showTrip, fitTrip,
     /** Changes the type chosen in the Add a marker picker (and opens the group it is in). */
     setSelectedType,
+    /** Whether a marker is drawn on the map under the trip rules (not counting the POI layer switch). */
+    isShownOnMap: (id) => shownOnMap(store.get(id)),
+    setTripShown,
     getSelectedType: () => selectedType,
     /** Flies to a marker and opens its window (the Trips tab's day list uses it). */
     openMarker: (id) => flyToItem(id),
     /** Draws the route of one day of a trip (thin) while the trip screen shows it; showDay(null) clears it. */
     showDay(tripId, date) { shownDay = tripId ? { tripId, date } : null; redrawRoutes(); },
     /** Zooms the map to these markers (a day of a trip). */
-    fitItems(ids) { const list = ids.map((id) => store.get(id)).filter(Boolean); if (!list.length) { toast('Nothing to show on the map for this page.'); return false; } fitToItems(list); return true; },
+    fitItems(ids) { const list = ids.map((id) => store.get(id)).filter(Boolean); if (!list.length) { toast('Nothing to show on the map for this page.'); return false; } return fitShown(list); },
     getCurrentTrip: () => currentTripId,
     setCurrentTrip(id) {
       currentTripId = id && store.getTrip(id) ? id : null;

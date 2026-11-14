@@ -19,6 +19,8 @@ function sanitize(raw) {
   if (typeof raw.holdHint === 'boolean') out.holdHint = raw.holdHint;
   if (raw.showSide === true) out.showSide = true; // show every Side Quest on the map (off: only those of the main stop that is open)
   if (raw.hideTrips === true) out.hideTrips = true; // trip markers, their routes and links are off the map (the top-left toggle)
+  if (Array.isArray(raw.tripHidden)) { const ids = [...new Set(raw.tripHidden.filter((x) => typeof x === 'string' && x.length > 0 && x.length <= 64))].slice(-200); if (ids.length) out.tripHidden = ids; } // trips taken off the map by hand (device-local; never part of a trip or a shared trip)
+  if (raw.unassignedHidden === true) out.unassignedHidden = true; // markers with no trip are off the map (the Home marker is not affected)
   if (raw.crosshair === false) out.crosshair = false; // the crosshair at the map centre is on unless switched off
   if (raw.markerDetails === false) out.markerDetails = false; // a click on a marker only selects it (no details window)
   if (raw.railFolded === true) out.railFolded = true; // the rail of tab icons is folded up into one circle

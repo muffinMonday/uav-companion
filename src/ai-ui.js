@@ -215,7 +215,7 @@ export function initAI({ map, toast, panel, poi }) {
       return tripIdByRef.get(r.tripRef);
     };
 
-    const { added, stored } = poi.addMany(fresh.map((r) => {
+    const { added, stored, notice, anyShown } = poi.addMany(fresh.map((r) => {
       const tripId = tripFor(r);
       const trip = tripId ? poi.store.getTrip(tripId) : null;
       // a day number becomes a date in a trip with dates (day 1 is the start date); the day itself is then worked out from the date
@@ -230,12 +230,13 @@ export function initAI({ map, toast, panel, poi }) {
     const unv = added.filter((a) => a.unverified).length;
     toast(`Added ${added.length} marker${added.length === 1 ? '' : 's'}${createdTrips ? ` and ${createdTrips} trip${createdTrips === 1 ? '' : 's'}` : ''}${unv ? `, ${unv} unverified: check ${unv === 1 ? 'it' : 'them'} on the map` : ''}.`
       + `${failed.length ? ` ${failed.length} not found: correct ${failed.length === 1 ? 'its address' : 'their addresses'} in the panel.` : ''}`
-      + `${stored ? '' : ' The browser would not store them: export to keep them.'}`, 9000);
+      + `${stored ? '' : ' The browser would not store them: export to keep them.'}`
+      + `${notice ? ' ' + notice.text : ''}`, 9000, notice ? { label: notice.label, run: notice.run } : null);
     if (failed.length) { // keep them in the preview, to correct and look up again
       rows = failed.map((r) => ({ ...r, include: true }));
       meta = { ...meta, unresolved: true, skipped: 0, notes: [] };
       render();
-    } else { text.value = ''; clearPreview(); poi.fitToItems(added); } // fitting closes the panel on a phone: not while there is a list to correct
+    } else { text.value = ''; clearPreview(); if (anyShown) poi.fitToItems(added); } // fitting closes the panel on a phone: not while there is a list to correct
   }
 
   // ---------- share links ----------

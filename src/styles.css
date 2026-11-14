@@ -378,6 +378,10 @@ textarea{resize:vertical;min-height:60px}
 @media (prefers-reduced-motion:reduce){.sec-toggle::before{transition:none}}
 .trip-head .sec-count{margin-left:auto}
 #poi-filters-clear[hidden]{display:none}
+.vis-toggle{flex:none;padding:2px 10px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface);color:var(--fg);font:inherit;font-size:var(--fs-meta);font-weight:var(--fw-semibold);cursor:pointer}
+.vis-toggle[aria-pressed=false]{background:transparent;color:var(--muted);border-style:dashed}
+.trip-head .vis-note{flex-basis:100%;color:var(--muted)}
+@media (pointer:coarse){.vis-toggle{min-height:36px}}
 .search-row{display:flex;gap:8px;align-items:center;margin:6px 0}
 .poi-search{flex:1 1 auto;min-width:0}
 .search-count{margin:0 0 6px}
