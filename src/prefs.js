@@ -36,6 +36,7 @@ function sanitize(raw) {
   if (typeof raw.lookupNames === 'boolean') out.lookupNames = raw.lookupNames;
   if (typeof raw.checkIn === 'boolean') out.checkIn = raw.checkIn; // use the position to enable check-in at markers
   if (raw.autoShare === 'on' || raw.autoShare === 'off') out.autoShare = raw.autoShare; // automatic location sharing: the answer to the first-time question (unset = not answered yet)
+  if (raw.autoSessionAttendance === true) out.autoSessionAttendance = true; // automatic flight-session attendance (session-arrival.js): off unless the person turned it on; the server holds the consent too
   if (raw.shareFriends === false) out.shareFriends = false; // automatic sharing does not include friends (on unless switched off)
   if (Array.isArray(raw.shareOff)) out.shareOff = raw.shareOff.filter((x) => typeof x === 'string' && x.length > 0 && x.length <= 64).slice(0, 50); // trips (and 'friends') the person stopped by hand: never started automatically
   if (raw.sessionsNearby === true) out.sessionsNearby = true; // the dashboard may look for public flight sessions within 10 km of the map centre (never the position)

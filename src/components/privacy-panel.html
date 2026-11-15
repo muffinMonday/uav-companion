@@ -44,6 +44,12 @@
         <label class="switch"><span>Include friends <small>Friends who are online see you on their map, marked as a friend. Off: only trip parties are included.</small></span><input type="checkbox" id="pv-autoshare-friends"></label>
       </div>
 
+      <div class="card" id="pv-sessatt-card">
+        <h2>Automatic attendance at flight sessions</h2>
+        <label class="switch"><span>Confirm my attendance automatically <small>While this page is open and a session you joined is under way, your position is sent to UAV Companion every 30 to 60 seconds so the server can check that you are at the meeting point. The server keeps only times and a count, never your position. Nothing runs in the background, and it works only when you are signed in.</small></span><input type="checkbox" id="pv-sessatt" disabled></label>
+        <p class="hint" id="pv-sessatt-note" role="status"></p>
+      </div>
+
       <div class="card">
         <h2>Check-in</h2>
         <label class="switch"><span>Check in at markers <small>Uses your position to enable a Check in button on a marker when you are within 300 m of it. Your position is read only while the panel shows markers and is never sent anywhere. A check-in saves your coordinates and the time with the marker, in this browser.</small></span><input type="checkbox" id="pv-checkin"></label>

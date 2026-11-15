@@ -33,7 +33,31 @@ export function initPrivacyUI({ mw, elev, toast = () => {} }) {
   }
   for (const r of radios) r.addEventListener('change', () => { if (r.checked) setPrivacy({ weatherPrecision: r.value }); });
 
+  const attendance = initSessionAttendance(toast);
   initDiagnostics(toast);
+  return attendance;
+}
+
+/** The automatic-attendance card: the switch is the person's yes (the server records the consent first); it is disabled when signed out or when the database switch is off. Returns { bindArrival(controller) }. */
+function initSessionAttendance(toast) {
+  const sw = $('pv-sessatt'), note = $('pv-sessatt-note');
+  if (!sw || !note) return { bindArrival() {} };
+  let a = null;
+  const paint = () => {
+    const cfg = a?.config();
+    if (!cfg) { sw.checked = false; sw.disabled = true; note.textContent = 'Sign in to use automatic attendance.'; return; }
+    sw.disabled = !cfg.enabled;
+    sw.checked = cfg.enabled && cfg.consented && getPrivacy().autoSessionAttendance;
+    note.textContent = !cfg.enabled ? 'Automatic attendance is not switched on yet. An organiser can still confirm you by hand.' : sw.checked ? (a.state().text || 'On. Keep this page open at the meeting point.') : 'Off.';
+  };
+  sw.addEventListener('change', async () => {
+    if (!a) { sw.checked = false; return; }
+    sw.disabled = true;
+    try { await (sw.checked ? a.enable() : a.disable()); } catch (e) { sw.checked = !sw.checked; toast(e.message || 'That did not work.'); }
+    paint();
+  });
+  paint();
+  return { bindArrival(c) { a = c; c.onState(paint); paint(); } };
 }
 
 const fmtSize = (b) => (b < 1024 ? b + ' B' : (b / 1024).toFixed(1) + ' KB');

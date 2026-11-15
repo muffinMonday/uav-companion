@@ -104,7 +104,7 @@ const poi = initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWe
   const mig = poi.store.takeMigration();
   if (mig) toast(`Day numbers now follow the dates: ${mig.corrected} corrected${mig.converted ? `, ${mig.converted} turned into dates` : ''}.`, 9000);
 }
-initPrivacyUI({ mw: poi.mw, elev: poi.elev, toast }); // the privacy settings own the weather and elevation switches
+const privacyUI = initPrivacyUI({ mw: poi.mw, elev: poi.elev, toast }); // the privacy settings own the weather and elevation switches
 const trips = initTripsUI({ poi, panel, toast, checkPoint, zoneSummary });             // the Trips tab: create and edit trips, tag markers with them
 const ai = initAI({ map, toast, panel, poi });  // paste an AI's itinerary, or open a share link, then preview and add
 const opensShareLink = /^#import=/.test(location.hash); // read before fromHash() clears it
@@ -123,7 +123,7 @@ cloud.openData = () => dash.open({ data: true }); // the account popover's expor
 const splash = initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud, toolbar }); // the quick setup: greets a first visit, and "Quick setup" reopens it
 dash.onQuickSetup(splash.open);
 if (dash.splashFirst) splash.open();
-initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); cloud.sessions = initSessionsHub({ handle: h, map, toast, panel, onOpen: (tabs, opts) => helpRef.h.hubHint(tabs, opts), markers: () => poi.store.items().filter((i) => i.type !== 'home').map((i) => ({ name: i.name, lat: i.lat, lon: i.lon })) }); cloud.sessions.onSummary(() => cloud.refresh?.()); cloud.sessions.redeemFromHash(); cloud.sessions.refresh(); initFriendsUI({ panel, handle: h, toast, cloud }); initAccountUI({ handle: h, panel, toast, cloud }); splash.refresh(); cloud.refresh?.(); } }).catch((e) => log.warn('sync', 'cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
+initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); cloud.sessions = initSessionsHub({ handle: h, map, toast, panel, onOpen: (tabs, opts) => helpRef.h.hubHint(tabs, opts), markers: () => poi.store.items().filter((i) => i.type !== 'home').map((i) => ({ name: i.name, lat: i.lat, lon: i.lon })) }); privacyUI.bindArrival(cloud.sessions.arrival); cloud.sessions.onSummary(() => cloud.refresh?.()); cloud.sessions.redeemFromHash(); cloud.sessions.refresh(); initFriendsUI({ panel, handle: h, toast, cloud }); initAccountUI({ handle: h, panel, toast, cloud }); splash.refresh(); cloud.refresh?.(); } }).catch((e) => log.warn('sync', 'cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch((e) => { log.warn('map', 'point check failed', e); toast('Point check failed. Check your connection and try again.'); });
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.

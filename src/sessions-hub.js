@@ -9,6 +9,8 @@ import { createExplorer } from './sessions-map-explorer.js';
 import { sessionMapActions, hasPoint } from './maplinks-ui.js';
 import { previewParts } from './sessions-preview.js';
 import { xpBadge } from './sessions-xp.js';
+import { createArrival } from './session-arrival.js';
+import { getPrivacy, setPrivacy } from './privacy.js';
 import { showProfile } from './profile-popover.js';
 import { avatarEl } from './avatars.js';
 import { loadPrefs, savePrefs } from './prefs.js';
@@ -36,6 +38,9 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   let opener = null; // the element that had focus when the hub was opened
   const listeners = new Set();
   const scroll = new Map();
+  // automatic attendance (off unless the database switch, the person's consent and the local switch are all on): one foreground sampler, see session-arrival.js
+  const arrival = createArrival({ api, candidates: () => mine.sessions, signedIn, pref: () => getPrivacy().autoSessionAttendance === true, setPref: (v) => setPrivacy({ autoSessionAttendance: v }), toast });
+  arrival.onState((st) => { if (dlg.open && view === 'detail' && detail && st.sessionId === detail.id) paint(); });
 
   // ---- the dialog
   const dlg = el('dialog', 'ses-hub'); dlg.id = 'ses-hub'; dlg.setAttribute('aria-labelledby', 'ses-hub-title');
@@ -117,6 +122,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (me !== seqMine) return;
     mine = failed.v ? { ...mine, status: 'error' } : { status: 'ready', sessions, roles, notices, takedowns, invites };
     summaryAt = Date.now();
+    (arrival.config() ? Promise.resolve() : arrival.loadConfig()).then(() => arrival.kick());
     if (!failed.v) await Promise.all([...manageOpen].map(async (id) => { const s = mine.sessions.find((x) => x.id === id); if (s?.canManage) await loadPeople(s); else manageOpen.delete(id); }));
     summaryDone();
     if (dlg.open) paint();
@@ -153,7 +159,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
       ex.update(); armExpiry();
     }, Math.min(Math.max(t - Date.now() + 250, 1000), 2147e6));
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { clearTimeout(expiryTimer); expiryTimer = 0; return; } if (dlg.open && view === 'list' && section === 'discover') paint(); ex.update(); armExpiry(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) arrival.kick(); if (document.hidden) { clearTimeout(expiryTimer); expiryTimer = 0; return; } if (dlg.open && view === 'list' && section === 'discover') paint(); ex.update(); armExpiry(); });
 
   // ---- the summary the dashboard and the Friends card show
   function summaryNow() {
@@ -418,6 +424,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (s.description) f.append(el('p', 'ses-desc', s.description));
     const rt = roleText(s); if (rt) { const n = el('p', 'ses-role', rt); n.dataset.role = s.isHost ? (s.canVerify ? 'host-verifier' : 'host') : 'verifier'; f.append(n); }
     if (s.myAttended) f.append(el('span', 'badge ok ses-attended', 'You were there'));
+    { const st2 = arrival.state(); if (st2.sessionId === s.id && st2.text) { const n = el('p', 'hint ses-arrival', st2.text); n.setAttribute('role', 'status'); f.append(n); } }
     if (s.status === 'scheduled' || s.status === 'closed') f.append(peopleSection(s));
     const bs = el('div', 'btn-row');
     if (!signedIn()) bs.append(signInBox('Sign in to say you will come.'));
@@ -583,7 +590,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     dlg.querySelector('.ses-tab[aria-selected=true]')?.focus();
     onOpen?.(tabs, opts);
   }
-  function reset() { seqMine++; seqPub++; inLists = null; peopleCache.clear(); ppl = { id: null, status: 'idle', people: [], total: 0 }; mine = mineEmpty(); nearby = null; manageOpen.clear(); people.clear(); invite.clear(); newLink = null; editing = null; reporting = null; message = ''; summaryAt = 0; clearDraft(); ex.update(); if (!dlg.open) { body.replaceChildren(); if (view !== 'list') { view = 'list'; detail = null; } } /* a hidden dialog keeps no private text */ if (dlg.open) { if (view !== 'list' && section !== 'discover') { view = 'list'; detail = null; } paint(); } summaryDone(); }
+  function reset() { arrival.reset(); seqMine++; seqPub++; inLists = null; peopleCache.clear(); ppl = { id: null, status: 'idle', people: [], total: 0 }; mine = mineEmpty(); nearby = null; manageOpen.clear(); people.clear(); invite.clear(); newLink = null; editing = null; reporting = null; message = ''; summaryAt = 0; clearDraft(); ex.update(); if (!dlg.open) { body.replaceChildren(); if (view !== 'list') { view = 'list'; detail = null; } } /* a hidden dialog keeps no private text */ if (dlg.open) { if (view !== 'list' && section !== 'discover') { view = 'list'; detail = null; } paint(); } summaryDone(); }
 
   // sign-in changes: a person who signs in gets their sessions (and a link they opened as a guest is used); sign-out forgets them; a link waits until the saved sign-in has been read
   let was = signedIn();
@@ -607,7 +614,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   const control = new Control().addTo(map);
 
   return {
-    open, reset, button: control._a,
+    open, reset, arrival, button: control._a,
     reload: () => refreshSummary(true),
     refresh: () => refreshSummary(false),
     summary: summaryNow,

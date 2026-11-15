@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-11-15 (Flight Sessions automatic attendance app side, wave D; still off in the database)
+- New Privacy card with an off-by-default switch (the server records the consent first), one foreground position sampler (30 to 60 s, only while a joined session is under way and the page is visible, stops after the award, on sign-out, opt-out, denied permission and hidden page), a progress line in the session detail and a toast only after a server-confirmed award. `auto_attendance_enabled` stays 0, so nothing is sent in production.
+
 ## 2026-11-15 (Flight Sessions automatic attendance backend, wave C; switched off)
 - Migration `20261119110000_session_auto_attendance.sql`: consent and probe tables without coordinates, `submit_session_arrival`, `source = 'auto'`, settings for every threshold, admin bulk revoke by time range, audit actions, place and times frozen once a session starts. `auto_attendance_enabled` = 0: nothing awards XP.
 

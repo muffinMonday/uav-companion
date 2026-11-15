@@ -10,6 +10,8 @@
 //   autoShare         'unset' | 'on' | 'off': automatic location sharing with the party and friends (autoshare.js). unset = not asked yet; it is asked once, the first time
 //                     someone in a party or a friend is online, and only 'on' lets the app start sharing by itself. Never synced: the browser's own location
 //                     permission is per browser too.
+//   autoSessionAttendance  send position samples to the server to confirm attendance at a flight session I joined, while the page is open (session-arrival.js)   (default off;
+//                     separate from checkIn, locateOnLaunch and autoShare; the server records the consent too and only works when its own switch is on)
 //   shareFriends      automatic sharing includes friends                                        (default on, once autoShare is on)
 //   shareOff          trips (and 'friends') the person stopped by hand: they are not started automatically again until the person starts them
 //   lookupNames       when importing an AI-made itinerary, look up places that came without coordinates by sending
@@ -26,6 +28,7 @@ let state = {
   checkIn: !!saved.checkIn,
   locateOnLaunch: saved.locateOnLaunch !== false,
   autoShare: saved.autoShare ?? 'unset',
+  autoSessionAttendance: saved.autoSessionAttendance === true,
   shareFriends: saved.shareFriends !== false,
   shareOff: saved.shareOff ?? [],
 };
@@ -44,6 +47,7 @@ export function setPrivacy(patch) {
     checkIn: state.checkIn || null,
     locateOnLaunch: state.locateOnLaunch ? null : false, // null = back to the default (on)
     autoShare: state.autoShare === 'unset' ? null : state.autoShare,
+    autoSessionAttendance: state.autoSessionAttendance || null,
     shareFriends: state.shareFriends ? null : false,
     shareOff: state.shareOff.length ? state.shareOff : null,
   });

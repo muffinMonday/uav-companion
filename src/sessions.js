@@ -49,6 +49,13 @@ export function cleanParticipant(r) {
   return { handle: r.handle.slice(0, 64), name: text(r.display_name, 40) || 'Someone', avatar: avatar(r.avatar), relation: ['self', 'friend', 'pending'].includes(r.relation) ? r.relation : 'none', isHost: r.is_host === true, friendshipId: r.relation === 'friend' ? id(r.friendship_id) : null, total: count(r.total) };
 }
 
+/** The answer of submit_session_arrival: { status, xp, count } with a status from the fixed set, anything else read as unavailable. */
+const ARRIVAL_STATUS = ['unavailable', 'no_consent', 'not_eligible', 'too_early', 'ended', 'poor_accuracy', 'too_far', 'tracking', 'waiting', 'capped', 'already_attended', 'revoked', 'awarded', 'attended'];
+export function cleanArrival(r) {
+  const status = r && ARRIVAL_STATUS.includes(r.status) ? r.status : 'unavailable';
+  return { status, xp: Number.isInteger(r?.xp) && r.xp >= 0 && r.xp <= 100000 ? r.xp : 0, count: count(r?.count) };
+}
+
 /** One list_my_session_invitations row, or null. */
 export function cleanInvitation(r) {
   const s = cleanSession(r && { ...r, id: r.session_id, status: 'scheduled' });
@@ -179,6 +186,12 @@ export function createSessions(client) {
     async friendRows() { const r = await rpc('list_friends'); return Array.isArray(r) ? r : []; },
     async showInLists() { return (await rpc('get_show_in_attendee_lists')) !== false; },
     async setShowInLists(show) { return (await rpc('set_show_in_attendee_lists', { p_show: show === true })) !== false; },
+    /** Automatic attendance: { enabled, consented, accuracy_m, spacing_s } (the database switch, this person's consent, the sampling facts). */
+    async arrivalConfig() { const r = await rpc('arrival_config'); return { enabled: r?.enabled === true, consented: r?.consented === true, accuracy_m: Number.isInteger(r?.accuracy_m) ? r.accuracy_m : 50, spacing_s: Number.isInteger(r?.spacing_s) ? r.spacing_s : 30 }; },
+    async recordConsent() { await rpc('record_arrival_consent', { p_version: 1 }); },
+    async withdrawConsent() { await rpc('withdraw_arrival_consent'); },
+    /** One position sample for a session: the server measures the distance and keeps no coordinates. Returns cleanArrival(). */
+    async submitArrival(sessionId, lat, lng, accuracy) { return cleanArrival(await rpc('submit_session_arrival', { p_session: sessionId, p_lat: lat, p_lng: lng, p_accuracy: accuracy })); },
     /** { admin, organiser } for the caller. */
     async roles() { const r = await rpc('my_roles'); return { admin: r?.admin === true, organiser: r?.organiser === true }; },
     /** Public sessions (guests too): { lat, lng, radiusKm } for a place, `query`, `from`/`until` ISO times, `limit` (max 50), `offset`. */
