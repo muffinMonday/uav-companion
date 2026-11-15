@@ -1,6 +1,6 @@
 # UAV Companion — Flight Sessions Discover, Preview, People and Automatic Attendance
 
-**Status:** IN PROGRESS (2026-11-15). Waves A, B1, B2, C and D are built, tested, committed, pushed, deployed and live-checked; `auto_attendance_enabled` is 0 and no automatic XP is awarded. **Open:** Wave E (canary: flag flip, one real-phone pass, separate project first), owner-gated and not authorized by this run. Kept in `in-progress/` for that reason. Evidence in section 14.
+**Status:** COMPLETED, WAVE E DESCOPED (2026-11-15). Waves A, B1, B2, C and D are built, tested, committed, pushed, deployed and live-checked (commits `7b241ea`, `24304d8`, `6cdb845`, `886252a`, `5fcd847`, docs `f18cdc1`; evidence and tests in section 14). `auto_attendance_enabled` is 0 on the hosted project and no automatic XP is awarded. **Wave E (canary, flag flip, real-phone pass) was cancelled by the owner** so the architecture of the automatic-attendance section can be reviewed first; it is deferred, not done. Residual risks: section 13.
 **Prepared:** 2026-11-15
 **Repository:** `muffinMonday/uav-companion`
 **Direction:** Discover improvements, tile-grid previews, a participant list with Add friend, and opt-in automatic proximity attendance with server-awarded XP. Automatic XP ships **off** (`progression_settings.auto_attendance_enabled = 0`) and stays off in this backlog.
@@ -9,6 +9,7 @@
 ## Status history
 - 2026-11-15: original planning draft (organiser-removed auto XP, shared Leaflet preview, host profile reuse).
 - 2026-11-15: waves A to D implemented and deployed (section 14); Wave E not started.
+- 2026-11-15: owner descoped Wave E (needs more time to review the architecture) and moved this backlog to `completed/`; flag stays 0.
 - 2026-11-15: code review amended this file: conflicts with the code recorded (section 2), Today needs no SQL change, previews become a tile grid, host and participants open the profile popover with Add friend, section 7 rewritten (any-host thresholds, coordinate-free evidence, consent table), waves A, B1, B2, C, D (E out of scope).
 
 ## 1. Outcomes and scope
@@ -79,7 +80,7 @@ Out of scope: background geofencing, push, a new map service, anti-spoofing guar
 | B2 | additive migration (`xp_reward`, participants, friend request, opt-out); badge, participant icons, popover changes, privacy switch | migration ships with the deploy |
 | C | consent and probe tables, `submit_session_arrival`, settings, bulk revoke, purge, audit codes, grants; flag 0 | backend only |
 | D | consent UI, sampler, progress, toast; flag still 0 | frontend |
-| E | canary | **out of scope** |
+| E | canary | **descoped by owner 2026-11-15** (deferred, not done) |
 
 Each wave is built, tested, committed, pushed and deployed (one `deploy:live` per wave that changes `src/`) before the next.
 
@@ -95,7 +96,7 @@ Each wave is built, tested, committed, pushed and deployed (one `deploy:live` pe
 ## 11. Decisions
 **Closed (2026-11-15):** any host with the thresholds above; GPS-only evidence plus caps, no on-site code; previews expand on demand at every width, no swipe, no airspace overlay; host and all participants clickable for any viewer with Add friend; people-list safeguards accepted; auto awards count toward attendance achievements; thresholds "looser" as in section 7; radius/accuracy/dwell 100 m / 50 m / 120 s.
 
-**Still open:** pre-start and post-end grace (none now); hosted sign-up and email-confirmation settings unverified before any auto-XP rollout; Wave E canary and flag flip; real-phone pass; thresholds to tune after a pilot.
+**Still open (deferred with Wave E; reopen only with a new plan):** an architecture review of section 7, a canary path (second Supabase project, a hosted allowlist migration, or local Supabase with a tunnel), pre-start and post-end grace (none now); hosted sign-up and email-confirmation settings unverified before any auto-XP rollout; Wave E canary and flag flip; real-phone pass; thresholds to tune after a pilot.
 
 ## 14. Implementation evidence (2026-11-15)
 | Wave | Commit | Hosted / deploy | Tests |
@@ -121,4 +122,4 @@ Stop and report if a hosted migration dry run lists anything unexpected, tests f
 - Hosted sign-up and email-confirmation settings were not verified (local config has confirmations off).
 - No real-phone or Safari pass; previews were tested with a stub tile image; screenshots of the sessions dialog are not in the baseline matrix.
 - A started session can no longer be moved or re-timed (decision), which also blocks a host extending the end time.
-- The flag is 0 everywhere: the whole automatic path is untested against real GPS and a real second person.
+- The flag is 0 everywhere: the whole automatic path is untested against real GPS and a real second person. With Wave E descoped, nobody has exercised it end to end outside the test suites; do not set the flag to 1 without a new plan.
