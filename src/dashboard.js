@@ -41,7 +41,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
   let quickSetup = null;                             // opens the quick setup again (set by the page once it exists)
   let tripFade = false;                              // the trip card eases in after ‹ or ›
   let tripIx = 0;                                    // which of the coming trips the trip card shows
-  let regions = { countries: [], goTo: null };
+  let regions = { countries: [], goTo: null, areas: [], goToArea: null };
 
   // ---------- the cards ----------
   function welcomeLine() {
@@ -274,15 +274,18 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
   }
   function regionsCard() {
     const c = el('section', 'dash-card dash-fly');
-    if (regions.countries.length) {
+    if (regions.areas.length) {
       c.append(el('h3', '', 'Fly in'));
-      const row = el('div', 'btn-row');
-      for (const k of regions.countries) {
-        const b = el('button', 'btn small', k.name); b.type = 'button';
-        b.addEventListener('click', () => { regions.goTo?.(k.id); panel.closeIfPhone(); if (isPhone()) setState('peek'); });
-        row.append(b);
-      }
-      c.append(row);
+      const sel = el('select'); sel.id = 'dash-fly'; sel.setAttribute('aria-label', 'Fly in to a region');
+      sel.append(Object.assign(el('option', '', 'Choose a region'), { value: '' }));
+      for (const a of regions.areas) sel.append(Object.assign(el('option', '', a.label), { value: a.id }));
+      sel.addEventListener('change', () => {
+        const id = sel.value;
+        sel.value = ''; // the same region can be chosen again after panning away
+        if (!id) return;
+        regions.goToArea?.(id); panel.closeIfPhone(); if (isPhone()) setState('peek');
+      });
+      c.append(sel);
     }
     return c;
   }
@@ -510,7 +513,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
 
   return {
     /** The regions the map covers and how to go to one (known once the data index has loaded). */
-    setRegions(countries, goTo) { regions = { countries, goTo }; if (state === 'expanded') render(); },
+    setRegions(countries, goTo, areas = [], goToArea = null) { regions = { countries, goTo, areas, goToArea }; if (state === 'expanded') render(); },
     open: (opts) => setState('expanded', opts),
     /** Fold to the one-line strip. */
     fold: () => setState('peek'),

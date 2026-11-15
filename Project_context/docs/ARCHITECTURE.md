@@ -30,8 +30,38 @@ A static front end (GitHub Pages) that works fully without a server, plus an **o
 | Shared trips | `sharedtrip/{api,core,engine}.js`, `party-ui.js` | One document per trip with revision; poll every 10 s (every 20 s after about a minute with nothing new, every 30 s after about three; back to 10 s on a change, an edit or coming back to the page; a failed poll waits longer each time), save about 2 s after a change; three-way field-level merge in the client (edit beats delete); owner-only delete and membership; Home markers and check-ins refused by the database |
 | Online status | `presence.js` | Heartbeat every 30 s while signed in and visible; online within 75 s; hideable (symmetric) |
 | Live locations | `live.js`, `livemap.js`, `party-ui.js` | Per-trip switch, off on every app start; send at most every 5 s; others polled every 5 s, and only while `list_my_trips` says someone else in the party is sharing (`live_active`); server keeps latest row only (stale 2 min, deleted after 10 min; ends a day after the trip) |
-| Zones and point check | `map.js`, `zones.js`, `pointcheck.js` | PMTiles range requests; check reads the max-zoom tile |
+| Zones and point check | `map.js`, `zones.js`, `pointcheck.js`, `pmtiles-source.js` | Each archive is downloaded whole, when its bounds meet the view (see Fly In regions); check reads the max-zoom tile |
 | AI import | `aiimport.js`, `ai-ui.js` | Lenient parse, strict sanitize, preview; optional name geocoding |
+
+## Fly In regions
+The dashboard's **Fly in** card is a dropdown with one choice per region archive. Choosing one fits the map to that region's bounds (`app/region-ui.js`, `goToArea`). The zone layers then load only the archives whose bounds meet the visible map (`map.js` `createZones`, on every `moveend`), so a region outside the view is not downloaded. The index and manifests are small JSON and load first; no archive is fetched by them.
+
+Options, in the order shown (Title Case, as in the dropdown):
+- Chongqing
+- Guangdong
+- Hubei
+- Hunan
+- Jilin
+- Ningxia
+- Sichuan
+- Singapore
+
+The label of each region ID is in `src/app/region-labels.js` (`REGION_LABELS`); a region with no entry would show its manifest name instead:
+
+| Region ID | Fly In label |
+|---|---|
+| `cn-chongqing` | Chongqing |
+| `cn-guangdong` | Guangdong |
+| `cn-hubei` | Hubei |
+| `cn-hunan` | Hunan |
+| `cn-jilin` | Jilin |
+| `cn-ningxia` | Ningxia |
+| `cn-sichuan` | Sichuan |
+| `sg-nofly` | Singapore |
+
+**Keep in sync:** whenever a region's shape archive is added or removed, check the Fly in options, `REGION_LABELS` and this list in the same change. `tests/region-labels-unit.mjs` fails when a region in `public/data` has no label, a label has no region, or the choices differ from its expected list (update that list with the change). `tests/fly-in.mjs` checks the dropdown and the downloads in the browser.
+
+The header's country menu is separate: it centres on a whole country, and a country view loads every archive it touches (China: all of them).
 
 ## External services (browser side)
 | Service | Use | Sent | Gate |

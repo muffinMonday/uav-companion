@@ -1,4 +1,12 @@
-## Latest: live zones blank, cause found; PMTiles moved to `tiles/` (2026-11-15; owner approved commit, push and deploy)
+## Latest: Fly in dropdown loads archives on demand (2026-11-15)
+- The dashboard's **Fly in** card is a dropdown of the eight region archives: Chongqing, Guangdong, Hubei, Hunan, Jilin, Ningxia, Sichuan, Singapore (labels in `src/app/region-labels.js`; no Chengdu, no China option). Choosing one fits the map to its bounds; only the archives whose bounds meet the view load (`createZones.sync`, unchanged). Documented in ARCHITECTURE "Fly In regions". No data, manifest, archive or deploy-layout change.
+- Unchanged from the PMTiles fix below: whole-file download, Cache API reuse, and the first visit opening on Singapore.
+- Measured (headless Edge, `tests/fly-in.mjs`): fresh Singapore view: 1 archive (`sg-nofly`), 0.36 MB. Switch to Hubei: 4 archives (`cn-hubei`, `cn-chongqing`, `cn-hunan`, `cn-sichuan`, whose bounds meet the Hubei view at zoom 7), 21.34 MB. Pan to Guangzhou: `cn-guangdong` only, 1.16 MB. After a reload, Hubei again: 0 archives from the network (Cache API).
+- Checks: `npm run test:unit` all suites pass (`region-labels-unit` 5 checks); `npm test` all suites pass (`fly-in` 9, `dashboard` 89, `splash`, `prefs`, `responsive` 210).
+- Residual: the header country menu still loads every China archive its view touches. The no-location fallback in the quick setup still offers country buttons.
+- Deployed regions (unchanged by this change): `cn-chongqing`, `cn-guangdong`, `cn-hubei`, `cn-hunan`, `cn-jilin`, `cn-ningxia`, `cn-sichuan`, `sg-nofly`. Deploy and live verification: recorded below once `npm run deploy:live` has run.
+
+## Latest (previous): live zones blank, cause found; PMTiles moved to `tiles/` (2026-11-15; owner approved commit, push and deploy)
 - Cause: the CDN in front of uavcompanion.com answers PMTiles Range requests from a stale cached object. Full GETs are correct (sha256 matches the name hash); every archive's `Content-Range` total and body length are wrong, the live page logs 172 `Failed to fetch`, and 0 zone pixels paint. Same bytes with correct Range responses paint 248,835 pixels (causal test, headless Edge).
 - Fix (option 2): archives published under `tiles/<country>/`; `scripts/build-data.js` writes there and keeps `tiles/` out of its cleanup; `public/data` relocated (git-ignored; backup in the session scratchpad); `cn-sichuan` restored from gh-pages into the new layout (no source in `data/regions`). Docs: ARCHITECTURE, DATABASE, cn-chengdu. No app code change.
 - Scope: cache-path fix only. Chengdu is NOT in this change (not in the tree, not published). The live region set is preserved, including Sichuan.

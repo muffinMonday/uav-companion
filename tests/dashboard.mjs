@@ -46,7 +46,8 @@ ok(/Under way/.test(txt) && /Day 2 of 3/.test(txt), 'the trip card shows the tri
 ok(/Today/.test(txt) && /Today stop/.test(txt) && /Second stop/.test(txt), 'a trip under way lists today\'s stops');
 ok(/1 of 2/.test(txt), 'with ‹ 1 of 2 › to move through the coming trips');
 ok(/Back up your markers/.test(txt) && /45 days ago/.test(txt), 'a backup 45 days old gets a reminder');
-ok(/Fly in/.test(txt) && (await p.locator('#dash-body .btn', { hasText: 'Singapore' }).count()) === 1, 'there is a button for each covered region');
+const flyOpts = await p.$$eval('#dash-fly option', (os) => os.map((o) => o.textContent));
+ok(JSON.stringify(flyOpts) === JSON.stringify(['Choose a region', 'Chongqing', 'Guangdong', 'Hubei', 'Hunan', 'Jilin', 'Ningxia', 'Sichuan', 'Singapore']), 'Fly in lists each covered region by name, and no China: ' + flyOpts.join(', '));
 ok((await p.locator('.dash-guide').count()) === 0 && !/What’s new/.test(txt), 'Help is not showing and there is no What\'s new for a visitor who has seen it');
 await p.locator('#dash-body .dash-stop', { hasText: 'Today stop' }).click(); await p.waitForSelector('.poi-pop h3', { timeout: 8000 });
 ok((await p.textContent('.poi-pop h3')) === 'Today stop', 'tapping a stop opens it on the map');
@@ -64,7 +65,7 @@ await p.locator('#dash-body .dash-trip-nav .btn').nth(0).click(); await p.waitFo
 ok(/Under way/.test(await p.textContent('#dash-body .dash-trip-head')) && await p.locator('#dash-body .dash-trip-nav .btn').nth(0).isDisabled(), '‹ goes back to the first trip');
 const dr = await rect(p, '#dash'), pr = await rect(p, '#panel');
 ok(dr.r <= pr.x + 1, 'beside the open side panel the dashboard stops short of it');
-await p.locator('#dash-body .btn', { hasText: 'Singapore' }).click(); await p.waitForTimeout(1300);
+await p.selectOption('#dash-fly', 'sg-nofly'); await p.waitForTimeout(1300);
 const view = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).view);
 ok(Math.abs(view.lat - 1.35) < 0.5 && Math.abs(view.lon - 103.8) < 0.5, 'the Singapore button centres the map there: ' + JSON.stringify(view));
 await p.click('#tab-config'); await p.click('#help-open'); await p.waitForTimeout(300);
