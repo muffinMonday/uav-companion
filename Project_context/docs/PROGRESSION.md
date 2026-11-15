@@ -42,6 +42,9 @@ Tests: `db-progression-unit`, `db-progression-read-unit`, `db-sessions-unit`, `d
 ## Flight sessions: XP badge (2026-11-15)
 The session lists carry `xp_reward` (database function `session_xp_reward`): `attendance_xp` when the host is an organiser or administrator (or when `auto_attendance_enabled` is on), null otherwise or when `attendance_xp` is 0. The app shows it through one helper (`sessions-xp.js`); RSVP alone still earns nothing. Automatic attendance (flag 0) is described in `DECISIONS.md`.
 
+## Automatic attendance (waves C and D; **off**: `auto_attendance_enabled` = 0)
+Rules and numbers: `DECISIONS.md` and `DATABASE.md`. The award goes through `award_xp` with the same ledger key as a manual mark (`attendance`, `session:<id>`), so the two paths cannot pay twice and a revoked row is never re-awarded; `attendance_xp` 0 records attendance with no XP. Auto awards count toward the attendance achievements. Rollback: set the flag to 0 and run `admin_bulk_revoke_auto_attendance(from, to, reason)`. Turning the flag on is an owner decision after a canary (Wave E, not part of the first release).
+
 ## Known gaps and risks
 - Real-world flying achievements (Maiden Flight, Back in the Air, Weekend Warrior, Frequent Flyer) are not defined: nothing records a flight yet (check-ins are local, live positions have no history). Needs a flight-logging feature (phase 7, not started).
 - No admin screen: XP adjustments, role grants and attendance revocation of other sessions' marks beyond the Sessions card are RPC/SQL. Walk-in friend-code lookup is not rate limited (organiser/administrator role only).

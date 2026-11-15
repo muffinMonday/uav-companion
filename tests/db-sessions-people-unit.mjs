@@ -33,9 +33,9 @@ ok((await pubRow(null, bS)).xp_reward === null, 'attendance_xp 0 means no XP is 
 await db.exec(`update public.progression_settings set value = 75 where key = 'attendance_xp'`);
 ok((await pubRow(null, bS)).xp_reward === 75, 'the amount follows the setting, never a constant');
 await db.exec(`update public.progression_settings set value = 50 where key = 'attendance_xp'`);
-await db.exec(`insert into public.progression_settings (key, value) values ('auto_attendance_enabled', 1)`);
+await db.exec(`update public.progression_settings set value = 1 where key = 'auto_attendance_enabled'`);
 ok((await pubRow(null, cS)).xp_reward === 50, 'with automatic attendance on, any host\'s session can pay');
-await db.exec(`delete from public.progression_settings where key = 'auto_attendance_enabled'`);
+await db.exec(`update public.progression_settings set value = 0 where key = 'auto_attendance_enabled'`);
 ok((await pubRow(null, cS)).xp_reward === null, 'and off again: none');
 ok(/permission denied/.test(await refused(db, C, 'select public.session_xp_reward($1)', [bS])), 'session_xp_reward is internal');
 

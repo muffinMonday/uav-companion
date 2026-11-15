@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-11-15 (Flight Sessions automatic attendance backend, wave C; switched off)
+- Migration `20261119110000_session_auto_attendance.sql`: consent and probe tables without coordinates, `submit_session_arrival`, `source = 'auto'`, settings for every threshold, admin bulk revoke by time range, audit actions, place and times frozen once a session starts. `auto_attendance_enabled` = 0: nothing awards XP.
+
 ## 2026-11-15 (Flight Sessions people and XP badge, wave B2)
 - Migration `20261119100000_sessions_people_xp.sql`: `xp_reward` on the session lists, `list_session_participants` and `request_friend_from_session` (random per-session handles), the "Show me in attendee lists" switch. Discover rows, explorer cards and the detail show one server-fed XP badge; the host and everyone listed open the profile popover (Add friend for non-friends; "In your friends list" for friends). Reverses "RSVP names are managers-only" (DECISIONS).
 
