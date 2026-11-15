@@ -2,6 +2,8 @@
 
 **Validated release candidate, 2026-11-15; not deployed.** Release is deferred while
 Claude's mascot integration is active. [Artifact identities and rollback](../china-airspace/evidence/chengdu-release.json).
+Implementation `29478d2` is pushed on `feature/chengdu-city-mask`;
+[draft PR #10](https://github.com/muffinMonday/uav-companion/pull/10) is open for review.
 
 KDji third-party UOM reference mirror: <https://kdji.cn/support/nfz-map.html>.
 The source claims publication in May 2026 and snapshot
