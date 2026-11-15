@@ -1,3 +1,8 @@
+## Latest: China airspace restored (2026-11-15; owner authorized deploy)
+- A later deploy had published Hubei only (gh-pages e10f6ee) from a stale git-ignored `public/data`. Restored six regions from 8018ea0; source 777502d, production ccb2644. `npm run deploy` now restores published regions and runs `scripts/preflight-data.js` (hashes, references, no published region missing; approved removals only via `data/removed-regions.json`). Legend, point-check, Help, Map Configs, README, ATTRIBUTIONS name Hubei (official) vs KDji (third-party snapshot).
+- Tests: unit suites pass (prod-data-unit 23 checks), selected-airspace, html-dom, dashboard 89, layers, launchloc, prefs, sg pass. `responsive` times out in this environment with and without the change. Not verified: pixel render of the five KDji regions on the live map, real phone. Details: [release record](../../docs/china-airspace/SELECTED_SOURCE_RELEASE.md#production-regression-and-repair-2026-11-15). Rollback ZIPs in planning/regression-fix/.
+
+
 # Session Checkpoint
 
 ## Latest: trip marker map view (2026-11-15; owner authorized commit, push, deploy:live for this backlog)
