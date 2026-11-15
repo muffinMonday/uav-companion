@@ -150,6 +150,8 @@ export function createSync({ store, adapter, storage = globalThis.localStorage, 
       try { const cloud = await adapter.info(); if (cloud && reconcileSettings(cloud.settings)) schedule(); } catch (e) { log.warn('sync', 'checking the cloud settings failed', e); /* try again at the next visit */ }
     },
     async signIn(email) { try { await adapter.signIn(email); return { ok: true }; } catch (e) { return { ok: false, error: String(e?.message || e) }; } },
+    /** Starts Google sign-in; on success the page is already leaving for Google. */
+    async signInWithGoogle() { try { await adapter.signInWithGoogle(); return { ok: true }; } catch (e) { return { ok: false, error: String(e?.message || e) }; } },
     /**
      * Signs out. With `wipe`, this device's markers and trips are removed afterwards so the next person to sign in here does not inherit them (the data
      * stays in the cloud copy). It refuses ({ ok: false, reason }) while something here is not in the cloud copy: 'unsynced' (a change the cloud has not

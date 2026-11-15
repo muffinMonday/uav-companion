@@ -25,7 +25,8 @@ function productionDir() {
   const f = git(['fetch', '--quiet', 'origin', 'gh-pages'], { encoding: 'utf8' });
   if (f.status !== 0) fail([`cannot fetch origin/gh-pages (${(f.stderr || '').trim()}); use --production <dir> or, for a first publish, --no-baseline`]);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'uav-prod-'));
-  const a = git(['archive', '--format=tar', 'FETCH_HEAD', 'data'], { maxBuffer: 1 << 30 });
+  // autocrlf off: on Windows, archive would convert line endings and the published bytes (and their name hashes) would no longer match
+  const a = git(['-c', 'core.autocrlf=false', 'archive', '--format=tar', 'FETCH_HEAD', 'data'], { maxBuffer: 1 << 30 });
   if (a.status !== 0) fail(['gh-pages has no data/ folder; use --no-baseline for a first publish']);
   const x = spawnSync('tar', ['-x', '-C', tmp], { input: a.stdout });
   if (x.status !== 0) fail(['cannot unpack the published data']);

@@ -1,5 +1,7 @@
 # cn-sichuan
 
+**Release resumed, 2026-11-15:** OAuth is live at `02cb2a0`; the owner cleared the deployment window and authorized PR #11 merge/deploy. Latest-main reconciliation preserves OAuth unchanged. Refreshed rollback: `planning/sichuan/oauth-production-baseline.zip`, SHA256 `c07673793098981baecb813e357638d01850c2685dfdd73975bc1b00ce3b60ad`. Earlier deferral notes below are historical; current evidence is in `sichuan-release.json`.
+
 [Draft PR #11](https://github.com/muffinMonday/uav-companion/pull/11), implementation `c3abe23` committed and pushed. Merge and deployment deferred.
 
 **Validated replacement candidate, 2026-11-15; not deployed.** The owner confirmed

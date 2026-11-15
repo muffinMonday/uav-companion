@@ -214,5 +214,6 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   handle.account = { open: () => show(), close: () => hide(false), reload: () => loadProfile({ force: true }) };
   paintButtons();
   if (session()) loadProfile();
+  if (!session() && handle.hasSignInNotice()) show(); // a failed or cancelled Google return: open the popover so the message is seen (quiet on success)
   return { reload: () => loadProfile({ force: true }) };
 }

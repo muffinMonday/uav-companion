@@ -1,5 +1,5 @@
 {
-  "status": "validated candidate; production release deferred for active Google OAuth work",
+  "status": "validated release ready for PR merge and deployment",
   "checkedOn": "2026-11-15",
   "branch": "feature/sichuan-replacement",
   "mainBaseline": "8c802711a3d4ab769d53c5bc5a9b873aa77fd89d",
@@ -107,8 +107,8 @@
     "candidatePackage": "Extracted ZIP passes 8-region preflight and all source/capture checksums"
   },
   "coordination": {
-    "ownerConfirmed": "Claude is still active; prepare the PR and defer release",
-    "merge": "deferred",
+    "ownerConfirmed": "Claude completed OAuth and deployed it; owner authorizes PR #11 reconciliation, merge and deploy",
+    "merge": "ready after all focused checks passed",
     "deploy": "not run"
   },
   "candidatePackage": {
@@ -148,5 +148,42 @@
     "url": "https://github.com/muffinMonday/uav-companion/pull/11",
     "draft": true,
     "merged": false
+  },
+  "reconciliation": {
+    "checkedOn": "2026-11-15",
+    "main": "de71b907348ceb1d4911ab536c179e65dcd6602d",
+    "production": "02cb2a0d3cca5b089486727ddf5727f573f1ee76",
+    "method": "Merge latest main into existing PR branch; only CURRENT_STATUS.md content conflict, both checkpoints preserved",
+    "oauthFiles": "Byte-identical to origin/main; no auth/provider/migration edits",
+    "sourceIntegrity": "Original source, PMTiles and candidate ZIP checksums unchanged; no acquisition or GEOS repeat",
+    "rollback": {
+      "file": "planning/sichuan/oauth-production-baseline.zip",
+      "sha256": "c07673793098981baecb813e357638d01850c2685dfdd73975bc1b00ce3b60ad",
+      "contents": "Complete latest live application including Google OAuth and all 8 original regional artifacts"
+    },
+    "liveOAuthBaseline": {
+      "checkedAt": "2026-11-15T09:48:15.387Z",
+      "baseline": "02cb2a0d3cca5b089486727ddf5727f573f1ee76",
+      "liveAsset": "assets/index-Bulrl3dP.js",
+      "sha256": "f6bc671e4ceab0944cc3583fd1d4fe607d82c98faba0d89203b196bcb284ddc6",
+      "googleSignInUI": true,
+      "googleProviderAuthorizeStatus": 302,
+      "googleProviderRedirectHost": "accounts.google.com",
+      "realUserSignIn": "Not performed; no credentials supplied",
+      "chengduLive": true
+    },
+    "focused": {
+      "sichuanAndSelected": 4,
+      "productionData": 26,
+      "googleUnit": 16,
+      "build": "passed",
+      "preflight": "8 regions vs production 8; only approved Chengdu-to-Sichuan replacement",
+      "googleBrowser": {
+        "passed": 37,
+        "failed": 0,
+        "scope": "Mocked Google redirect/return, email fallback, signed-in state, desktop and phone layout; no real user sign-in"
+      }
+    },
+    "fullSuite": "Prior 136-suite result reused per owner instruction; reconciliation changes no shared runtime behavior"
   }
 }

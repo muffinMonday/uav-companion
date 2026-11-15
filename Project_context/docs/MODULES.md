@@ -42,7 +42,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `sync/core.js` (pure) | Cloud-copy rules: `decide`, `buildDoc`, `diffDocs`, synced settings (`cleanSettings`, `mergeSettings`), `contentSig` | - |
 | `sync/engine.js` | Acts on the rules through an adapter; state in `uavzones.v1.sync`; optional `settings` hooks (theme: adopt newer, upload ours alone, `checkSettings` on tab focus) | adapter |
 | `sync/supabase.js` | Real adapter; dynamic-imports supabase-js; `configured()` | `client` |
-| `sync-ui.js` | Cloud copy card (status, sync, versions), sign-in form and sign-out flow, conflict prompt; returns the handle used below | `initSyncUI` |
+| `sync-ui.js` | Cloud copy card (status, sync, versions), sign-in form (Continue with Google plus the email link, one status line; `takeAuthReturnError` for a failed Google return) and sign-out flow, conflict prompt; returns the handle used below | `initSyncUI` |
 | `account-ui.js` (also the delete-account dialog) | Account button (panel header and rail) and its popover: guest note and sign-in, or name, friend code, sync state, Edit profile, Friends, Sign out | handle |
 | `avatars.js` (pure lists, `avatarEl`), `profile-ui.js` | Preset avatars and interest tags; the Profile card and the bio/location lines | `avatarEl`, `profileBits` |
 | `steam.js` (pure + API wrapper), `steam-ui.js` | Steam: validation, wording, reading the sign-in result, the Steam card (link, sync, unlink) | `createSteam`, `cleanSteam`, `createSteamCard`, `announceSteamReturn` |
