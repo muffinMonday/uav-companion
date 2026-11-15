@@ -1,4 +1,6 @@
-## Latest: Google sign-in built and mock-tested, uncommitted (2026-11-15)
+## Latest: Google sign-in released (2026-11-15)
+- Committed `f3b4933`, pushed; deploy blocked by a Windows line-ending bug in the preflight read of published data, fixed in `bfe0c5f`, pushed; `deploy:live` published gh-pages `02cb2a0`. Live bundle `index-Bulrl3dP.js`. Still to check: Pages subpath Google run (owner).
+- Earlier state:
 - Backlog `backlogs/for-review/GOOGLE_OAUTH_SIGN_IN_BACKLOG.md` (status history has the detail). Frontend only; no migration; no hosted setting changed. Files: `src/sync/supabase.js`, `src/sync/engine.js`, `src/sync-ui.js`, `src/account-ui.js`, `src/styles.css`, tests `google-signin-unit` and `google-signin` (registered in `tests/run.mjs`), docs DEVELOPMENT, ARCHITECTURE, MODULES, DESIGN section 25.
 - Tests (mocked): `google-signin-unit` 16, `google-signin` 37, all unit suites pass, full browser run passes except `diag` (environmental). **Not live-checked**: a real Google sign-in, Pages subpath, denial tab behaviour. Owner decisions in force: D1 implicit, no denial marker, no auto-open on success.
 - Owner live run (local): approval signs in; denial leaves the same tab on Google's page. Owner accepts that page; closing it or going back opens the app as a guest. Email link and the other checks reported as working.

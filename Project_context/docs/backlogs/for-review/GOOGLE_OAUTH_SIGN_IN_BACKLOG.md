@@ -1,6 +1,6 @@
 # Google OAuth Sign-In Backlog
 
-**Status:** Phases 1 to 3 built and tested with mocks in the working tree (2026-11-15), **uncommitted, not pushed, not deployed**. Release is gated on the owner's live Google run (D3).
+**Status:** Released 2026-11-15 (commit `f3b4933` on `main`, `deploy:live` gh-pages `02cb2a0`). Live local Google run by the owner; Pages subpath run still open.
 **Scope:** Google sign-in for the existing optional Supabase account system, frontend only
 **Planning date:** 2026-11-15; reviewed against `main` at `8c80271` the same day
 
@@ -15,6 +15,8 @@
 - Not done: Pages subpath run, Google logo on the button, local-stack `[auth.external.google]`. Live local Google run done by owner (see the 2026-11-15 entry above).
 
 - 2026-11-15: owner live run, local (`localhost:5173`), real Google: approval redirects back and signs in; denial leaves the same tab on Google's page with no return to the app (the expected result under "no marker"). Email link, same-email linking and the other popover states were reported as working. Owner decision (same day): the stranded Google page is acceptable; no new-tab change. Closing the Google tab, or going back to the app, opens the app as a guest. Not checked: Pages subpath.
+
+- 2026-11-15: **released**. Commits `f3b4933` (feature) and `bfe0c5f` (deploy preflight fix: `scripts/preflight-data.js` read published data through `git archive` with CRLF conversion on Windows, so the Chengdu boundary hash check failed and blocked the deploy; now `core.autocrlf=false` for that read). `deploy:live` published; live `index.html` serves `index-Bulrl3dP.js`, which contains "Opening Google". Pages subpath check (owner) still open.
 
 ## Goal
 
