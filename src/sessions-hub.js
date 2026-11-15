@@ -7,6 +7,7 @@ import { createSessionForm, clearDraft } from './sessions-create.js';
 import { localDate, localTime } from './sessions-recurrence.js';
 import { createExplorer } from './sessions-map-explorer.js';
 import { sessionMapActions, hasPoint } from './maplinks-ui.js';
+import { previewParts } from './sessions-preview.js';
 import { avatarEl } from './avatars.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { log } from './log.js';
@@ -26,6 +27,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   const mineEmpty = () => ({ status: 'idle', sessions: [], roles: { admin: false, organiser: false }, notices: [], takedowns: [], invites: [] });
   let mine = mineEmpty(), section = 'discover', view = 'list', detail = null, message = '', busy = false, seqMine = 0, seqPub = 0, summaryAt = 0, nearby = null;
   let pub = { status: 'idle', list: [], more: false, query: '', near: 'any', when: 'any', space: false, offset: 0 };
+  let previewOpen = null; // the one Discover card whose map preview is open (not kept between visits)
   let manageOpen = new Set(), people = new Map(), invite = new Map(), newLink = null, editing = null, reporting = null;
   let quietClose = false; // the close event is queued and fires later; this marks the close that only steps aside for the map
   let opener = null; // the element that had focus when the hub was opened
@@ -44,7 +46,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   closeB.addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener('cancel', (e) => { if (view !== 'list') { e.preventDefault(); back(); } }); // Escape closes the detail or the form before the hub
-  dlg.addEventListener('close', () => { dlg.style.removeProperty('--ses-vvh'); dlg.style.removeProperty('--ses-vvtop'); if (quietClose) { quietClose = false; return; } scroll.clear(); const o = opener; opener = null; if (o?.isConnected && !o.closest('[inert]')) o.focus?.({ preventScroll: true }); }); // focus goes back to what opened the hub, also after the map picker closed and reopened it
+  dlg.addEventListener('close', () => { dlg.style.removeProperty('--ses-vvh'); dlg.style.removeProperty('--ses-vvtop'); if (quietClose) { quietClose = false; return; } scroll.clear(); previewOpen = null; const o = opener; opener = null; if (o?.isConnected && !o.closest('[inert]')) o.focus?.({ preventScroll: true }); }); // focus goes back to what opened the hub, also after the map picker closed and reopened it
   // The sheet (a touch screen up to 900 px wide, styles.css) follows the visual viewport, so the on-screen keyboard and a moving browser toolbar never cover its header, tabs or the Create / Cancel row.
   const vv = window.visualViewport;
   const fit = () => { if (!dlg.open || !vv || vv.scale > 1.01) return; dlg.style.setProperty('--ses-vvh', vv.height + 'px'); dlg.style.setProperty('--ses-vvtop', vv.offsetTop + 'px'); };
@@ -183,12 +185,12 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   const currentOf = (id) => mine.sessions.find((x) => x.id === id) ?? pub.list.map(asSession).find((x) => x.id === id) ?? (detail?.id === id ? detail.fallback : null);
   const hostBadge = (s) => { const w = el('span', 'ses-host'); w.append(avatarEl(s.hostAvatar, s.hostName, 20), el('small', '', s.isHost ? 'You' : s.hostName)); return w; };
 
-  function go(sec, v = 'list') { section = sec; view = v; message = ''; editing = null; reporting = null; newLink = null; if (v === 'list') detail = null; paint(); if (sec === 'discover' && v === 'list') loadPublic({ quiet: true }); }
+  function go(sec, v = 'list') { previewOpen = null; section = sec; view = v; message = ''; editing = null; reporting = null; newLink = null; if (v === 'list') detail = null; paint(); if (sec === 'discover' && v === 'list') loadPublic({ quiet: true }); }
   function back() { if (view === 'detail' || view === 'create') { view = 'list'; detail = null; message = ''; editing = null; paint(); } }
   function openDetail(s) { detail = { id: s.id, fallback: s }; view = 'detail'; message = ''; editing = null; reporting = null; newLink = null; paint(); if (s.visibility === 'public') loadPublic({ quiet: true }); if (signedIn()) loadMine({ quiet: true }); const sess = currentOf(s.id); if (sess?.canManage) { manageOpen.add(s.id); loadPeople(sess).then(paint); } }
 
   // ---- drawing
-  function rowFor(s, extra = []) {
+  function rowFor(s, extra = [], { preview = false } = {}) {
     const st = sessionState(s), r = el('div', 'ses-row'); r.dataset.id = s.id; r.dataset.status = s.status;
     // the card body opens the map explorer on this session: the title is the one real control (a stretched ::after makes the whole card its target), so no control sits inside another
     const point = hasPoint(s.lat, s.lng);
@@ -205,6 +207,11 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     const meta = [seriesText(s), capacityText(s), Number.isFinite(s.distanceKm) ? `${s.distanceKm.toFixed(1)} km away` : ''].filter(Boolean);
     r.append(el('small', 'ses-count', meta.join(' · ')), hostBadge(s));
     const bs = el('div', 'btn-row'); const d = btn('Details'); d.dataset.act = 'details'; d.addEventListener('click', (e) => { e.stopPropagation(); openDetail(s); }); bs.append(sessionMapActions({ lat: s.lat, lng: s.lng, title: s.title }), d, ...extra); r.append(bs);
+    if (preview && point) {
+      const open = previewOpen === s.id;
+      const parts = previewParts(s, { basemap: loadPrefs().basemap, expanded: open, onToggle: () => { previewOpen = open ? null : s.id; paint(); body.querySelector(`.ses-row[data-id="${CSS.escape(s.id)}"] .ses-chev`)?.focus({ preventScroll: true }); }, onOpenMap: () => explore(section, { focus: s.id }) });
+      if (parts) { r.classList.add('has-prev'); r.append(parts.chevron, parts.panel); }
+    }
     return r;
   }
   const empty = (t) => el('p', 'hint ses-empty', t);
@@ -257,7 +264,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
       else {
         if (list.length) f.append(exploreButton('discover'));
         else f.append(el('p', 'hint', 'No session on this page matches. More may be on the next page.'));
-        for (const s of list) f.append(rowFor(s, []));
+        for (const s of list) f.append(rowFor(s, [], { preview: true }));
         if (pub.more) { const m = btn('Show more'); m.dataset.act = 'more'; m.addEventListener('click', () => loadPublic({ more: true })); f.append(m); }
       }
     }

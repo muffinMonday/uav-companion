@@ -1437,3 +1437,23 @@ body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}
 .name-tag-text{display:flex;flex-direction:column;min-width:0}
 .name-tag-text b,.name-tag-trip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .name-tag-trip{color:var(--muted);font-size:var(--fs-meta);line-height:1.2}
+
+/* Flight sessions: the map preview of a Discover card, opened by a chevron at the right edge (src/sessions-preview.js). Four basemap tiles, a pin and the credit. */
+.ses-row.has-prev>.ses-top{padding-right:44px}
+.ses-chev{position:absolute;top:0;right:0;z-index:2;inline-size:44px;block-size:44px;display:grid;place-items:center;padding:0;border:0;border-radius:var(--radius-sm);background:none;color:var(--muted);cursor:pointer}
+.ses-chev svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ses-chev:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+@media (hover:hover){.ses-chev:hover{color:var(--text);background:var(--surface-2)}}
+.ses-prev{display:grid;grid-template-rows:0fr;transition:grid-template-rows .18s ease;position:relative;z-index:1}
+.ses-prev[data-open=true]{grid-template-rows:1fr;margin-top:var(--sp-2)}
+.ses-prev-in{min-height:0;overflow:hidden;visibility:hidden}
+.ses-prev[data-open=true] .ses-prev-in{visibility:visible}
+.ses-prev-fig{position:relative;margin:0;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;block-size:160px;background:var(--surface-2)}
+.ses-prev-map{position:absolute;inset:0;overflow:hidden}
+.ses-prev-map img{position:absolute;inline-size:256px;block-size:256px;max-inline-size:none;margin:0;left:calc(50% - var(--px) + var(--tx,0px));top:calc(80px - var(--py) + var(--ty,0px))}
+.ses-prev-pin{position:absolute;left:50%;top:80px;inline-size:14px;block-size:14px;margin:-14px 0 0 -7px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.ses-prev-open{position:absolute;inset:0;inline-size:100%;block-size:100%;padding:0;border:0;background:none;cursor:pointer}
+.ses-prev-open:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ses-prev-credit{position:absolute;right:0;bottom:0;z-index:1;max-inline-size:100%;padding:1px 4px;font-size:var(--fs-micro);line-height:1.3;background:rgba(255,255,255,.85);color:#333;pointer-events:none}
+.ses-prev-credit a{color:inherit;pointer-events:auto}
+.ses-prev-note{display:block;margin-top:4px;color:var(--muted)}
