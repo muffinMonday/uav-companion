@@ -72,7 +72,7 @@ Limits: import file 2 MB; 2,000 items.
 ## 3. Files
 - **Export/import (GeoJSON, `uavzones: 1`):** Points `[lon, lat]` with `properties` (id, type, name, note, created, optional day/order/date/endDate/unverified/tripId/isSub/parentId/checkin), optional top-level `trips`. Import merges by id; existing ids skipped; markers of unknown trips arrive untagged. Home markers are exported, never put in share links.
 - **Share links:** `#import=z.<deflate-raw base64url>` and compact `z2.` (`sharecompact.js`; row slots 11 = Side Quest flag, 12 = parent row number, both absent on main stops, so older links and rows are unchanged); no Home, check-ins, notes, checklists.
-- **Static data (`public/data/`, not in git):** `index.json`, `<country>/manifest.json`, hashed PMTiles per region, `places/`. Sources in git: `data/regions/<country>/country.json`, `<region>/source.json` + `boundary.geojson`, `data/places/<country>.txt`. Hubei: 84,863 cells, verified against the shapefile by `npm run verify:data`.
+- **Static data (`public/data/`, not in git):** `index.json`, `<country>/manifest.json`, hashed PMTiles per region under `tiles/<country>/` (a new path, not `<country>/`, after the CDN served stale Range responses for the old paths on 2026-11-15; a path change, not a schema change), `places/`. Sources in git: `data/regions/<country>/country.json`, `<region>/source.json` + `boundary.geojson`, `data/places/<country>.txt`. Hubei: 84,863 cells, verified against the shapefile by `npm run verify:data`.
 
 ## Migration notes
 - The `uavzones.` prefix and `uavzones: 1` flag predate the rename and stay so old data loads.

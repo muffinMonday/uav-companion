@@ -1,3 +1,10 @@
+## Latest: live zones blank, cause found; PMTiles moved to `tiles/` (2026-11-15; NOT committed, NOT deployed, awaiting owner approval)
+- Cause: the CDN in front of uavcompanion.com answers PMTiles Range requests from a stale cached object. Full GETs are correct (sha256 matches the name hash); every archive's `Content-Range` total and body length are wrong, the live page logs 172 `Failed to fetch`, and 0 zone pixels paint. Same bytes with correct Range responses paint 248,835 pixels (causal test, headless Edge).
+- Fix (option 2): archives published under `tiles/<country>/`; `scripts/build-data.js` writes there and keeps `tiles/` out of its cleanup; `public/data` relocated (git-ignored; backup in the session scratchpad); `cn-sichuan` restored from gh-pages into the new layout (no source in `data/regions`). Docs: ARCHITECTURE, DATABASE, cn-chengdu. No app code change.
+- Scope: cache-path fix only. Chengdu is NOT in this change (not in the tree, not published). The live region set is preserved, including Sichuan.
+- Checks: `inspectTree` 8 regions, no errors; `preflight-data.js public/data` ok, 8 regions (production 8), 0 added, 0 removed; `npm run test:unit` all suites pass; `npm run build` ok; the built app paints 248,835 zone pixels with all 7 PMTiles loaded from `tiles/` (206). Archive bytes identical to gh-pages.
+- Before deploy: owner approval for commit, push and `npm run deploy:live`; then check every live archive's Content-Range total and the rendered zone layer.
+
 ## Latest: Google sign-in released (2026-11-15)
 - Committed `f3b4933`, pushed; deploy blocked by a Windows line-ending bug in the preflight read of published data, fixed in `bfe0c5f`, pushed; `deploy:live` published gh-pages `02cb2a0`. Live bundle `index-Bulrl3dP.js`. Still to check: Pages subpath Google run (owner).
 - Earlier state:

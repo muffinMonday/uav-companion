@@ -101,7 +101,7 @@ were performed. The existing bundle-size warning remains.
 
 ## Release and rollback
 
-Candidate archive: `cn/cn-chengdu.66de882a.pmtiles`, **57 source polygons**,
+Candidate archive: `tiles/cn/cn-chengdu.66de882a.pmtiles`, **57 source polygons**,
 92,940 addressed tiles, 5,744,094 bytes. Boundary:
 `cn/cn-chengdu.boundary.a54e47db.json`. Full hashes and GEOS witnesses are in the
 linked evidence files. Generated artifacts remain local and git-ignored.

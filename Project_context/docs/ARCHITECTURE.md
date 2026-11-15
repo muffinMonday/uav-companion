@@ -6,7 +6,7 @@ A static front end (GitHub Pages) that works fully without a server, plus an **o
 | Component | Responsibility |
 |---|---|
 | Build pipeline (`scripts/`, Node, local) | Region shapefiles/GeoJSON/OneMap themes to one content-hashed PMTiles per region, manifests, places index in `public/data/` |
-| Static data (`public/data/`, generated, not in git) | `index.json`, `<country>/manifest.json`, `<region>.<hash>.pmtiles`, `places/` |
+| Static data (`public/data/`, generated, not in git) | `index.json`, `<country>/manifest.json`, `tiles/<country>/<region>.<hash>.pmtiles` (under `tiles/` so the CDN never serves a stale Range response for an old path), `places/` |
 | Web app (`src/`, `index.html`) | Leaflet map, zones from PMTiles, point check, search, opt-in weather/elevation, markers, trips, AI import, dashboard, privacy; side panel tabs Map Configs, Trips, Points of Interest, and Friends (only in a build with accounts) |
 | Static AI assets (`public/ai/`, `public/llms.txt`) | Prompt, schema, example for any AI assistant |
 | Supabase (`supabase/migrations/`) | Auth (email link), Postgres with RLS, SQL functions as the only write path. See `DATABASE.md` |

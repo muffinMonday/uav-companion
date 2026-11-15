@@ -57,8 +57,9 @@ export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS
     tiles, bounds, minZoom: MIN_Z, maxZoom: MAX_Z,
     metadata: { name: meta.name, attribution: `${source.authority}, effective ${source.effective ?? 'unknown'}`, vector_layers: [{ id: 'zones', fields: classes ? { c: 'String', n: 'String', d: 'String' } : {} }] },
   });
-  const file = `${countryId}/${id}.${hash(buf)}.pmtiles`;
-  fs.mkdirSync(path.join(OUT, countryId), { recursive: true });
+  // Tiles live under tiles/ (not <country>/): the CDN in front of the site has cached stale Range responses for the old paths, so a new path is the fix.
+  const file = `tiles/${countryId}/${id}.${hash(buf)}.pmtiles`;
+  fs.mkdirSync(path.join(OUT, 'tiles', countryId), { recursive: true });
   fs.writeFileSync(path.join(OUT, file), buf);
   console.log(`[${id}] wrote ${file} (${(buf.length / 1e6).toFixed(1)} MB, ${tiles.length} tiles)`);
 
@@ -158,6 +159,8 @@ async function buildTree(OUT, local) {
       // drop files no manifest entry refers to (older hashes, removed regions)
       const keep = new Set(regions.flatMap((r) => [r.file, r.boundary, r.points].filter(Boolean)).map((f) => path.basename(f)));
       for (const f of fs.readdirSync(path.join(OUT, countryId))) if (f !== 'manifest.json' && !keep.has(f)) fs.unlinkSync(path.join(OUT, countryId, f));
+      const tileDir = path.join(OUT, 'tiles', countryId);
+      if (fs.existsSync(tileDir)) for (const f of fs.readdirSync(tileDir)) if (!keep.has(f)) fs.unlinkSync(path.join(tileDir, f));
     } else {
       console.log(`[${countryId}] no regions yet, listed without data`); // still appears in the country menu if it has a view
     }
@@ -172,7 +175,7 @@ async function buildTree(OUT, local) {
     }
   }
   // remove country folders that are gone
-  for (const d of dirs(OUT)) if (d !== 'places' && !index.countries.some((c) => c.id === d)) fs.rmSync(path.join(OUT, d), { recursive: true });
+  for (const d of dirs(OUT)) if (d !== 'places' && d !== 'tiles' && !index.countries.some((c) => c.id === d)) fs.rmSync(path.join(OUT, d), { recursive: true });
 
   if (local && !index.countries.length) { fs.rmSync(OUT, { recursive: true, force: true }); return index; } // no local regions: no local tree
   writeJson(path.join(OUT, 'index.json'), index, true);
