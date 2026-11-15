@@ -361,6 +361,28 @@ const fit = await p.evaluate(() => { const c = document.getElementById('ses-hub'
 ok(fit.l >= 0 && fit.r <= fit.w + 1 && fit.sw <= fit.cw + 1, 'on a 360 px phone the hub fills the screen without sideways scrolling (' + Math.round(fit.l) + ' to ' + Math.round(fit.r) + ' of ' + fit.w + ')');
 await ctx.close();
 
+// ---------- Wave A: the Today filter and the Has-space page filter (discover-list-guards)
+await db.exec(`delete from public.flight_sessions where title like 'Full %'`);
+await ins('Today only', { s: hr(-0.5), e: hr(1), lat: 10, lng: 10 }); await ins('Later day', { s: hr(30), e: hr(32), lat: 10, lng: 10 });
+({ ctx, p } = await open('c'));
+await openHub(p);
+await p.waitForSelector(body + ' .ses-row', { timeout: 5000 });
+const opts = await p.$$eval('#ses-when-f option', (o) => o.map((x) => x.textContent));
+ok(opts.join('|') === 'Any date|Today (your time)|Next 7 days|Next 30 days', 'the date filter has Today: ' + opts.join('|'));
+await p.selectOption('#ses-when-f', 'today'); await p.waitForTimeout(700);
+const todayRows = await p.locator(body + ' .ses-row').allTextContents();
+ok(todayRows.length >= 1 && todayRows.every((t) => !/Later day|Far away/.test(t)) && todayRows.some((t) => /Today only/.test(t)), 'Today keeps what is under way and drops tomorrow and later (' + todayRows.length + ' rows)');
+const fullIds = [];
+for (let i = 0; i < 20; i++) fullIds.push(await ins('Full ' + i, { s: hr(-1.9 + i / 100), e: hr(1 + i / 100), cap: 1, lat: 10, lng: 10 }));
+for (const id of fullIds) await sql(`insert into public.session_rsvps (session_id, user_id) values ($1, $2)`, [id, D]);
+await p.selectOption('#ses-when-f', 'any'); await p.waitForTimeout(700);
+await p.check('.ses-check input'); await p.waitForTimeout(400);
+ok(await p.locator(body + ' .ses-row').count() === 0 && !/No public sessions match/.test(await txt(p, body)) && await p.locator(body + ' [data-act=more]').isVisible(), 'Has space with a page of full sessions shows Show more, not a false empty state');
+await p.click(body + ' [data-act=more]'); await p.waitForTimeout(700);
+ok(/Today only/.test(await txt(p, body)), 'Show more reaches the sessions that have space');
+await p.uncheck('.ses-check input'); await ctx.close();
+await db.exec(`delete from public.flight_sessions where title like 'Full %' or title in ('Today only', 'Later day')`);
+
 ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
 await b.close();
 await db.close();

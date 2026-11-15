@@ -1,5 +1,5 @@
 // The plain side of flight sessions (src/sessions.js): validation of what the database returns, which controls to offer when, and the database wrapper. No browser, no network.
-import { cleanSession, cleanPerson, sessionState, whenText, createSessions, cleanPublic, cleanInvitation, cleanNotice, cleanTakedown, cleanInviteList, capacityText, roleText, seriesText, linkUrl, tokenFromHash, metres } from '../src/sessions.js';
+import { cleanSession, cleanPerson, sessionState, whenText, createSessions, cleanPublic, cleanInvitation, cleanNotice, cleanTakedown, cleanInviteList, capacityText, roleText, seriesText, linkUrl, tokenFromHash, metres, todayRange, stillOn, nextExpiry } from '../src/sessions.js';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 
 const H = 3600_000, now = Date.UTC(2026, 10, 14, 12, 0, 0);
@@ -110,3 +110,23 @@ await api2.createSeries({ title: 'T', lat: 1, lng: 2, localStart: '2026-11-14T10
 ok(calls2.at(-1)[0] === 'create_session_series' && calls2.at(-1)[1].p_local_start === '2026-11-14T10:00:00' && calls2.at(-1)[1].p_count === 4 && calls2.at(-1)[1].p_frequency === 'weekly', 'createSeries sends the wall time, duration, repeat and count');
 await api2.invite('s1', 'ABCDE-12345', 'series'); await api2.createLink('s1', { scope: 'series', hours: 24, maxUses: 5 }); await api2.redeemLink('tok'); await api2.report('s1', 'spam', 'n'); await api2.removePerson('s1', 'r1');
 ok(calls2.slice(-5).map((c) => c[0]).join() === 'invite_to_session,create_session_link,redeem_session_link,report_session,remove_session_participant' && calls2.at(-4)[1].p_expires_hours === 24 && calls2.at(-4)[1].p_max_uses === 5 && calls2.at(-3)[1].p_token === 'tok' && calls2.at(-2)[1].p_reason === 'spam', 'invitations, links, reports and removals call the right functions');
+
+// ---------- Today filter, expiry guard (injected clock; the zone is switched last because it changes every Date)
+{
+  const prev = process.env.TZ;
+  const range = (tz, y, mo, d, h, mi) => { process.env.TZ = tz; return todayRange(new Date(y, mo, d, h, mi).getTime()); };
+  let r = range('America/New_York', 2026, 10, 1, 0, 30); // the day the clocks go back: 25 hours long
+  ok(r.from === '2026-11-01T04:30:00.000Z' && r.until === '2026-11-02T04:59:59.999Z', 'Today ends at the next local midnight minus 1 ms on a 25-hour day: ' + r.until);
+  r = range('America/New_York', 2026, 2, 8, 12, 0); // spring forward: 23 hours long
+  ok(r.until === '2026-03-09T03:59:59.999Z', 'Today on a 23-hour day: ' + r.until);
+  r = range('Asia/Singapore', 2026, 10, 15, 23, 59);
+  ok(Date.parse(r.until) - Date.parse(r.from) === 60_000 - 1, 'one minute before local midnight: Today is that minute');
+  r = range('Asia/Singapore', 2026, 10, 15, 0, 0);
+  ok(Date.parse(r.until) - Date.parse(r.from) === 86_400_000 - 1, 'at local midnight Today is the whole day, until 23:59:59.999');
+  r = range('Pacific/Kiritimati', 2026, 10, 15, 10, 0);
+  ok(new Date(Date.parse(r.until) + 1).getHours() === 0 && new Date(Date.parse(r.until) + 1).getMinutes() === 0, 'the end plus 1 ms is a local midnight (UTC+14)');
+  if (prev === undefined) delete process.env.TZ; else process.env.TZ = prev;
+  const L = [{ endsAt: iso(-1) }, { endsAt: iso(3) }, { endsAt: iso(1) }, { endsAt: new Date(now).toISOString() }];
+  ok(stillOn(L, now).length === 2 && stillOn(L, now).every((x) => Date.parse(x.endsAt) > now), 'expired rows (and one ending exactly now) are dropped');
+  ok(nextExpiry(L, now) === now + H && nextExpiry([{ endsAt: iso(-2) }], now) === null && nextExpiry([], now) === null, 'the next expiry is the earliest end still ahead');
+}

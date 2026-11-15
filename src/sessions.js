@@ -119,6 +119,23 @@ export function whenText(startsAt, endsAt, locale = 'en-GB') {
   return a.toDateString() === b.toDateString() ? `${d(a)}, ${h(a)} to ${h(b)}` : `${d(a)} ${h(a)} to ${d(b)} ${h(b)}`;
 }
 
+/** The viewer-local "Today" window for the Discover filter: from now until the next local midnight minus 1 ms (DST-safe: calendar arithmetic, never +24 h). */
+export function todayRange(now = Date.now()) {
+  const d = new Date(now);
+  const next = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 0, 0, 0, 0);
+  return { from: new Date(now).toISOString(), until: new Date(next.getTime() - 1).toISOString() };
+}
+
+/** Rows that have not ended yet (a cached list can outlive a session). */
+export const stillOn = (list, now = Date.now()) => list.filter((s) => Date.parse(s.endsAt) > now);
+
+/** The earliest end time among sessions that are still on, as epoch ms, or null (when to look at the list again). */
+export function nextExpiry(list, now = Date.now()) {
+  let min = null;
+  for (const s of list) { const t = Date.parse(s.endsAt); if (t > now && (min === null || t < min)) min = t; }
+  return min;
+}
+
 /** Straight-line distance in metres (for ordering and for "near here" text only; the database does the real checks). */
 export function metres(aLat, aLng, bLat, bLng) {
   const r = Math.PI / 180, dLat = (bLat - aLat) * r, dLng = (bLng - aLng) * r;

@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-11-15 (Flight Sessions Discover, wave A)
+- Discover: date filter gains **Today (your time)** (from now to the next local midnight minus 1 ms, DST-safe; no SQL change), cached rows that have ended are dropped and the list is re-checked at the earliest end time, and `Has space` no longer shows a false empty state or hides `Show more`. Backlog `FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md` (`in-progress/`).
+
 ## 2026-11-15 (trip marker map view)
 - Trips: `Show this trip` shows one trip's pins, routes and Side Quest links on the map (page state only; clears when the Trips tab is left). Completed trips are off the global map unless `Show completed trips` (Points of Interest tab) is on. Name tag shows the trip name under the marker name; pins carry an `aria-label` with the trip. Backlog `TRIP_MARKER_MAP_VISIBILITY_AND_DISAMBIGUATION_BACKLOG.md` (`completed/`).
 

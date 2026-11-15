@@ -2,7 +2,7 @@
 // (hosting, joined, history, updates), Invitations, a session's detail with its host tools, and the New session form. The map point picker closes the dialog while the person
 // chooses on the map and reopens it with the draft intact. The database decides everything (sessions.js); this only draws. Plain DOM, textContent only.
 import L from 'leaflet';
-import { createSessions, sessionState, whenText, capacityText, roleText, seriesText, linkUrl, tokenFromHash } from './sessions.js';
+import { createSessions, todayRange, stillOn, nextExpiry, sessionState, whenText, capacityText, roleText, seriesText, linkUrl, tokenFromHash } from './sessions.js';
 import { createSessionForm, clearDraft } from './sessions-create.js';
 import { localDate, localTime } from './sessions-recurrence.js';
 import { createExplorer } from './sessions-map-explorer.js';
@@ -75,7 +75,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   // ---- the map explorer: the hub steps aside (state kept) and a non-modal dock lists the same sessions beside the interactive map
   let exploring = null; // { src: 'discover' | 'mine' | 'invites' | 'one', id }: which list the explorer shows (the hub's own data, read again on every update)
   const upcomingMine = () => { const t = Date.now(); return mine.sessions.filter((s) => (s.isHost || s.iRsvped || s.myAttended) && s.status === 'scheduled' && Date.parse(s.endsAt) > t); };
-  const discoverList = () => (pub.space ? pub.list.filter((s) => s.capacity === null || s.rsvpCount < s.capacity) : pub.list).map((p) => ({ ...(mine.sessions.find((x) => x.id === p.id) ?? asSession(p)), distanceKm: p.distanceKm }));
+  const discoverList = () => (pub.space ? stillOn(pub.list).filter((s) => s.capacity === null || s.rsvpCount < s.capacity) : stillOn(pub.list)).map((p) => ({ ...(mine.sessions.find((x) => x.id === p.id) ?? asSession(p)), distanceKm: p.distanceKm }));
   function exploreItems() {
     if (!exploring) return [];
     if (exploring.src === 'one') { const s = currentOf(exploring.id); return s && (s.visibility === 'public' || signedIn()) ? [s] : []; }
@@ -126,7 +126,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (!more && !(quiet && pub.status === 'ready')) { pub = { ...pub, status: 'loading', offset: 0 }; if (dlg.open) paint(); }
     const f = { limit: PAGE, offset: more ? pub.offset : 0, query: pub.query.trim() || undefined };
     if (pub.near !== 'any') { const c = map.getCenter().wrap(); f.lat = Math.round(c.lat * 1e4) / 1e4; f.lng = Math.round(c.lng * 1e4) / 1e4; f.radiusKm = Number(pub.near); }
-    const now = Date.now(); if (pub.when === 'week') { f.from = new Date(now).toISOString(); f.until = new Date(now + 7 * 864e5).toISOString(); } else if (pub.when === 'month') { f.from = new Date(now).toISOString(); f.until = new Date(now + 30 * 864e5).toISOString(); }
+    const now = Date.now(); if (pub.when === 'today') { Object.assign(f, todayRange(now)); } else if (pub.when === 'week') { f.from = new Date(now).toISOString(); f.until = new Date(now + 7 * 864e5).toISOString(); } else if (pub.when === 'month') { f.from = new Date(now).toISOString(); f.until = new Date(now + 30 * 864e5).toISOString(); }
     try {
       const rows = await api.listPublic(f);
       if (me !== seqPub) return;
@@ -134,7 +134,21 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     } catch (e) { if (me !== seqPub) return; log.warn('sessions', 'public list failed', e); pub = { ...pub, status: 'error' }; }
     if (dlg.open) paint();
     ex.update();
+    armExpiry();
   }
+  // A loaded list can outlive its sessions: look at it again when the earliest one ends (one timer, only while the hub or the explorer shows it, never while the page is hidden).
+  let expiryTimer = 0;
+  function armExpiry() {
+    clearTimeout(expiryTimer); expiryTimer = 0;
+    if (document.hidden || !(dlg.open || exploring) || pub.status !== 'ready') return;
+    const t = nextExpiry(pub.list); if (t === null) return;
+    expiryTimer = setTimeout(() => {
+      expiryTimer = 0;
+      if (dlg.open && view === 'list' && section === 'discover') paint();
+      ex.update(); armExpiry();
+    }, Math.min(Math.max(t - Date.now() + 250, 1000), 2147e6));
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { clearTimeout(expiryTimer); expiryTimer = 0; return; } if (dlg.open && view === 'list' && section === 'discover') paint(); ex.update(); armExpiry(); });
 
   // ---- the summary the dashboard and the Friends card show
   function summaryNow() {
@@ -227,7 +241,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     const near = el('select'); near.setAttribute('aria-label', 'Distance from the map centre'); near.id = 'ses-near';
     for (const [v, t] of [['any', 'Anywhere'], ['10', 'Within 10 km'], ['25', 'Within 25 km'], ['100', 'Within 100 km']]) near.append(new Option(t, v)); near.value = pub.near;
     const when = el('select'); when.setAttribute('aria-label', 'When'); when.id = 'ses-when-f';
-    for (const [v, t] of [['any', 'Any date'], ['week', 'Next 7 days'], ['month', 'Next 30 days']]) when.append(new Option(t, v)); when.value = pub.when;
+    for (const [v, t] of [['any', 'Any date'], ['today', 'Today (your time)'], ['week', 'Next 7 days'], ['month', 'Next 30 days']]) when.append(new Option(t, v)); when.value = pub.when;
     const sl = el('label', 'ses-check'); const sp = el('input'); sp.type = 'checkbox'; sp.checked = pub.space; sl.append(sp, el('span', '', 'Has space'));
     form.append(q, near, when, sl);
     const apply = () => { pub = { ...pub, query: q.value, near: near.value, when: when.value, space: sp.checked }; loadPublic(); };
@@ -239,10 +253,11 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     else if (pub.status === 'error') { f.append(el('p', 'hint', 'Public sessions are unavailable right now.')); const r = btn('Try again'); r.addEventListener('click', () => loadPublic()); f.append(r); }
     else {
       const list = discoverList();
-      if (!list.length) f.append(empty('No public sessions match. Try a wider distance or date, or plan one yourself.'));
+      if (!list.length && !pub.more) f.append(empty('No public sessions match. Try a wider distance or date, or plan one yourself.'));
       else {
-        f.append(exploreButton('discover'));
-        for (const s of discoverList()) f.append(rowFor(s, []));
+        if (list.length) f.append(exploreButton('discover'));
+        else f.append(el('p', 'hint', 'No session on this page matches. More may be on the next page.'));
+        for (const s of list) f.append(rowFor(s, []));
         if (pub.more) { const m = btn('Show more'); m.dataset.act = 'more'; m.addEventListener('click', () => loadPublic({ more: true })); f.append(m); }
       }
     }

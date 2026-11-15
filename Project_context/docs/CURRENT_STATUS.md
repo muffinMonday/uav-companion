@@ -1,4 +1,9 @@
-## Latest: China airspace restored (2026-11-15; owner authorized deploy)
+## Latest: Flight Sessions Discover + auto-attendance backlog, wave A (2026-11-15; owner authorized commit/push/hosted migrations/deploy:live for this backlog only, flag stays 0, no Wave E)
+- Backlog: `backlogs/in-progress/FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md` (rewritten from the review plan; waves A, B1, B2, C, D). Docs commit `fe21279`.
+- **Wave A** (frontend only): `todayRange`/`stillOn`/`nextExpiry` in `sessions.js`; Today option, expiry guard and timer, `Has space` fix in `sessions-hub.js`. Tests: `sessions-unit` 66 (DST with injected zones), browser `sessions` 73. Full `npm test` 124/125; the one failure is `diag` (it imports `/src/log.js`, which the `vite preview` server on :5173 does not serve; environmental). Note: the :5173 server is `vite preview` of `dist/`, so run `npm run build` (with `VITE_SUPABASE_*` from `.env.development.local` in the shell) before browser tests.
+- Next: B1 previews, B2 migration `20261119100000`, C `20261119110000`, D. Drafts are in progress.
+
+## Earlier: China airspace restored (2026-11-15; owner authorized deploy)
 - A later deploy had published Hubei only (gh-pages e10f6ee) from a stale git-ignored `public/data`. Restored six regions from 8018ea0; source 777502d, production ccb2644. `npm run deploy` now restores published regions and runs `scripts/preflight-data.js` (hashes, references, no published region missing; approved removals only via `data/removed-regions.json`). Legend, point-check, Help, Map Configs, README, ATTRIBUTIONS name Hubei (official) vs KDji (third-party snapshot).
 - Tests: unit suites pass (prod-data-unit 23 checks), selected-airspace, html-dom, dashboard 89, layers, launchloc, prefs, sg pass. `responsive` times out in this environment with and without the change. Not verified: pixel render of the five KDji regions on the live map, real phone. Details: [release record](../../docs/china-airspace/SELECTED_SOURCE_RELEASE.md#production-regression-and-repair-2026-11-15). Rollback ZIPs in planning/regression-fix/.
 
