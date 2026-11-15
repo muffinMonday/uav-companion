@@ -1,4 +1,7 @@
 ## 2026-11-15 (Mascot and personality integration, Phases 0 to 2)
+
+## 2026-11-15 ? Sichuan coverage replacement
+- PR #11 merged `ad25a34`, production `6dd8ede`: 468 original unmasked KDji polygons replace Chengdu. All 57 former source features and seven unaffected regions preserved. Google OAuth retained; focused source/point/rendering, preflight and OAuth checks pass. Live artifact hashes, all 468 interiors, outside-Chengdu pixels/point metadata and Google provider redirect verified. No acquisition/GEOS repeat or provider/database change. [Release evidence](../../docs/china-airspace/evidence/sichuan-release.json).
 - New app icon and web manifest; mascot on the quick setup, dashboard greeting, Help header and the empty Trips, Saved Places and Discover states. Decorative only. Thumbs-up celebration deferred (needs a server-side milestone signal). Backlog `backlogs/in-progress/MASCOT_PERSONALITY_INTEGRATION.md`.
 
 # Changelog

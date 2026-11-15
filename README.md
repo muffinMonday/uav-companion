@@ -84,7 +84,7 @@ The repository currently contains published coverage for:
 
 For these five, the polygons represent only the geographic coverage that was captured. A spot with no polygon is unknown: it does not establish restricted or unrestricted airspace. Release evidence: [selected-source release](docs/china-airspace/SELECTED_SOURCE_RELEASE.md), [Chongqing express release](docs/china-airspace/EXPRESS_CHONGQING_CHENGDU.md). Attribution: [docs/ATTRIBUTIONS.md](docs/ATTRIBUTIONS.md).
 
-**Sichuan replacement prepared; release deferred for active Google OAuth work:** 468 original KDji polygons acquired through 16 overlapping province-wide windows on 2026-11-15. No administrative clipping or rendering mask. The candidate replaces the live 57-polygon Chengdu registration; all 57 original features are unchanged. [Sichuan source, validation and release status](docs/regions/cn-sichuan.md).
+**Sichuan (live):** 468 original KDji polygons acquired through 16 overlapping province-wide windows on 2026-11-15. No administrative clipping or rendering mask. Replaces the former 57-polygon Chengdu registration; all 57 original features are unchanged. [Sichuan source, validation and release status](docs/regions/cn-sichuan.md).
 
 **Singapore:** published OneMap-derived restricted/no-fly layers represented as `restrict` data. The map is approximate; the official OneMap Drone Query remains the authoritative check.
 

@@ -29,7 +29,10 @@ test('complete Sichuan archive preserves all 468 original interiors without an a
 
 test('approved replacement is atomic and cannot excuse unrelated production region loss', () => {
   const cand=inspectTree(path.join(root,'public/data')),prod=inspectTree(path.join(root,'planning/sichuan/production/data'));
-  const removals=readRemovals(path.join(root,'data/removed-regions.json'));
+  // Replay the reviewed approval against the saved pre-release baseline after release cleanup.
+  const active=readRemovals(path.join(root,'data/removed-regions.json'));
+  const completed=read('docs/china-airspace/evidence/sichuan-release.json').completedRemovalApproval || [];
+  const removals=active.size ? active : new Map(completed.map(r=>[r.id,r]));
   assert.deepEqual([...removals.keys()],['cn-chengdu']);
   assert.deepEqual(cand.errors,[]); assert.deepEqual(prod.errors,[]);
   assert.deepEqual(compareToProduction(cand,prod,removals),[]);
