@@ -1,6 +1,7 @@
 ## Latest: Mascot sizing refinement and dashboard greeting alignment (2026-11-15; owner authorized commit, push and deploy:live for Phases 0 to 2 plus this alignment only; Phase 3 still deferred)
 - Backlog `backlogs/in-progress/MASCOT_PERSONALITY_INTEGRATION.md` section 12 (sizing refinement, final alignment, evidence). Greeting picture now sits left of the greeting text, vertically centred; sizes unchanged. CSS and tests only; no database change.
 - Tests: `mascots` 181/181, `dashtall` 25, `dashboard` 89, `mascot-unit` 20, unit suites all pass, build passes, full `npm test` 134 assertions ok with `diag` failing (known environmental, :5173 preview).
+- Released: commit `9e81d1d` pushed to `origin/main`; `npm run deploy:live` published gh-pages `a49ea7f`; live `index-B9mEaV0r.css` and `index-B-4t5v9O.js` match the local build (SHA-256 prefixes equal); guest screenshot of the live dashboard shows the picture left of the greeting. Phase 3 still deferred.
 
 ## Previous: Mascot and personality integration, Phases 0 to 2 (2026-11-15; owner authorized commit, push, one deploy:live for this work only)
 - Backlog `backlogs/in-progress/MASCOT_PERSONALITY_INTEGRATION.md` (section 11: findings, decisions, evidence). Frontend and assets only; no database change.
