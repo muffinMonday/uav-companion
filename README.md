@@ -84,6 +84,12 @@ The repository currently contains published coverage for:
 
 For these five, the polygons represent only the geographic coverage that was captured. A spot with no polygon is unknown: it does not establish restricted or unrestricted airspace. Release evidence: [selected-source release](docs/china-airspace/SELECTED_SOURCE_RELEASE.md), [Chongqing express release](docs/china-airspace/EXPRESS_CHONGQING_CHENGDU.md). Attribution: [docs/ATTRIBUTIONS.md](docs/ATTRIBUTIONS.md).
 
+**Prepared, not yet deployed:** Chengdu retains 57 original KDji polygons and applies
+an OpenStreetMap administrative city boundary to both rendering and point checks.
+Only 31 polygons intersect the city; outside-city geometry never establishes
+suitable flight. Release is deferred for concurrent mascot work.
+[Chengdu provenance, validation and release status](docs/regions/cn-chengdu.md).
+
 **Singapore:** published OneMap-derived restricted/no-fly layers represented as `restrict` data. The map is approximate; the official OneMap Drone Query remains the authoritative check.
 
 Each region declares its semantics, coordinate system, source authority, effective date, licence/terms, coverage boundary and publication policy in `source.json`. Region provenance is documented under [`docs/regions/`](docs/regions/).

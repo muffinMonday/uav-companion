@@ -1,2 +1,5 @@
 # Approval fixtures bind exact bytes across Windows and Unix checkouts.
 tests/fixtures/airspace/* text eol=lf
+# Chengdu's published mask and GEOS witnesses have recorded byte hashes.
+data/regions/cn/chengdu/boundary.geojson text eol=lf
+docs/china-airspace/evidence/chengdu-mask-geos.json text eol=lf
