@@ -68,11 +68,7 @@ existing region reader, builder, boundary handling and manifest format.
 - `input`: complete FeatureCollection or `.shp` with adjacent `.shx`, `.dbf`, `.prj`.
 - `boundary`: reviewed WGS84 Polygon/MultiPolygon or Feature. The boundary distinguishes
   unknown coverage from outside-zone answers; it never clips the source geometry.
-  For the Chengdu selected-source city candidate, `region.maskToBoundary: true`
-  additionally requires this boundary for positive point queries and canvas
-  rendering, with no coverage margin. Original source/PMTiles geometry stays intact;
-  navigation bounds use the mask extent. Missing or invalid masks fail closed.
-  [Chengdu validation and reproduction](../regions/cn-chengdu.md).
+  Administrative rendering masks were retired by the [Sichuan replacement](SICHUAN_REPLACEMENT.md). Selected-source geometry is unmasked; historical Chengdu artifacts require their matching historical application for rollback.
 - `expected.features` and `expected.contentSha256`: reviewed complete-source count and
   canonical content hash (`sha256(stringify(collection))` from acquisition `core.js`).
   For a shapefile, the collection is the result of the existing `shapefile.read` dependency.

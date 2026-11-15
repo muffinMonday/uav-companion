@@ -1,0 +1,189 @@
+{
+  "status": "validated release ready for PR merge and deployment",
+  "checkedOn": "2026-11-15",
+  "branch": "feature/sichuan-replacement",
+  "mainBaseline": "8c802711a3d4ab769d53c5bc5a9b873aa77fd89d",
+  "productionBaseline": "b9e23786f500f8209287176337e8876b67924ca1",
+  "previousPR": {
+    "number": 10,
+    "merged": true
+  },
+  "rollback": {
+    "file": "planning/sichuan/production-baseline.zip",
+    "sha256": "9ca4d74eb02e562f7c53e01847e98d33a0ccb9909ae2b1fbd795d8a5bf4173a3",
+    "contents": "Complete gh-pages tree; archived with core.autocrlf=false to preserve hashed JSON bytes"
+  },
+  "originalChengdu": {
+    "captures": "planning/sichuan/chengdu-capture-network",
+    "source": "planning/sichuan/chengdu-source/zones.geojson",
+    "contentSha256": "bac39add1ed4fe93fb9c7627b44869c9a3c192d12a3f151fffafe2d00a3e56be",
+    "pmtiles": "cn/cn-chengdu.66de882a.pmtiles",
+    "pmtilesSha256": "66de882a82a0a9300ca9008e0bca9280b10d13aa54128a1004162f38fbb800f1",
+    "mask": "cn/cn-chengdu.boundary.a54e47db.json",
+    "maskSha256": "a54e47db27521d76fb1d25d9443d0294706c1d96d973564f3f699ed6d71d0e92",
+    "all57FeaturesUnchanged": true,
+    "sourceFileSha256": "cf71f5e6ad41a4732720ecf869fa9b5f5180837b12b93243124de8287748ab3d"
+  },
+  "sichuan": {
+    "id": "cn-sichuan",
+    "country": "cn",
+    "name": "Sichuan",
+    "nameZh": "四川",
+    "file": "cn/cn-sichuan.493d55a3.pmtiles",
+    "boundary": null,
+    "bounds": [
+      97.382812,
+      26.049327,
+      108.542536,
+      34.314628
+    ],
+    "coverageBounds": [
+      97.382812,
+      26.049327,
+      108.542536,
+      34.314628
+    ],
+    "cells": 468,
+    "minZoom": 3,
+    "maxZoom": 14,
+    "semantics": "allow",
+    "maxHeightM": null,
+    "source": {
+      "authority": "KDji third-party UOM reference mirror",
+      "url": "https://kdji.cn/support/nfz-map.html",
+      "effective": null,
+      "publishedMonth": "2026-05",
+      "snapshotAt": "2026-09-22T05:49:15.173Z",
+      "contentSha256": "8e12e3ed54ca3768bd190406558f813a0abf76bbc369eaccf75ec7622faa4ffa",
+      "acquiredOn": "2026-11-15"
+    },
+    "license": "LicenseRef-OwnerAttested-KDji-Project",
+    "crs": "wgs84",
+    "crsVerified": false,
+    "coverageMode": "positive-only",
+    "sourceConfidence": {
+      "mode": "selected-source",
+      "type": "third-party-uom-snapshot",
+      "alignment": "declared-only",
+      "completeness": "unverified",
+      "currency": "unverified",
+      "temporaryRestrictions": "not-included",
+      "flightPermission": "unverified",
+      "rightsBasis": "owner-attested-project-authorization"
+    },
+    "officialMap": {
+      "label": "Verify with UOM",
+      "url": "https://uom.caac.gov.cn/"
+    },
+    "sha256": "493d55a35b30e2a86f39282152af866c999d37a22001bb46b460995c50720c28",
+    "bytes": 8547247,
+    "addressedTiles": 129488,
+    "rawSourceSha256": "094f6dad6d26641e24b4e86a72e3c6962f2bdef519cc0f16df59eb7a9e850451",
+    "successfulRequests": 16,
+    "networkAttempts": 17,
+    "occurrences": 593,
+    "uniquePolygons": 468,
+    "duplicates": 125,
+    "conflicts": 0
+  },
+  "geometryPolicy": "Complete original union, no coordinate/property changes, clipping, repair, administrative mask or query rectangle mask; existing MVT geometry quantization and attribute omission remain unchanged",
+  "validation": {
+    "geos": "All 468 valid, topology/extent/coordinate identity after winding normalization; no positive-area source overlaps",
+    "pmtiles": "All 468 original feature interior witnesses pass archive and app point reads",
+    "focusedTests": "4 passed; no skips, including real outside-Chengdu pixels, overlap, holes, unknown and existing authoritative verdicts",
+    "unaffectedRegions": "All seven regional descriptors and referenced artifacts byte-identical/deep-equal to baseline",
+    "preflight": "8 regions versus production 8; cn-chengdu removed by approval, cn-sichuan added; rejects missing replacement and every unrelated loss",
+    "applicationBuild": "passed, existing bundle-size warning",
+    "fullSuite": {
+      "command": "npm test (temporary test-only localhost resolver -> 127.0.0.1 isolated Vite app)",
+      "unitSuites": 64,
+      "browserSuites": 72,
+      "passed": 136,
+      "failed": 0,
+      "seconds": 748,
+      "configuration": "Existing ignored .env.development.local copied byte-for-byte; no provider configuration changed",
+      "initialAttempt": "Stopped: localhost resolved to another pre-existing IPv6 preview and worktree test config was absent. Corrected complete rerun passes, including diag."
+    },
+    "candidatePackage": "Extracted ZIP passes 8-region preflight and all source/capture checksums"
+  },
+  "coordination": {
+    "ownerConfirmed": "Claude completed OAuth and deployed it; owner authorizes PR #11 reconciliation, merge and deploy",
+    "merge": "ready after all focused checks passed",
+    "deploy": "not run"
+  },
+  "candidatePackage": {
+    "file": "planning/sichuan/validated-data.zip",
+    "bytes": 13571612,
+    "sha256": "99ac259b3ab9e9b7a1df38f9df2cd1c6c97fa49818cd2d4f7fbdfad47ee7ff33",
+    "contents": "Complete public/data; original Sichuan source; all 16 raw captures, HTTP/checkpoint/plan/diagnostic evidence; original Chengdu source and captures; acquisition config and live baseline check"
+  },
+  "liveBaseline": {
+    "checkedAt": "2026-11-15T08:51:52.951Z",
+    "url": "https://muffinmonday.github.io/uav-companion/data/",
+    "regions": [
+      "cn-chengdu",
+      "cn-chongqing",
+      "cn-guangdong",
+      "cn-hubei",
+      "cn-hunan",
+      "cn-jilin",
+      "cn-ningxia"
+    ],
+    "checks": [
+      {
+        "file": "cn/cn-chengdu.66de882a.pmtiles",
+        "sha256": "66de882a82a0a9300ca9008e0bca9280b10d13aa54128a1004162f38fbb800f1",
+        "bytes": 5744094
+      },
+      {
+        "file": "cn/cn-chengdu.boundary.a54e47db.json",
+        "sha256": "a54e47db27521d76fb1d25d9443d0294706c1d96d973564f3f699ed6d71d0e92",
+        "bytes": 171437
+      }
+    ]
+  },
+  "implementationCommit": "c3abe232d97c4bff74f7dc48bd8a0a471807a462",
+  "pullRequest": {
+    "number": 11,
+    "url": "https://github.com/muffinMonday/uav-companion/pull/11",
+    "draft": true,
+    "merged": false
+  },
+  "reconciliation": {
+    "checkedOn": "2026-11-15",
+    "main": "de71b907348ceb1d4911ab536c179e65dcd6602d",
+    "production": "02cb2a0d3cca5b089486727ddf5727f573f1ee76",
+    "method": "Merge latest main into existing PR branch; only CURRENT_STATUS.md content conflict, both checkpoints preserved",
+    "oauthFiles": "Byte-identical to origin/main; no auth/provider/migration edits",
+    "sourceIntegrity": "Original source, PMTiles and candidate ZIP checksums unchanged; no acquisition or GEOS repeat",
+    "rollback": {
+      "file": "planning/sichuan/oauth-production-baseline.zip",
+      "sha256": "c07673793098981baecb813e357638d01850c2685dfdd73975bc1b00ce3b60ad",
+      "contents": "Complete latest live application including Google OAuth and all 8 original regional artifacts"
+    },
+    "liveOAuthBaseline": {
+      "checkedAt": "2026-11-15T09:48:15.387Z",
+      "baseline": "02cb2a0d3cca5b089486727ddf5727f573f1ee76",
+      "liveAsset": "assets/index-Bulrl3dP.js",
+      "sha256": "f6bc671e4ceab0944cc3583fd1d4fe607d82c98faba0d89203b196bcb284ddc6",
+      "googleSignInUI": true,
+      "googleProviderAuthorizeStatus": 302,
+      "googleProviderRedirectHost": "accounts.google.com",
+      "realUserSignIn": "Not performed; no credentials supplied",
+      "chengduLive": true
+    },
+    "focused": {
+      "sichuanAndSelected": 4,
+      "productionData": 26,
+      "googleUnit": 16,
+      "build": "passed",
+      "preflight": "8 regions vs production 8; only approved Chengdu-to-Sichuan replacement",
+      "googleBrowser": {
+        "passed": 37,
+        "failed": 0,
+        "scope": "Mocked Google redirect/return, email fallback, signed-in state, desktop and phone layout; no real user sign-in"
+      }
+    },
+    "fullSuite": "Prior 136-suite result reused per owner instruction; reconciliation changes no shared runtime behavior"
+  }
+}

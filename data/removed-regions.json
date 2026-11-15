@@ -1,1 +1,11 @@
-{ "removed": [] }
+{
+  "removed": [
+    {
+      "id": "cn-chengdu",
+      "replacementId": "cn-sichuan",
+      "reason": "Owner-approved replacement with cn-sichuan: complete province-wide acquired KDji original polygons, unmasked. Release only as one validated artifact set.",
+      "approvedBy": "Repository owner (express Sichuan replacement authorization, 2026-11-15)",
+      "date": "2026-11-15"
+    }
+  ]
+}
