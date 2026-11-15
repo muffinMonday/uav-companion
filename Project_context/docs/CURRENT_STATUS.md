@@ -1,4 +1,8 @@
-## Latest: Mascot and personality integration, Phases 0 to 2 (2026-11-15; owner authorized commit, push, one deploy:live for this work only)
+## Latest: Mascot sizing refinement and dashboard greeting alignment (2026-11-15; owner authorized commit, push and deploy:live for Phases 0 to 2 plus this alignment only; Phase 3 still deferred)
+- Backlog `backlogs/in-progress/MASCOT_PERSONALITY_INTEGRATION.md` section 12 (sizing refinement, final alignment, evidence). Greeting picture now sits left of the greeting text, vertically centred; sizes unchanged. CSS and tests only; no database change.
+- Tests: `mascots` 181/181, `dashtall` 25, `dashboard` 89, `mascot-unit` 20, unit suites all pass, build passes, full `npm test` 134 assertions ok with `diag` failing (known environmental, :5173 preview).
+
+## Previous: Mascot and personality integration, Phases 0 to 2 (2026-11-15; owner authorized commit, push, one deploy:live for this work only)
 - Backlog `backlogs/in-progress/MASCOT_PERSONALITY_INTEGRATION.md` (section 11: findings, decisions, evidence). Frontend and assets only; no database change.
 - Built: icon set and manifest (`public/icons`, `public/manifest.webmanifest`, head links), `src/mascot-ui.js`, waving on the splash and dashboard greeting, thinking in Help and the empty Trips, Saved Places and Discover states, `scripts/make-mascots.mjs`, `strip-local.js` drops `dist/mascots`. Phase 3 (thumbs-up) deferred: no server milestone signal.
 - Tests: new `mascot-unit`, browser `mascots` 173; `html-dom` fixture and test normaliser updated for the new head links; unit suites all pass; full `npm test` all pass except `diag` (environmental, :5173 preview does not serve /src/log.js). Screenshots: 18 after-shots (splash, dashboard, Help; desk and phone, both themes) viewed in `~/UAV_UI_Screenshots/mascot-after`; no full before/after set. Not verified: real phone, Safari home-screen icon, screen reader, dark-theme art edges at 1x on a real display.

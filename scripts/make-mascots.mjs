@@ -1,7 +1,7 @@
 // Derives the web images from the owner-approved originals in public/mascots/ (never edited, never shipped: strip-local.js removes them from dist).
 //   node scripts/make-mascots.mjs
 // Source -> output (nothing is redrawn; only resized, and cropped for the small favicons):
-//   waving.png, thinking.png  -> src/assets/mascots/<name>.webp   256 px, used by src/mascot-ui.js
+//   waving.png, thinking.png  -> src/assets/mascots/<name>.webp   320 px, used by src/mascot-ui.js
 //   icon.png (a JPEG despite the name) -> public/icons/icon-512.png, icon-192.png, apple-touch-icon.png (180, whole picture)
 //                                         favicon-32.png, favicon-48.png (head and goggles crop: the whole picture is unreadable at 16 to 48 px)
 // No image library: the installed browser resizes and encodes through a canvas (the same browser the tests use).
@@ -43,7 +43,7 @@ await page.evaluate(() => {
   };
 });
 const save = (out, url) => { const buf = Buffer.from(url.split(',')[1], 'base64'); writeFileSync(file(out), buf); console.log(out.padEnd(40), buf.length + ' bytes'); };
-for (const name of MASCOTS) save(`src/assets/mascots/${name}.webp`, await page.evaluate(([s, n]) => window.derive(s, n, 'image/webp', 0.86), [b64(`public/mascots/${name}.png`, 'image/png'), 256]));
+for (const name of MASCOTS) save(`src/assets/mascots/${name}.webp`, await page.evaluate(([s, n]) => window.derive(s, n, 'image/webp', 0.86), [b64(`public/mascots/${name}.png`, 'image/png'), 320]));
 const icon = b64('public/mascots/icon.png', 'image/jpeg');
 for (const i of ICONS) save(i.out, await page.evaluate(([s, n, c]) => window.derive(s, n, 'image/png', undefined, c), [icon, i.size, i.crop ?? null]));
 await browser.close();

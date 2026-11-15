@@ -35,9 +35,9 @@ for (const [name, vp, touch] of [['desktop', { width: 1300, height: 850 }, false
   const { ctx, p } = await open({ vp, touch, dash: null, theme });
   await p.waitForSelector('#splash[open]');
   const i = await info(p, '#splash .mascot'); decor(i, `splash, ${name}, ${theme}`);
-  ok(i[0].h <= 56 && i[0].w <= 56, `splash picture is small (${Math.round(i[0].w)} px)`);
+  ok(i[0].w === (vp.width <= 520 ? 96 : 120) || vp.height <= 520, `splash picture is ${Math.round(i[0].w)} px`);
   const h2 = await p.$eval('#splash-title', (e) => e.getBoundingClientRect().height);
-  ok(h2 < 90, 'the heading did not get squeezed into a tall column (' + Math.round(h2) + ' px)');
+  ok(h2 < 110, 'the heading did not get squeezed into a tall column (' + Math.round(h2) + ' px)');
   ok(await noOverflow(p, '#splash'), 'splash has no sideways scroll');
   for (const s of ['#splash-trip', '#splash-flight', '#splash-skip']) { await p.locator(s).scrollIntoViewIfNeeded(); ok(await reachable(p, s), s + ' is reachable'); }
   ok(p.__bad.length === 0, 'no image request failed ' + p.__bad.join(','));
@@ -48,20 +48,22 @@ for (const [name, vp, touch] of [['desktop', { width: 1300, height: 850 }, false
   ok(await noOverflow(p, '#splash'), 'splash at 200% zoom has no sideways scroll'); await p.locator('#splash-skip').scrollIntoViewIfNeeded(); ok(await reachable(p, '#splash-skip'), 'Skip is reachable at 200% zoom'); await ctx.close(); }
 
 // ---- the dashboard greeting and Help
-for (const [name, vp, touch, size] of [['desktop', { width: 1300, height: 850 }, false, 64], ['phone 390', { width: 390, height: 844 }, true, 48], ['phone 412', { width: 412, height: 915 }, true, 48], ['tablet 768', { width: 768, height: 1024 }, true, 64]]) for (const theme of ['light', 'dark']) {
+for (const [name, vp, touch, size] of [['desktop', { width: 1300, height: 850 }, false, 112], ['phone 390', { width: 390, height: 844 }, true, 92], ['phone 412', { width: 412, height: 915 }, true, 92], ['tablet 768', { width: 768, height: 1024 }, true, 112]]) for (const theme of ['light', 'dark']) {
   const { ctx, p } = await open({ vp, touch, theme });
   await openDash(p);
   const i = await info(p, '#dash .dash-welcome .mascot'); decor(i, `greeting, ${name}, ${theme}`);
   ok(Math.round(i[0].w) === size, `greeting picture is ${size} px (${Math.round(i[0].w)})`);
   const wh = await p.$eval('.dash-welcome', (e) => e.getBoundingClientRect().height);
-  ok(wh <= 90, `the greeting row stays compact (${Math.round(wh)} px)`);
+  ok(wh <= 112, `the greeting row stays compact (${Math.round(wh)} px)`);
+  const geo = await p.evaluate(() => { const m = document.querySelector('#dash .dash-welcome .mascot').getBoundingClientRect(); const h = document.querySelector('#dash .dash-hello').getBoundingClientRect(); const s = document.querySelector('#dash .dash-hello-sub').getBoundingClientRect(); return { left: m.right <= h.left + 1, gap: Math.abs((m.top + m.bottom) / 2 - (h.top + s.bottom) / 2) }; });
+  ok(geo.left && geo.gap <= 12, `the greeting picture is left of the text and centred on it (centre offset ${Math.round(geo.gap)} px)`);
   ok((await p.$eval('.dash-hello', (e) => parseFloat(getComputedStyle(e).fontSize))) >= 22, 'the greeting text keeps its size');
   ok(await noOverflow(p, '#dash-body'), 'dashboard body has no sideways scroll');
   for (const s of ['#dash-close', '#dash-collapse']) if (await p.locator(s).count()) ok(await reachable(p, s), s + ' is not covered');
   await p.locator('#dash-help').click();
   await p.waitForSelector('#dash-help-title');
   const hp = await info(p, '#dash .dash-help-head .mascot'); decor(hp, `Help header, ${name}, ${theme}`);
-  ok(Math.round(hp[0].w) === 40, 'Help picture is 40 px'); ok(await reachable(p, '#dash-back'), 'Back stays reachable');
+  ok(Math.round(hp[0].w) === (vp.width <= 520 ? 84 : 96), 'Help picture is ' + Math.round(hp[0].w) + ' px'); ok(await reachable(p, '#dash-back'), 'Back stays reachable');
   ok((await info(p, '#dash .mascot')).length === 1, 'one mascot on the Help screen');
   await ctx.close();
 }
@@ -80,7 +82,7 @@ for (const [name, vp, touch] of [['desktop', { width: 1300, height: 850 }, false
   await tab(p, 'poi'); await p.waitForTimeout(400);
   e = await info(p, '#poi-empty .mascot'); decor(e, `empty Saved Places, ${name}, ${theme}`);
   ok((await p.locator('#poi-empty').isVisible()) && /No markers yet/.test(await p.textContent('#poi-empty')), 'the empty Saved Places sentence is intact');
-  ok(e[0].h <= 56, 'the empty-state picture is no taller than 56 px');
+  ok(e[0].h >= 110 && e[0].h <= 135, 'the empty-state picture is 110 to 135 px (' + Math.round(e[0].h) + ')');
   await ctx.close();
   ({ ctx, p } = await open({ vp, touch, theme, data: true }));
   await tab(p, 'trips'); await p.waitForTimeout(400);

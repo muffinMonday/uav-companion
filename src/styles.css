@@ -874,7 +874,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .dash-tasks .btn{justify-content:center;min-height:var(--control-h);font-weight:var(--fw-semibold)}
 .dash-warn{border-color:var(--no);background:var(--no-bg)}
 .dash-warn .hint{color:var(--no)}
-.dash-help-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.dash-help-head{margin-bottom:8px}
 .dash-help-head h3{margin:0;font-size:var(--fs-title)}
 .dash-topic,.dash-subtopic{border-top:1px solid var(--line);padding:2px 0}
 .dash-topic>summary,.dash-subtopic>summary,.dash-data>summary,.dash-lines>summary{cursor:pointer;padding:8px 0;color:var(--fg);font-weight:var(--fw-semibold)}
@@ -1475,19 +1475,35 @@ button.ses-attendee{cursor:pointer}
 
 /* ---------- the mascot: decorative, never a control, sized by place (DESIGN.md section 24) ---------- */
 .mascot{flex:none;display:block;aspect-ratio:1;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none}
-.dash-welcome{display:grid;grid-template-columns:1fr auto;column-gap:var(--sp-3);align-items:center}
-.dash-welcome>.dash-hello,.dash-welcome>.dash-hello-sub{grid-column:1}
-.dash-welcome>.mascot{grid-column:2;grid-row:1 / span 2;width:64px;height:64px}
-.dash-help-head .mascot{width:40px;height:40px;margin-left:auto}
+.dash-welcome{display:grid;grid-template-columns:auto 1fr;column-gap:var(--sp-3);align-items:center;align-content:center}
+.dash-welcome>.dash-hello,.dash-welcome>.dash-hello-sub{grid-column:2}
+/* Sizes by place (the pictures are tall and nearly fill their square, so the CSS box is close to the drawn character). A small negative top margin lends the picture the
+   padding above it (never below, where the next block starts); nothing overlaps text or a control (the picture is in its own grid column). The greeting picture sits left of the text, vertically centred on the two text rows. */
+.dash-welcome>.mascot{grid-column:1;grid-row:1 / span 2;width:112px;height:112px;margin-block:-8px 0}
+.dash-help-head{display:grid;grid-template-columns:1fr auto;column-gap:10px;row-gap:2px;align-items:center}
+.dash-help-head>.dash-back,.dash-help-head>h3{grid-column:1}
+.dash-help-head>.dash-back{justify-self:start}
+.dash-help-head .mascot{grid-column:2;grid-row:1 / span 2;width:96px;height:96px;margin-block:-4px 0}
 .splash-head{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
 .splash-head h2{min-width:0}
-.splash-head .mascot{width:56px;height:56px}
+.splash-head .mascot{width:120px;height:120px;margin-block:-16px 0}
 .hint.has-mascot{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);text-align:center}
 .hint.has-mascot[hidden]{display:none}
-.hint.has-mascot .mascot{width:56px;height:56px}
-.ses-empty.has-mascot .mascot{width:48px;height:48px}
+.hint.has-mascot .mascot{width:128px;height:128px;margin-block:-6px 0}
+.ses-empty.has-mascot .mascot{width:104px;height:104px;margin-block:-4px 0}
 @media (max-width:520px){
-  .dash-welcome>.mascot{width:48px;height:48px}
-  .splash-head .mascot{width:48px;height:48px}
+  .dash-welcome>.mascot{width:92px;height:92px;margin-block:-6px 0}
+  .dash-help-head .mascot{width:84px;height:84px}
+  .splash-head .mascot{width:96px;height:96px;margin-block:-12px 0}
+  .hint.has-mascot .mascot{width:112px;height:112px}
+  .ses-empty.has-mascot .mascot{width:92px;height:92px}
 }
-@media (max-width:340px){.dash-welcome>.mascot{display:none}}
+/* a short screen (a phone on its side, a keyboard open) keeps room for the controls */
+@media (max-height:520px){
+  .dash-welcome>.mascot{width:72px;height:72px}
+  .dash-help-head .mascot{width:64px;height:64px;margin-block:0}
+  .splash-head .mascot{width:72px;height:72px;margin-block:-6px 0}
+  .hint.has-mascot .mascot{width:80px;height:80px;margin-block:-4px 0}
+  .ses-empty.has-mascot .mascot{width:72px;height:72px;margin-block:-4px 0}
+}
+@media (max-width:340px),(max-height:420px){.dash-welcome>.mascot{display:none}}
