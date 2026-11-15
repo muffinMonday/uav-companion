@@ -61,6 +61,11 @@ test('selected snapshots never classify gaps, missing tiles or unknown footprint
     assert.deepEqual(result.fitted, [108, 29, 116, 34]);
     assert.match(result.legend, /Hubei: Teal/);
     assert.match(result.legend, /Selected example: Teal: suitable-flight polygons/);
+    assert.match(result.explanation, /Selected example data: Third-party mirror; snapshot 2026-09-22; effective date unknown/);
+    assert.match(result.explanation, /neither restricted nor permitted/);
+    assert.match(result.explanation, /Verify current official UOM information/);
+    assert.match(result.legend, /Selected example: Third-party mirror, snapshot 2026-09-22/);
+    assert.match(result.note, /official Existing authority \(effective 2026-05-14\); Selected example: Third-party mirror \(snapshot 2026-09-22; effective date unknown/);
     assert.match(result.note, /mapped polygons only/);
     assert(!result.note.includes('effective null'));
   } finally {

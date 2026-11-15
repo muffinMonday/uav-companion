@@ -27,3 +27,5 @@ Patterns learned from corrections. One line each: what went wrong, the rule that
 - Moving an action behind a collapsed `<details>` (Help topics) breaks tests that click it: open the topics first (`document.querySelectorAll('.dash-topic').forEach(d => d.open = true)`), or the click times out as "not visible".
 
 - Browser tests with fixtures dated around "today" go red when the calendar day rolls over (`trips`, `sidedrag` failed from 2026-11-15: a trip ending 14 Nov became a past trip). Pin the page clock in the test (`ctx.clock.install` + `resume`) instead of moving every date. Check a red suite against the unmodified file before blaming the change.
+
+- Never publish from git-ignored generated data without comparing it to what is live (2026-11-15: a stale `public/data` removed five China regions). `npm run deploy` now restores and preflights against gh-pages.

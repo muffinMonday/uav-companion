@@ -1,5 +1,5 @@
 import { zoneFill } from '../map.js';
-import { MEANINGS, SELECTED_SOURCE_MEANING } from '../legends.js';
+import { MEANINGS, SELECTED_SOURCE_MEANING, selectedProviders, snapshotText } from '../legends.js';
 import { savePrefs } from '../prefs.js';
 
 const $ = (id) => document.getElementById(id);
@@ -52,12 +52,19 @@ export function renderRegionInfo({ index, regions }) {
     row.append(sw, (selected.length ? legacy.filter(r => r.semantics === sem).map(r => r.name).join(', ') + ': ' : '') + meanings[sem][1]);
     legend.append(row);
   }
-  if (selected.length) addLegend(zoneFill('allow'), selected.map(r => r.name).join(', ') + ': ' + SELECTED_SOURCE_MEANING);
+  if (selected.length) {
+    addLegend(zoneFill('allow'), selected.map(r => r.name).join(', ') + ': ' + SELECTED_SOURCE_MEANING);
+    const official = legacy.filter(r => !r.classes && r.source?.authority).map(r => `${r.name}: ${r.source.authority} (official)`);
+    const third = selectedProviders(regions).map(g => `${g.names.join(', ')}: ${g.authority}, ${snapshotText(g.snapshots)}${g.thirdParty ? ' (third-party reference, not a government release)' : ''}`);
+    const p = document.createElement('div'); p.className = 'legend-note'; p.textContent = [...official, ...third].join('. ') + '.'; legend.append(p);
+  }
 
   const note = $('regions-note');
   note.textContent = '';
   const b = document.createElement('b');
   const pending = index.countries.filter((c) => !c.regions).map((c) => c.name);
   b.textContent = `Coverage: ${regions.map((r) => r.name + (r.sourceConfidence?.mode === 'selected-source' ? ' (mapped polygons only)' : '')).join(', ') || 'none'}.${pending.length ? ` No data yet: ${pending.join(', ')}.` : ''} `;
-  note.append(b, (selected.length ? 'Data sources: ' : 'Official data: ') + [...new Set(regions.map((r) => r.sourceConfidence?.mode === 'selected-source' ? `${r.source.authority} (snapshot ${r.source.snapshotAt?.slice(0, 10) || 'unknown'}; effective date ${r.source.effective || 'unknown'}; current permission unverified)` : `${r.source.authority} (effective ${r.source.effective})`))].join('; ') + '.');
+  const official = [...new Set(legacy.map((r) => `${r.source.authority} (effective ${r.source.effective})`))];
+  const third = selectedProviders(regions).map(g => `${g.names.join(', ')}: ${g.authority} (${snapshotText(g.snapshots)}; effective date unknown; current permission unverified)`);
+  note.append(b, selected.length ? 'Data sources: ' + [...official.map(o => 'official ' + o), ...third].join('; ') + '.' : 'Official data: ' + official.join('; ') + '.');
 }

@@ -137,3 +137,9 @@ and all referenced tiles/boundaries together), rebuild/test, then use the author
 subsequent unrelated UX changes. Verify the removed region IDs are absent, Hubei/Singapore
 hashes and point checks match the baseline, and accounts remain enabled. Never remove
 a PMTiles file while a manifest still references it.
+
+## Production regression and repair (2026-11-15)
+The 2026-11-14 releases above were published, then `gh-pages` commit e10f6ee (a later `deploy:live`) replaced them with Hubei and Singapore only, with `data/index.json` and `data/cn/manifest.json` generated on 2026-11-11. Cause: `npm run deploy` publishes whatever `public/data` holds, and that folder is git-ignored and was a stale local build. Nothing in the deploy compared it with production.
+
+Repair: the five PMTiles, `cn/manifest.json` and `index.json` were restored from release 8018ea07e513b791b790e3b4487bbc2364a4521d (Hubei, Singapore and place files were byte-identical in both). Every manifest reference and filename hash was verified. `scripts/preflight-data.js` now restores missing published regions before the build and blocks the publish if any would disappear, unless listed in `data/removed-regions.json`; tests: `tests/prod-data-unit.mjs`. Rollback ZIPs (git-ignored): `planning/regression-fix/production-e10f6ee-stale-site.zip` (stale site) and `production-8018ea0-known-good-site.zip`.
+

@@ -70,8 +70,21 @@ These features are not required for the map, search, point checks, local places 
 
 The repository currently contains published coverage for:
 
-- **Hubei, China:** the official suitable-flight grid, represented as `allow` data. The dataset contains approximately 85,000 cells and includes a stated height context in its source metadata.
-- **Singapore:** published OneMap-derived restricted/no-fly layers represented as `restrict` data. The map is approximate; the official OneMap Drone Query remains the authoritative check.
+**China, official-source geometry** (`allow` data):
+
+- **Hubei:** the official Hubei Development and Reform Commission shapefile, 84,863 grid cells ([provenance](docs/regions/cn-hubei.md)).
+
+**China, third-party reference geometry** (`allow` data). These five regions are polygon snapshots from the [KDji UOM reference mirror](https://kdji.cn/support/nfz-map.html), published under an owner-attested project permission that is not an open licence. They are not the official government shapefiles. Effective dates are unknown and the snapshots were captured on 2026-09-22.
+
+- **Jilin:** 140 polygons ([provenance](docs/regions/cn-jilin.md))
+- **Hunan:** 53 polygons ([provenance](docs/regions/cn-hunan.md))
+- **Ningxia:** 79 polygons ([provenance](docs/regions/cn-ningxia.md))
+- **Guangdong:** 101 polygons ([provenance](docs/regions/cn-guangdong.md))
+- **Chongqing:** 777 polygons ([provenance](docs/regions/cn-chongqing.md))
+
+For these five, the polygons represent only the geographic coverage that was captured. A spot with no polygon is unknown: it does not establish restricted or unrestricted airspace. Release evidence: [selected-source release](docs/china-airspace/SELECTED_SOURCE_RELEASE.md), [Chongqing express release](docs/china-airspace/EXPRESS_CHONGQING_CHENGDU.md). Attribution: [docs/ATTRIBUTIONS.md](docs/ATTRIBUTIONS.md).
+
+**Singapore:** published OneMap-derived restricted/no-fly layers represented as `restrict` data. The map is approximate; the official OneMap Drone Query remains the authoritative check.
 
 Each region declares its semantics, coordinate system, source authority, effective date, licence/terms, coverage boundary and publication policy in `source.json`. Region provenance is documented under [`docs/regions/`](docs/regions/).
 
@@ -134,7 +147,7 @@ The test suite covers data validation, point checks, map/location behaviour, imp
 npm run deploy
 ```
 
-This builds the app, removes local-only data, and publishes `dist/` to the `gh-pages` branch. Enable GitHub Pages to serve from that branch. The deployment script is intentionally separate from the source branch so generated tiles do not become part of normal Git history.
+`npm run deploy` first restores any published region the local `public/data` lacks, then builds, strips local-only data and runs a production data preflight (`scripts/preflight-data.js`). The preflight validates every manifest reference and content hash and blocks publication if a region published on `gh-pages` would disappear. A region may be removed only by listing it, with reason, approver and date, in `data/removed-regions.json`; new regions are added automatically. `npm run deploy:live` runs the same steps, so a stale checkout cannot overwrite production data with old generated artifacts. This builds the app, removes local-only data, and publishes `dist/` to the `gh-pages` branch. Enable GitHub Pages to serve from that branch. The deployment script is intentionally separate from the source branch so generated tiles do not become part of normal Git history.
 
 For a configured live Supabase build, use the project-specific deployment process described in [`supabase/README.md`](supabase/README.md). Never commit service-role keys, database passwords, access tokens or local environment files.
 

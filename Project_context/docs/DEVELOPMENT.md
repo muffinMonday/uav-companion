@@ -33,7 +33,7 @@ Never commit or print the service-role key, DB password or access token.
 ## Build, verify, deploy
 - `npm run build`: production bundle to `dist/`. Production check: `npm run build && npx vite preview --port 5173 --strictPort`, then run the tests.
 - `npm run verify:data`: shapefile cells versus tiles.
-- `npm run deploy`: build and publish `dist/` to `gh-pages` as a single commit. Public. Do not run without the owner's approval; It runs `scripts/strip-local.js` after the build, so local-only regions (`publish: false`, built into `public/data-local`) never go out. GitHub Pages must be set to the `gh-pages` branch in repo settings.
+- `npm run deploy`: restore published regions the local `public/data` lacks (`scripts/preflight-data.js --restore`), build, strip, run the production data preflight (hashes, manifest references, no published region missing), then publish `dist/` to `gh-pages` as a single commit. Intentional region removal: add `{id, reason, approvedBy, date}` to `data/removed-regions.json` in a reviewed commit. `--production <dir>` checks against a local copy; `--no-baseline` is for a first publish only. Public. Do not run without the owner's approval; It runs `scripts/strip-local.js` after the build, so local-only regions (`publish: false`, built into `public/data-local`) never go out. GitHub Pages must be set to the `gh-pages` branch in repo settings.
 
 ## Tests (`tests/`)
 ```

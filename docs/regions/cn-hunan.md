@@ -15,3 +15,6 @@ Two overlapping geographic windows acquired sequentially on 2026-11-14; complete
 This registration uses the API reference snapshot, **not** the separately archived official shapefile. Their feature counts and source identities must not be conflated.
 
 Source hashes, original response inventories, full GEOS/winding audit, point/render checks and tile hashes: [release evidence](../china-airspace/evidence/selected-source-release.json). [Publication policy and rollback](../china-airspace/SELECTED_SOURCE_RELEASE.md). The existing six-gate workflow is unchanged; these registrations do not claim those approvals.
+
+## Production status (2026-11-15)
+A later deploy built from a stale, git-ignored `public/data` and briefly published Hubei only; the six-region data was restored from the 8018ea0 release on 2026-11-15. This dataset is published again. The history above is unchanged. Repair: [release record](../china-airspace/SELECTED_SOURCE_RELEASE.md#production-regression-and-repair-2026-11-15).

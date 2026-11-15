@@ -52,3 +52,6 @@ Before release, 56 application point cases, all 777 feature interiors, full GEOS
 focused integration/pilot/precision checks and the application build passed. All 57
 unit suites were covered successfully, with known locale/timing failures passing
 isolated host reruns. No full browser-suite repeat: runtime unchanged.
+
+## Production status (2026-11-15)
+Chongqing disappeared from production in the e10f6ee deploy and was restored from 8018ea0. See [production regression and repair](SELECTED_SOURCE_RELEASE.md#production-regression-and-repair-2026-11-15). The release evidence above is unchanged.

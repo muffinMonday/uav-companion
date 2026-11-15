@@ -11,6 +11,22 @@ export const MEANINGS = {
 };
 export const SELECTED_SOURCE_MEANING = 'Teal: suitable-flight polygons in the selected source. Gaps and areas outside these polygons have unknown coverage; current flight permission is unverified. Check UOM before flying.';
 
+const day = (iso) => iso?.slice(0, 10) || null;
+const isThirdParty = (r) => r.sourceConfidence?.type === 'third-party-uom-snapshot';
+/** Selected-source regions grouped by provider, for the map legend and coverage note: [{ authority, names, snapshots (sorted dates), thirdParty }]. */
+export function selectedProviders(regions) {
+  const groups = new Map();
+  for (const r of regions) {
+    if (r.sourceConfidence?.mode !== 'selected-source') continue;
+    const g = groups.get(r.source.authority) ?? { authority: r.source.authority, names: [], snapshots: new Set(), thirdParty: isThirdParty(r) };
+    g.names.push(r.name); if (day(r.source.snapshotAt)) g.snapshots.add(day(r.source.snapshotAt));
+    groups.set(r.source.authority, g);
+  }
+  return [...groups.values()].map((g) => ({ ...g, snapshots: [...g.snapshots].sort() }));
+}
+/** "snapshot 2026-09-22", "snapshots 2026-09-22 to 2026-09-23" or "snapshot date unknown". */
+export const snapshotText = (dates) => !dates.length ? 'snapshot date unknown' : dates.length === 1 ? `snapshot ${dates[0]}` : `snapshots ${dates[0]} to ${dates[dates.length - 1]}`;
+
 const swatch = (colour) => { const i = el('i', 'mean-swatch'); i.style.background = colour; i.setAttribute('aria-hidden', 'true'); return i; };
 const row = (colour, text) => { const r = el('div', 'mean-row'); r.append(swatch(colour), el('span', '', text)); return r; };
 
@@ -27,7 +43,8 @@ export function zoneExplanation(res) {
   const r = res.region, m = MEANINGS[r.semantics];
   if (r.sourceConfidence?.mode === 'selected-source') {
     body.append(row('var(--zone)', SELECTED_SOURCE_MEANING));
-    body.append(el('p', '', `${r.name}: ${r.source.authority}; snapshot ${r.source.snapshotAt?.slice(0, 10) || 'unknown'}; effective date ${r.source.effective || 'unknown'}. Independent coordinate alignment, completeness and regulatory currency are unverified. Temporary restrictions may be missing.`));
+    body.append(el('p', '', `${r.name} data: ${r.source.authority}${isThirdParty(r) ? ' (a third-party reference snapshot, not a government-published release)' : ''}; ${snapshotText(day(r.source.snapshotAt) ? [day(r.source.snapshotAt)] : [])}; effective date ${r.source.effective || 'unknown'}.`));
+    body.append(el('p', '', 'Only the captured polygons are mapped. A spot outside them is unknown: that is neither restricted nor permitted airspace. Coordinate alignment, completeness and currency are unverified, and temporary restrictions may be missing. Verify current official UOM information (uom.caac.gov.cn) before flying.'));
     return box;
   }
   if (r.classes) { // named classes (Singapore): one row per kind of zone, with the colour it has on the map

@@ -364,7 +364,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
         buttons.append(act('Open Map Configs', () => panel.open('config')));
       }
       if (t.id === 'data') {
-        inner.append(el('p', 'hint', 'A planning aid, not flight advice: check the official platform before every flight. Zone data covers ' + (names.length ? names.join(' and ') : 'a few regions') + '. Singapore’s no-fly zones are approximate; every window links to the official OneMap Drone Query. Not being inside a mapped zone, or being outside the data, is never permission to fly.'), keyNodes[0]);
+        inner.append(el('p', 'hint', 'A planning aid, not flight advice: check the official platform before every flight. Zone data covers ' + (names.length ? names.join(' and ') : 'a few regions') + '. Zone data combines government-published datasets and selected third-party reference snapshots: the map legend and each point check’s “What does this mean?” show the source and date. Singapore’s no-fly zones are approximate; every window links to the official OneMap Drone Query. Not being inside a mapped zone, or being outside the data, is never permission to fly.'), keyNodes[0]);
       }
       for (const r of replayable.filter((x) => t.ids.includes(x.id))) buttons.append(replayBtn(r));
       if (buttons.children.length) inner.append(buttons);
