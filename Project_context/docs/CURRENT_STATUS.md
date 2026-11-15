@@ -1,8 +1,9 @@
-## Latest: offline place-name index removed; place names search online only (2026-11-16; committed and deployed in the commit that records this)
+## Latest: offline place-name index removed; place names search online only (2026-11-16; committed `857a457`, pushed to `main`, `npm run deploy:live` published gh-pages `49743e1`)
 - Removed: `data/places/` (the Chinese/English place list), its build step (`scripts/build-data.js`), the preflight handling of `places` (`scripts/lib/prod-data.js`), the loader's place lists (`src/app/region-loader.js`, `src/main.js`), the offline lookup in `src/search.js`, and `places` in `public/data/index.json` (generated, git-ignored; the first deploy after this drops `public/data/places/`).
 - Place names: nothing is searched while typing. Enter, or the "Search online" row, sends one request (Photon, then Nominatim when Photon has nothing or fails). Coordinates and map links are never sent. Failure messages: offline in the browser, no connection, an HTTP error with its status, unreadable answer, no results.
 - Privacy: the search box keeps its explicit-action rule. The `lookupNames` switch still governs only the AI-import name lookup, as before; the search box does not read it (unchanged behaviour, noted for the owner).
 - Tests: `npm run test:unit` all pass; `npm run build` ok; `node tests/run.mjs --jobs 1` (every suite, one at a time): all suites passed (3267 s). Browser `search` (42, including online-only, failures and offline) and `prefs`, `smoke`, `poi1` moved from the Wuhan name to its coordinates. Under four parallel suites, single assertions in `live`, `autoshare`, `motion` and `prefs` failed at random once each and passed when rerun alone: load timing, not this change.
+- Live check (no writes): new bundle served (`index-DJLqVw3h.js`); `/data/index.json` has no `places`; `/data/places/cn.b21eb3e4.json` returns 404.
 - Fly In: no uncommitted Fly In changes were in the tree.
 
 ## Previous: one-click guest, EXP section in session details (2026-11-16; migration applied to the hosted project; committed and deployed in the commit that records this)
