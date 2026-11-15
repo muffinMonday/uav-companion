@@ -48,6 +48,7 @@ ok(xpText(0) === '0' && xpText(350) === '350' && xpText(3650) === '3,650' && xpT
 // ---------- history
 ok(describeHistory({ amount: 10, source: 'sim', reason: '' }).detail === 'Simulator playtime' && describeHistory({ amount: 10, source: 'sim' }).title === '+10 XP', 'a simulator hour reads "+10 XP"');
 ok(describeHistory({ amount: 50, source: 'attendance' }).detail === 'Flight session attended', 'a session reads as attended');
+ok(describeHistory({ amount: 70, source: 'hosting' }).detail === 'Flight session hosted' && describeHistory({ amount: -10, source: 'hosting' }).detail === 'Flight session hosted (adjusted)' && cleanHistory({ items: [{ id: 1, amount: 70, source: 'hosting', created_at: 'x' }] }).items[0].source === 'hosting', 'a hosting reward and its adjustment read as hosted, not as an administrator adjustment');
 const adm = describeHistory({ amount: -300, source: 'admin', reason: 'Corrected a duplicate' });
 ok(adm.title === '−300 XP' && adm.detail === 'Adjusted by an administrator: Corrected a duplicate' && describeHistory({ amount: 5, source: 'admin', reason: '' }).detail === 'Adjusted by an administrator', 'an administrator adjustment shows its reason, or says it was an adjustment');
 ok(describeHistory({ amount: 0, source: 'admin', reason: 'x' }).title === '0 XP', 'a zero adjustment reads "0 XP"');

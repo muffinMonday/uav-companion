@@ -139,7 +139,7 @@ ok((await probes(fut2)).length === 1, 'a rename keeps them');
 
 // ---------- the weekly cap, zero XP
 await setting('auto_cap_day', 1);
-for (let i = 0; i < 5; i++) { const x = await sql(`insert into public.flight_sessions (title, latitude, longitude, starts_at, ends_at, created_by, visibility, publication, status, timezone) values ('old ${i}', 1, 1, now() - interval '3 days', now() - interval '3 days' + interval '1 hour', '${B}', 'public', 'published', 'closed', 'UTC') returning id`); await db.exec(`insert into public.session_attendance (session_id, user_id, source, verified_at) values ('${x[0].id}', '${C}', 'auto', now() - interval '2 days')`); }
+for (let i = 0; i < 5; i++) { const x = await sql(`insert into public.flight_sessions (title, latitude, longitude, starts_at, ends_at, created_by, visibility, publication, status, timezone) values ('old ${i}', 1, 1, now() - interval '3 days', now() - interval '3 days' + interval '1 hour', '${B}', 'public', 'published', 'scheduled', 'UTC') returning id`); await db.exec(`insert into public.session_attendance (session_id, user_id, source, verified_at) values ('${x[0].id}', '${C}', 'auto', now() - interval '2 days')`); await db.exec(`update public.flight_sessions set status = 'closed' where id = '${x[0].id}'`); } // history is written while the session is open (attendance cannot be added to a closed one), then closed
 const s5 = await mk({ u: A }); await join(C, s5);
 ok((await shot(C, s5)).status === 'capped', 'five automatic awards in a week: capped');
 await db.exec(`delete from public.session_attendance where source = 'auto' and session_id in (select id from public.flight_sessions where title like 'old %')`);
