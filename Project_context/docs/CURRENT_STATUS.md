@@ -1,4 +1,10 @@
-## Chengdu city-mask candidate (2026-11-15; isolated airspace worktree; release deferred)
+## Latest: host reward and Chengdu city mask merged and deployed (2026-11-15; owner authorized merge, commit, push and deploy:live for these two changes only)
+- Host reward (`20261120100000_session_host_reward.sql`, commit `75fc265`): `close_session` pays the host 50 XP + 10 per verified non-host attendee (ledger source `hosting`, separate from attendance counts); late revocation appends an adjustment. **Migration not applied to the hosted project yet**: dry run, backup and `db push` need a separate owner go-ahead. Tests: `db-session-host-reward-unit` 36 pass.
+- Chengdu city mask (branch `feature/chengdu-city-mask`, merged into `main` as `c64902d`; `CURRENT_STATUS.md` conflict resolved in `d0d457e`). Draft PR #10 was not closed from here (no `gh` CLI in this session).
+- Verification on merged main: `npm run test:unit` all suites pass; `npm run build` with the Supabase values from `.env.development.local` set; full `node tests/run.mjs` 135 suites pass, only `diag` fails (environmental: :5173 preview does not serve `/src/log.js`). An earlier full run without the Supabase values had 18 failures, all about accounts being absent from that build; rerun with them: all pass.
+- Deploy: see the next line once `npm run deploy:live` has finished.
+
+## Chengdu city-mask candidate (2026-11-15; isolated airspace worktree; release deferred; superseded by the block above)
 - Branch `feature/chengdu-city-mask`, worktree `.worktrees/chengdu-city-mask`, based on fetched `origin/main` f18cdc1. Claude's active checkout and untracked mascot assets remain untouched. No deployment or merge while mascot work is active.
 - Implementation `29478d2` is committed and pushed; reviewable [draft PR #10](https://github.com/muffinMonday/uav-companion/pull/10) is open. Release remains deferred for the shared deployment window; no production changes were made.
 - 59 captured occurrences deduplicate to 57 unchanged original KDji polygons (two exact repeats, no conflicts). WGS84 OpenStreetMap administrative relation 2110264 is the city mask, distributed under ODbL. Both application rendering and positive point queries require this same mask; unavailable masks fail closed. Hubei/global semantics stay unchanged.
