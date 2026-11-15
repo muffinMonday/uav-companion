@@ -34,9 +34,16 @@ A static front end (GitHub Pages) that works fully without a server, plus an **o
 | AI import | `aiimport.js`, `ai-ui.js` | Lenient parse, strict sanitize, preview; optional name geocoding |
 
 ## Fly In regions
-The dashboard's **Fly in** card is a dropdown with one choice per region archive. Choosing one fits the map to that region's bounds (`app/region-ui.js`, `goToArea`). The zone layers then load only the archives whose bounds meet the visible map (`map.js` `createZones`, on every `moveend`), so a region outside the view is not downloaded. The index and manifests are small JSON and load first; no archive is fetched by them.
+The dashboard's **Fly in** card and Map Config's **Go to** card show the same country buttons (`app/country-menu.js`, `countryPicker`; no dropdown). Each supported country gets one button, and the rule is fixed:
+- A country with **one** supported region navigates directly: its button fits the map to that region's bounds and opens no menu (Singapore).
+- A country with **several** supported regions opens a menu of its regions below the buttons; choosing one fits the map to it and closes the menu (China).
+- There is no country-wide item (no "China" entry in its menu), and the region labels are capitalised.
 
-Options, in the order shown (Title Case, as in the dropdown):
+The zone layers then load only the archives whose bounds meet the visible map (`map.js` `createZones`, on every `moveend`), so a region outside the view is not downloaded. The index and manifests are small JSON and load first; no archive is fetched by them. The choice is not remembered: a button has no selected state.
+
+**Adding or removing shape coverage:** keep in the same change the country's button (a country appears once it has zone data), its menu items (one per region, or none if it has one region), the display labels, the tests (`tests/country-groups-unit.mjs`, `tests/region-labels-unit.mjs`, `tests/country-buttons.mjs`, `tests/fly-in.mjs`) and this list.
+
+Region menu items, in the order shown (capitalised labels):
 - Chongqing
 - Guangdong
 - Hubei
@@ -59,9 +66,7 @@ The label of each region ID is in `src/app/region-labels.js` (`REGION_LABELS`); 
 | `cn-sichuan` | Sichuan |
 | `sg-nofly` | Singapore |
 
-**Keep in sync:** whenever a region's shape archive is added or removed, check the Fly in options, `REGION_LABELS` and this list in the same change. `tests/region-labels-unit.mjs` fails when a region in `public/data` has no label, a label has no region, or the choices differ from its expected list (update that list with the change). `tests/fly-in.mjs` checks the dropdown and the downloads in the browser.
-
-The header's country menu is separate: it centres on a whole country, and a country view loads every archive it touches (China: all of them).
+**Keep in sync:** whenever a region's shape archive is added or removed, check the Fly in options, `REGION_LABELS` and this list in the same change. `tests/region-labels-unit.mjs` fails when a region in `public/data` has no label, a label has no region, or the choices differ from its expected list (update that list with the change). `tests/fly-in.mjs` checks the buttons and the downloads in the browser; `tests/country-buttons.mjs` checks the menu by keyboard, outside presses, one menu at a time and narrow screens.
 
 ## External services (browser side)
 | Service | Use | Sent | Gate |

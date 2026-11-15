@@ -19,10 +19,10 @@ const centre = async (p) => { await p.evaluate(() => 0); return p.evaluate(() =>
 const ctx = await b.newContext({ viewport: { width: 1200, height: 800 } });
 let p = await open(ctx);
 
-// ---- country: choice stays in the menu
-ok((await p.inputValue('#country')) === '', 'first visit: no country chosen');
-await p.selectOption('#country', 'sg'); await p.waitForTimeout(1500);
-ok((await p.inputValue('#country')) === 'sg', 'country choice stays shown in the dropdown after choosing');
+// ---- country buttons: Singapore focuses at once; a country choice is not remembered (a button has no state)
+ok((await p.locator('#pane-config .country-btn[aria-expanded="true"]').count()) === 0, 'first visit: no country menu open');
+await p.evaluate((s) => document.querySelector(s).click(), '#pane-config .country-btn[data-country="sg"]'); await p.waitForTimeout(1500);
+ok((await p.locator('#pane-config .country-menu').isHidden()), 'Singapore navigates at once, with no menu');
 const sgScale = await centre(p);
 
 // ---- basemap
@@ -34,34 +34,29 @@ await p.mouse.move(300, 400); await p.mouse.down(); await p.mouse.move(250, 330,
 const want = await p.evaluate(() => { const m = document.querySelector('#map'); return null; });
 await p.waitForTimeout(600);
 let saved = await view(p);
-ok(saved.basemap === 'cyclosm' && saved.country === 'sg' && saved.view && Number.isInteger(saved.view.zoom), 'stored: ' + JSON.stringify(saved));
+ok(saved.basemap === 'cyclosm' && !('country' in saved) && saved.view && Number.isInteger(saved.view.zoom), 'stored: ' + JSON.stringify(saved));
 
 // ---- next session (same storage): reload
 const before = saved.view;
 p.__tiles.length = 0; // only tiles requested after the reload count
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1800);
-ok((await p.inputValue('#country')) === 'sg', 'reload: country dropdown still shows Singapore');
 ok((await p.inputValue('#base')) === 'cyclosm', 'reload: basemap dropdown shows CyclOSM');
 ok(p.__tiles.some((u) => /tile-cyclosm\.openstreetmap\.fr/.test(u)) && !p.__tiles.some((u) => /\/\/tile\.openstreetmap\.org/.test(u)), 'reload: CyclOSM tiles are loaded, not the standard map');
 const after = (await view(p)).view;
 ok(after && after.zoom === before.zoom && Math.abs(after.lat - before.lat) < 1e-4 && Math.abs(after.lon - before.lon) < 1e-4, `reload: same position and zoom (${before.lat},${before.lon} z${before.zoom})`);
 ok(Math.abs(before.lon - 104) > 5, 'the restored position is where the user left the map (Wuhan area), not the country view');
 
-// ---- Centre button re-centres on the chosen country
-await p.click('#country-go'); await p.waitForTimeout(1800);
+// ---- the Singapore button re-centres on Singapore
+await p.evaluate((s) => document.querySelector(s).click(), '#pane-config .country-btn[data-country="sg"]'); await p.waitForTimeout(1800);
 await p.waitForTimeout(600);
 const c1 = (await view(p)).view;
-ok(Math.abs(c1.lon - 103.85) < 0.6 && Math.abs(c1.lat - 1.3) < 0.4, `Centre button returns to Singapore (${c1.lat}, ${c1.lon})`);
-ok((await p.inputValue('#country')) === 'sg', 'dropdown still shows Singapore after Centre');
+ok(Math.abs(c1.lon - 103.85) < 0.6 && Math.abs(c1.lat - 1.3) < 0.4, `the Singapore button returns to Singapore (${c1.lat}, ${c1.lon})`);
 
-// ---- clearing the choice
-await p.selectOption('#country', ''); await p.waitForTimeout(300);
-ok(!('country' in (await view(p))), 'choosing the prompt clears the remembered country');
-await p.click('#country-go'); ok(/Choose a country first/.test(await p.textContent('#toast')), 'Centre with nothing chosen says so');
-
-// ---- China, then the zoom of a fresh context is independent
-await p.selectOption('#country', 'cn'); await p.waitForTimeout(1500);
-ok((await view(p)).country === 'cn', 'switching country updates the remembered choice');
+// ---- China opens its own menu; choosing a region focuses it and closes the menu
+await p.evaluate((s) => document.querySelector(s).click(), '#pane-config .country-btn[data-country="cn"]'); await p.waitForTimeout(300);
+ok((await p.locator('#pane-config .country-menu .btn').allTextContents()).join(',') === 'Chongqing,Guangdong,Hubei,Hunan,Jilin,Ningxia,Sichuan', 'the China button opens a menu of its seven regions');
+await p.evaluate((s) => document.querySelector(s).click(), '#pane-config .country-menu [data-region="cn-hubei"]'); await p.waitForTimeout(1500);
+ok((await p.locator('#pane-config .country-menu').isHidden()) && Math.abs((await view(p)).view.lat - 30.6) < 2, 'choosing Hubei closes the menu and focuses the map on Hubei');
 
 // ---- damaged / hostile stored values
 for (const [label, value] of [
@@ -75,7 +70,7 @@ for (const [label, value] of [
   await c.addInitScript((v) => localStorage.setItem('uavzones.v1.prefs', v), value);
   const q = await open(c);
   const okLoad = (await q.textContent('#regions-note')).includes('Coverage');
-  ok(okLoad && (await q.inputValue('#base')) === 'osm' && (await q.inputValue('#country')) === '', `damaged prefs (${label}): app loads with defaults`);
+  ok(okLoad && (await q.inputValue('#base')) === 'osm', `damaged prefs (${label}): app loads with defaults`);
   if (label === 'unknown country') { const v = (await view(q)).view; ok(v && v.zoom === 8, 'unknown country ignored, valid saved view still used'); }
   await c.close();
 }
@@ -84,8 +79,8 @@ for (const [label, value] of [
 const c4 = await b.newContext({ viewport: { width: 1200, height: 800 } });
 await c4.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });
 const q4 = await open(c4);
-await q4.selectOption('#country', 'sg'); await q4.selectOption('#base', 'topo'); await q4.waitForTimeout(800);
-ok((await q4.inputValue('#country')) === 'sg', 'storage blocked: controls still work');
+await q4.evaluate((s) => document.querySelector(s).click(), '#pane-config .country-btn[data-country="sg"]'); await q4.selectOption('#base', 'topo'); await q4.waitForTimeout(800);
+ok((await q4.inputValue('#base')) === 'topo' && (await q4.locator('#pane-config .country-btn').count()) === 2, 'storage blocked: controls still work');
 
 console.log('errors:', errs.length ? errs : 'none');
 await b.close();

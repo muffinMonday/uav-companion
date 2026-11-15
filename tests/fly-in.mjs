@@ -7,6 +7,12 @@ const info = (m) => console.log('INFO  ' + m);
 const errs = [];
 const CHINA = ['cn-chongqing', 'cn-guangdong', 'cn-hubei', 'cn-hunan', 'cn-jilin', 'cn-ningxia', 'cn-sichuan'];
 const RETURNING = { showOnStart: true, welcomed: true, seen: LATEST_SEEN };
+/** Chooses a region the way a person does: a China button opens its menu, then the region; Singapore has no menu. */
+async function choose(p, id) {
+  const country = id.startsWith('sg-') ? 'sg' : 'cn';
+  await p.click(`.dash-fly .country-btn[data-country="${country}"]`);
+  if (country === 'cn') await p.click(`.dash-fly .country-menu [data-region="${id}"]`);
+}
 const mb = (n) => (n / 1e6).toFixed(2) + ' MB';
 
 const b = await chromium.launch({ channel: CHANNEL });
@@ -37,12 +43,14 @@ let { ctx, p, log } = await open();
 const sgOnly = JSON.stringify(ids(log)) === JSON.stringify(['sg-nofly']);
 ok(sgOnly, 'fresh visit: archives downloaded = ' + JSON.stringify(ids(log)) + ' (' + log.length + ' response(s), ' + mb(bytes(log)) + ')');
 info(`fresh Singapore view: ${ids(log).length} archive(s) downloaded, ${mb(bytes(log))} transferred`);
-const flyOpts = await p.$$eval('#dash-fly option', (os) => os.map((o) => o.textContent));
-ok(flyOpts.length === 9 && flyOpts[0] === 'Choose a region' && flyOpts.at(-1) === 'Singapore', 'the Fly in dropdown lists the regions by name');
+const flyBtns = await p.$$eval('.dash-fly .country-btn', (bs) => bs.map((b) => b.textContent));
+ok(JSON.stringify(flyBtns) === JSON.stringify(['China', 'Singapore']), 'Fly in shows one button per country: ' + flyBtns.join(', '));
+ok(await p.locator('.dash-fly .country-menu').isHidden(), 'the China menu is closed until its button is pressed');
 
 // ================= 2. choosing a China region focuses it and downloads its archive (and only the ones its view touches)
 const before2 = log.length;
-await p.selectOption('#dash-fly', 'cn-hubei'); await p.waitForTimeout(3000);
+await choose(p, 'cn-hubei'); await p.waitForTimeout(3000);
+ok(await p.locator('.dash-fly .country-menu').isHidden(), 'choosing Hubei closes the China menu');
 const hubeiStep = log.slice(before2);
 const hubeiIds = ids(hubeiStep);
 ok(hubeiIds.includes('cn-hubei'), 'choosing Hubei downloads the Hubei archive');
@@ -67,7 +75,7 @@ const cached = await p.evaluate(async () => (await caches.open('uavzones-pmtiles
 ok(cached.includes('cn-hubei') && cached.includes('sg-nofly'), 'the Cache API holds the archives already downloaded: ' + JSON.stringify(cached.sort()));
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(2000);
 const before4 = log.length;
-await p.selectOption('#dash-fly', 'cn-hubei'); await p.waitForTimeout(3000);
+await choose(p, 'cn-hubei'); await p.waitForTimeout(3000);
 const again = ids(log.slice(before4));
 ok(!again.includes('cn-hubei'), 'after a reload, choosing Hubei again does not download its archive: network = ' + JSON.stringify(again));
 ok((await p.locator('.leaflet-container').count()) === 1 && (await p.locator('.leaflet-overlay-pane').count()) === 1, 'the map is on the page and its layers are there while archives load');

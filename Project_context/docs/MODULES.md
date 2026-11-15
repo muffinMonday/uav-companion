@@ -98,7 +98,8 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `app/point-check.js` | `createPointCheckUI({ map, panel, weather, addAt })` returns `{ showCheck, showWeather }`: the point-check popup (elevation, weather button, map links, official map link, Add as marker/Side Quest, swipe). `addAt` is late-bound to the POI module |
 | `app/map-settings.js` | `initAppearanceSettings` (theme radios), `initMapSettings` (popup opacity, basemap, zone opacity value, saved view), `initWeatherSettings` (map app/mode, wind limit) |
 | `app/region-loader.js` | `loadRegionData({ dataUrl, localUrl, mayHaveLocalData })` returns `{ index, regions, places }`; local-only regions merged, tolerated if missing; unit test `region-loader-unit` |
-| `app/region-ui.js` | `initRegionUI` (country menu, Centre button, dashboard Fly in targets, returns `clearOfPanel`), `renderRegionInfo` (legend, coverage note) |
+| `app/region-ui.js` | `initRegionUI` (Map Config Go to buttons, dashboard Fly in targets, returns `clearOfPanel`), `renderRegionInfo` (legend, coverage note) |
+| `app/country-menu.js` | `countryGroups` (one group per supported country, its regions by label), `countryPicker` (one button per country; a single-region country navigates, a multi-region country opens its region menu); used by the dashboard Fly in card and Map Config Go to (see ARCHITECTURE "Fly In regions") |
 | `app/region-labels.js` | `REGION_LABELS`, `regionLabel`: the Fly in label of each region ID (see ARCHITECTURE "Fly In regions") |
 
 `main.js` keeps the start-up order, toast, launch-location flags, POI/Trips/AI/dashboard/splash/cloud wiring (cloud starts without being awaited, concurrently with region loading), map click and hold handlers, flying-area pins and zone layers.

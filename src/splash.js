@@ -10,6 +10,7 @@ import { save as saveDash, load as loadDash } from './dashstate.js';
 import { savePrefs } from './prefs.js';
 import { focusField, showModalQuiet } from './touch.js';
 import { mascotEl } from './mascot-ui.js';
+import { countryPicker } from './app/country-menu.js';
 
 export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud = {}, toolbar = null }) {
   const dlg = document.createElement('dialog');
@@ -174,10 +175,10 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
 
   function noLocation() {
     settled = false;
-    const row = el('div', 'btn-row');
-    for (const k of dash.regions.countries) row.append(btn(k.name, () => { settled = true; dlg.close(); dash.regions.goTo?.(k.id); }, 'btn'));
+    // The same country buttons as the dashboard's Fly in card (one per country; a country with several regions opens its menu).
+    const picker = countryPicker(dash.regions.groups, (id) => { settled = true; dlg.close(); dash.regions.goToArea?.(id); });
     const close = btn('Close', () => { settled = true; dlg.close(); }, 'btn small'); close.id = 'splash-close';
-    show(heading('No location yet'), el('p', 'hint', 'The browser did not give a position. You can allow location in its settings and press the locate button on the map, or start from a region:'), row, close);
+    show(heading('No location yet'), el('p', 'hint', 'The browser did not give a position. You can allow location in its settings and press the locate button on the map, or start from a region:'), picker, close);
   }
 
   return { open: choose, /** The cloud code loads after the page: show the account row if the first screen is already up. */ refresh() { if (dlg.open) paintAccount(); } };

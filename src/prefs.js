@@ -1,4 +1,4 @@
-// Remembered settings (last basemap, country choice, map position, zone opacity, colour theme, privacy choices), kept in this browser only.
+// Remembered settings (last basemap, map position, zone opacity, colour theme, privacy choices), kept in this browser only.
 // Everything read back is validated, so a damaged or hand-edited entry falls back to the defaults.
 const KEY = 'uavzones.v1.prefs';
 
@@ -9,7 +9,6 @@ function sanitize(raw) {
   const out = {};
   if (!raw || typeof raw !== 'object') return out;
   if (BASEMAPS.includes(raw.basemap)) out.basemap = raw.basemap;
-  if (typeof raw.country === 'string' && /^[a-z]{2,8}$/.test(raw.country)) out.country = raw.country;
   if (Number.isFinite(raw.opacity) && raw.opacity >= 0.1 && raw.opacity <= 0.9) out.opacity = Math.round(raw.opacity * 100) / 100; // the slider's own range
   if (raw.units === 'metric' || raw.units === 'imperial') out.units = raw.units;
   if (Number.isFinite(raw.maxRangeM) && raw.maxRangeM >= 100 && raw.maxRangeM <= 200000) out.maxRangeM = Math.round(raw.maxRangeM); // 100 m to 200 km

@@ -147,7 +147,7 @@ try {
   initPointCheck(regions);
   initSearch(map, places, { show: showCheck });
 
-  const { clearOfPanel } = initRegionUI({ map, panel, dash, prefs, index, regions, toast });
+  const { clearOfPanel } = initRegionUI({ map, panel, dash, index, regions });
 
   // Point features (flying areas): a green pin each, which opens the usual check window for that spot with a note
   const pinLayer = L.layerGroup().addTo(map);

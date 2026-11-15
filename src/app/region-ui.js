@@ -1,43 +1,26 @@
 import { zoneFill } from '../map.js';
 import { MEANINGS, SELECTED_SOURCE_MEANING, selectedProviders, snapshotText } from '../legends.js';
-import { savePrefs } from '../prefs.js';
 import { regionLabel } from './region-labels.js';
+import { countryGroups, countryPicker } from './country-menu.js';
 
 const $ = (id) => document.getElementById(id);
 
 /**
- * Country shortcut (re-centres on a country's view box, whether or not it has zone data yet) and the dashboard's Fly in choices (one per region archive).
- * Returns { clearOfPanel }: fit options that keep what is fitted clear of a docked side panel (phones use a bottom sheet that is closed while viewing).
+ * The country buttons (Map Config's Go to card, and the dashboard's Fly in choices through the same groups) and the Fly in region
+ * focus. Returns { clearOfPanel }: fit options that keep what is fitted clear of a docked side panel (phones use a bottom sheet that is closed while viewing).
  */
-export function initRegionUI({ map, panel, dash, prefs, index, regions, toast }) {
-  const countrySel = $('country');
-  for (const c of index.countries.filter((x) => x.view).sort((a, b) => a.name.localeCompare(b.name))) {
-    const o = document.createElement('option');
-    o.value = c.id;
-    o.textContent = c.regions ? c.name : `${c.name} (no zone data yet)`;
-    countrySel.append(o);
-  }
+export function initRegionUI({ map, panel, dash, index, regions }) {
   const clearOfPanel = () => (panel.isOpen() && window.innerWidth > 520 ? { paddingBottomRight: [$('panel').offsetWidth + 24, 0] } : undefined);
-  const goToCountry = (id) => {
-    const c = index.countries.find((x) => x.id === id && x.view);
-    if (!c) return;
-    map.fitBounds([[c.view[1], c.view[0]], [c.view[3], c.view[2]]], clearOfPanel());
-    if (!c.regions) toast(`No zone data for ${c.name} yet. The map shows nothing about flying rules there.`, 7000);
-  };
-  // Fly in: one region archive. Only the archives that the new view touches are loaded (createZones.sync on moveend).
-  const areas = regions.filter((r) => r.bounds).map((r) => ({ id: r.id, label: regionLabel(r), bounds: r.bounds })).sort((a, b) => a.label.localeCompare(b.label));
+  // Focus on one region archive. Only the archives that the new view touches are loaded (createZones.sync on moveend).
+  const areas = regions.filter((r) => r.bounds).map((r) => ({ id: r.id, country: r.country, label: regionLabel(r), bounds: r.bounds }));
   const goToArea = (id) => {
     const a = areas.find((x) => x.id === id);
     if (a) map.fitBounds([[a.bounds[1], a.bounds[0]], [a.bounds[3], a.bounds[2]]], clearOfPanel());
   };
-  // The choice stays shown in the menu and is remembered. Choosing it again after panning away: use the Centre button.
-  countrySel.addEventListener('change', () => { savePrefs({ country: countrySel.value || null }); goToCountry(countrySel.value); });
-  $('country-go').addEventListener('click', () => {
-    if (!countrySel.value) { toast('Choose a country first.', 3000); return; }
-    goToCountry(countrySel.value);
-  });
-  dash.setRegions(index.countries.filter((c) => c.regions && c.view).sort((x, y) => x.name.localeCompare(y.name)), goToCountry, areas, goToArea); // the dashboard's Fly in choices and the country menu's targets
-  if (prefs.country && index.countries.some((c) => c.id === prefs.country && c.view)) countrySel.value = prefs.country; // position itself comes from the saved view
+  const supported = index.countries.filter((c) => c.regions && c.view);
+  const groups = countryGroups(supported, areas);
+  $('country-buttons').replaceChildren(countryPicker(groups, goToArea));
+  dash.setRegions(supported.sort((x, y) => x.name.localeCompare(y.name)), groups, goToArea); // the dashboard's Fly in buttons and the "How it works" list
   return { clearOfPanel };
 }
 

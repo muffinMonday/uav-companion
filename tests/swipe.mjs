@@ -68,7 +68,8 @@ ok(await visible(p, '#panel'), 'a mostly sideways swipe to the left is left alon
 // places where a swipe must not start (the body is put back at the top and left to settle first, so the control is where it was measured)
 const settle = async () => { await p.$eval('.sp-body', (e) => { e.scrollTop = 0; }); await p.waitForFunction(() => document.querySelector('.sp-body').scrollTop === 0); await p.waitForTimeout(300); };
 await settle();
-const sel = await p.locator('#country').count() ? '#country' : 'select';
+const sel = '#base';
+await p.evaluate((s) => document.querySelector(s).scrollIntoView({ block: 'center' }), sel); await p.waitForTimeout(200);
 const sbox = await box(p, sel).catch(() => null);
 const onIt = (b2, tag) => p.evaluate(([x, y, t]) => document.elementFromPoint(x, y)?.matches(t), [b2.cx, b2.cy, tag]);
 if (sbox) { ok(await onIt(sbox, 'select'), 'the swipe below starts on the drop-down'); await swipe([sbox.cx, sbox.cy], [sbox.cx, sbox.cy + 160]); ok(await visible(p, '#panel'), 'a swipe that starts on a drop-down does not dismiss'); }
