@@ -1,5 +1,7 @@
 # Chengdu candidate inputs
 
+**Historical inputs:** Chengdu is live at production `b9e2378`; the candidate [Sichuan replacement](../../../../docs/regions/cn-sichuan.md) retires this registration. The source descriptor is now archived at `docs/china-airspace/evidence/chengdu-source-retired.json`; use that path in the historical reconstruction below. The boundary and original captures remain rollback evidence.
+
 See [provenance and release state](../../../../docs/regions/cn-chengdu.md).
 `boundary.geojson` is © OpenStreetMap contributors, ODbL 1.0; its geometry is
 unchanged from the archived Nominatim response. `zones.geojson` is ignored raw data.

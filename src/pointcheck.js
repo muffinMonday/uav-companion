@@ -4,7 +4,6 @@ import { zonesInArchive } from './zones.js';
 import { regionUrl } from './config.js';
 import { el, statusEl, disclaimer } from './cards.js';
 import { zoneExplanation } from './legends.js';
-import { loadCoverageMask, inMask } from './coverage-mask.js';
 
 const archives = new Map();
 const boundaries = new Map();
@@ -75,7 +74,6 @@ export async function checkPoint(lat, lon) {
   for (const group of [near.filter(r => !selected(r)), near.filter(selected)]) {
     for (const r of group) {
       try {
-        if (r.maskToBoundary && !inMask(await loadCoverageMask(r), lat, lon)) continue;
         const zones = await zonesInArchive(archive(r), r.maxZoom, lat, lon);
         if (zones.length) return { status: 'inside', region: r, zones };
       } catch (e) {
