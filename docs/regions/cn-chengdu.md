@@ -1,5 +1,7 @@
 # cn-chengdu
 
+**Current status, 2026-11-15:** PR #10 is merged. Chengdu was published at gh-pages `b9e2378` and remains live while Claude works on Google OAuth. The [Sichuan replacement](cn-sichuan.md) is prepared separately and retires this registration only on atomic release. The following candidate-era account is retained as historical evidence. The retired source descriptor is archived at `../china-airspace/evidence/chengdu-source-retired.json`.
+
 **Validated release candidate, 2026-11-15; not deployed.** Release is deferred while
 Claude's mascot integration is active. [Artifact identities and rollback](../china-airspace/evidence/chengdu-release.json).
 Implementation `29478d2` is pushed on `feature/chengdu-city-mask`;

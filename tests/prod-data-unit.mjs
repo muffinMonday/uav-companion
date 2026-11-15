@@ -51,6 +51,14 @@ ok(compareToProduction(stale, prod, new Map([['cn-gone', { id: 'cn-gone' }]])).s
 const grown = tree('grown', { cn: [...six, 'cn-sichuan'], sg: ['sg-nofly'] });
 ok(compareToProduction(inspectTree(grown), prod).length === 0, 'a new region is accepted');
 
+// A scoped live replacement must be present; the approval cannot waive other loss.
+const cityProd = inspectTree(tree('city-prod', { cn: [...six, 'cn-chengdu'], sg: ['sg-nofly'] }));
+const replacementApproval = new Map([['cn-chengdu', { replacementId: 'cn-sichuan' }]]);
+ok(compareToProduction(inspectTree(grown), cityProd, replacementApproval).length === 0, 'approved Chengdu to Sichuan replacement passes');
+ok(compareToProduction(prod, cityProd, replacementApproval).some(e => /replacement cn-sichuan is missing/.test(e)), 'removing Chengdu without its Sichuan replacement fails');
+const unrelatedLoss = inspectTree(grown); unrelatedLoss.regions.delete('cn-jilin');
+ok(compareToProduction(unrelatedLoss, cityProd, replacementApproval).some(e => e.startsWith('cn-jilin:')), 'replacement approval does not allow unrelated Jilin loss');
+
 // Hash and reference integrity
 const bad = tree('bad', { cn: six, sg: ['sg-nofly'] });
 fs.writeFileSync(path.join(bad, prod.regions.get('cn-jilin').region.file), 'tampered');
@@ -83,7 +91,14 @@ ok(!r2.includes('cn-jilin') && a2.regions.has('cn-new') && a2.regions.has('cn-ni
 ok(restoreMissing(staleDir, prodDir).length === 0, 'restore is idempotent');
 
 // CLI: a stale candidate is blocked, a restored one passes
-const cli = (a) => spawnSync(process.execPath, [path.join(ROOT, 'scripts/preflight-data.js'), ...a], { encoding: 'utf8' });
+// Isolate fixture removals from the repository's reviewed production approvals.
+const cliRoot = path.join(tmp, 'cli-root');
+fs.mkdirSync(path.join(cliRoot, 'scripts/lib'), { recursive: true });
+fs.mkdirSync(path.join(cliRoot, 'data'));
+fs.writeFileSync(path.join(cliRoot, 'package.json'), '{"type":"module"}');
+fs.writeFileSync(path.join(cliRoot, 'data/removed-regions.json'), '{"removed":[]}');
+for (const file of ['scripts/preflight-data.js', 'scripts/lib/prod-data.js']) fs.copyFileSync(path.join(ROOT, file), path.join(cliRoot, file));
+const cli = (a) => spawnSync(process.execPath, [path.join(cliRoot, 'scripts/preflight-data.js'), ...a], { encoding: 'utf8' });
 const s3 = tree('stale3', { cn: ['cn-hubei'], sg: ['sg-nofly'] });
 const blocked = cli([s3, '--production', prodDir]);
 ok(blocked.status === 1 && /Not deploying/.test(blocked.stderr) && /cn-jilin/.test(blocked.stderr), 'CLI blocks a stale candidate (exit 1)');

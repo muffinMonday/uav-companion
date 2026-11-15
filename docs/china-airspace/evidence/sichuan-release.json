@@ -1,0 +1,315 @@
+{
+  "status": "released and live verified",
+  "checkedOn": "2026-11-15",
+  "branch": "feature/sichuan-replacement",
+  "mainBaseline": "8c802711a3d4ab769d53c5bc5a9b873aa77fd89d",
+  "productionBaseline": "b9e23786f500f8209287176337e8876b67924ca1",
+  "previousPR": {
+    "number": 10,
+    "merged": true
+  },
+  "rollback": {
+    "file": "planning/sichuan/oauth-production-baseline.zip",
+    "sha256": "c07673793098981baecb813e357638d01850c2685dfdd73975bc1b00ce3b60ad",
+    "contents": "Complete latest live application including Google OAuth and all 8 original regional artifacts"
+  },
+  "originalChengdu": {
+    "captures": "planning/sichuan/chengdu-capture-network",
+    "source": "planning/sichuan/chengdu-source/zones.geojson",
+    "contentSha256": "bac39add1ed4fe93fb9c7627b44869c9a3c192d12a3f151fffafe2d00a3e56be",
+    "pmtiles": "cn/cn-chengdu.66de882a.pmtiles",
+    "pmtilesSha256": "66de882a82a0a9300ca9008e0bca9280b10d13aa54128a1004162f38fbb800f1",
+    "mask": "cn/cn-chengdu.boundary.a54e47db.json",
+    "maskSha256": "a54e47db27521d76fb1d25d9443d0294706c1d96d973564f3f699ed6d71d0e92",
+    "all57FeaturesUnchanged": true,
+    "sourceFileSha256": "cf71f5e6ad41a4732720ecf869fa9b5f5180837b12b93243124de8287748ab3d"
+  },
+  "sichuan": {
+    "id": "cn-sichuan",
+    "country": "cn",
+    "name": "Sichuan",
+    "nameZh": "四川",
+    "file": "cn/cn-sichuan.493d55a3.pmtiles",
+    "boundary": null,
+    "bounds": [
+      97.382812,
+      26.049327,
+      108.542536,
+      34.314628
+    ],
+    "coverageBounds": [
+      97.382812,
+      26.049327,
+      108.542536,
+      34.314628
+    ],
+    "cells": 468,
+    "minZoom": 3,
+    "maxZoom": 14,
+    "semantics": "allow",
+    "maxHeightM": null,
+    "source": {
+      "authority": "KDji third-party UOM reference mirror",
+      "url": "https://kdji.cn/support/nfz-map.html",
+      "effective": null,
+      "publishedMonth": "2026-05",
+      "snapshotAt": "2026-09-22T05:49:15.173Z",
+      "contentSha256": "8e12e3ed54ca3768bd190406558f813a0abf76bbc369eaccf75ec7622faa4ffa",
+      "acquiredOn": "2026-11-15"
+    },
+    "license": "LicenseRef-OwnerAttested-KDji-Project",
+    "crs": "wgs84",
+    "crsVerified": false,
+    "coverageMode": "positive-only",
+    "sourceConfidence": {
+      "mode": "selected-source",
+      "type": "third-party-uom-snapshot",
+      "alignment": "declared-only",
+      "completeness": "unverified",
+      "currency": "unverified",
+      "temporaryRestrictions": "not-included",
+      "flightPermission": "unverified",
+      "rightsBasis": "owner-attested-project-authorization"
+    },
+    "officialMap": {
+      "label": "Verify with UOM",
+      "url": "https://uom.caac.gov.cn/"
+    },
+    "sha256": "493d55a35b30e2a86f39282152af866c999d37a22001bb46b460995c50720c28",
+    "bytes": 8547247,
+    "addressedTiles": 129488,
+    "rawSourceSha256": "094f6dad6d26641e24b4e86a72e3c6962f2bdef519cc0f16df59eb7a9e850451",
+    "successfulRequests": 16,
+    "networkAttempts": 17,
+    "occurrences": 593,
+    "uniquePolygons": 468,
+    "duplicates": 125,
+    "conflicts": 0
+  },
+  "geometryPolicy": "Complete original union, no coordinate/property changes, clipping, repair, administrative mask or query rectangle mask; existing MVT geometry quantization and attribute omission remain unchanged",
+  "validation": {
+    "geos": "All 468 valid, topology/extent/coordinate identity after winding normalization; no positive-area source overlaps",
+    "pmtiles": "All 468 original feature interior witnesses pass archive and app point reads",
+    "focusedTests": "4 passed; no skips, including real outside-Chengdu pixels, overlap, holes, unknown and existing authoritative verdicts",
+    "unaffectedRegions": "All seven regional descriptors and referenced artifacts byte-identical/deep-equal to baseline",
+    "preflight": "8 regions versus production 8; cn-chengdu removed by approval, cn-sichuan added; rejects missing replacement and every unrelated loss",
+    "applicationBuild": "passed, existing bundle-size warning",
+    "fullSuite": {
+      "command": "npm test (temporary test-only localhost resolver -> 127.0.0.1 isolated Vite app)",
+      "unitSuites": 64,
+      "browserSuites": 72,
+      "passed": 136,
+      "failed": 0,
+      "seconds": 748,
+      "configuration": "Existing ignored .env.development.local copied byte-for-byte; no provider configuration changed",
+      "initialAttempt": "Stopped: localhost resolved to another pre-existing IPv6 preview and worktree test config was absent. Corrected complete rerun passes, including diag."
+    },
+    "candidatePackage": "Extracted ZIP passes 8-region preflight and all source/capture checksums"
+  },
+  "coordination": {
+    "ownerConfirmed": "Claude completed OAuth and deployed it; owner authorizes PR #11 reconciliation, merge and deploy",
+    "merge": "ad25a342c567c8a0b754cb0e36aad8ae6897a7d2",
+    "deploy": "6dd8ede494f6cbe7c5932193a6b303f4f6fb5eb2"
+  },
+  "candidatePackage": {
+    "file": "planning/sichuan/validated-data.zip",
+    "bytes": 13571612,
+    "sha256": "99ac259b3ab9e9b7a1df38f9df2cd1c6c97fa49818cd2d4f7fbdfad47ee7ff33",
+    "contents": "Complete public/data; original Sichuan source; all 16 raw captures, HTTP/checkpoint/plan/diagnostic evidence; original Chengdu source and captures; acquisition config and live baseline check"
+  },
+  "liveBaseline": {
+    "checkedAt": "2026-11-15T08:51:52.951Z",
+    "url": "https://muffinmonday.github.io/uav-companion/data/",
+    "regions": [
+      "cn-chengdu",
+      "cn-chongqing",
+      "cn-guangdong",
+      "cn-hubei",
+      "cn-hunan",
+      "cn-jilin",
+      "cn-ningxia"
+    ],
+    "checks": [
+      {
+        "file": "cn/cn-chengdu.66de882a.pmtiles",
+        "sha256": "66de882a82a0a9300ca9008e0bca9280b10d13aa54128a1004162f38fbb800f1",
+        "bytes": 5744094
+      },
+      {
+        "file": "cn/cn-chengdu.boundary.a54e47db.json",
+        "sha256": "a54e47db27521d76fb1d25d9443d0294706c1d96d973564f3f699ed6d71d0e92",
+        "bytes": 171437
+      }
+    ]
+  },
+  "implementationCommit": "c3abe232d97c4bff74f7dc48bd8a0a471807a462",
+  "pullRequest": {
+    "number": 11,
+    "url": "https://github.com/muffinMonday/uav-companion/pull/11",
+    "draft": false,
+    "merged": true,
+    "mergeCommit": "ad25a342c567c8a0b754cb0e36aad8ae6897a7d2"
+  },
+  "reconciliation": {
+    "checkedOn": "2026-11-15",
+    "main": "de71b907348ceb1d4911ab536c179e65dcd6602d",
+    "production": "02cb2a0d3cca5b089486727ddf5727f573f1ee76",
+    "method": "Merge latest main into existing PR branch; only CURRENT_STATUS.md content conflict, both checkpoints preserved",
+    "oauthFiles": "Byte-identical to origin/main; no auth/provider/migration edits",
+    "sourceIntegrity": "Original source, PMTiles and candidate ZIP checksums unchanged; no acquisition or GEOS repeat",
+    "rollback": {
+      "file": "planning/sichuan/oauth-production-baseline.zip",
+      "sha256": "c07673793098981baecb813e357638d01850c2685dfdd73975bc1b00ce3b60ad",
+      "contents": "Complete latest live application including Google OAuth and all 8 original regional artifacts"
+    },
+    "liveOAuthBaseline": {
+      "checkedAt": "2026-11-15T09:48:15.387Z",
+      "baseline": "02cb2a0d3cca5b089486727ddf5727f573f1ee76",
+      "liveAsset": "assets/index-Bulrl3dP.js",
+      "sha256": "f6bc671e4ceab0944cc3583fd1d4fe607d82c98faba0d89203b196bcb284ddc6",
+      "googleSignInUI": true,
+      "googleProviderAuthorizeStatus": 302,
+      "googleProviderRedirectHost": "accounts.google.com",
+      "realUserSignIn": "Not performed; no credentials supplied",
+      "chengduLive": true
+    },
+    "focused": {
+      "sichuanAndSelected": 4,
+      "productionData": 26,
+      "googleUnit": 16,
+      "build": "passed",
+      "preflight": "8 regions vs production 8; only approved Chengdu-to-Sichuan replacement",
+      "googleBrowser": {
+        "passed": 37,
+        "failed": 0,
+        "scope": "Mocked Google redirect/return, email fallback, signed-in state, desktop and phone layout; no real user sign-in"
+      }
+    },
+    "fullSuite": "Prior 136-suite result reused per owner instruction; reconciliation changes no shared runtime behavior"
+  },
+  "mergeCommit": "ad25a342c567c8a0b754cb0e36aad8ae6897a7d2",
+  "productionDeploymentCommit": "6dd8ede494f6cbe7c5932193a6b303f4f6fb5eb2",
+  "historicalRollback": {
+    "file": "planning/sichuan/production-baseline.zip",
+    "sha256": "9ca4d74eb02e562f7c53e01847e98d33a0ccb9909ae2b1fbd795d8a5bf4173a3",
+    "contents": "Complete gh-pages tree; archived with core.autocrlf=false to preserve hashed JSON bytes"
+  },
+  "completedRemovalApproval": [
+    {
+      "id": "cn-chengdu",
+      "replacementId": "cn-sichuan",
+      "reason": "Owner-approved replacement with cn-sichuan: complete province-wide acquired KDji original polygons, unmasked. Release only as one validated artifact set.",
+      "approvedBy": "Repository owner (express Sichuan replacement authorization, 2026-11-15)",
+      "date": "2026-11-15"
+    }
+  ],
+  "activeRemovalApprovalCleared": true,
+  "liveVerification": {
+    "data": {
+      "checkedAt": "2026-11-15T09:53:15.810Z",
+      "deploymentCommit": "6dd8ede494f6cbe7c5932193a6b303f4f6fb5eb2",
+      "mergeCommit": "ad25a342c567c8a0b754cb0e36aad8ae6897a7d2",
+      "liveRegions": [
+        "cn-chongqing",
+        "cn-guangdong",
+        "cn-hubei",
+        "cn-hunan",
+        "cn-jilin",
+        "cn-ningxia",
+        "cn-sichuan",
+        "sg-nofly"
+      ],
+      "sichuanFeatures": 468,
+      "sourceInteriorWitnessesPassed": 468,
+      "unmasked": true,
+      "unaffectedRegionsUnchanged": 7,
+      "liveAsset": "assets/index-TB5Y4jZ8.js",
+      "bundleSha256": "587c4b794dd553421dc0e2ae43f2df9ec5f6c35522a1672f6bb88ded759ce642",
+      "hashchecks": [
+        {
+          "file": "cn/cn-chongqing.a1d54094.pmtiles",
+          "sha256": "a1d54094a434af96b73d973c7bc0d1267f69404cb0f36d5ee3aef0d795b828f3",
+          "bytes": 1915414
+        },
+        {
+          "file": "cn/cn-guangdong.550bc53c.pmtiles",
+          "sha256": "550bc53c423dc86ea38f1b99ee2e71b2f56307289e989ff73f052c203c8a512d",
+          "bytes": 1156750
+        },
+        {
+          "file": "cn/cn-hubei.566a4850.pmtiles",
+          "sha256": "566a485009c6d44e9b234ecdcbce2858b840f2040e59de204d7de0c286f12ec5",
+          "bytes": 6735672
+        },
+        {
+          "file": "cn/cn-hubei.boundary.d51de41d.json",
+          "sha256": "d51de41db7ce7f2ad8eb5b00cc5ea42c9444710961ca210e47b84ef4713feaab",
+          "bytes": 33352
+        },
+        {
+          "file": "cn/cn-hunan.b0935b4d.pmtiles",
+          "sha256": "b0935b4d7c0846832bb63839048d435f0668cd2212e8c58388f2aaf28f96dc81",
+          "bytes": 4140219
+        },
+        {
+          "file": "cn/cn-jilin.f11867c2.pmtiles",
+          "sha256": "f11867c2b6a59fce26290b4e7d8ebf18cfc176cc14a7658ec41fe46c163e6117",
+          "bytes": 2791083
+        },
+        {
+          "file": "cn/cn-ningxia.99868b1d.pmtiles",
+          "sha256": "99868b1d8e0d3a16055aca8b564bdc14a987336ecf17c6a134e4d036da9028b4",
+          "bytes": 692619
+        },
+        {
+          "file": "cn/cn-sichuan.493d55a3.pmtiles",
+          "sha256": "493d55a35b30e2a86f39282152af866c999d37a22001bb46b460995c50720c28",
+          "bytes": 8547247
+        },
+        {
+          "file": "sg/sg-nofly.52266140.pmtiles",
+          "sha256": "52266140f9d2c092f23c5ee5323c678feeffadfbe0da34e6c34de977ec241102",
+          "bytes": 363509
+        },
+        {
+          "file": "sg/sg-nofly.boundary.8621758d.json",
+          "sha256": "8621758df002c24f8a98e2e5f95dded1051037a69256100eb45ee6ee31f831a2",
+          "bytes": 880
+        },
+        {
+          "file": "sg/sg-nofly.points.c137b1a4.json",
+          "sha256": "c137b1a4b89e8b1a2063cda48af6c110f7bb81adad67b6a85c3e793396343057",
+          "bytes": 483
+        }
+      ]
+    },
+    "browser": {
+      "checkedAt": "2026-11-15T09:55:44.745Z",
+      "actualLiveApplication": true,
+      "outsideChengduWitness": {
+        "lon": 104.48066700000001,
+        "lat": 30.9786985
+      },
+      "unmaskedPixels": true,
+      "pointCheck": "POINT CHECK\nAdd as marker\nAdd as Side Quest\nRemove pin\n30.97870, 104.48067\nNavigate\nSuitable-flight zone (selected source)\nSichuan: mapped by KDji third-party UOM reference mirror; snapshot 2026-09-22, effective date unknown. Current flight permission, completeness and independent alignment are unverified. Check UOM before flying.\nWhat does this mean?\n\nPlanning aid, not flight advice.\n\nShow weather here\nSends this location, rounded to about 1 km, to Open-Meteo.com\nVerify with UOM",
+      "hubeiPointCheck": "POINT CHECK\nAdd as marker\nAdd as Side Quest\nRemove pin\n30.00000, 110.00000\nNavigate\nSuitable-flight zone, below 120 m true height\nPer Hubei data (Hubei Development and Reform Commission, effective 2026-05-14).\nWhat does this mean?\n\nPlanning aid, not flight advice.\n\nShow weather here\nSends this location, rounded to about 1 km, to Open-Meteo.com",
+      "singaporePointCheck": "POINT CHECK\nAdd as marker\nAdd as Side Quest\nRemove pin\n1.30200, 103.82910\nNavigate\nNo-fly zone: Restricted area\nRestricted area. Flying here needs permission, or is not allowed. Check the official map before flying.\nWSR38 · Restricted area\nThe restricted area encompass the Padang and surrounding areas, from ground level to 4,000 feet above mean sea level. The conduct of unauthorised aerial activities within and into the Area is not allowed at all times.\nCIVIL AVIATION AUTHORITY OF SINGAPORE · updated 24/12/2024\nWhat does this mean?\n\nPlanning aid, not flight advice.\n\nShow weather here\nSends this location, rounded to about 1 km, to Open-Meteo.com\nOneMap Drone Query (official)",
+      "googleButton": true,
+      "googleProvider": "google",
+      "googleReturnURL": "https://muffinmonday.github.io/uav-companion/",
+      "googleProviderStatus": 302,
+      "googleRedirectHost": "accounts.google.com",
+      "realUserSignIn": "Not performed; no user credentials supplied",
+      "pageErrors": [],
+      "screenshot": "planning/sichuan/live-outside-chengdu.png"
+    }
+  },
+  "deployment": {
+    "workflow": "npm run deploy:live",
+    "preflight": "passed against latest OAuth production before publish: 8 regions, 1 scoped removal and 1 addition",
+    "publisherRetry": "First attempt stopped before push due Windows MAX_PATH in cache; same workflow succeeded with supported process-local CACHE_DIR pointing to short temporary directory",
+    "sourceAndArtifacts": "Prior validated source and PMTiles reused unchanged; no acquisition or GEOS rerun",
+    "oauth": "16 unit and 37 mocked-browser checks pass; live UI and actual provider authorization redirect pass; real-user sign-in not performed",
+    "postReleasePreflight": "passed against live gh-pages 6dd8ede: 8 regions, 0 removed, 0 added; active removal approvals empty, completed approval retained in this record"
+  }
+}

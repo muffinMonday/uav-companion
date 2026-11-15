@@ -37,6 +37,10 @@ test('selected snapshots never classify gaps, missing tiles or unknown footprint
       const hole = await checkPoint(1.05, 103.05);
       const gap = await checkPoint(1.01, 103.105);
       const outside = await checkPoint(.5, 104);
+      const filledSelected = { ...selected, id: 'cn-filled-selected', file: file.replace('zones.pmtiles', 'filled.pmtiles') };
+      initPointCheck([selected, filledSelected]);
+      const selectedOverlap = await checkPoint(1.05, 103.05);
+      if (selectedOverlap.status !== 'inside' || selectedOverlap.region.id !== filledSelected.id) throw new Error('Selected-source overlap must continue past a hole in the first region');
       const hubei = { ...selected, id: 'cn-hubei', name: 'Hubei', coverageBounds: bounds, coverageMode: undefined, sourceConfidence: undefined, maxHeightM: 120, source: { authority: 'Existing authority', effective: '2026-05-14' } };
       initPointCheck([{ ...selected, id: 'cn-overlap', file: file.replace('zones.pmtiles', 'filled.pmtiles') }, hubei]);
       const legacy = await checkPoint(1.05, 103.05);

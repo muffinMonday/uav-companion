@@ -42,7 +42,8 @@ export function inspectTree(dir) {
   return { errors, index, countries, regions };
 }
 
-// `removed-regions.json`: { "removed": [{ "id", "reason", "approvedBy", "date" }] }. Only entries with every field count; the file is reviewed in git.
+// `removed-regions.json`: { "removed": [{ "id", "reason", "approvedBy", "date", "replacementId"? }] }.
+// Only entries with every required field count; optional replacementId requires an atomic replacement. Reviewed in git.
 export function readRemovals(file) {
   let list = [];
   try { list = readJson(file).removed ?? []; } catch { /* no file: nothing may be removed */ }
@@ -54,6 +55,9 @@ const stamp = (r) => r.source?.snapshotAt ?? r.source?.effective ?? null;
 // Errors for anything the candidate would take away from, or roll back on, the published site.
 export function compareToProduction(cand, prod, removals = new Map()) {
   const errors = [];
+  for (const [id, approval] of removals) {
+    if (!cand.regions.has(id) && approval.replacementId && !cand.regions.has(approval.replacementId)) errors.push(`${id}: approved replacement ${approval.replacementId} is missing from the candidate`);
+  }
   for (const [id, { region: pr }] of prod.regions) {
     const c = cand.regions.get(id);
     if (!c) { if (!removals.has(id)) errors.push(`${id}: published but missing from the candidate (not listed in removed-regions.json)`); continue; }

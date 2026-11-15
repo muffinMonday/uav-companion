@@ -1,5 +1,7 @@
 # Chongqing / Chengdu express release
 
+**Current status, 2026-11-15:** Chengdu was subsequently merged and published at gh-pages `b9e2378`. The unmasked [Sichuan replacement](SICHUAN_REPLACEMENT.md) is now prepared; production release is deferred for active Google OAuth work. Earlier statements below are historical.
+
 **Chengdu follow-up, 2026-11-15:** city-mask implementation and 57-feature PMTiles
 candidate are validated; deployment remains deferred for concurrent mascot work.
 See [current Chengdu provenance and release state](../regions/cn-chengdu.md).
