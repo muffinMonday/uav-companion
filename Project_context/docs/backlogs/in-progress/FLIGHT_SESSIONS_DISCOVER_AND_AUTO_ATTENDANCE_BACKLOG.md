@@ -1,6 +1,6 @@
 # UAV Companion — Flight Sessions Discover, Preview, People and Automatic Attendance
 
-**Status:** IN PROGRESS since 2026-11-15 (moved from for-review; owner authorized autonomous build, commit, push, hosted migrations and `deploy:live` for this backlog only; decisions closed in section 11). Evidence: see the status history below.
+**Status:** IN PROGRESS (2026-11-15). Waves A, B1, B2, C and D are built, tested, committed, pushed, deployed and live-checked; `auto_attendance_enabled` is 0 and no automatic XP is awarded. **Open:** Wave E (canary: flag flip, one real-phone pass, separate project first), owner-gated and not authorized by this run. Kept in `in-progress/` for that reason. Evidence in section 14.
 **Prepared:** 2026-11-15
 **Repository:** `muffinMonday/uav-companion`
 **Direction:** Discover improvements, tile-grid previews, a participant list with Add friend, and opt-in automatic proximity attendance with server-awarded XP. Automatic XP ships **off** (`progression_settings.auto_attendance_enabled = 0`) and stays off in this backlog.
@@ -8,6 +8,7 @@
 
 ## Status history
 - 2026-11-15: original planning draft (organiser-removed auto XP, shared Leaflet preview, host profile reuse).
+- 2026-11-15: waves A to D implemented and deployed (section 14); Wave E not started.
 - 2026-11-15: code review amended this file: conflicts with the code recorded (section 2), Today needs no SQL change, previews become a tile grid, host and participants open the profile popover with Add friend, section 7 rewritten (any-host thresholds, coordinate-free evidence, consent table), waves A, B1, B2, C, D (E out of scope).
 
 ## 1. Outcomes and scope
@@ -96,8 +97,28 @@ Each wave is built, tested, committed, pushed and deployed (one `deploy:live` pe
 
 **Still open:** pre-start and post-end grace (none now); hosted sign-up and email-confirmation settings unverified before any auto-XP rollout; Wave E canary and flag flip; real-phone pass; thresholds to tune after a pilot.
 
+## 14. Implementation evidence (2026-11-15)
+| Wave | Commit | Hosted / deploy | Tests |
+|---|---|---|---|
+| docs | `fe21279` | none | n/a |
+| A | `7b241ea` | deploy:live, bundle `index-CgiUpX5u.js` identical live | `sessions-unit` 66, `sessions` 73 |
+| B1 | `24304d8` | deploy:live, `index-C6YCX0re.js` identical live | `sessions-preview-unit` 30, `session-preview` 64 |
+| B2 | `6cdb845` | migration `20261119100000` (dry run listed only it, read-only backup `tests/out/sessions-people-release/`), deploy:live `index-DwS37eiV.js` | `db-sessions-people-unit` 54, `sessions` 90, `sessions-unit` 88 |
+| C | `886252a` | migration `20261119110000` (dry run listed only it, backup `tests/out/sessions-auto-release/`); no src change, so no deploy; flag verified 0 on the hosted project | `db-session-arrival-unit` 60 |
+| D | `5fcd847` | deploy:live, `index-CFwqLmbV.js` identical live | `session-arrival-unit` 48, `session-arrival` 19; `html-dom` fixture regenerated (7 new elements) |
+
+Every wave: full `npm run test:unit` and full `npm test` run before the commit; the only failing suite each time is `diag`, which imports `/src/log.js` and so cannot run against the `vite preview` server on :5173 (environmental; not caused by these changes). `live-engine-unit` flaked once under load (passes alone). Live guest smoke checks were read-only (no sign-in, no writes, `list_session_participants` deliberately not called because it writes handle rows). Hosted advisors reported nothing.
+
+Deviations: the attendee-list switch is in My sessions (not the Privacy card); `xp_reward` is also on `list_sessions` and invitations; the probe count uses the server clock only; one `rate limit` counter (60 calls a minute) is shared by the attendee list and the sampler; tile previews were checked with a stub tile image in tests.
+
 ## 12. Stop conditions
 Stop and report if a hosted migration dry run lists anything unexpected, tests fail without a test-side cause, the linked project is not `tgptrtcuaryyyfzhrffm`, a secret or permission is missing, or the code contradicts a decision above. Never turn `auto_attendance_enabled` on in this backlog.
 
 ## 13. Residual risks (to keep updated)
-GPS spoofing; ring farming within the caps; attendee-list exposure; hosted sign-up and email-confirmation settings unverified; no real-phone pass.
+- GPS spoofing is not preventable in a web client; caps and the bulk revoke only bound it.
+- Ring farming: cooperating accounts older than 7 days can still earn once per day and five per week each.
+- Attendee-list exposure: public sessions publish who will come, to guests; only the opt-out switch, the page cap and the per-person rate limit mitigate it (guests have no per-person limit).
+- Hosted sign-up and email-confirmation settings were not verified (local config has confirmations off).
+- No real-phone or Safari pass; previews were tested with a stub tile image; screenshots of the sessions dialog are not in the baseline matrix.
+- A started session can no longer be moved or re-timed (decision), which also blocks a host extending the end time.
+- The flag is 0 everywhere: the whole automatic path is untested against real GPS and a real second person.

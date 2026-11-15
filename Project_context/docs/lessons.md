@@ -29,3 +29,10 @@ Patterns learned from corrections. One line each: what went wrong, the rule that
 - Browser tests with fixtures dated around "today" go red when the calendar day rolls over (`trips`, `sidedrag` failed from 2026-11-15: a trip ending 14 Nov became a past trip). Pin the page clock in the test (`ctx.clock.install` + `resume`) instead of moving every date. Check a red suite against the unmodified file before blaming the change.
 
 - Never publish from git-ignored generated data without comparing it to what is live (2026-11-15: a stale `public/data` removed five China regions). `npm run deploy` now restores and preflights against gh-pages.
+
+## 2026-11-15 (Flight Sessions Discover and auto-attendance)
+- **Redefining a function that several migrations already redefined: start from the newest definition, not the first.** `purge_user_sessions` gained the report delete in the moderation migration; copying the series migration's body would have silently dropped it (`db-sessions-v2-moderation-unit` caught it). Grep `create or replace function public.<name>` across all migrations and diff the bodies before copying.
+- **The app on :5173 may be `vite preview` of `dist/`, not `npm run dev`.** Browser suites then test the last build: run `npm run build` (with `VITE_SUPABASE_*` from `.env.development.local` in the shell, or the account UI is absent) before them. `diag` imports `/src/log.js` and only works against the dev server.
+- **A new mocked setof RPC must be added to `SETOF` in the session browser suites**, or the mock returns a scalar and the screen silently shows an empty list.
+- **A DOM fixture failure after a markup change is expected**: regenerate `tests/fixtures/html-dom-baseline.json` (source digest and elements) in the same commit, after checking that only the intended elements were added.
+- Class names: `.ses-person` already belongs to the manager's people panel; the attendee list uses `.ses-attendee`.
