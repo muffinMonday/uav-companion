@@ -1,0 +1,12 @@
+Review-only handoff — UAV Companion Flight Sessions Discover + Automatic Attendance
+
+Repository: muffinMonday/uav-companion
+Planned backlog destination: Project_context/docs/backlogs/in-progress/FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md
+
+Read CLAUDE.md, Project_context/AGENTS.md, CURRENT_STATUS.md, DECISIONS.md, PROGRESSION.md, DESIGN.md, MODULES.md and the supplied backlog. Inspect the latest local HEAD, git status, existing sessions v2 migrations, SQL functions, client privacy/profile and location-watch modules, and the completed session/visual backlogs. Reconcile conflicts with live code and more recent authoritative decisions. Do not assume the planning snapshot is still current.
+
+This is a PLANNING/SECURITY REVIEW, not execution. In particular, the owner has chosen fully automatic proximity attendance AND server-awarded XP with no routine organiser approval. That is a deliberate revision of the older manual-only authority policy. Evaluate the trust boundary and propose a least-privilege, independently authorized server transaction; do not permit client-side self-awards, direct ledger grants, or false claims that GPS cannot be spoofed. Keep location-check-in consent separate from POI check-in and live location sharing. Public host-profile visibility must not exceed existing friend/party/share_profile authorization.
+
+Check that the backlog captures: Today (viewer-local midnight + ongoing events), already-server-filtered expiry and stale client cleanup, authoritative +XP badges, host detail profile, light lazy session map thumbnails, phone right-edge down/up chevron with below-card reveal, preview tap -> existing Map Explorer, no thumbnail inside Explorer, foreground-only opt-in auto arrival, server-awarded XP, toast only after confirmed award, idempotency/revocation, feature flag off by default, separate backend approval/release gates, tests and owner stop conditions.
+
+Deliver: discrepancies, actionable refinements to the Markdown, proposed wave boundaries, database/RLS/retention security review, privacy and UX edge cases, test matrix and unresolved owner decisions. If asked to save, place this in docs/backlogs/for-review and update registration docs only with explicit permission. DO NOT modify application code or migrations, commit, push or deploy. Any later implementation, Supabase mutation, feature-flag activation and production deployment require separate explicit owner approval.

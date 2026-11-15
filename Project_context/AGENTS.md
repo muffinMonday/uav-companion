@@ -78,3 +78,6 @@ For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map
 
 ## Backlog: Trip Marker Map Visibility
 - `docs/backlogs/completed/TRIP_MARKER_MAP_VISIBILITY_AND_DISAMBIGUATION_BACKLOG.md`: trip-only map view, completed-trip policy, trip text on name tag and pin labels. Frontend only. Status and evidence in its section 11 and `CURRENT_STATUS.md`.
+
+## Backlog: Flight Sessions Discover, Previews, People and Automatic Attendance
+- `docs/backlogs/in-progress/FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md`: Today filter, tile-grid previews, participant list with Add friend, automatic attendance (flag 0). Waves A, B1, B2, C, D; Wave E (canary) not authorized. Authorization for commit, push, hosted migrations and `deploy:live` is for this backlog only and expires when it is done.
