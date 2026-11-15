@@ -1,5 +1,7 @@
 # Sichuan replacement release
 
+[Draft PR #11](https://github.com/muffinMonday/uav-companion/pull/11), implementation `c3abe23` committed and pushed. Merge and deployment deferred.
+
 2026-11-15: validated candidate on `feature/sichuan-replacement`, based on main
 `8c802711a3d4ab769d53c5bc5a9b873aa77fd89d`. **Do not merge or deploy while
 Claude's Google OAuth work remains active.** The owner explicitly confirmed

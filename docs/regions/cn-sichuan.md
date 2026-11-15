@@ -1,5 +1,7 @@
 # cn-sichuan
 
+[Draft PR #11](https://github.com/muffinMonday/uav-companion/pull/11), implementation `c3abe23` committed and pushed. Merge and deployment deferred.
+
 **Validated replacement candidate, 2026-11-15; not deployed.** The owner confirmed
 Claude is still implementing Google OAuth: prepare the PR and defer release.
 Production still registers `cn-chengdu` at gh-pages `b9e2378`; PR #10 is merged.

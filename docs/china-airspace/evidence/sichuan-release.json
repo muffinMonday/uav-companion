@@ -141,5 +141,12 @@
         "bytes": 171437
       }
     ]
+  },
+  "implementationCommit": "c3abe232d97c4bff74f7dc48bd8a0a471807a462",
+  "pullRequest": {
+    "number": 11,
+    "url": "https://github.com/muffinMonday/uav-companion/pull/11",
+    "draft": true,
+    "merged": false
   }
 }
