@@ -1,4 +1,4 @@
-// loadRegionData (src/app/region-loader.js): public data, optional local-only regions, failures. fetch is stubbed; no browser needed.
+// loadRegionData (src/app/region-loader.js): public data, optional local-only regions, failures. fetch is stubbed; no browser needed. There is no place index: nothing under places/ is ever requested.
 import { ROOT } from './lib.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -18,27 +18,27 @@ function stub(files, { delay = 0, log = [], active = { now: 0, max: 0 } } = {}) 
   return { log, active };
 }
 const pubIndex = () => ({ countries: [
-  { id: 'sg', name: 'Singapore', regions: 1, manifest: 'sg/manifest.json', places: 'sg/places.json' },
-  { id: 'cn', name: 'China', regions: 1, manifest: 'cn/manifest.json', places: null },
-  { id: 'xx', name: 'Nowhere', regions: 0, manifest: null, places: null },
+  { id: 'sg', name: 'Singapore', regions: 1, manifest: 'sg/manifest.json' },
+  { id: 'cn', name: 'China', regions: 1, manifest: 'cn/manifest.json' },
+  { id: 'xx', name: 'Nowhere', regions: 0, manifest: null },
 ] });
 const pubFiles = () => ({
   'pub:index.json': pubIndex(),
   'pub:sg/manifest.json': { regions: [{ id: 'sg1', name: 'SG' }] },
   'pub:cn/manifest.json': { regions: [{ id: 'cn1', name: 'CN' }, { id: 'cn2', name: 'CN2' }] },
-  'pub:sg/places.json': [{ name: 'A' }, { name: 'B' }],
 });
 
 // public only
 let s = stub(pubFiles());
 let r = await loadRegionData(urls(false));
-ok(r.regions.map((x) => x.id).join() === 'sg1,cn1,cn2' && r.places.length === 2 && r.index.countries.length === 3, 'public: regions in country order, places flattened, index kept');
+ok(r.regions.map((x) => x.id).join() === 'sg1,cn1,cn2' && r.index.countries.length === 3 && !('places' in r), 'public: regions in country order, index kept, no place list returned');
+ok(!s.log.some((u) => /places/.test(u)), 'public: the removed place index is never requested');
 ok(!s.log.some((u) => u.startsWith('loc:')), 'public: no local request when local data is not possible on this address');
 
-// manifests and place lists are requested at the same time
+// the manifests are requested at the same time
 s = stub(pubFiles(), { delay: 15 });
 await loadRegionData(urls(false));
-ok(s.active.max >= 3, `concurrency: manifests and places overlap (${s.active.max} requests at once)`);
+ok(s.active.max >= 2, `concurrency: manifests overlap (${s.active.max} requests at once)`);
 
 // local regions are merged: new country added, existing country's count raised, regions follow public ones and are flagged
 let files = { ...pubFiles(),
@@ -50,7 +50,7 @@ r = await loadRegionData(urls(true));
 const sg = r.index.countries.find((c) => c.id === 'sg'), hb = r.index.countries.find((c) => c.id === 'hb');
 ok(r.regions.map((x) => x.id).join() === 'sg1,cn1,cn2,sgl,hb1,hb2', 'local: local regions come after the public ones');
 ok(r.regions.filter((x) => x.local).map((x) => x.id).join() === 'sgl,hb1,hb2', 'local: only local regions are flagged');
-ok(sg.regions === 2 && hb.regions === 2 && hb.manifest === null && hb.places === null && hb.view.length === 4, 'local: an existing country counts the extra region; a new country is added with no public manifest or places');
+ok(sg.regions === 2 && hb.regions === 2 && hb.manifest === null && hb.view.length === 4, 'local: an existing country counts the extra region; a new country is added with no public manifest');
 ok(!r.index.countries.some((c) => c.id === 'nm' && c.regions), 'local: an entry without a manifest adds nothing');
 
 // no local data here: fine

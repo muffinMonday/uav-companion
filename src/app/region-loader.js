@@ -1,8 +1,8 @@
 /**
- * Loads the region index, the manifests and the place lists. Nothing is fetched until this is called.
+ * Loads the region index and the manifests. Nothing is fetched until this is called.
  * `urls` is { dataUrl, localUrl, mayHaveLocalData } from config.js (passed in so this file has no build-time dependency).
  * Regions built locally only (publish: false) sit in ./data-local; they are looked for on localhost and private addresses only,
- * and a failure there is ignored. A public failure rejects. Returns { index, regions, places }.
+ * and a failure there is ignored. A public failure rejects. Returns { index, regions }.
  */
 export async function loadRegionData({ dataUrl, localUrl, mayHaveLocalData }) {
   const loadJson = async (path) => {
@@ -22,15 +22,11 @@ export async function loadRegionData({ dataUrl, localUrl, mayHaveLocalData }) {
         m.regions.forEach((x) => { x.local = true; });
         localManifests.push(m);
         const entry = index.countries.find((c) => c.id === lc.id);
-        if (entry) entry.regions += m.regions.length; else index.countries.push({ ...lc, regions: m.regions.length, manifest: null, places: null });
+        if (entry) entry.regions += m.regions.length; else index.countries.push({ ...lc, regions: m.regions.length, manifest: null });
       }
     } catch { /* no local data here: fine */ }
   }
-  const [manifests, placeLists] = await Promise.all([
-    Promise.all(index.countries.filter((c) => c.manifest).map((c) => loadJson(c.manifest))),
-    Promise.all(index.countries.filter((c) => c.places).map((c) => loadJson(c.places))),
-  ]);
+  const manifests = await Promise.all(index.countries.filter((c) => c.manifest).map((c) => loadJson(c.manifest)));
   const regions = [...manifests, ...localManifests].flatMap((m) => m.regions);
-  const places = placeLists.flat();
-  return { index, regions, places };
+  return { index, regions };
 }

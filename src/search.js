@@ -2,15 +2,11 @@ import L from 'leaflet';
 import { parseCoordinates } from './coordparse.js';
 import { log } from './log.js';
 
-const KIND = { city: 'City', county: 'District / county', landmark: 'Landmark' };
-const norm = (t) => t.toLowerCase().replace(/[\s'’\-]/g, '');
-const strip = (t) => t.replace(/(土家族自治县|林区|市|区|县)$/, '');
-
 /**
- * The search box: place names (offline, then online) and coordinates (typed or from a pasted map link).
+ * The search box: coordinates (typed or from a pasted map link), and place names searched online only when the person asks (Enter, or the "Search online" row).
  * Picking a result drops a blue pin and opens the point-check window for it, through `show` (see showCheck in main.js).
  */
-export function initSearch(map, places, { show }) {
+export function initSearch(map, { show }) {
   const qEl = document.getElementById('q');
   const resEl = document.getElementById('results');
   const box = document.getElementById('search'), toggle = document.getElementById('search-toggle');
@@ -29,25 +25,10 @@ export function initSearch(map, places, { show }) {
     e.preventDefault(); expand();
   });
 
-  function offline(q) {
-    const n = norm(strip(q.trim()));
-    if (!n) return [];
-    const out = [];
-    for (const [zh, en, lat, lon, kind] of places) {
-      const z = strip(zh), e = norm(en);
-      let score = -1;
-      if (z === n || e === n) score = 0;
-      else if (z.startsWith(n) || e.startsWith(n)) score = 1;
-      else if (zh.includes(n) || e.includes(n)) score = 2;
-      if (score >= 0) out.push({ score, label: zh, sub: `${en} · ${KIND[kind]}`, lat, lon, zoom: kind === 'city' ? 11 : kind === 'county' ? 12 : 14 });
-    }
-    return out.sort((a, b) => a.score - b.score).slice(0, 8);
-  }
-
   /** What the text means: coordinates (or a map link) are read here and never searched online; anything else is a place name. */
   function interpret(q) {
     const c = parseCoordinates(q);
-    if (c === null) return { list: offline(q), coords: false, error: '' };
+    if (c === null) return { list: [], coords: false, error: '' };
     if (!c.ok) return { list: [], coords: true, error: c.error };
     return { list: c.candidates.map((x) => ({ ...x, zoom: 15 })), coords: true, error: '' };
   }
@@ -77,7 +58,7 @@ export function initSearch(map, places, { show }) {
     if (q.trim() && !coords) { // coordinates never go to an online search
       const li = document.createElement('li');
       li.className = 'online';
-      li.textContent = list.length ? `Search online for “${q.trim()}”` : `No offline match. Search online for “${q.trim()}”`;
+      li.textContent = `Search online for “${q.trim()}”`;
       li.addEventListener('mousedown', (e) => { e.preventDefault(); online(q.trim()); });
       resEl.appendChild(li);
     }
@@ -85,28 +66,40 @@ export function initSearch(map, places, { show }) {
     qEl.setAttribute('aria-expanded', String(!resEl.hidden));
   }
 
+  /** Says what went wrong with an online search, in words a person can act on. */
+  const failureText = (kind) => (kind === 'offline' ? 'You are offline. Place-name search needs a connection; coordinates still work.'
+    : kind === 'network' ? 'Could not reach the search services. Check the connection, then try again.'
+    : kind === 'bad' ? 'The search service sent an answer that could not be read. Try again later.'
+    : `The search service answered with an error (${kind}). Try again later.`);
+
+  /** One request to a search service: the JSON answer, or an error that says what kind of failure it was. */
+  async function answer(url) {
+    let r;
+    try { r = await fetch(url); } catch { throw Object.assign(new Error('no answer'), { kind: 'network' }); }
+    if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { kind: r.status });
+    try { return await r.json(); } catch { throw Object.assign(new Error('unreadable answer'), { kind: 'bad' }); }
+  }
+
+  /** Runs only when the person asks (Enter, or the "Search online" row). Photon first; Nominatim when Photon has nothing or fails. */
   async function online(q) {
+    if (navigator.onLine === false) { msg(failureText('offline')); return; }
     msg('Searching online…');
     const c = map.getCenter();
     try {
-      const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${c.lat}&lon=${c.lng}&limit=8`);
-      if (!r.ok) throw new Error(r.status);
-      const d = await r.json();
+      const d = await answer(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${c.lat}&lon=${c.lng}&limit=8`);
       const list = d.features.map((f) => {
         const p = f.properties, [lon, lat] = f.geometry.coordinates;
         const sub = [p.city || p.county, p.state, p.country].filter(Boolean).join(', ');
         return { label: p.name || q, sub: `${sub} · online`, lat, lon, zoom: 14 };
       });
       if (list.length) return render(list, '');
-    } catch (e) { log.warn('search', 'Photon lookup failed, trying Nominatim', e); /* fall through to Nominatim */ }
+    } catch (e) { log.warn('search', 'Photon lookup failed, trying Nominatim', e.kind ?? e); /* fall through to Nominatim */ }
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&accept-language=zh,en&q=${encodeURIComponent(q)}`);
-      if (!r.ok) throw new Error(r.status);
-      const d = await r.json();
+      const d = await answer(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&accept-language=zh,en&q=${encodeURIComponent(q)}`);
       const list = d.map((x) => ({ label: x.name || x.display_name.split(',')[0], sub: `${x.display_name} · online`, lat: +x.lat, lon: +x.lon, zoom: 14 }));
       if (list.length) return render(list, '');
       msg('No online results. Try another spelling or the Chinese name.');
-    } catch { msg('Online search unavailable (no connection, or the service blocked the request). Offline names still work.'); }
+    } catch (e) { msg(failureText(e.kind ?? 'bad')); }
   }
 
   function removePin() { if (marker) { map.removeLayer(marker); marker = null; } }

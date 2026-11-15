@@ -28,7 +28,7 @@ const sgScale = await centre(p);
 // ---- basemap
 await p.selectOption('#base', 'cyclosm'); await p.waitForTimeout(1200);
 // pan/zoom somewhere specific
-await openSearch(p); await p.fill('#q', '武汉'); await p.keyboard.press('Enter'); await p.waitForTimeout(2500);
+await openSearch(p); await p.fill('#q', '30.5928, 114.3055'); await p.keyboard.press('Enter'); await p.waitForTimeout(2500);
 await p.click('.leaflet-control-zoom-in'); await p.waitForTimeout(1000);
 await p.mouse.move(300, 400); await p.mouse.down(); await p.mouse.move(250, 330, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(1200);
 const want = await p.evaluate(() => { const m = document.querySelector('#map'); return null; });

@@ -30,11 +30,6 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Licence: not stated in the attachment. Confirm terms before public redistribution.
 - Reference status: the official grid is the reference. The earlier prototype layers (removed from the repo) overlapped it by about 86% (province) and 89% (Wuhan), so those layers are not authoritative.
 
-### 3.2 Place index (`data/places/<country>.txt`)
-- Editable source, one file per country; the build generates `public/data/places/<country>.<hash>.json`.
-- Format: `local name|English name|lat|lon|kind` (`city`, `county` or `landmark`).
-- Accuracy: coordinates for county seats and districts were compiled by hand and are approximate (roughly 1 to 3 km). Verify before relying on them for anything beyond finding the right area on the map.
-
 ### 3.3 Basemap tiles
 - Not stored in the repo. Loaded at runtime from the provider.
 - Attribution must stay visible (OpenStreetMap and, as applicable, the style and host of the Humanitarian and CyclOSM layers, and OpenTopoMap).
@@ -52,8 +47,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 - Keep the zone layer on top of any basemap.
 
 **F3. Search**
-- Offline: match Chinese names and pinyin/English names from the place index, ranked by exact, prefix and substring matches, with a result limit.
-- Online: query a geocoder (Photon first, Nominatim as fallback) when the user asks. Show a clear message if the request is blocked or fails.
+- Online only: place names go to a geocoder (Photon first, Nominatim when Photon has nothing or fails) when the user presses Enter or chooses “Search online”. Nothing is sent while typing; coordinates and map links are read on the device and never searched. There is no offline place index. Clear messages say when the browser is offline, when no service could be reached, when a service returned an error (with its status), and when there are no results.
 - Selecting a result centres the map and places a marker with the name.
 - Keyboard support: arrows to move through results, Enter to select, Escape to close.
 
@@ -372,7 +366,7 @@ Earlier layers (the Wuhan screenshot extraction and the province extraction from
 ## 5. Non-functional requirements
 
 - **Static delivery:** the app must run from static files with no server of our own; GitHub Pages or a similar static host must work. Accounts are optional (Supabase, section 9) and absent from a build without a project address.
-- **Offline behaviour:** the target is that zones and offline search work without internet, with only basemap tiles and online search needing it. Not met yet: it needs a service worker caching the tiles.
+- **Offline behaviour:** the target is that zones work without internet, with only basemap tiles and online search needing it. Not met yet: it needs a service worker caching the tiles.
 - **Responsive:** usable on a phone and a desktop browser. Checked at 390 px and 1200 px wide in Edge; not on real devices.
 - **Performance:** zones are served as vector tiles (PMTiles, range requests), so only the tiles in view are fetched. Not yet measured on mid-range phones.
 - **Accessibility:** controls are keyboard-operable, have labels, and offer System, Light and Dark themes (F52).

@@ -87,7 +87,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 |---|---|
 | `scripts/build-data.js` (+ `lib/{crs,readers,tiles,pmtiles-writer,onemap}.js`) | Regions to `public/data/` |
 | `scripts/verify-data.js`, `strip-local.js`, `make-china-outline.js` | Tile check; remove local-only regions before deploy; China outline for `src/data/` |
-| `data/regions/<country>/<region>/{source.json,boundary.geojson}`, `data/places/` | Committed region definitions; raw data local |
+| `data/regions/<country>/<region>/{source.json,boundary.geojson}` | Committed region definitions; raw data local |
 | `supabase/migrations/`, `supabase/README.md` | Database; see `DATABASE.md` |
 | `tests/` (`run.mjs`, `lib*.mjs`) | Suites; see `DEVELOPMENT.md` |
 | `docs/` | `AI.md`, `ATTRIBUTIONS.md`, `regions/` |

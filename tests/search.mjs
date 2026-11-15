@@ -1,4 +1,4 @@
-// The search box: coordinates and pasted map links, and a blue pin plus the point-check window for the picked result.
+// The search box: coordinates and pasted map links, place names searched online only when asked (Enter or the "Search online" row), clear messages when a service fails, and a blue pin plus the point-check window for the picked result. The removed offline place index is never requested.
 import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
 const openSearch = (p) => p.evaluate(() => { if (document.getElementById('search').classList.contains('collapsed')) document.getElementById('search-toggle').click(); }); // the search box starts folded into a magnifying glass
@@ -6,18 +6,22 @@ const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 
 const b = await chromium.launch({ channel: CHANNEL });
-async function session({ viewport = { width: 1200, height: 800 }, mobile = false } = {}) {
+async function session({ viewport = { width: 1200, height: 800 }, mobile = false, photon = { status: 500 }, nominatim = { status: 500 } } = {}) {
   const ctx = await b.newContext({ viewport, hasTouch: mobile, isMobile: mobile });
-  const online = [];
-  for (const host of ['**/photon.komoot.io/**', '**/nominatim.openstreetmap.org/**']) await ctx.route(host, (route) => { online.push(route.request().url()); return route.fulfill({ status: 500, body: '' }); });
+  const online = [], requests = [];
+  // a service answers with { status, body } or 'abort' (no connection at all); the default is an error
+  const serve = (spec) => (route) => (spec === 'abort' ? route.abort() : route.fulfill({ status: spec.status ?? 200, contentType: 'application/json', body: JSON.stringify(spec.body ?? {}) }));
+  await ctx.route('**/photon.komoot.io/**', (route) => { online.push(route.request().url()); return serve(photon)(route); });
+  await ctx.route('**/nominatim.openstreetmap.org/**', (route) => { online.push(route.request().url()); return serve(nominatim)(route); });
   for (const host of ['**/uri.amap.com/**', '**/www.google.com/maps/**']) await ctx.route(host, (route) => route.fulfill({ status: 200, contentType: 'text/html', body: 'ok' }));
   const p = await ctx.newPage();
+  p.on('request', (r) => requests.push(r.url()));
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/arcgisonline|Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
   await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
   if (await p.evaluate(() => !document.getElementById('panel').hidden)) await p.click('#panel-close');
   await p.waitForTimeout(300);
-  return { ctx, p, online };
+  return { ctx, p, online, requests };
 }
 const type = async (p, text) => { await openSearch(p); await p.fill('#q', ''); await openSearch(p); await p.fill('#q', text); await p.waitForTimeout(200); };
 const rows = (p) => p.$$eval('#results li[role=option]', (l) => l.map((x) => ({ main: x.querySelector('span').textContent, sub: x.querySelector('small').textContent })));
@@ -27,7 +31,7 @@ const win = (p) => p.evaluate(() => { const w = document.querySelector('.leaflet
 const waitWin = async (p) => { await p.waitForSelector('.leaflet-popup .maplinks', { timeout: 8000 }); await p.waitForTimeout(900); };
 
 // ================= coordinates in China
-let { ctx, p, online } = await session();
+let { ctx, p, online, requests } = await session();
 ok(/coordinates/i.test(await p.getAttribute('#q', 'placeholder')), 'the search box says it takes coordinates');
 await type(p, '30.5928, 114.3055');
 let r = await rows(p);
@@ -76,10 +80,16 @@ ok((await pin(p)).n === 1, 'and picked like any result (the old pin was replaced
 await ctx.close();
 
 // ================= a place name
-({ ctx, p, online } = await session());
+const YICHANG = { features: [{ properties: { name: '宜昌', city: '宜昌', state: 'Hubei', country: 'China' }, geometry: { type: 'Point', coordinates: [111.29, 30.69] } }] };
+({ ctx, p, online, requests } = await session({ photon: { body: YICHANG } }));
 await type(p, '宜昌');
+ok(online.length === 0 && (await rows(p)).length === 0, 'typing a place name sends nothing and lists nothing from a local index');
+ok((await p.locator('#results li.online').count()) === 1 && /Search online for “宜昌”/.test(await p.textContent('#results li.online')), 'the only row offers the online search');
+await p.locator('#results li.online').dispatchEvent('mousedown'); await p.waitForTimeout(700);
+ok(online.length === 1 && /q=%E5%AE%9C%E6%98%8C/.test(online[0]), 'the row sends one online request, for the typed text');
 r = await rows(p);
-ok(r.length >= 1 && (await p.locator('#results li.online').count()) === 1, 'a place name lists offline matches and the online option');
+ok(r.length === 1 && r[0].main === '宜昌', 'the answer is listed: ' + JSON.stringify(r));
+ok(!requests.some((u) => /\/data\/places\//.test(u)), 'the removed place index is never requested');
 await p.keyboard.press('Enter'); await waitWin(p);
 pn = await pin(p); w = await win(p);
 ok(pn && pn.n === 1 && Math.abs(pn.x - pn.mx) < 14 && w && /zone/i.test(w.text) && w.amap && w.nav && w.add, 'a name search also gets the pin and the same window, with the buttons');
@@ -123,6 +133,39 @@ await p.keyboard.press('Enter'); await waitWin(p);
 pn = await pin(p); w = await win(p);
 ok(w && w.top >= 0 && w.bottom <= pn.top + 2 && Math.abs(pn.x - pn.mx) < 16, 'phone: the pin is centred and the window above it is fully on screen');
 await p.screenshot({ path: `${SP}/search-phone.png` });
+await ctx.close();
+
+// ================= online place-name search: what is sent, and what a failure says
+const SEARCHED = '#results li.online';
+const askOnline = async (p) => { await p.locator(SEARCHED).dispatchEvent('mousedown'); await p.waitForTimeout(700); };
+({ ctx, p, online, requests } = await session({ photon: { status: 200, body: { features: [] } }, nominatim: { status: 200, body: [{ name: '宜昌', display_name: '宜昌, Hubei, China', lat: '30.69', lon: '111.29' }] } }));
+await type(p, '宜昌'); await askOnline(p);
+ok(online.length === 2 && /photon/.test(online[0]) && /nominatim/.test(online[1]), 'an empty Photon answer falls back to Nominatim, one request each');
+ok((await rows(p)).length === 1, 'and the Nominatim result is listed');
+await type(p, '30.5928, 114.3055');
+ok(online.length === 2, 'coordinates are never sent to a search service');
+await ctx.close();
+
+({ ctx, p, online } = await session({ photon: 'abort', nominatim: 'abort' }));
+await type(p, '宜昌'); await askOnline(p);
+ok(/Could not reach the search services/.test(await msgText(p)) && (await rows(p)).length === 0, 'no connection: the list says the services could not be reached');
+ok(online.length === 2, 'both services were tried once');
+await ctx.close();
+
+({ ctx, p } = await session({ photon: { status: 503 }, nominatim: { status: 429 } }));
+await type(p, '宜昌'); await askOnline(p);
+ok(/answered with an error \(429\)/.test(await msgText(p)), 'an HTTP error names the status of the service that failed last: ' + (await msgText(p)));
+await ctx.close();
+
+({ ctx, p } = await session({ photon: { status: 200, body: { features: [] } }, nominatim: { status: 200, body: [] } }));
+await type(p, 'Nowhere Town'); await askOnline(p);
+ok(/No online results/.test(await msgText(p)), 'no results from either service: says so');
+await ctx.close();
+
+({ ctx, p, online } = await session());
+await ctx.setOffline(true);
+await type(p, '宜昌'); await askOnline(p);
+ok(/You are offline/.test(await msgText(p)) && online.length === 0, 'offline in the browser: says so and sends nothing');
 await ctx.close();
 
 console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));

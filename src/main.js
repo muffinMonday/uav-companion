@@ -142,10 +142,10 @@ map.on('click', (e) => {
 
 // Data
 try {
-  const { index, regions, places } = await loadRegionData({ dataUrl, localUrl, mayHaveLocalData });
+  const { index, regions } = await loadRegionData({ dataUrl, localUrl, mayHaveLocalData });
   setArchiveReferences(regions.map((r) => regionUrl(r, r.file))); // which cached archives the current manifests still use
   initPointCheck(regions);
-  initSearch(map, places, { show: showCheck });
+  initSearch(map, { show: showCheck });
 
   const { clearOfPanel } = initRegionUI({ map, panel, dash, index, regions });
 

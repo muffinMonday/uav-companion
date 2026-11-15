@@ -22,7 +22,7 @@ function tree(name, spec, { stamp = '2026-09-22' } = {}) {
       return { id, country: cid, name: id, file, boundary: null, cells: 1, source: { snapshotAt: stamp } };
     });
     fs.writeFileSync(path.join(dir, cid, 'manifest.json'), JSON.stringify({ country: { id: cid }, regions }));
-    countries.push({ id: cid, regions: regions.length, manifest: `${cid}/manifest.json`, places: null });
+    countries.push({ id: cid, regions: regions.length, manifest: `${cid}/manifest.json` });
   }
   fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify({ countries }));
   return dir;

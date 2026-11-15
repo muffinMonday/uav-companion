@@ -23,7 +23,7 @@ await page.screenshot({ path: `${SP}/1-initial.png` });
 console.log('scale bar:', await page.locator('.leaflet-control-scale-line').first().textContent());
 
 // zoom to Wuhan and click map for point check
-await openSearch(page); await page.fill('#q', '武汉');
+await openSearch(page); await page.fill('#q', '30.5928, 114.3055');
 await page.waitForSelector('#results li[role=option]');
 await page.keyboard.press('Enter');
 await page.waitForTimeout(3000);

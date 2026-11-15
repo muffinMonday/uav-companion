@@ -5,7 +5,7 @@ A static front end (GitHub Pages) that works fully without a server, plus an **o
 ## Components
 | Component | Responsibility |
 |---|---|
-| Build pipeline (`scripts/`, Node, local) | Region shapefiles/GeoJSON/OneMap themes to one content-hashed PMTiles per region, manifests, places index in `public/data/` |
+| Build pipeline (`scripts/`, Node, local) | Region shapefiles/GeoJSON/OneMap themes to one content-hashed PMTiles per region, manifests in `public/data/` (no place index: place names are searched online only) |
 | Static data (`public/data/`, generated, not in git) | `index.json`, `<country>/manifest.json`, `tiles/<country>/<region>.<hash>.pmtiles` (under `tiles/` so the CDN never serves a stale Range response for an old path), `places/`. Browser: each archive is downloaded whole, checked against its name's hash, and kept in the Cache API (`uavzones-pmtiles-v1`, with a last-use index); older hash-named archives are kept, and one is evicted only when a save hits a full store (`src/pmtiles-source.js`) |
 | Web app (`src/`, `index.html`) | Leaflet map, zones from PMTiles, point check, search, opt-in weather/elevation, markers, trips, AI import, dashboard, privacy; side panel tabs Map Configs, Trips, Points of Interest, and Friends (only in a build with accounts) |
 | Static AI assets (`public/ai/`, `public/llms.txt`) | Prompt, schema, example for any AI assistant |

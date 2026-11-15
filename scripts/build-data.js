@@ -4,13 +4,12 @@
 //
 // Usage: node --max-old-space-size=8192 scripts/build-data.js [regionId ...]   (no ids = rebuild everything)
 //
-// Output (for both trees; the local tree has no places):
+// Output (for both trees):
 //   <tree>/index.json                       countries
 //   <tree>/<country>/manifest.json          regions of one country
 //   <tree>/<country>/<id>.<hash>.pmtiles    zone tiles (hash in the name so updates are never served stale)
 //   <tree>/<country>/<id>.boundary.<hash>.json   coverage polygon (optional)
 //   <tree>/<country>/<id>.points.<hash>.json     point features, e.g. flying areas (optional)
-//   public/data/places/<country>.json       offline search index
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -20,7 +19,6 @@ import { writePMTiles } from './lib/pmtiles-writer.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const REGIONS = path.join(ROOT, 'data/regions');
-const PLACES = path.join(ROOT, 'data/places');
 const OUT_PUBLIC = path.join(ROOT, 'public/data');
 const OUT_LOCAL = path.join(ROOT, 'public/data-local');
 const SEMANTICS = new Set(['allow', 'restrict']);
@@ -97,27 +95,6 @@ export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS
   };
 }
 
-function buildPlaces(countryId) {
-  const file = path.join(PLACES, `${countryId}.txt`);
-  if (!fs.existsSync(file)) return null;
-  const KINDS = new Set(['city', 'county', 'landmark']);
-  const places = [];
-  fs.readFileSync(file, 'utf8').split(/\r?\n/).forEach((line, i) => {
-    if (!line.trim() || line.startsWith('#')) return;
-    const [zh, en, lat, lon, kind] = line.split('|').map((s) => s.trim());
-    if (!zh || !en || !Number.isFinite(+lat) || !Number.isFinite(+lon) || !KINDS.has(kind)) {
-      throw new Error(`${countryId}.txt line ${i + 1}: expected "local name|English name|lat|lon|city|county|landmark", got "${line}"`);
-    }
-    places.push([zh, en, +lat, +lon, kind]);
-  });
-  const text = JSON.stringify(places);
-  const rel = `places/${countryId}.${hash(text)}.json`;
-  fs.mkdirSync(path.join(OUT_PUBLIC, 'places'), { recursive: true });
-  fs.writeFileSync(path.join(OUT_PUBLIC, rel), text);
-  console.log(`[${countryId}] places: ${places.length}`);
-  return rel;
-}
-
 const wanted = new Set(process.argv.slice(2));
 
 /** Builds one tree: the public one (regions that publish) or the local one (regions with "publish": false). */
@@ -146,7 +123,7 @@ async function buildTree(OUT, local) {
 
     const regions = [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
     if (local && !regions.length) continue; // nothing local for this country
-    const entry = { id: countryId, name: cMeta.name, nameZh: cMeta.nameZh, view: cMeta.view ?? null, regions: regions.length, manifest: null, places: local ? null : buildPlaces(countryId) };
+    const entry = { id: countryId, name: cMeta.name, nameZh: cMeta.nameZh, view: cMeta.view ?? null, regions: regions.length, manifest: null };
     if (regions.length) {
       writeJson(manifestPath, { country: { id: countryId, name: cMeta.name, nameZh: cMeta.nameZh }, generated: index.generated, regions }, true);
       entry.manifest = `${countryId}/manifest.json`;
@@ -161,15 +138,8 @@ async function buildTree(OUT, local) {
     index.countries.push(entry);
   }
 
-  if (!local) {
-    // remove places files that no longer belong to any country entry
-    if (fs.existsSync(path.join(OUT, 'places'))) {
-      const keep = new Set(index.countries.map((c) => c.places && path.basename(c.places)).filter(Boolean));
-      for (const f of fs.readdirSync(path.join(OUT, 'places'))) if (!keep.has(f)) fs.unlinkSync(path.join(OUT, 'places', f));
-    }
-  }
   // remove country folders that are gone
-  for (const d of dirs(OUT)) if (d !== 'places' && d !== 'tiles' && !index.countries.some((c) => c.id === d)) fs.rmSync(path.join(OUT, d), { recursive: true });
+  for (const d of dirs(OUT)) if (d !== 'tiles' && !index.countries.some((c) => c.id === d)) fs.rmSync(path.join(OUT, d), { recursive: true });
 
   if (local && !index.countries.length) { fs.rmSync(OUT, { recursive: true, force: true }); return index; } // no local regions: no local tree
   writeJson(path.join(OUT, 'index.json'), index, true);

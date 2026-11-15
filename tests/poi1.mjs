@@ -24,7 +24,7 @@ await p.click('#dock [data-tab=poi]'); ok(await p.isVisible('#pane-poi'), 'dock 
 await p.screenshot({ path: SP + '/ui-poi-empty.png' });
 
 // ---- go to Wuhan so we have a real view
-await openSearch(p); await p.fill('#q', '武汉'); await p.keyboard.press('Enter'); await p.waitForTimeout(2500);
+await openSearch(p); await p.fill('#q', '30.5928, 114.3055'); await p.keyboard.press('Enter'); await p.waitForTimeout(2500);
 await p.keyboard.press('Escape');
 
 // ---- place a Hotel by tapping the map

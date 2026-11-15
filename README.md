@@ -19,8 +19,7 @@ The app is designed to be useful without an account: places, settings and backup
 
 ### Search and location
 
-- Searches an offline place index with Chinese names, pinyin and English names.
-- Can use Photon and Nominatim for an explicitly requested online lookup.
+- Searches place names online (Photon, then Nominatim) only when you ask: press Enter or choose “Search online”. Nothing is sent while you type, and coordinates are never sent.
 - Accepts decimal coordinates, degrees/minutes/seconds, and pasted Google Maps or Amap links.
 - Provides a three-step location control: show location, follow location, and return to normal north-up mode.
 - Supports phone compass heading, map rotation, a north compass control, accuracy display and a scale bar.
@@ -159,7 +158,6 @@ For a configured live Supabase build, use the project-specific deployment proces
 src/                         application, map, search, location, places and trips
 scripts/                     data build, verification, CRS and tile tooling
 data/regions/                region metadata, boundaries and local raw-data locations
-data/places/                 editable offline place indexes
 public/ai/                   AI prompt and GeoJSON schema/examples
 public/data/                 generated data published with the deployment
 docs/                        data provenance, AI and attribution documentation

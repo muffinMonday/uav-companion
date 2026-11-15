@@ -37,7 +37,6 @@ export function inspectTree(dir) {
       if (!r.file) errors.push(`${r.id}: no tile file`);
       for (const f of refsOf(r)) { const e = checkArtifact(dir, f); if (e) errors.push(`${r.id}: ${e}`); }
     }
-    if (c.places) { const e = checkArtifact(dir, c.places); if (e) errors.push(`${c.id}: ${e}`); }
   }
   return { errors, index, countries, regions };
 }
@@ -92,9 +91,8 @@ export function restoreMissing(dir, prodDir, removals = new Map()) {
     fs.mkdirSync(path.join(dir, pc.id), { recursive: true });
     fs.writeFileSync(path.join(dir, pc.manifest), JSON.stringify(manifest, null, 2) + '\n');
     const entry = index.countries.find((c) => c.id === pc.id);
-    if (entry) { entry.regions = manifest.regions.length; entry.manifest = pc.manifest; entry.places ??= pc.places; }
+    if (entry) { entry.regions = manifest.regions.length; entry.manifest = pc.manifest; }
     else index.countries.push({ ...pc, regions: manifest.regions.length });
-    if (pc.places && !fs.existsSync(path.join(dir, pc.places))) { fs.mkdirSync(path.dirname(path.join(dir, pc.places)), { recursive: true }); fs.copyFileSync(path.join(prodDir, pc.places), path.join(dir, pc.places)); }
   }
   if (restored.length) fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(index, null, 2) + '\n');
   return restored;
