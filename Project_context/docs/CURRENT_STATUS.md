@@ -4,7 +4,9 @@
 - Measured (headless Edge, `tests/fly-in.mjs`): fresh Singapore view: 1 archive (`sg-nofly`), 0.36 MB. Switch to Hubei: 4 archives (`cn-hubei`, `cn-chongqing`, `cn-hunan`, `cn-sichuan`, whose bounds meet the Hubei view at zoom 7), 21.34 MB. Pan to Guangzhou: `cn-guangdong` only, 1.16 MB. After a reload, Hubei again: 0 archives from the network (Cache API).
 - Checks: `npm run test:unit` all suites pass (`region-labels-unit` 5 checks); `npm test` all suites pass (`fly-in` 9, `dashboard` 89, `splash`, `prefs`, `responsive` 210).
 - Residual: the header country menu still loads every China archive its view touches. The no-location fallback in the quick setup still offers country buttons.
-- Deployed regions (unchanged by this change): `cn-chongqing`, `cn-guangdong`, `cn-hubei`, `cn-hunan`, `cn-jilin`, `cn-ningxia`, `cn-sichuan`, `sg-nofly`. Deploy and live verification: recorded below once `npm run deploy:live` has run.
+- Deployed regions (unchanged by this change): `cn-chongqing`, `cn-guangdong`, `cn-hubei`, `cn-hunan`, `cn-jilin`, `cn-ningxia`, `cn-sichuan`, `sg-nofly`.
+- Committed `f507c83` and pushed to `main`; `npm run deploy:live` published gh-pages `8dd126d` (preflight: 8 regions, production 8, 0 added, 0 removed).
+- Live check (guest, no writes, uavcompanion.com): the fresh visit downloads only `sg-nofly` (1 archive, 363,509 bytes); the dropdown lists the 8 names; choosing Hubei downloads `cn-hubei`, `cn-chongqing`, `cn-hunan`, `cn-sichuan` (4 archives, 21,338,552 bytes); no page errors.
 
 ## Latest (previous): live zones blank, cause found; PMTiles moved to `tiles/` (2026-11-15; owner approved commit, push and deploy)
 - Cause: the CDN in front of uavcompanion.com answers PMTiles Range requests from a stale cached object. Full GETs are correct (sha256 matches the name hash); every archive's `Content-Range` total and body length are wrong, the live page logs 172 `Failed to fetch`, and 0 zone pixels paint. Same bytes with correct Range responses paint 248,835 pixels (causal test, headless Edge).
