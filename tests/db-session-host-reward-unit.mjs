@@ -146,3 +146,11 @@ for (const f of [`public.session_host_reward('${s0}', true)`, `public.award_xp('
 }
 ok(/permission denied/.test(await refused(db, B, `insert into public.xp_ledger (user_id, amount, source, ref) values ('${B}', 50, 'hosting', 'session:x')`)), 'a host cannot write the ledger directly');
 ok(/only an administrator adjustment/.test((await db.query(`select public.award_xp($1, -5, 'hosting', 'session:zz')`, [B]).then(() => '', (e) => String(e.message)))), 'only the :adj: key can lower hosting XP');
+
+// the amounts the app explains come from the same settings the close pays (session_xp_rates, read-only, signed-in people only)
+const rates0 = await one(B, 'public.session_xp_rates()');
+ok(rates0.host_base_xp === 50 && rates0.host_per_attendee_xp === 10, 'session_xp_rates gives the host reward settings: ' + JSON.stringify(rates0));
+await db.exec(`update public.progression_settings set value = 7 where key = 'host_per_attendee_xp'`);
+ok((await one(C, 'public.session_xp_rates()')).host_per_attendee_xp === 7, 'a change to the setting is what a signed-in person is shown');
+await db.exec(`update public.progression_settings set value = 10 where key = 'host_per_attendee_xp'`);
+ok(/permission denied/.test(await refused(db, null, 'select public.session_xp_rates()')), 'a visitor cannot read them');

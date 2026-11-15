@@ -8,7 +8,7 @@ import { localDate, localTime } from './sessions-recurrence.js';
 import { createExplorer } from './sessions-map-explorer.js';
 import { sessionMapActions, hasPoint } from './maplinks-ui.js';
 import { previewParts } from './sessions-preview.js';
-import { xpBadge } from './sessions-xp.js';
+import { xpBadge, xpExplainText } from './sessions-xp.js';
 import { createArrival } from './session-arrival.js';
 import { getPrivacy, setPrivacy } from './privacy.js';
 import { showProfile } from './profile-popover.js';
@@ -33,6 +33,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   let mine = mineEmpty(), section = 'discover', view = 'list', detail = null, message = '', busy = false, seqMine = 0, seqPub = 0, summaryAt = 0, nearby = null;
   let pub = { status: 'idle', list: [], more: false, query: '', near: 'any', when: 'any', space: false, offset: 0 };
   let inLists = null; // "Show me in attendee lists": null = not asked yet, undefined = asking, else the stored choice
+  let xpRates = null; // the host reward the database pays, { hostBase, hostPerAttendee }, read with the signed-in list (null until then)
   let previewOpen = null; // the one Discover card whose map preview is open (not kept between visits)
   let manageOpen = new Set(), people = new Map(), invite = new Map(), newLink = null, editing = null, reporting = null;
   let quietClose = false; // the close event is queued and fires later; this marks the close that only steps aside for the map
@@ -116,11 +117,12 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (mine.status === 'idle' && !quiet) { mine = { ...mine, status: 'loading' }; if (dlg.open) paint(); }
     const one = async (fn, fallback) => { try { return await fn(); } catch (e) { log.warn('sessions', 'load failed', e); return fallback; } };
     const failed = { v: false };
-    const [sessions, roles, notices, takedowns, invites] = await Promise.all([
+    const [sessions, roles, notices, takedowns, invites, rates] = await Promise.all([
       api.list().catch((e) => { failed.v = true; log.warn('sessions', 'list failed', e); return null; }), one(() => api.roles(), { admin: false, organiser: false }),
-      one(() => api.notices(), []), one(() => api.takedowns(), []), one(() => api.invitations(), []),
+      one(() => api.notices(), []), one(() => api.takedowns(), []), one(() => api.invitations(), []), one(() => api.xpRates(), null),
     ]);
     if (me !== seqMine) return;
+    if (rates) xpRates = rates;
     mine = failed.v ? { ...mine, status: 'error' } : { status: 'ready', sessions, roles, notices, takedowns, invites };
     summaryAt = Date.now();
     (arrival.config() ? Promise.resolve() : arrival.loadConfig()).then(() => arrival.kick());
@@ -427,6 +429,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (s.myAttended) f.append(el('span', 'badge ok ses-attended', 'You were there'));
     { const st2 = arrival.state(); if (st2.sessionId === s.id && st2.text) { const n = el('p', 'hint ses-arrival', st2.text); n.setAttribute('role', 'status'); f.append(n); } }
     if (s.status === 'scheduled' || s.status === 'closed') f.append(peopleSection(s));
+    { const t = xpExplainText(s, xpRates); if (t) { const sec = el('section', 'ses-xp'); sec.setAttribute('aria-label', 'EXP'); sec.dataset.xp = s.isHost ? 'host' : 'attendee'; sec.append(el('h3', 'ses-group', 'EXP'), el('p', 'ses-xp-text', t)); f.append(sec); } }
     const bs = el('div', 'btn-row');
     if (!signedIn()) bs.append(signInBox('Sign in to say you will come.'));
     else if (st.canRsvp) { if (s.visibility === 'public') bs.append(el('small', 'hint ses-rsvp-note', 'Your name and picture show in the list of who is coming. You can switch that off under My sessions.')); const b = btn('I will come', 'btn small primary'); b.dataset.act = 'rsvp'; b.addEventListener('click', () => act(() => api.rsvp(s.id), 'You are on the list.')); bs.append(b); }

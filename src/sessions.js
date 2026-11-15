@@ -1,6 +1,6 @@
 // Flight sessions, the plain part: the database functions (supabase/migrations/20261114130000_flight_sessions.sql and the 202611181* Sessions 2.0 migrations), validation of what they
-// return, and the rules for which button to show when. The database enforces every rule; these only decide what the screen offers. Hosting a session and RSVP give no XP:
-// attendance XP comes only from an organiser who hosts the session (or an administrator) marking someone present (`canVerify`).
+// return, and the rules for which button to show when. The database enforces every rule; these only decide what the screen offers. RSVP gives no XP. Attendance XP comes only from
+// an organiser who hosts the session (or an administrator) marking someone present (`canVerify`). A host earns the host reward when the session closes with verified attendees (`xpRates`).
 
 const text = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
 const time = (v) => (typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? v : null);
@@ -167,6 +167,12 @@ export const linkUrl = (token, base) => `${base}#session=${token}`;
 export const tokenFromHash = (hash) => { const m = /^#session=([A-Za-z0-9]{32,100})$/.exec(hash || ''); return m ? m[1] : null; };
 
 const list = (rows, clean) => (Array.isArray(rows) ? rows.map(clean).filter(Boolean) : []);
+/** session_xp_rates() as { hostBase, hostPerAttendee } (whole numbers, 0 or more), or null. */
+const whole = (v) => (Number.isInteger(v) && v >= 0 && v <= 100000 ? v : null);
+export const cleanRates = (r) => {
+  const hostBase = whole(r?.host_base_xp), hostPerAttendee = whole(r?.host_per_attendee_xp);
+  return hostBase === null || hostPerAttendee === null ? null : { hostBase, hostPerAttendee };
+};
 
 export function createSessions(client) {
   const rpc = async (fn, args) => {
@@ -203,6 +209,8 @@ export function createSessions(client) {
       if (f.until) args.p_until = f.until;
       return list(await rpc('list_public_sessions', args), cleanPublic);
     },
+    /** The host reward the database pays: { hostBase, hostPerAttendee } (XP), or null when the database does not say. */
+    async xpRates() { return cleanRates(await rpc('session_xp_rates')); },
     async invitations() { return list(await rpc('list_my_session_invitations'), cleanInvitation); },
     async notices() { return list(await rpc('list_my_session_notices'), cleanNotice); },
     ackNotices: () => rpc('ack_session_notices'),

@@ -36,3 +36,7 @@ Patterns learned from corrections. One line each: what went wrong, the rule that
 - **A new mocked setof RPC must be added to `SETOF` in the session browser suites**, or the mock returns a scalar and the screen silently shows an empty list.
 - **A DOM fixture failure after a markup change is expected**: regenerate `tests/fixtures/html-dom-baseline.json` (source digest and elements) in the same commit, after checking that only the intended elements were added.
 - Class names: `.ses-person` already belongs to the manager's people panel; the attendee list uses `.ses-attendee`.
+
+## 2026-11-15 (one-click guest, session XP explanation)
+- **Before a browser run, check what owns :5173.** Vite moves to 5175 when 5173 is taken, and the suites still hit 5173: a leftover `vite preview` of an old build answered, and the splash and sessions checks failed on code that was not under test. Run `npx vite --port 5173 --strictPort` (fails loudly instead) and confirm the served file has your change (`curl localhost:5173/src/<file>`).
+- **A figure shown to people must come from the database settings it describes.** The host reward amounts (`host_base_xp`, `host_per_attendee_xp`) were not readable by the app; a read-only `session_xp_rates()` supplies them, and the browser test changes the settings to prove the text follows.

@@ -1,3 +1,10 @@
+## Latest: one-click guest, EXP section in session details (2026-11-16; migration applied to the hosted project; committed and deployed in the commit that records this)
+- Splash: **Continue as guest** closes the splash at once and opens the dashboard, like Skip, and records `account: 'guest'`.
+- Session details: an **EXP** section below "Who is coming" (`xpExplainText` in `src/sessions-xp.js`). Participant: "Earn N XP when your attendance is verified. RSVP alone earns no XP." Host: the close reward and per-attendee amount, read from the read-only `session_xp_rates()` (migration `20261120110000_session_xp_rates.sql`, applied to the hosted project with `db push --remote --yes` after a dry run that listed only that file). The create-session hint still says hosting gives no XP (kept as asked; it now contradicts the host rule, owner to decide).
+- Tests: `npm test` all suites pass (741 s), including `splash` 43, `sessions` 94, `diag`, and `db-session-host-reward-unit` 39 with the rate function. `npm run build` ok.
+- Fly In: no uncommitted Fly In changes were in the tree; nothing there was touched.
+- Next: the pasted "Remove the offline place-search index" spec (not started).
+
 ## Latest: country buttons replace the Fly in dropdown and the Go to select (2026-11-15; committed `c10aa3b`, pushed to `main`, `npm run deploy:live` published; owner approved)
 - Live check (guest, read-only, uavcompanion.com): live bundle `index-hinXsyBJ.js` equals the local build; the dashboard Fly in card and Map Config Go to card each show China and Singapore; no page errors. Not clicked through every region live.
 - The dropdowns are gone. The dashboard's **Fly in** card and Map Config's **Go to** card show one button per country (`src/app/country-menu.js`). **Singapore** focuses the map on it at once, with no menu. **China** opens a menu of its seven regions (Chongqing, Guangdong, Hubei, Hunan, Jilin, Ningxia, Sichuan); choosing one focuses the map on it and closes the menu. No "China" item and no whole-country view. Rule, and what to keep in sync when coverage changes: ARCHITECTURE "Fly In regions".

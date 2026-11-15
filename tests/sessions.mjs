@@ -411,6 +411,7 @@ await db.exec(`insert into public.session_rsvps (session_id, user_id) values ('$
   const names = await p.locator(body + ' .ses-attendee-name').allTextContents();
   ok(names.join('|') === 'Bea|Alex|Dee', 'the detail lists the host first, then the people who are coming: ' + names.join('|'));
   ok(/Your name and picture show/.test(await txt(p, body + ' .ses-rsvp-note')) && /Host/.test(await txt(p, body + ' .ses-attendee')), 'the RSVP step has the notice and the host is marked');
+  ok((await txt(p, body + ' .ses-xp-text')) === 'Earn 50 XP when your attendance is verified. RSVP alone earns no XP.' && await p.locator(body + ' .ses-xp').getAttribute('data-xp') === 'attendee' && await p.locator(body + ' .ses-xp').evaluate((e) => e.previousElementSibling?.classList.contains('ses-people')), 'the EXP section after Who is coming explains the attendee rule (the amount from the session)');
   await p.locator(body + ' .ses-attendee', { hasText: 'Alex' }).click(); await p.waitForTimeout(900);
   ok(/In your friends list/.test(await txt(p, hub + ' #profile-pop')) && await p.locator(hub + ' #profile-pop [data-act=add-friend]').count() === 0, 'a friend shows "In your friends list" and no Add friend');
   await p.keyboard.press('Escape'); await p.waitForTimeout(200);
@@ -451,6 +452,24 @@ await db.exec(`insert into public.session_rsvps (session_id, user_id) values ('$
   await rowOf(p, 'People meet').locator('[data-act=host-profile]').click(); await p.waitForTimeout(900);
   const sb = await p.locator('#profile-pop').boundingBox();
   ok(await p.locator(hub + ' #profile-pop:not([hidden])').count() === 1 && sb.x >= 0 && sb.x + sb.width <= 361 && sb.y >= 0 && sb.y + sb.height <= 741, 'on a 360 px phone the profile sheet fits the screen inside the dialog');
+  await ctx.close();
+
+  // the host (an organiser): the amounts are the database's host reward settings, read again after they change
+  const rates = async (base, per) => db.exec(`update public.progression_settings set value = ${base} where key = 'host_base_xp'; update public.progression_settings set value = ${per} where key = 'host_per_attendee_xp'`);
+  const hostNote = async (p) => { await openHub(p); await p.waitForSelector(body + ' .ses-row', { timeout: 5000 }); await p.fill('#ses-q', 'meet'); await p.press('#ses-q', 'Enter'); await p.waitForTimeout(700); await rowOf(p, 'People meet').locator('[data-act=details]').click(); await p.waitForSelector(body + ' .ses-xp-text', { timeout: 6000 }); return txt(p, body + ' .ses-xp-text'); };
+  ({ ctx, p } = await open('b'));
+  const first = await hostNote(p);
+  ok(first === 'Earn 50 XP when the session closes, plus 10 XP for each verified attendee. At least one verified attendee is required for the host reward.', 'the host is told the close reward and the per-attendee amount, from the database: ' + first);
+  await rates(40, 12);
+  await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(700);
+  const changed = await hostNote(p);
+  ok(/Earn 40 XP when the session closes, plus 12 XP for each verified attendee/.test(changed), 'changing the database settings changes the host text, with no app change');
+  await rates(50, 10);
+  await ctx.close();
+  ({ ctx, p } = await open('c'));
+  await openHub(p); await p.waitForSelector(body + ' .ses-row', { timeout: 5000 }); await p.fill('#ses-q', 'Plain'); await p.press('#ses-q', 'Enter'); await p.waitForTimeout(700);
+  await rowOf(p, 'Plain meet').locator('[data-act=details]').click(); await p.waitForSelector(body + ' .ses-xp-text', { timeout: 6000 });
+  ok(/^Earn 50 XP when the session closes/.test(await txt(p, body + ' .ses-xp-text')) && await p.locator(body + ' .badge.xp').count() === 0, 'an ordinary host is still told about the host reward (no organiser role needed), while the attendee XP badge stays absent');
   await ctx.close();
 }
 await db.exec(`delete from public.flight_sessions where title in ('People meet', 'Plain meet')`);

@@ -2,6 +2,7 @@
 //   Plan a trip   -> a short form, or an itinerary link, that becomes a prompt to copy into any AI; then the AI's answer is pasted and previewed here
 //   Plan a flight -> use my location, and centre the map on it (the Fly in buttons if the position cannot be had)
 //   Skip          -> the dashboard opens with How it works showing
+//   Continue as guest (account row, when accounts are on) -> the same as Skip, and the choice is kept as account 'guest' (everything stays in this browser)
 //   Learn the map -> an optional three-step orientation (official information, checking a spot, finding the tools); every step can be skipped and it ends back here
 // The link is never fetched: it is only put in the prompt text. The choice is saved as prefs.mode for the flight planner that will open itself.
 import { el } from './cards.js';
@@ -40,7 +41,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
     acctBox.hidden = !accountsOn();
     if (acctBox.hidden) return;
     const chosen = loadDash().account === 'guest';
-    const guest = btn('Continue as guest', () => { saveDash({ account: 'guest' }); paintAccount(); }, 'btn small'); guest.id = 'splash-guest'; guest.setAttribute('aria-pressed', String(chosen));
+    const guest = btn('Continue as guest', () => { saveDash({ account: 'guest' }); skip(); }, 'btn small'); guest.id = 'splash-guest'; guest.setAttribute('aria-pressed', String(chosen));
     const make = btn('Create a profile', () => { saveDash({ account: 'profile' }); finish(); dash.fold(); cloud.handle.open(); }, 'btn small'); make.id = 'splash-profile';
     const row = el('div', 'btn-row'); row.append(guest, make);
     acctBox.append(row, el('p', 'hint', chosen ? 'You are a guest: everything stays in this browser. Sign in any time from the account button.' : 'A profile keeps your markers and trips on other devices and lets you add friends. It is optional.'));
