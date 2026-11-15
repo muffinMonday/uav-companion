@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import { leafletLayer, PolygonSymbolizer } from 'protomaps-leaflet';
 import { regionUrl } from './config.js';
+import { sharedArchive } from './pmtiles-source.js';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -64,7 +65,7 @@ export function createZones(map, regions) {
   let opacity = 0.45;
 
   const make = (r) => leafletLayer({
-    url: regionUrl(r, r.file),
+    url: sharedArchive(regionUrl(r, r.file)),
     maxZoom: 19,
     maxDataZoom: r.maxZoom, // tiles stop here; deeper map zooms overzoom them (library default is 15)
     // Opaque fill; transparency is applied to the whole layer so adjacent cells do not darken at shared edges.
@@ -93,9 +94,9 @@ export function createZones(map, regions) {
     sync,
     fit(options) {
       if (!regions.length) return;
-      // the opening view shows the first region (Hubei); the others are reached with the country menu, since one view over
-      // regions thousands of kilometres apart would show none of them
-      const all = toLatLngBounds((regions.find(r => r.id === 'cn-hubei') ?? regions[0]).bounds);
+      // the opening view shows Singapore, so a first visit downloads only its archive; the others are reached with the
+      // country menu, since one view over regions thousands of kilometres apart would show none of them
+      const all = toLatLngBounds((regions.find(r => r.id === 'sg-nofly') ?? regions[0]).bounds);
       map.fitBounds(all, options);
     },
     setVisible(v) {

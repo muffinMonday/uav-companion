@@ -1,7 +1,7 @@
 // F4: what does the data say about this point? Reads the same PMTiles the map draws, at the highest zoom.
-import { PMTiles } from 'pmtiles';
 import { zonesInArchive } from './zones.js';
 import { regionUrl } from './config.js';
+import { sharedArchive } from './pmtiles-source.js';
 import { el, statusEl, disclaimer } from './cards.js';
 import { zoneExplanation } from './legends.js';
 
@@ -12,7 +12,7 @@ let regions = [];
 export function initPointCheck(list) { regions = list; }
 
 const archive = (r) => {
-  if (!archives.has(r.id)) archives.set(r.id, new PMTiles(regionUrl(r, r.file)));
+  if (!archives.has(r.id)) archives.set(r.id, sharedArchive(regionUrl(r, r.file)));
   return archives.get(r.id);
 };
 

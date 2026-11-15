@@ -31,7 +31,8 @@ import { initAI, loadPrompt } from './ai-ui.js';
 import { initTripsUI } from './trips-ui.js';
 import { getPrivacy } from './privacy.js';
 import { onDistanceSettings } from './units.js';
-import { dataUrl, localUrl, mayHaveLocalData } from './config.js';
+import { dataUrl, localUrl, mayHaveLocalData, regionUrl } from './config.js';
+import { setArchiveReferences } from './pmtiles-source.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { initTheme } from './theme.js';
 import { log, applyDebugParam } from './log.js';
@@ -142,6 +143,7 @@ map.on('click', (e) => {
 // Data
 try {
   const { index, regions, places } = await loadRegionData({ dataUrl, localUrl, mayHaveLocalData });
+  setArchiveReferences(regions.map((r) => regionUrl(r, r.file))); // which cached archives the current manifests still use
   initPointCheck(regions);
   initSearch(map, places, { show: showCheck });
 

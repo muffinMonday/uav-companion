@@ -15,7 +15,7 @@ const base = [
 
 const b = await chromium.launch({ channel: CHANNEL });
 async function session({ items = base, viewport = { width: 1200, height: 800 }, mobile = false } = {}) {
-  const ctx = await b.newContext({ viewport, hasTouch: mobile, isMobile: mobile });
+  const ctx = await b.newContext({ viewport, hasTouch: mobile, isMobile: mobile, hubeiView: true });
   await ctx.addInitScript((po) => { if (!sessionStorage.__seeded) { sessionStorage.__seeded = '1'; localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po })); } }, items);
   // the real map apps are never contacted
   for (const host of ['**/uri.amap.com/**', '**/www.google.com/maps/**']) await ctx.route(host, (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<html>ok</html>' }));

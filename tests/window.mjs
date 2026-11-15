@@ -11,7 +11,7 @@ const seed = { v: 1, items: [
 
 const b = await chromium.launch({ channel: CHANNEL });
 async function session(viewport, mobile = false, prefs = null) {
-  const ctx = await b.newContext({ viewport, hasTouch: mobile, isMobile: mobile });
+  const ctx = await b.newContext({ viewport, hasTouch: mobile, isMobile: mobile, hubeiView: true });
   await ctx.addInitScript(([s, pr]) => { if (!sessionStorage.__seeded) { sessionStorage.__seeded = '1'; localStorage.setItem('uavzones.v1.pois', JSON.stringify(s)); if (pr) localStorage.setItem('uavzones.v1.prefs', JSON.stringify(pr)); } }, [seed, prefs]);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
@@ -112,7 +112,7 @@ ok(Math.abs(after.y - before.y) > 30, 'the map can still be dragged around the e
 await p.screenshot({ path: `${SP}/window-phone.png` });
 await ctx.close();
 
-({ ctx, p } = await session({ width: 390, height: 780 }, true, { windowExpanded: true }));
+({ ctx, p } = await session({ width: 390, height: 780 }, true, { windowExpanded: true, view: { lat: 30.6, lon: 114.3, zoom: 7 } }));
 await openMarker(p, 'Bridge');
 ok(/is-expanded/.test((await geo(p)).cls), 'a phone visitor who chose expanded gets it');
 await ctx.close();

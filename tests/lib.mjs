@@ -22,8 +22,10 @@ export const chromium = {
   async launch(options) {
     const browser = await real.launch(options);
     const newContext = browser.newContext.bind(browser);
-    browser.newContext = async ({ addFolded, listFolded, ...opts } = {}) => {
+    browser.newContext = async ({ addFolded, listFolded, hubeiView, ...opts } = {}) => {
       const ctx = await newContext({ reducedMotion: 'reduce', ...opts }); // moving elements make timing flaky; motion.mjs asks for it back
+      // hubeiView: start on Hubei (the suites that use its Wuhan points). A first visit now opens on Singapore.
+      if (hubeiView) await ctx.addInitScript(() => { try { if (localStorage.getItem('uavzones.v1.prefs') === null) localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.6, lon: 114.3, zoom: 7 } })); } catch { /* ignore */ } });
       // (the contextual hints are marked as seen too, or a hint at the top of a pane would move what the suites click on; the discover suite starts without them)
       await ctx.addInitScript(([seen, hints]) => { try { if (localStorage.getItem('uavzones.v1.dash') === null) localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: false, welcomed: true, seen })); if (localStorage.getItem('uavzones.v1.help') === null) localStorage.setItem('uavzones.v1.help', JSON.stringify({ v: 1, seen: hints })); } catch { /* ignore */ } }, [LATEST_SEEN, HELP.map((h) => h.id)]);
       // Add a marker is folded on every page load (by design). The older suites click its controls, so they get it opened; `addFolded: true` keeps the real first state (the picker suite).
