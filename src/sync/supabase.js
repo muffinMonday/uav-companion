@@ -13,6 +13,8 @@ export async function createSupabaseAdapter({ url = import.meta.env?.VITE_SUPABA
     client: sb, // for tests
     async getSession() { const { data } = await sb.auth.getSession(); const u = data.session?.user; return u ? { email: u.email, id: u.id } : null; },
     async signIn(email) { const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo, shouldCreateUser: true } }); if (error) throw new Error(error.message); },
+    /** Starts Google sign-in: the browser leaves for Google and returns to `redirectTo`. Default identity scopes only; the flow stays implicit like the email link. */
+    async signInWithGoogle() { const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } }); if (error) throw new Error(error.message); },
     async signOut() { await sb.auth.signOut(); },
     onAuthChange(fn) { const { data } = sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') fn(event); }); return () => data.subscription.unsubscribe(); },
     async info() {

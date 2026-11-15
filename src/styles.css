@@ -908,6 +908,8 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 /* optional cloud copy (privacy settings card, the question dialog, the dashboard line) */
 .cloud-form{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .cloud-status{margin:4px 0 0}
+.cloud-google{width:100%;margin-top:8px}
+.cloud-or{margin:8px 0 0;text-align:center}
 .cloud-versions{margin-top:10px;display:flex;flex-direction:column;gap:6px}
 .cloud-version{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:var(--fs-small)}
 #cloud-card .btn.danger{margin-top:10px}

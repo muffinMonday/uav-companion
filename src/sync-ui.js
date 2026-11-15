@@ -31,8 +31,26 @@ function download(side, doc) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+/**
+ * A failed or cancelled Google return carries `error` in the address (the hash, or the query). Reports whether this load is one, and removes those
+ * parameters so a refresh does not show it again. Never touches a successful return (it has `access_token`; the library reads it).
+ * Denying Google's own consent screen does not come back to the app at all, so this only sees returns that reach us.
+ */
+export function takeAuthReturnError(loc = location, hist = history) {
+  try {
+    const h = new URLSearchParams(loc.hash.replace(/^#/, '')), q = new URLSearchParams(loc.search);
+    const has = (x) => x.has('error') || x.has('error_description');
+    if (h.has('access_token') || !(has(h) || has(q))) return false;
+    for (const x of [h, q]) for (const k of ['error', 'error_code', 'error_description']) x.delete(k);
+    const qs = q.toString(), hs = h.toString();
+    hist.replaceState(null, '', loc.pathname + (qs ? '?' + qs : '') + (hs ? '#' + hs : ''));
+    return true;
+  } catch { return false; }
+}
+
 export async function initSyncUI({ store, toast }) {
   if (!configured()) return null;
+  let notice = takeAuthReturnError() ? 'Google sign-in did not finish. Try again, or use the email link below.' : null; // shown in the sign-in form until the next attempt
   const anchor = $('pv-checkin')?.closest('.card');
   if (!anchor) return null;
   const [{ createSupabaseAdapter }, { createSync }] = await Promise.all([import('./sync/supabase.js'), import('./sync/engine.js')]);
@@ -53,21 +71,36 @@ export async function initSyncUI({ store, toast }) {
   let versions = null;
   const handle = {};
 
-  /** The email sign-in form with its own status line; the account popover shows it. */
+  /** Every sign-in form on the page, so a page restored from the back button can enable them again (see below). */
+  const signIns = new Set();
+  window.addEventListener('pageshow', () => { for (const x of signIns) { if (x.box.isConnected) x.reset(); else signIns.delete(x); } });
+
+  /** Google and email sign-in with one status line; the account popover shows it. Starting either disables both while the page leaves. */
   function signInForm() {
     const box = el('div', 'cloud-signin');
+    const g = el('button', 'btn cloud-google', 'Continue with Google'); g.type = 'button';
+    const or = el('p', 'hint cloud-or', 'or use email');
     const f = el('form', 'cloud-form');
     const input = el('input'); input.type = 'email'; input.required = true; input.placeholder = 'you@example.com'; input.autocomplete = 'email'; input.setAttribute('aria-label', 'Email address');
     const b = el('button', 'btn small', 'Email me a sign-in link'); b.type = 'submit';
     const m = el('p', 'hint'); m.setAttribute('role', 'status'); m.hidden = true;
+    const busy = (on) => { g.disabled = b.disabled = on; if (on) notice = null; };
+    const say = (t) => { m.textContent = t; m.hidden = false; };
+    if (notice) say(notice); // kept through redraws of the popover until the next attempt
     f.append(input, b);
     f.addEventListener('submit', async (e) => {
-      e.preventDefault(); b.disabled = true;
+      e.preventDefault(); busy(true);
       const r = await sync.signIn(input.value.trim());
-      m.textContent = r.ok ? 'Check your email for the link, open it on this device, and you will be signed in.' : 'Could not send the link: ' + r.error;
-      m.hidden = false; b.disabled = false;
+      say(r.ok ? 'Check your email for the link, open it on this device, and you will be signed in.' : 'Could not send the link: ' + r.error);
+      busy(false);
     });
-    box.append(f, m);
+    g.addEventListener('click', async () => {
+      busy(true); say('Opening Google…');
+      const r = await sync.signInWithGoogle();
+      if (!r.ok) { say('Could not open Google: ' + r.error); busy(false); } // on success the page is leaving, so the controls stay disabled
+    });
+    signIns.add({ box, reset: () => { busy(false); if (m.textContent === 'Opening Google…') m.hidden = true; } });
+    box.append(g, or, f, m);
     return box;
   }
 
@@ -181,6 +214,8 @@ export async function initSyncUI({ store, toast }) {
     /** Opens the account popover (account-ui.js sets `account`); the privacy settings until it exists. */
     open: () => (handle.account ? handle.account.open() : $('privacy-btn')?.click()),
     signInForm,
+    /** True while this load came back from a failed or cancelled Google attempt and no new attempt has started (account-ui.js opens the popover for it). */
+    hasSignInNotice: () => !!notice,
     signOut,
     backupThisDevice,
     deleteAccount,
