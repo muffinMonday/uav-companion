@@ -2,6 +2,7 @@
 // while the Leaflet map stays interactive. Tapping a card selects that occurrence and puts its marker in the middle of the part of the map the dock does not cover.
 // The hub (sessions-hub.js) owns the data: this module only draws what `getItems()` returns and never keeps a second copy that could outlive a sign-out.
 // Plain DOM, textContent only (titles and places are untrusted text). Spec and decisions: Project_context/docs/backlogs/completed/FLIGHT_SESSIONS_MAP_EXPLORER.md.
+import { xpBadge } from './sessions-xp.js';
 import L from 'leaflet';
 import { whenText, capacityText, seriesText } from './sessions.js';
 import { sessionMapActions, hasPoint } from './maplinks-ui.js';
@@ -100,7 +101,7 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
   function card(s) {
     const li = el('li', 'ses-xcard'); li.dataset.id = s.id;
     const sel = el('button', 'ses-xsel'); sel.type = 'button';
-    const top = el('span', 'ses-xtop'); top.append(el('b', 'ses-xtitle', s.title), el('span', 'badge', s.visibility === 'public' ? 'Public' : 'Private'));
+    const top = el('span', 'ses-xtop'); top.append(el('b', 'ses-xtitle', s.title), el('span', 'badge', s.visibility === 'public' ? 'Public' : 'Private')); { const x = s.status === 'scheduled' ? xpBadge(s) : null; if (x) top.append(x); }
     sel.append(top, el('span', 'ses-xwhen', whenText(s.startsAt, s.endsAt)));
     if (s.location) sel.append(el('span', 'ses-xplace', s.location));
     sel.append(el('span', 'ses-xmeta', [seriesText(s), capacityText(s)].filter(Boolean).join(' · ')));
@@ -154,7 +155,7 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
   function update() {
     if (!isOpen) return;
     items = getItems().filter((s) => s && typeof s.id === 'string' && typeof s.title === 'string');
-    const next = items.map((s) => [s.id, s.title, s.startsAt, s.endsAt, s.location, s.lat, s.lng, s.visibility, s.capacity, s.rsvpCount, s.status].join('|')).join('\n');
+    const next = items.map((s) => [s.id, s.title, s.startsAt, s.endsAt, s.location, s.lat, s.lng, s.visibility, s.capacity, s.rsvpCount, s.status, s.xpReward].join('|')).join('\n');
     if (selectedId && !items.some((s) => s.id === selectedId)) selectedId = null;
     if (next === sig) return;
     sig = next; render();

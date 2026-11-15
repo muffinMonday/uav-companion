@@ -20,7 +20,7 @@ function build() {
   pop = el('div', 'account-pop profile-pop'); pop.id = 'profile-pop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Profile');
   document.body.append(pop);
   onSwipe(pop, { direction: 'down', enabled: () => isPhone() && !pop.hidden, canStart: (t) => pop.scrollTop <= 0 && atTop(t, pop), onDismiss: () => hide() }); // the bottom sheet on a phone
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) hide(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) { e.preventDefault(); e.stopPropagation(); hide(); } }, true); // closes only the popover, not the dialog behind it
   document.addEventListener('pointerdown', (e) => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest?.('.pv-trigger')) hide(false); });
   window.addEventListener('resize', () => { if (!pop.hidden && anchor) place(anchor); });
 }
@@ -55,7 +55,7 @@ export function profileContent(row, { load = null, peek = null, mode = 'other', 
 }
 
 /** Shows `row` (a friend or party member: display_name, avatar, bio, location, interests) next to `from`; `sub` is an optional line such as "online". */
-export function showProfile(row, from, sub = '') {
+export function showProfile(row, from, sub = '', extra = null) {
   if (!pop) build();
   const close = el('button', 'icon-btn account-close'); close.type = 'button'; close.setAttribute('aria-label', 'Close'); close.title = 'Close';
   close.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; // constant markup
@@ -67,6 +67,9 @@ export function showProfile(row, from, sub = '') {
     ? { load: () => progression.get(h.kind, h.id), peek: () => progression.peek(h.kind, h.id), mode: self ? 'self' : 'other', api: self ? progression : null, onDraw }
     : {}));
   if (sub) pop.append(el('small', 'pv-sub', sub));
+  if (extra) pop.append(extra);
+  const host = from?.closest?.('dialog[open]') ?? document.body; // inside an open modal dialog the popover must live in it, or the dialog's top layer would cover it
+  if (pop.parentNode !== host) host.append(pop);
   pop.hidden = false; anchor = from;
   place(from);
   close.focus();

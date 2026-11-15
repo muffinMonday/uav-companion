@@ -20,7 +20,7 @@ const session = (id, email) => {
 const db = await makeDb();
 let lock = Promise.resolve();
 const serial = (fn) => { const r = lock.then(fn, fn); lock = r.catch(() => {}); return r; };
-const SETOF = new Set(['list_friends', 'list_blocked', 'list_sessions', 'list_public_sessions', 'list_my_session_invitations', 'list_my_session_notices', 'my_session_moderation', 'get_public_session']);
+const SETOF = new Set(['list_friends', 'list_blocked', 'list_sessions', 'list_public_sessions', 'list_my_session_invitations', 'list_my_session_notices', 'my_session_moderation', 'get_public_session', 'list_session_participants']);
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
 const fault = { list: false };
 const mockFor = (uid) => async (route) => {
@@ -382,6 +382,78 @@ await p.click(body + ' [data-act=more]'); await p.waitForTimeout(700);
 ok(/Today only/.test(await txt(p, body)), 'Show more reaches the sessions that have space');
 await p.uncheck('.ses-check input'); await ctx.close();
 await db.exec(`delete from public.flight_sessions where title like 'Full %' or title in ('Today only', 'Later day')`);
+
+// ---------- Wave B2: the XP badge from the database, the host and attendee popovers with Add friend, the attendee-list switch
+await db.exec(`delete from public.flight_sessions where title in ('People meet', 'Plain meet')`);
+await db.exec(`delete from public.friendships`);
+const peopleS = (await sql(`insert into public.flight_sessions (title, latitude, longitude, starts_at, ends_at, created_by, visibility, publication, timezone) values ('People meet', 10, 10, $1, $2, $3, 'public', 'published', 'Asia/Shanghai') returning id`, [hr(3), hr(5), B]))[0].id;
+await sql(`insert into public.flight_sessions (title, latitude, longitude, starts_at, ends_at, created_by, visibility, publication, timezone) values ('Plain meet', 11, 11, $1, $2, $3, 'public', 'published', 'Asia/Shanghai')`, [hr(3), hr(5), C]);
+await db.exec(`insert into public.session_rsvps (session_id, user_id) values ('${peopleS}', '${A}'), ('${peopleS}', '${D}')`);
+{
+  const cA2 = await one(A, 'public.ensure_profile()').then((r) => r.friend_code);
+  const fq = await one(C, 'public.request_friend($1)', [cA2]); await one(A, 'public.respond_friend($1, true)', [fq.id]); // C and Alex are friends; Bea and Dee are strangers to C
+  ({ ctx, p } = await open('c'));
+  await openHub(p); await p.waitForSelector(body + ' .ses-row', { timeout: 5000 });
+  await p.fill('#ses-q', 'meet'); await p.press('#ses-q', 'Enter'); await p.waitForTimeout(700);
+  ok(/\+50 XP/.test(await rowOf(p, 'People meet').textContent()) && !/XP/.test(await rowOf(p, 'Plain meet').textContent()), 'the XP badge comes from the database: an organiser\'s session shows +50 XP, an ordinary host\'s shows none');
+  ok(/RSVP alone earns none/.test(await rowOf(p, 'People meet').locator('.badge.xp').getAttribute('title')), 'its text says RSVP alone earns nothing');
+  await rowOf(p, 'People meet').locator('[data-act=host-profile]').click(); await p.waitForTimeout(900);
+  ok(await p.locator(hub + ' #profile-pop:not([hidden])').count() === 1 && /Bea/.test(await txt(p, hub + ' #profile-pop')) && await p.locator(hub + ' #profile-pop [data-act=add-friend]').count() === 1, 'the host opens the profile popover inside the dialog, with Add friend for a stranger');
+  const pb = await p.locator('#profile-pop').boundingBox(); const vp = p.viewportSize();
+  ok(pb.x >= 0 && pb.y >= 0 && pb.x + pb.width <= vp.width && pb.y + pb.height <= vp.height + 1, 'the popover is on screen');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+  ok(await p.locator('#profile-pop:not([hidden])').count() === 0 && await p.locator(hub + '[open]').count() === 1, 'Escape closes only the popover, not the dialog');
+  await rowOf(p, 'People meet').locator('[data-act=host-profile]').click(); await p.waitForTimeout(700);
+  await p.click(hub + ' #profile-pop [data-act=add-friend]'); await p.waitForTimeout(900);
+  ok(/Friend request sent/.test(await txt(p, hub + ' #profile-pop')) && (await sql(`select 1 from public.friendships where requester = '${C}' and addressee = '${B}' and status = 'pending'`)).length === 1, 'Add friend sends the request and says so');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  await rowOf(p, 'People meet').locator('[data-act=details]').click(); await p.waitForSelector(body + ' .ses-attendee', { timeout: 6000 });
+  const names = await p.locator(body + ' .ses-attendee-name').allTextContents();
+  ok(names.join('|') === 'Bea|Alex|Dee', 'the detail lists the host first, then the people who are coming: ' + names.join('|'));
+  ok(/Your name and picture show/.test(await txt(p, body + ' .ses-rsvp-note')) && /Host/.test(await txt(p, body + ' .ses-attendee')), 'the RSVP step has the notice and the host is marked');
+  await p.locator(body + ' .ses-attendee', { hasText: 'Alex' }).click(); await p.waitForTimeout(900);
+  ok(/In your friends list/.test(await txt(p, hub + ' #profile-pop')) && await p.locator(hub + ' #profile-pop [data-act=add-friend]').count() === 0, 'a friend shows "In your friends list" and no Add friend');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  await p.locator(body + ' .ses-attendee', { hasText: 'Dee' }).click(); await p.waitForTimeout(700);
+  ok(await p.locator(hub + ' #profile-pop [data-act=add-friend]').count() === 1 && !/@|[0-9a-f]{8}-[0-9a-f]{4}/.test(await txt(p, hub + ' #profile-pop')), 'a stranger: name, picture and Add friend, no id in sight');
+  await p.click(hub + ' #profile-pop [data-act=add-friend]'); await p.waitForTimeout(900);
+  ok((await sql(`select 1 from public.friendships where requester = '${C}' and addressee = '${D}'`)).length === 1, 'Add friend from the list sends a request by handle');
+  await ctx.close();
+
+  // a guest: the list and the popover work, Add friend asks to sign in
+  ({ ctx, p } = await open('guest'));
+  await openHub(p); await p.waitForSelector(body + ' .ses-row', { timeout: 5000 });
+  await p.fill('#ses-q', 'People'); await p.press('#ses-q', 'Enter'); await p.waitForTimeout(700);
+  await rowOf(p, 'People meet').locator('[data-act=details]').click(); await p.waitForSelector(body + ' .ses-attendee', { timeout: 6000 });
+  ok(await p.locator(body + ' .ses-attendee').count() === 3, 'a guest sees the list of a public session');
+  await p.locator(body + ' .ses-attendee', { hasText: 'Dee' }).click(); await p.waitForTimeout(600);
+  await p.click(hub + ' #profile-pop [data-act=add-friend]'); await p.waitForTimeout(500);
+  ok(/Sign in to add friends/.test(await txt(p, '#toast')), 'a guest\'s Add friend asks them to sign in');
+  await ctx.close();
+
+  // the opt-out switch
+  ({ ctx, p } = await open('d'));
+  await openHub(p, 'mine'); await p.waitForSelector('#ses-in-lists', { timeout: 5000 });
+  ok(await p.isChecked('#ses-in-lists'), 'the attendee-list switch is on by default');
+  await p.uncheck('#ses-in-lists'); await p.waitForTimeout(800);
+  ok((await sql(`select show_in_attendee_lists as v from public.profiles where user_id = '${D}'`))[0].v === false, 'switching it off is stored');
+  await ctx.close();
+  ({ ctx, p } = await open('guest'));
+  await openHub(p); await p.fill('#ses-q', 'People'); await p.press('#ses-q', 'Enter'); await p.waitForTimeout(700);
+  await rowOf(p, 'People meet').locator('[data-act=details]').click(); await p.waitForSelector(body + ' .ses-attendee', { timeout: 6000 });
+  ok((await p.locator(body + ' .ses-attendee-name').allTextContents()).join('|') === 'Bea|Alex', 'someone who switched it off is no longer listed');
+  await ctx.close();
+
+  // a phone: the popover is a sheet inside the dialog
+  ({ ctx, p } = await open('c', { vp: { width: 360, height: 740 }, mobile: true }));
+  await p.evaluate(() => document.querySelector('.sessions-btn').click()); await p.waitForSelector(hub + '[open]'); await p.waitForSelector(body + ' .ses-row', { timeout: 5000 });
+  await p.fill('#ses-q', 'People'); await p.press('#ses-q', 'Enter'); await p.waitForTimeout(700);
+  await rowOf(p, 'People meet').locator('[data-act=host-profile]').click(); await p.waitForTimeout(900);
+  const sb = await p.locator('#profile-pop').boundingBox();
+  ok(await p.locator(hub + ' #profile-pop:not([hidden])').count() === 1 && sb.x >= 0 && sb.x + sb.width <= 361 && sb.y >= 0 && sb.y + sb.height <= 741, 'on a 360 px phone the profile sheet fits the screen inside the dialog');
+  await ctx.close();
+}
+await db.exec(`delete from public.flight_sessions where title in ('People meet', 'Plain meet')`);
 
 ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
 await b.close();

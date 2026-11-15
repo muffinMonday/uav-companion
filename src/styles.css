@@ -1457,3 +1457,18 @@ body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}
 .ses-prev-credit{position:absolute;right:0;bottom:0;z-index:1;max-inline-size:100%;padding:1px 4px;font-size:var(--fs-micro);line-height:1.3;background:rgba(255,255,255,.85);color:#333;pointer-events:none}
 .ses-prev-credit a{color:inherit;pointer-events:auto}
 .ses-prev-note{display:block;margin-top:4px;color:var(--muted)}
+
+/* Flight sessions: XP badge, host and attendee buttons, Add friend (src/sessions-xp.js, sessions-hub.js) */
+.badge.xp{background:var(--accent-soft,var(--surface-2));color:var(--accent-text,var(--text));border-color:var(--accent)}
+button.ses-host{display:inline-flex;align-items:center;gap:6px;min-block-size:32px;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;text-align:left}
+button.ses-host:focus-visible,.ses-attendee:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--radius-sm)}
+@media (pointer:coarse){button.ses-host{min-block-size:44px}}
+.ses-people-list{list-style:none;margin:var(--sp-2) 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.ses-attendee{display:flex;align-items:center;gap:var(--sp-2);inline-size:100%;min-block-size:44px;padding:0 var(--sp-2);border:0;border-radius:var(--radius-sm);background:none;color:inherit;font:inherit;text-align:left}
+button.ses-attendee{cursor:pointer}
+@media (hover:hover){button.ses-attendee:hover{background:var(--surface-2)}}
+.ses-attendee-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ses-attendee-rel{color:var(--muted)}
+.ses-addfriend{margin-top:var(--sp-2)}
+.ses-privacy{margin-top:var(--sp-3)}
+.ses-rsvp-note{display:block;flex-basis:100%;margin:0 0 var(--sp-2)}

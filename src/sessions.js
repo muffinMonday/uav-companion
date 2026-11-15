@@ -10,6 +10,8 @@ const coord = (v, max) => (typeof v === 'number' && Number.isFinite(v) && Math.a
 const capacity = (v) => (Number.isInteger(v) && v >= 1 && v <= 500 ? v : null);
 const zone = (v) => (typeof v === 'string' && /^[A-Za-z0-9_+\-/]{1,64}$/.test(v) ? v : 'UTC');
 const avatar = (v) => text(v, 40);
+/** XP a session can pay, as the database states it (xp_reward): a positive whole number, or null for "no XP possible" (and for an old database that has no such column). */
+const xp = (v) => (Number.isInteger(v) && v > 0 && v <= 100000 ? v : null);
 const series = (r) => ({ seriesId: id(r.series_id), seriesOrdinal: Number.isInteger(r.series_ordinal) && r.series_ordinal > 0 ? r.series_ordinal : null, seriesCount: Number.isInteger(r.series_count) && r.series_count > 0 ? r.series_count : null });
 
 /** A list_sessions row made safe to draw, or null. */
@@ -22,7 +24,7 @@ export function cleanSession(r) {
     lat: coord(r.latitude, 90), lng: coord(r.longitude, 180), timezone: zone(r.timezone), visibility: r.visibility === 'public' ? 'public' : 'private', capacity: capacity(r.capacity),
     status: ['scheduled', 'closed', 'cancelled'].includes(r.status) ? r.status : 'closed', rsvpCount: count(r.rsvp_count),
     iRsvped: r.i_rsvped === true, myAttended: r.my_attended === true, canManage: r.can_manage === true, canVerify: r.can_verify === true, isHost: r.is_host === true, invited: r.invited === true,
-    hostName: text(r.host_name, 40) || 'Someone', hostAvatar: avatar(r.host_avatar), ...series(r),
+    hostName: text(r.host_name, 40) || 'Someone', hostAvatar: avatar(r.host_avatar), xpReward: xp(r.xp_reward), ...series(r),
   };
 }
 
@@ -34,8 +36,17 @@ export function cleanPublic(r) {
   return {
     id: r.id.slice(0, 64), title: text(r.title, 80) || 'Flight session', description: text(r.description, 500), location: text(r.location, 120), startsAt, endsAt, lat, lng,
     timezone: zone(r.timezone), capacity: capacity(r.capacity), rsvpCount: count(r.rsvp_count), hostName: text(r.host_name, 40) || 'Someone', hostAvatar: avatar(r.host_avatar),
-    distanceKm: typeof r.distance_km === 'number' && Number.isFinite(r.distance_km) && r.distance_km >= 0 ? r.distance_km : null, ...series(r),
+    distanceKm: typeof r.distance_km === 'number' && Number.isFinite(r.distance_km) && r.distance_km >= 0 ? r.distance_km : null, xpReward: xp(r.xp_reward), ...series(r),
   };
+}
+
+/**
+ * One person of a session's attendee list (list_session_participants), or null. `handle` is the session-scoped opaque name, never a user id;
+ * `relation` is self | friend | pending | none; `friendshipId` is the viewer's own friendship row (friends only).
+ */
+export function cleanParticipant(r) {
+  if (!r || typeof r !== 'object' || typeof r.handle !== 'string' || !r.handle) return null;
+  return { handle: r.handle.slice(0, 64), name: text(r.display_name, 40) || 'Someone', avatar: avatar(r.avatar), relation: ['self', 'friend', 'pending'].includes(r.relation) ? r.relation : 'none', isHost: r.is_host === true, friendshipId: r.relation === 'friend' ? id(r.friendship_id) : null, total: count(r.total) };
 }
 
 /** One list_my_session_invitations row, or null. */
@@ -160,6 +171,14 @@ export function createSessions(client) {
   return {
     /** [session] as cleanSession gives them, in the database's order (soonest first). */
     async list() { return list(await rpc('list_sessions'), cleanSession); },
+    /** The attendee list of a session: { people: [cleanParticipant], total }. The database decides who may see it (public sessions anyone, private ones people who joined). */
+    async participants(sessionId, { limit = 30, offset = 0 } = {}) { const people = list(await rpc('list_session_participants', { p_session: sessionId, p_limit: limit, p_offset: offset }), cleanParticipant); return { people, total: people[0]?.total ?? 0 }; },
+    /** Add friend from a session's list: 'friends' or 'pending' (one answer whatever the other person's settings). */
+    async requestFriendFrom(sessionId, handle) { const r = await rpc('request_friend_from_session', { p_session: sessionId, p_handle: handle }); return r?.status === 'friends' ? 'friends' : 'pending'; },
+    /** The caller's friends as the database returns them (for a friend's full profile in the popover). */
+    async friendRows() { const r = await rpc('list_friends'); return Array.isArray(r) ? r : []; },
+    async showInLists() { return (await rpc('get_show_in_attendee_lists')) !== false; },
+    async setShowInLists(show) { return (await rpc('set_show_in_attendee_lists', { p_show: show === true })) !== false; },
     /** { admin, organiser } for the caller. */
     async roles() { const r = await rpc('my_roles'); return { admin: r?.admin === true, organiser: r?.organiser === true }; },
     /** Public sessions (guests too): { lat, lng, radiusKm } for a place, `query`, `from`/`until` ISO times, `limit` (max 50), `offset`. */

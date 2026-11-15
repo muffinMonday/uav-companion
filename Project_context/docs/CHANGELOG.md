@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-11-15 (Flight Sessions people and XP badge, wave B2)
+- Migration `20261119100000_sessions_people_xp.sql`: `xp_reward` on the session lists, `list_session_participants` and `request_friend_from_session` (random per-session handles), the "Show me in attendee lists" switch. Discover rows, explorer cards and the detail show one server-fed XP badge; the host and everyone listed open the profile popover (Add friend for non-friends; "In your friends list" for friends). Reverses "RSVP names are managers-only" (DECISIONS).
+
 ## 2026-11-15 (Flight Sessions Discover, wave A)
 - Discover: date filter gains **Today (your time)** (from now to the next local midnight minus 1 ms, DST-safe; no SQL change), cached rows that have ended are dropped and the list is re-checked at the earliest end time, and `Has space` no longer shows a false empty state or hides `Show more`. Backlog `FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md` (`in-progress/`).
 

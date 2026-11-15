@@ -39,6 +39,9 @@ Tests: `db-progression-unit`, `db-progression-read-unit`, `db-sessions-unit`, `d
 4. First live check against real Steam with a chosen account (never done: built and tested only against fakes).
 5. (DONE 2026-11-13) `delete_profile` now wipes XP, achievements, counters, attendance and the Steam link; roles and `steam_credited` stay.
 
+## Flight sessions: XP badge (2026-11-15)
+The session lists carry `xp_reward` (database function `session_xp_reward`): `attendance_xp` when the host is an organiser or administrator (or when `auto_attendance_enabled` is on), null otherwise or when `attendance_xp` is 0. The app shows it through one helper (`sessions-xp.js`); RSVP alone still earns nothing. Automatic attendance (flag 0) is described in `DECISIONS.md`.
+
 ## Known gaps and risks
 - Real-world flying achievements (Maiden Flight, Back in the Air, Weekend Warrior, Frequent Flyer) are not defined: nothing records a flight yet (check-ins are local, live positions have no history). Needs a flight-logging feature (phase 7, not started).
 - No admin screen: XP adjustments, role grants and attendance revocation of other sessions' marks beyond the Sessions card are RPC/SQL. Walk-in friend-code lookup is not rate limited (organiser/administrator role only).

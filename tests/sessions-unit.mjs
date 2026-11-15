@@ -1,5 +1,6 @@
 // The plain side of flight sessions (src/sessions.js): validation of what the database returns, which controls to offer when, and the database wrapper. No browser, no network.
-import { cleanSession, cleanPerson, sessionState, whenText, createSessions, cleanPublic, cleanInvitation, cleanNotice, cleanTakedown, cleanInviteList, capacityText, roleText, seriesText, linkUrl, tokenFromHash, metres, todayRange, stillOn, nextExpiry } from '../src/sessions.js';
+import { cleanSession, cleanPerson, sessionState, whenText, createSessions, cleanPublic, cleanInvitation, cleanNotice, cleanTakedown, cleanInviteList, capacityText, roleText, seriesText, linkUrl, tokenFromHash, metres, todayRange, stillOn, nextExpiry, cleanParticipant } from '../src/sessions.js';
+import { xpBadgeInfo } from '../src/sessions-xp.js';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 
 const H = 3600_000, now = Date.UTC(2026, 10, 14, 12, 0, 0);
@@ -129,4 +130,24 @@ ok(calls2.slice(-5).map((c) => c[0]).join() === 'invite_to_session,create_sessio
   const L = [{ endsAt: iso(-1) }, { endsAt: iso(3) }, { endsAt: iso(1) }, { endsAt: new Date(now).toISOString() }];
   ok(stillOn(L, now).length === 2 && stillOn(L, now).every((x) => Date.parse(x.endsAt) > now), 'expired rows (and one ending exactly now) are dropped');
   ok(nextExpiry(L, now) === now + H && nextExpiry([{ endsAt: iso(-2) }], now) === null && nextExpiry([], now) === null, 'the next expiry is the earliest end still ahead');
+}
+
+// ---------- the XP badge field and the attendee list (wave B2)
+{
+  const pr = { id: 'p1', title: 'T', starts_at: iso(1), ends_at: iso(2), latitude: 1, longitude: 2 };
+  ok(cleanPublic({ ...pr, xp_reward: 50 }).xpReward === 50 && cleanPublic({ ...pr, xp_reward: 75 }).xpReward === 75, 'xp_reward is read from the database row');
+  for (const v of [null, undefined, 0, -5, 2.5, '50', NaN, 1e9]) ok(cleanPublic({ ...pr, xp_reward: v }).xpReward === null, 'not a reward: ' + String(v));
+  ok(cleanPublic(pr).xpReward === null && cleanSession(raw({ xp_reward: 50 })).xpReward === 50 && cleanSession(raw()).xpReward === null, 'an old database without the column means no badge');
+  ok(xpBadgeInfo({ xpReward: 50 }).label === '+50 XP' && /RSVP alone earns none/.test(xpBadgeInfo({ xpReward: 50 }).title) && xpBadgeInfo({ xpReward: 80 }).label === '+80 XP', 'the badge text follows the server amount');
+  ok(xpBadgeInfo({ xpReward: null }) === null && xpBadgeInfo({}) === null && xpBadgeInfo(null) === null && xpBadgeInfo({ xpReward: 0 }) === null, 'no amount: no badge');
+  const person = cleanParticipant({ handle: 'h1', display_name: 'Cam', avatar: 'fox', relation: 'friend', is_host: true, friendship_id: 'f1', total: 3 });
+  ok(person.handle === 'h1' && person.name === 'Cam' && person.relation === 'friend' && person.isHost && person.friendshipId === 'f1' && person.total === 3, 'a participant is read');
+  ok(cleanParticipant({ handle: 'h', relation: 'weird', friendship_id: 'x' }).relation === 'none' && cleanParticipant({ handle: 'h', relation: 'pending', friendship_id: 'x' }).friendshipId === null && cleanParticipant({ handle: 'h' }).name === 'Someone', 'unknown relations are none, only friends carry a friendship id, a name has a default');
+  for (const bad of [null, {}, { handle: '' }, { handle: 5 }, 'x']) ok(cleanParticipant(bad) === null, 'refused participant: ' + JSON.stringify(bad));
+  const calls3 = [];
+  const api3 = createSessions({ rpc: async (fn, args) => { calls3.push([fn, args]); return { data: fn === 'list_session_participants' ? [{ handle: 'h1', display_name: 'A', relation: 'none', total: 2 }, { junk: 1 }] : fn === 'request_friend_from_session' ? { status: 'friends' } : fn === 'get_show_in_attendee_lists' ? false : { ok: 1 }, error: null }; } });
+  const pp = await api3.participants('s1', { limit: 10, offset: 5 });
+  ok(pp.people.length === 1 && pp.total === 2 && calls3.at(-1)[0] === 'list_session_participants' && calls3.at(-1)[1].p_limit === 10 && calls3.at(-1)[1].p_offset === 5 && calls3.at(-1)[1].p_session === 's1', 'participants() sends the page and cleans the rows');
+  ok(await api3.requestFriendFrom('s1', 'h1') === 'friends' && calls3.at(-1)[1].p_handle === 'h1', 'requestFriendFrom sends the session and the handle only');
+  ok(await api3.showInLists() === false && await api3.setShowInLists(true) !== undefined && calls3.at(-1)[1].p_show === true, 'the list switch calls its two functions');
 }

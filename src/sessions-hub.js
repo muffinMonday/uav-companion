@@ -8,6 +8,8 @@ import { localDate, localTime } from './sessions-recurrence.js';
 import { createExplorer } from './sessions-map-explorer.js';
 import { sessionMapActions, hasPoint } from './maplinks-ui.js';
 import { previewParts } from './sessions-preview.js';
+import { xpBadge } from './sessions-xp.js';
+import { showProfile } from './profile-popover.js';
 import { avatarEl } from './avatars.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { log } from './log.js';
@@ -27,6 +29,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   const mineEmpty = () => ({ status: 'idle', sessions: [], roles: { admin: false, organiser: false }, notices: [], takedowns: [], invites: [] });
   let mine = mineEmpty(), section = 'discover', view = 'list', detail = null, message = '', busy = false, seqMine = 0, seqPub = 0, summaryAt = 0, nearby = null;
   let pub = { status: 'idle', list: [], more: false, query: '', near: 'any', when: 'any', space: false, offset: 0 };
+  let inLists = null; // "Show me in attendee lists": null = not asked yet, undefined = asking, else the stored choice
   let previewOpen = null; // the one Discover card whose map preview is open (not kept between visits)
   let manageOpen = new Set(), people = new Map(), invite = new Map(), newLink = null, editing = null, reporting = null;
   let quietClose = false; // the close event is queued and fires later; this marks the close that only steps aside for the map
@@ -178,12 +181,76 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   async function act(fn, done) {
     if (busy) return; busy = true; message = '';
     try { const r = await fn(); message = typeof done === 'function' ? done(r) : done || ''; } catch (e) { message = e.message || 'That did not work.'; }
-    busy = false; await loadMine(); if (section === 'discover') await loadPublic();
+    busy = false; peopleCache.clear(); if (detail) ppl = { id: null, status: 'idle', people: [], total: 0 }; await loadMine(); if (section === 'discover') await loadPublic();
     paint();
   }
   const warningText = (r) => (Array.isArray(r?.warnings) && r.warnings.some((w) => w.code === 'public_overlap') ? ' Another public session overlaps this one in time and place.' : '');
   const currentOf = (id) => mine.sessions.find((x) => x.id === id) ?? pub.list.map(asSession).find((x) => x.id === id) ?? (detail?.id === id ? detail.fallback : null);
-  const hostBadge = (s) => { const w = el('span', 'ses-host'); w.append(avatarEl(s.hostAvatar, s.hostName, 20), el('small', '', s.isHost ? 'You' : s.hostName)); return w; };
+  const hostBadge = (s) => {
+    const w = el(s.isHost ? 'span' : 'button', 'ses-host'); w.append(avatarEl(s.hostAvatar, s.hostName, 20), el('small', '', s.isHost ? 'You' : s.hostName));
+    if (!s.isHost) { w.type = 'button'; w.classList.add('pv-trigger'); w.dataset.act = 'host-profile'; w.setAttribute('aria-haspopup', 'dialog'); w.setAttribute('aria-label', 'View profile of ' + s.hostName); w.addEventListener('click', (e) => { e.stopPropagation(); showPerson(s, null, w); }); }
+    return w;
+  };
+  // ---- people: the attendee list, and a person's profile (a friend's full profile, anyone else's name, picture and Add friend)
+  let ppl = { id: null, status: 'idle', people: [], total: 0 };
+  const peopleCache = new Map(); // session id -> { at, people, total } so a row's host tap does not ask again within 30 s
+  async function loadPeopleList(id, { more = false } = {}) {
+    if (!more) ppl = { id, status: 'loading', people: [], total: 0 };
+    try {
+      const r = await api.participants(id, { limit: 30, offset: more ? ppl.people.length : 0 });
+      if (ppl.id !== id) return;
+      ppl = { id, status: 'ready', people: more ? [...ppl.people, ...r.people] : r.people, total: r.total };
+      peopleCache.set(id, { at: Date.now(), people: ppl.people.slice(0, 50), total: r.total });
+    } catch (e) { if (ppl.id !== id) return; log.warn('sessions', 'attendee list failed', e); ppl = { id, status: 'error', people: [], total: 0 }; }
+    if (dlg.open && view === 'detail' && detail?.id === id) paint();
+  }
+  async function showPerson(s, p, from) {
+    let person = p;
+    if (!person) { // the host: found in the list the database returns for this session
+      let c = peopleCache.get(s.id);
+      if (!c || Date.now() - c.at > 30000) { try { const r = await api.participants(s.id, { limit: 50 }); c = { at: Date.now(), people: r.people, total: r.total }; peopleCache.set(s.id, c); } catch (e) { log.warn('sessions', 'host lookup failed', e); toast('That profile is not available right now.'); return; } }
+      person = c.people.find((x) => x.isHost);
+      if (!person) { toast('That profile is not available.'); return; }
+    }
+    if (person.relation === 'self') return;
+    if (person.relation === 'friend') {
+      let row = null; try { row = (await api.friendRows()).find((r) => r.id === person.friendshipId) ?? null; } catch { row = null; }
+      showProfile(row ?? { display_name: person.name, avatar: person.avatar, status: 'friends', id: person.friendshipId }, from, 'In your friends list'); return;
+    }
+    const extra = el('div', 'ses-addfriend');
+    const state = (t) => { extra.replaceChildren(el('small', 'pv-sub', t)); };
+    if (person.relation === 'pending') state('Friend request sent');
+    else {
+      const add = btn('Add friend', 'btn small'); add.dataset.act = 'add-friend';
+      add.addEventListener('click', async () => {
+        if (!signedIn()) { toast('Sign in to add friends.'); return; }
+        add.disabled = true;
+        try { const r = await api.requestFriendFrom(s.id, person.handle); person.relation = r === 'friends' ? 'friend' : 'pending'; state(r === 'friends' ? 'In your friends list' : 'Friend request sent'); }
+        catch (e) { add.disabled = false; toast(e.message || 'That did not work.'); }
+      });
+      extra.append(add);
+    }
+    showProfile({ display_name: person.name, avatar: person.avatar }, from, '', extra);
+  }
+  function peopleSection(s) {
+    const box = el('section', 'ses-people'); box.setAttribute('aria-label', 'Who is coming'); box.append(el('h3', 'ses-group', 'Who is coming'));
+    if (ppl.id !== s.id) { loadPeopleList(s.id); box.append(el('p', 'hint', 'Loading…')); return box; }
+    if (ppl.status === 'loading') { box.append(el('p', 'hint', 'Loading…')); return box; }
+    if (ppl.status === 'error') { box.append(el('p', 'hint', 'The list is unavailable right now.')); return box; }
+    if (!ppl.people.length) { box.append(el('p', 'hint', s.visibility === 'private' && !signedIn() ? 'Sign in to see who is coming.' : 'No one is listed yet.')); return box; }
+    const ul = el('ul', 'ses-people-list');
+    for (const p of ppl.people) {
+      const li = el('li'); const row = p.relation === 'self' ? el('span', 'ses-attendee') : el('button', 'ses-attendee pv-trigger');
+      row.append(avatarEl(p.avatar, p.name, 28), el('span', 'ses-attendee-name', p.relation === 'self' ? p.name + ' (you)' : p.name));
+      if (p.isHost) row.append(el('small', 'badge', 'Host'));
+      if (p.relation === 'friend') row.append(el('small', 'ses-attendee-rel', 'Friend'));
+      if (p.relation !== 'self') { row.type = 'button'; row.dataset.act = 'person'; row.setAttribute('aria-haspopup', 'dialog'); row.setAttribute('aria-label', 'View profile of ' + p.name); row.addEventListener('click', () => showPerson(s, p, row)); }
+      li.append(row); ul.append(li);
+    }
+    box.append(ul);
+    if (ppl.people.length < ppl.total) { const m = btn('Show more people'); m.dataset.act = 'more-people'; m.addEventListener('click', () => loadPeopleList(s.id, { more: true })); box.append(m); }
+    return box;
+  }
 
   function go(sec, v = 'list') { previewOpen = null; section = sec; view = v; message = ''; editing = null; reporting = null; newLink = null; if (v === 'list') detail = null; paint(); if (sec === 'discover' && v === 'list') loadPublic({ quiet: true }); }
   function back() { if (view === 'detail' || view === 'create') { view = 'list'; detail = null; message = ''; editing = null; paint(); } }
@@ -202,6 +269,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     open.addEventListener('click', () => { if (point) explore(section, { focus: s.id }); else openDetail(s); });
     const top = el('div', 'ses-top'); top.append(open);
     top.append(el('span', 'badge', s.visibility === 'public' ? 'Public' : 'Private'));
+    { const x = s.status === 'scheduled' ? xpBadge(s) : null; if (x) top.append(x); }
     if (s.status !== 'scheduled') top.append(el('span', 'badge', s.status === 'closed' ? 'Closed' : 'Cancelled')); else if (st.started && !st.over) top.append(el('span', 'badge ok', 'Under way')); if (st.full && s.status === 'scheduled' && !s.iRsvped) top.append(el('span', 'badge', 'Full'));
     r.append(top, el('small', 'ses-when', whenText(s.startsAt, s.endsAt) + (s.location ? ' · ' + s.location : '')));
     const meta = [seriesText(s), capacityText(s), Number.isFinite(s.distanceKm) ? `${s.distanceKm.toFixed(1)} km away` : ''].filter(Boolean);
@@ -280,6 +348,12 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (mine.status === 'loading' || mine.status === 'idle') { f.append(el('p', 'hint', 'Loading sessions…')); return; }
     if (mine.status === 'error') { f.append(el('p', 'hint', 'Sessions are unavailable right now.')); const r = btn('Try again'); r.addEventListener('click', () => loadMine()); f.append(r); return; }
     f.append(createButton());
+    if (inLists === null) { inLists = undefined; api.showInLists().then((v) => { inLists = v; if (dlg.open && view === 'list' && section === 'mine') paint(); }).catch(() => { inLists = null; }); }
+    if (typeof inLists === 'boolean') {
+      const sw = el('label', 'ses-check ses-privacy'); const cb = el('input'); cb.type = 'checkbox'; cb.id = 'ses-in-lists'; cb.checked = inLists; sw.append(cb, el('span', '', 'Show me in attendee lists'));
+      cb.addEventListener('change', async () => { const want = cb.checked; cb.disabled = true; try { inLists = await api.setShowInLists(want); peopleCache.clear(); } catch (e) { cb.checked = !want; toast(e.message || 'That did not work.'); } cb.disabled = false; });
+      f.append(sw, el('small', 'hint', 'Other people who open a session you joined can then see your name and picture. Switch it off to stay out of those lists.'));
+    }
     if (upcomingMine().length) f.append(exploreButton('mine'));
     const unread = mine.notices.filter((n) => n.unread);
     if (unread.length || mine.takedowns.length) {
@@ -333,6 +407,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (!s) { f.append(empty('This session is no longer available.')); return; }
     const st = sessionState(s);
     const top = el('div', 'ses-top'); top.append(el('h3', 'ses-title', s.title), el('span', 'badge', s.visibility === 'public' ? 'Public' : 'Private'));
+    { const x = s.status === 'scheduled' ? xpBadge(s) : null; if (x) top.append(x); }
     if (s.status !== 'scheduled') top.append(el('span', 'badge', s.status === 'closed' ? 'Closed' : 'Cancelled')); f.append(top);
     f.append(el('p', 'ses-when', whenText(s.startsAt, s.endsAt)));
     if (seriesText(s)) f.append(el('p', 'hint', seriesText(s) + '. Each session has its own RSVPs, capacity and attendance.'));
@@ -343,9 +418,10 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (s.description) f.append(el('p', 'ses-desc', s.description));
     const rt = roleText(s); if (rt) { const n = el('p', 'ses-role', rt); n.dataset.role = s.isHost ? (s.canVerify ? 'host-verifier' : 'host') : 'verifier'; f.append(n); }
     if (s.myAttended) f.append(el('span', 'badge ok ses-attended', 'You were there'));
+    if (s.status === 'scheduled' || s.status === 'closed') f.append(peopleSection(s));
     const bs = el('div', 'btn-row');
     if (!signedIn()) bs.append(signInBox('Sign in to say you will come.'));
-    else if (st.canRsvp) { const b = btn('I will come', 'btn small primary'); b.dataset.act = 'rsvp'; b.addEventListener('click', () => act(() => api.rsvp(s.id), 'You are on the list.')); bs.append(b); }
+    else if (st.canRsvp) { if (s.visibility === 'public') bs.append(el('small', 'hint ses-rsvp-note', 'Your name and picture show in the list of who is coming. You can switch that off under My sessions.')); const b = btn('I will come', 'btn small primary'); b.dataset.act = 'rsvp'; b.addEventListener('click', () => act(() => api.rsvp(s.id), 'You are on the list.')); bs.append(b); }
     else if (s.iRsvped && s.status === 'scheduled') {
       if (st.canWithdraw) { const b = btn('Withdraw'); b.dataset.act = 'withdraw'; b.addEventListener('click', () => act(() => api.withdraw(s.id), 'Removed from the list.')); bs.append(b); }
       else bs.append(el('span', 'badge', 'You said you will come'));
@@ -507,7 +583,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     dlg.querySelector('.ses-tab[aria-selected=true]')?.focus();
     onOpen?.(tabs, opts);
   }
-  function reset() { seqMine++; seqPub++; mine = mineEmpty(); nearby = null; manageOpen.clear(); people.clear(); invite.clear(); newLink = null; editing = null; reporting = null; message = ''; summaryAt = 0; clearDraft(); ex.update(); if (!dlg.open) { body.replaceChildren(); if (view !== 'list') { view = 'list'; detail = null; } } /* a hidden dialog keeps no private text */ if (dlg.open) { if (view !== 'list' && section !== 'discover') { view = 'list'; detail = null; } paint(); } summaryDone(); }
+  function reset() { seqMine++; seqPub++; inLists = null; peopleCache.clear(); ppl = { id: null, status: 'idle', people: [], total: 0 }; mine = mineEmpty(); nearby = null; manageOpen.clear(); people.clear(); invite.clear(); newLink = null; editing = null; reporting = null; message = ''; summaryAt = 0; clearDraft(); ex.update(); if (!dlg.open) { body.replaceChildren(); if (view !== 'list') { view = 'list'; detail = null; } } /* a hidden dialog keeps no private text */ if (dlg.open) { if (view !== 'list' && section !== 'discover') { view = 'list'; detail = null; } paint(); } summaryDone(); }
 
   // sign-in changes: a person who signs in gets their sessions (and a link they opened as a guest is used); sign-out forgets them; a link waits until the saved sign-in has been read
   let was = signedIn();
