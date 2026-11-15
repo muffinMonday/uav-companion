@@ -17,6 +17,7 @@ import { routeLinks } from './maplinks-ui.js';
 import { MAX_STOPS } from './maplinks.js';
 import { loadPrefs } from './prefs.js';
 import { initReorder } from './reorder-ui.js';
+import { mascotEl } from './mascot-ui.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -24,6 +25,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   const store = poi.store;
   const cin = poi.checkin;
   const list = $('trips-list'), empty = $('trips-empty'), count = $('trips-count');
+  empty.classList.add('has-mascot'); empty.prepend(mascotEl('thinking', 56));
   const card = $('trip-form-card'), form = $('trip-form'), title = $('trip-form-title');
   const fName = $('trip-name'), fCountry = $('trip-country'), fStart = $('trip-start'), fEnd = $('trip-end'), fDesc = $('trip-desc');
   const lengthEl = $('trip-length'), errorEl = $('trip-error');

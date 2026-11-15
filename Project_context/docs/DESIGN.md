@@ -267,6 +267,11 @@ Spec: `DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md` sections 12 and 16. CSS only (blo
 - **Baseline tool:** the mocked server is per viewport and theme (parallel jobs no longer share one database), cleared of cloud copies at the start of every signed-in screen; more set-returning RPCs are listed so trips, party members and sessions load; `localData` and `trips` open options; the weather card uses a mocked Open-Meteo reply.
 - **Not covered:** session cards with data and invitation rows (nothing seeded), a shared trip with several members, real phone, Safari, screen reader, 200% zoom.
 
+## 24. Mascot (2026-11-15)
+- Decorative only: `src/mascot-ui.js` `mascotEl(pose, size)` gives `<img alt="" aria-hidden="true">`, never focusable, never a control, never the only carrier of a message. One mascot per screen; none on the map, popups, verdicts, warnings, confirmations, loading or error states.
+- Sizes by place: greeting 64 (48 under 521 px, hidden under 341 px), splash 56 (48), Help header 40, empty states 56 (Discover 48). It sits beside text in an existing row and never makes the row taller. No shadow, no animation.
+- Files: 256 px WebP in `src/assets/mascots` derived by `scripts/make-mascots.mjs` from `public/mascots` originals (not shipped). Add a pose to the map only when a screen uses it. App icon: `public/icons`, `public/manifest.webmanifest`.
+
 ## 23. Flight Sessions: map preview, people, XP badge (2026-11-15)
 - **Preview (wave B1):** a right-edge chevron on every Discover card (44 x 44 px, `aria-expanded`, `aria-controls`, one open at a time, no swipe, nothing kept between visits). Open, it shows four raster tiles of the current basemap (`.ses-prev-map`, dark theme through the existing `.base-tiles` filter), a pin, the basemap credit as text and "Open the map to check airspace." Tapping the picture opens the Map Explorer focus path. No Leaflet instance, no airspace overlay, no thumbnail in explorer cards. Height transition 0.18 s (the global reduced-motion rule removes it). Code: `sessions-preview-model.js` (tile maths), `sessions-preview.js`.
 - **XP badge (B2):** `.badge.xp`, one helper `sessions-xp.js`; text from the server amount only.

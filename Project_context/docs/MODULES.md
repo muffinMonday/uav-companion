@@ -130,6 +130,7 @@ All CSS is in `src/styles.css` (tokens and rules: `DESIGN.md`); find a feature's
 | Legend, coverage note, zone layers | `map-config.html` nodes moved by `dashboard.js` into Help (legend under Map basics, coverage under Data, privacy and safety); explanation per verdict from `legends.js` | `app/region-ui.js` (`renderRegionInfo`), `legends.js`, `map.js` | `.legend`, `.zone-meaning` | `dashboard`, `prefs`, `smoke` |
 | Locate, compass, rotation | dynamic Leaflet controls | `locate.js`, `maprotate.js` | `.locate-btn` | `launchloc`, `locatemode`, `maprotate` |
 | Friends, party, sessions, account pane, progression, Steam | dynamic | `friends-ui.js`, `party-ui.js`, `sessions-ui.js`, `sessions-map-explorer.js`, `account-ui.js`, `progression-ui.js`, `steam-ui.js` | `.fr-`, `.ses-`, `.ses-x`, `.map-action`, `.account-pop`, `.profile-dialog` | `friends`, `party`, `live`, `sessions`, `sessions-explorer`, `responsive`, `progression`, `steam`, `autoshare` |
+| Mascot, app icon, manifest | none (JS-injected; head links in `index.html`) | `mascot-ui.js` (used by `splash.js`, `dashboard.js`, `trips-ui.js`, `poi-ui.js`, `sessions-hub.js`); `scripts/make-mascots.mjs` | `.mascot`, `.splash-head`, `.has-mascot` | `mascots`, `mascot-unit`, `dashboard`, `splash` |
 | Toast, banner, weather card | `index.html` (`#toast`, `#banner`, `#weather`) | `main.js` (toast), `weather.js`, `whatsnew.js` | `.toast`, `.wx` | `smoke`, `mw`, `rain` |
 
 The two weather/elevation status lines are `#mw-status` (Map Configs) and `#pv-mw-status` (Privacy); `poi-ui.js` writes both.

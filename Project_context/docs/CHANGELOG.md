@@ -1,3 +1,6 @@
+## 2026-11-15 (Mascot and personality integration, Phases 0 to 2)
+- New app icon and web manifest; mascot on the quick setup, dashboard greeting, Help header and the empty Trips, Saved Places and Discover states. Decorative only. Thumbs-up celebration deferred (needs a server-side milestone signal). Backlog `backlogs/in-progress/MASCOT_PERSONALITY_INTEGRATION.md`.
+
 # Changelog
 
 ## 2026-11-15 (Flight Sessions Discover backlog completed; Wave E descoped)

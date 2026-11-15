@@ -1,3 +1,8 @@
+## Latest: Mascot and personality integration, Phases 0 to 2 (2026-11-15; owner authorized commit, push, one deploy:live for this work only)
+- Backlog `backlogs/in-progress/MASCOT_PERSONALITY_INTEGRATION.md` (section 11: findings, decisions, evidence). Frontend and assets only; no database change.
+- Built: icon set and manifest (`public/icons`, `public/manifest.webmanifest`, head links), `src/mascot-ui.js`, waving on the splash and dashboard greeting, thinking in Help and the empty Trips, Saved Places and Discover states, `scripts/make-mascots.mjs`, `strip-local.js` drops `dist/mascots`. Phase 3 (thumbs-up) deferred: no server milestone signal.
+- Tests: new `mascot-unit`, browser `mascots` 173; `html-dom` fixture and test normaliser updated for the new head links; unit suites all pass; full `npm test` all pass except `diag` (environmental, :5173 preview does not serve /src/log.js). Screenshots: 18 after-shots (splash, dashboard, Help; desk and phone, both themes) viewed in `~/UAV_UI_Screenshots/mascot-after`; no full before/after set. Not verified: real phone, Safari home-screen icon, screen reader, dark-theme art edges at 1x on a real display.
+
 ## Latest: Flight Sessions Discover + auto-attendance backlog COMPLETED, Wave E descoped (2026-11-15; owner decision, docs only, not yet committed)
 - Owner cancelled Wave E (canary, flag flip, real phone) to review the automatic-attendance architecture first; backlog moved to `backlogs/completed/` with references updated. Reopen only with a new plan (canary path: second project, hosted allowlist or local Supabase; hosted email-confirmation check). `auto_attendance_enabled` stays 0; never set it to 1 without a new instruction. Residual risks kept in backlog section 13.
 - Earlier state of the same backlog:

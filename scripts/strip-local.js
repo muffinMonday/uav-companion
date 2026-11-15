@@ -7,6 +7,8 @@ const dist = path.resolve(import.meta.dirname, '..', process.argv[2] ?? 'dist');
 const local = path.join(dist, 'data-local');
 if (fs.existsSync(local)) { fs.rmSync(local, { recursive: true, force: true }); console.log('removed dist/data-local (local-only regions are never deployed)'); }
 if (fs.existsSync(local)) { console.error('dist/data-local is still there: refusing to continue'); process.exit(1); }
+// the full-size mascot originals (public/mascots, about 5.7 MB) are sources for scripts/make-mascots.mjs; the app ships only the small derived files
+fs.rmSync(path.join(dist, 'mascots'), { recursive: true, force: true });
 // belt and braces: no manifest in the tree may mention a local region
 for (const f of fs.existsSync(dist) ? fs.readdirSync(dist, { recursive: true }) : []) {
   if (!/manifest\.json$/.test(String(f))) continue;

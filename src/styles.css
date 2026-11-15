@@ -1472,3 +1472,22 @@ button.ses-attendee{cursor:pointer}
 .ses-addfriend{margin-top:var(--sp-2)}
 .ses-privacy{margin-top:var(--sp-3)}
 .ses-rsvp-note{display:block;flex-basis:100%;margin:0 0 var(--sp-2)}
+
+/* ---------- the mascot: decorative, never a control, sized by place (DESIGN.md section 24) ---------- */
+.mascot{flex:none;display:block;aspect-ratio:1;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.dash-welcome{display:grid;grid-template-columns:1fr auto;column-gap:var(--sp-3);align-items:center}
+.dash-welcome>.dash-hello,.dash-welcome>.dash-hello-sub{grid-column:1}
+.dash-welcome>.mascot{grid-column:2;grid-row:1 / span 2;width:64px;height:64px}
+.dash-help-head .mascot{width:40px;height:40px;margin-left:auto}
+.splash-head{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
+.splash-head h2{min-width:0}
+.splash-head .mascot{width:56px;height:56px}
+.hint.has-mascot{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);text-align:center}
+.hint.has-mascot[hidden]{display:none}
+.hint.has-mascot .mascot{width:56px;height:56px}
+.ses-empty.has-mascot .mascot{width:48px;height:48px}
+@media (max-width:520px){
+  .dash-welcome>.mascot{width:48px;height:48px}
+  .splash-head .mascot{width:48px;height:48px}
+}
+@media (max-width:340px){.dash-welcome>.mascot{display:none}}

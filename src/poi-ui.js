@@ -23,6 +23,7 @@ import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer, toolBar } from './cards.js';
 import { zoneExplanation } from './legends.js';
 import { onPopupSwipe } from './swipe.js';
+import { mascotEl } from './mascot-ui.js';
 
 const $ = (id) => document.getElementById(id);
 const HOLD_MS = 380; // press and hold this long before a pin can be moved
@@ -93,6 +94,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const addCard = $('poi-add');
   const typesEl = $('poi-types'), listEl = $('poi-list'), filterEl = $('poi-filter'), countEl = $('poi-count');
   const emptyEl = $('poi-empty'), noteEl = $('poi-note'), editSwitch = $('poi-edit'), showSwitch = $('poi-show');
+  emptyEl.classList.add('has-mascot'); emptyEl.prepend(mascotEl('thinking', 56));
   const banner = $('banner'), bannerText = $('banner-text'), bannerAction = $('banner-action'), bannerReview = $('banner-review');
   const tripSel = $('poi-trip'), tripField = $('poi-trip-field'), tripFilterSel = $('poi-trip-filter'), tripFilterField = $('poi-trip-filter-field');
 

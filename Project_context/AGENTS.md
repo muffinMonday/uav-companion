@@ -79,5 +79,8 @@ For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map
 ## Backlog: Trip Marker Map Visibility
 - `docs/backlogs/completed/TRIP_MARKER_MAP_VISIBILITY_AND_DISAMBIGUATION_BACKLOG.md`: trip-only map view, completed-trip policy, trip text on name tag and pin labels. Frontend only. Status and evidence in its section 11 and `CURRENT_STATUS.md`.
 
+## Backlog: Mascot and Personality Integration
+- `docs/backlogs/in-progress/MASCOT_PERSONALITY_INTEGRATION.md`: app icon, manifest, mascot on the splash, dashboard greeting, Help and three empty states. Phase 3 (thumbs-up) deferred (no server signal; section 11). Owner authorized commit, push and one `deploy:live` for this work only.
+
 ## Backlog: Flight Sessions Discover, Previews, People and Automatic Attendance
 - `docs/backlogs/completed/FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md`: Today filter, tile-grid previews, participant list with Add friend, automatic attendance. **Completed 2026-11-15 with Wave E descoped by the owner** (more time needed to review the automatic-attendance architecture). Waves A, B1, B2, C, D are released (evidence in its section 14); `auto_attendance_enabled` stays 0 on the hosted project, so no automatic XP exists, and it must not be set to 1 without a new owner-approved plan. Residual risks in its section 13. The earlier commit/push/migration/deploy authorization was for waves A to D and has expired.
