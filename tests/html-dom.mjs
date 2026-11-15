@@ -25,7 +25,8 @@ const check = async (page, html, label) => {
       else if (src?.match(/^\.\/assets\/index-[\w-]+\.js$/)) {
         for (const a of [...e.attributes]) e.removeAttribute(a.name);
         e.setAttribute('type', 'module'); e.setAttribute('src', '/src/main.js');
-      } else if (['stylesheet', 'modulepreload'].includes(e.getAttribute('rel')) && href?.startsWith('./assets/')) e.remove();
+      } else if (href?.startsWith('./icons/') || href === './manifest.webmanifest') e.setAttribute('href', href.slice(1)); // public files: the build writes them relative to the base
+      else if (['stylesheet', 'modulepreload'].includes(e.getAttribute('rel')) && href?.startsWith('./assets/')) e.remove();
     }
     const all = [...d.querySelectorAll('*')];
     return all.map((e) => ({ tag: e.localName, parent: all.indexOf(e.parentElement), attrs: Object.fromEntries([...e.attributes].map((a) => [a.name, a.value]).sort()), text: [...e.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim() }));

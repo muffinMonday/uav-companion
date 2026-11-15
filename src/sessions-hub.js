@@ -15,6 +15,7 @@ import { showProfile } from './profile-popover.js';
 import { avatarEl } from './avatars.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { log } from './log.js';
+import { mascotEl } from './mascot-ui.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const btn = (label, cls = 'btn small') => { const b = el('button', cls, label); b.type = 'button'; return b; };
@@ -334,7 +335,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     else if (pub.status === 'error') { f.append(el('p', 'hint', 'Public sessions are unavailable right now.')); const r = btn('Try again'); r.addEventListener('click', () => loadPublic()); f.append(r); }
     else {
       const list = discoverList();
-      if (!list.length && !pub.more) f.append(empty('No public sessions match. Try a wider distance or date, or plan one yourself.'));
+      if (!list.length && !pub.more) { const e = empty('No public sessions match. Try a wider distance or date, or plan one yourself.'); e.classList.add('has-mascot'); e.prepend(mascotEl('thinking', 48)); f.append(e); }
       else {
         if (list.length) f.append(exploreButton('discover'));
         else f.append(el('p', 'hint', 'No session on this page matches. More may be on the next page.'));

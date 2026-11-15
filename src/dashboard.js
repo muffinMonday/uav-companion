@@ -12,6 +12,7 @@ import { MODES, MAX_STOPS } from './maplinks.js';
 import { typeOf } from './poi.js';
 import { checkinCell } from './checkin-ui.js';
 import { whenText } from './sessions.js';
+import { mascotEl } from './mascot-ui.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
@@ -63,7 +64,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
         else sub.append(name, status.of === 1 ? ' is today.' : ' is under way: day ' + status.day + ' of ' + status.of + '.');
       }
     }
-    c.append(sub);
+    c.append(sub, mascotEl('waving', 64));
     return c;
   }
   /** The route through the places ticked in Select mode: reorder, reverse, travel mode and the links. Shown only while selecting. */
@@ -322,7 +323,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     const back = el('button', 'btn small dash-back', '‹ Back to the dashboard'); back.type = 'button'; back.id = 'dash-back';
     back.addEventListener('click', () => showView('dash'));
     const h = el('h3', '', 'Help'); h.id = 'dash-help-title'; h.tabIndex = -1;
-    head.append(back, h);
+    head.append(back, h, mascotEl('thinking', 40));
     d.append(head);
     const replayable = actions.help?.replayable() ?? [];
     const claimed = new Set(HELP_TOPICS.flatMap((t) => t.ids));

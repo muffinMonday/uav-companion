@@ -1,4 +1,10 @@
+## 2026-11-15 (Mascot and personality integration, Phases 0 to 2)
+- New app icon and web manifest; mascot on the quick setup, dashboard greeting, Help header and the empty Trips, Saved Places and Discover states. Decorative only. Thumbs-up celebration deferred (needs a server-side milestone signal). Backlog `backlogs/in-progress/MASCOT_PERSONALITY_INTEGRATION.md`.
+
 # Changelog
+
+## 2026-11-15 (Flight Sessions Discover backlog completed; Wave E descoped)
+- Backlog `backlogs/completed/FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md` closed by the owner: waves A to D released, Wave E (canary, flag flip, real phone) cancelled pending an architecture review. `auto_attendance_enabled` remains 0; residual risks stay in its section 13. Documentation only.
 
 ## 2026-11-15 (Flight Sessions automatic attendance app side, wave D; still off in the database)
 - New Privacy card with an off-by-default switch (the server records the consent first), one foreground position sampler (30 to 60 s, only while a joined session is under way and the page is visible, stops after the award, on sign-out, opt-out, denied permission and hidden page), a progress line in the session detail and a toast only after a server-confirmed award. `auto_attendance_enabled` stays 0, so nothing is sent in production.
@@ -10,7 +16,7 @@
 - Migration `20261119100000_sessions_people_xp.sql`: `xp_reward` on the session lists, `list_session_participants` and `request_friend_from_session` (random per-session handles), the "Show me in attendee lists" switch. Discover rows, explorer cards and the detail show one server-fed XP badge; the host and everyone listed open the profile popover (Add friend for non-friends; "In your friends list" for friends). Reverses "RSVP names are managers-only" (DECISIONS).
 
 ## 2026-11-15 (Flight Sessions Discover, wave A)
-- Discover: date filter gains **Today (your time)** (from now to the next local midnight minus 1 ms, DST-safe; no SQL change), cached rows that have ended are dropped and the list is re-checked at the earliest end time, and `Has space` no longer shows a false empty state or hides `Show more`. Backlog `FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md` (`in-progress/`).
+- Discover: date filter gains **Today (your time)** (from now to the next local midnight minus 1 ms, DST-safe; no SQL change), cached rows that have ended are dropped and the list is re-checked at the earliest end time, and `Has space` no longer shows a false empty state or hides `Show more`. Backlog `FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md` (`completed/`).
 
 ## 2026-11-15 (trip marker map view)
 - Trips: `Show this trip` shows one trip's pins, routes and Side Quest links on the map (page state only; clears when the Trips tab is left). Completed trips are off the global map unless `Show completed trips` (Points of Interest tab) is on. Name tag shows the trip name under the marker name; pins carry an `aria-label` with the trip. Backlog `TRIP_MARKER_MAP_VISIBILITY_AND_DISAMBIGUATION_BACKLOG.md` (`completed/`).

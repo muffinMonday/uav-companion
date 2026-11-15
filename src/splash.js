@@ -9,6 +9,7 @@ import { buildTripPrompt, buildLinkPrompt, checkUrl, LIMITS } from './aiprompt.j
 import { save as saveDash, load as loadDash } from './dashstate.js';
 import { savePrefs } from './prefs.js';
 import { focusField, showModalQuiet } from './touch.js';
+import { mascotEl } from './mascot-ui.js';
 
 export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud = {}, toolbar = null }) {
   const dlg = document.createElement('dialog');
@@ -58,7 +59,8 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
     const learn = Object.assign(btn('Learn the map (optional, about a minute)', () => orient(0), 'dash-link'), { id: 'splash-learn' });
     const skipB = Object.assign(btn('Skip, just show me the map', skip, 'dash-link'), { id: 'splash-skip' });
     const links = el('div', 'splash-links'); links.append(learn, skipB);
-    show(heading('Where do you want to start?'), introEl, choices, acctBox, links);
+    const head = el('div', 'splash-head'); head.append(heading('Where do you want to start?'), mascotEl('waving', 56));
+    show(head, introEl, choices, acctBox, links);
   }
 
   // ---------- learn the map (optional): nothing is requested here, and every step can be skipped ----------

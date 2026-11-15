@@ -1,7 +1,9 @@
+STATUS (archived 2026-11-15): review done and the backlog implemented as waves A to D (commits 7b241ea, 24304d8, 6cdb845, 886252a, 5fcd847, docs f18cdc1); Wave E descoped by the owner, flag stays 0. Backlog: Project_context/docs/backlogs/completed/FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md
+
 Review-only handoff — UAV Companion Flight Sessions Discover + Automatic Attendance
 
 Repository: muffinMonday/uav-companion
-Planned backlog destination: Project_context/docs/backlogs/in-progress/FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md
+Planned backlog destination: Project_context/docs/backlogs/completed/FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md
 
 Read CLAUDE.md, Project_context/AGENTS.md, CURRENT_STATUS.md, DECISIONS.md, PROGRESSION.md, DESIGN.md, MODULES.md and the supplied backlog. Inspect the latest local HEAD, git status, existing sessions v2 migrations, SQL functions, client privacy/profile and location-watch modules, and the completed session/visual backlogs. Reconcile conflicts with live code and more recent authoritative decisions. Do not assume the planning snapshot is still current.
 
