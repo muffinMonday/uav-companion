@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import { leafletLayer, PolygonSymbolizer } from 'protomaps-leaflet';
 import { regionUrl } from './config.js';
+import { maskZoneLayer } from './coverage-mask.js';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -73,7 +74,7 @@ export function createZones(map, regions) {
       ? r.classes.filter((c) => !c.points).map((c) => ({ dataLayer: 'zones', filter: (zoom, f) => f.props.c === c.id, symbolizer: new PolygonSymbolizer({ fill: c.color }) }))
       : [{ dataLayer: 'zones', symbolizer: new PolygonSymbolizer({ fill: zoneFill(r.semantics) }) }],
     labelRules: [],
-    attribution: `Zones: ${r.source.authority}`,
+    attribution: `Zones: ${r.source.authority}` + (r.maskToBoundary ? `; coverage boundary: ${OSM_CREDIT} (ODbL)` : ''),
   });
 
   function sync() {
@@ -82,6 +83,7 @@ export function createZones(map, regions) {
     for (const r of regions) {
       if (layers.has(r.id) || !view.intersects(toLatLngBounds(r.bounds))) continue;
       const layer = make(r);
+      if (r.maskToBoundary) maskZoneLayer(layer, r);
       layer.setOpacity(opacity);
       layer.addTo(map);
       layers.set(r.id, layer);

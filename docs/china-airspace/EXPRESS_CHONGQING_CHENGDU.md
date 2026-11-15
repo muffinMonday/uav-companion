@@ -1,5 +1,10 @@
 # Chongqing / Chengdu express release
 
+**Chengdu follow-up, 2026-11-15:** city-mask implementation and 57-feature PMTiles
+candidate are validated; deployment remains deferred for concurrent mascot work.
+See [current Chengdu provenance and release state](../regions/cn-chengdu.md).
+The earlier acquisition and Chongqing release evidence below remains historical.
+
 2026-11-14. Chongqing is **published and live-verified** via [PR #8](https://github.com/muffinMonday/uav-companion/pull/8).
 Chengdu is acquired and independently validated, **withheld from publication**.
 Exact artifact identities and validation: [evidence](evidence/express-chongqing-chengdu.json).

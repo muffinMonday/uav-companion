@@ -1,0 +1,926 @@
+{
+  "valid": true,
+  "shapely": "2.2.0",
+  "geos": "3.14.1",
+  "sourceFeatures": 57,
+  "maskBounds": [
+    102.989623,
+    30.0916339,
+    104.8948475,
+    31.4370968
+  ],
+  "maskAreaKm2Approx": 14278.72386071443,
+  "intersectingFeatures": 31,
+  "crossingFeatures": 8,
+  "features": [
+    {
+      "id": "sichuan-251-0",
+      "originalInterior": {
+        "lon": 104.597397,
+        "lat": 30.236435
+      },
+      "maskedInterior": {
+        "lon": 104.597397,
+        "lat": 30.236435
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-257-0",
+      "originalInterior": {
+        "lon": 104.505386,
+        "lat": 30.9134675
+      },
+      "maskedInterior": {
+        "lon": 104.5259855,
+        "lat": 30.8434295
+      },
+      "outsideMaskInterior": {
+        "lon": 104.48066700000001,
+        "lat": 30.9786985
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.48066700000001,
+        "lat": 30.9786985
+      },
+      "crossesMask": true
+    },
+    {
+      "id": "sichuan-253-0",
+      "originalInterior": {
+        "lon": 104.552765,
+        "lat": 30.340805
+      },
+      "maskedInterior": {
+        "lon": 104.552765,
+        "lat": 30.340805
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-255-0",
+      "originalInterior": {
+        "lon": 104.690094,
+        "lat": 30.7074735
+      },
+      "maskedInterior": {
+        "lon": 104.690094,
+        "lat": 30.7074735
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-172-0",
+      "originalInterior": {
+        "lon": 104.4003295,
+        "lat": 30.391617
+      },
+      "maskedInterior": {
+        "lon": 104.4003295,
+        "lat": 30.391617
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-192-0",
+      "originalInterior": {
+        "lon": 104.18678299999999,
+        "lat": 31.0425565
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.18678299999999,
+        "lat": 31.0425565
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.18678299999999,
+        "lat": 31.0425565
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-260-0",
+      "originalInterior": {
+        "lon": 104.5788575,
+        "lat": 31.2526705
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.5788575,
+        "lat": 31.2526705
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.5788575,
+        "lat": 31.2526705
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-258-0",
+      "originalInterior": {
+        "lon": 104.9860385,
+        "lat": 31.2334445
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.9860385,
+        "lat": 31.2334445
+      },
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-243-0",
+      "originalInterior": {
+        "lon": 104.630356,
+        "lat": 30.1293185
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.630356,
+        "lat": 30.1293185
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.630356,
+        "lat": 30.1293185
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-181-0",
+      "originalInterior": {
+        "lon": 104.46487400000001,
+        "lat": 30.574264499999998
+      },
+      "maskedInterior": {
+        "lon": 104.46487400000001,
+        "lat": 30.574264499999998
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-180-0",
+      "originalInterior": {
+        "lon": 104.3714905,
+        "lat": 30.574264499999998
+      },
+      "maskedInterior": {
+        "lon": 104.3714905,
+        "lat": 30.574264499999998
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-248-0",
+      "originalInterior": {
+        "lon": 104.60701,
+        "lat": 30.2254485
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.60701,
+        "lat": 30.2254485
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.60701,
+        "lat": 30.2254485
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-302-0",
+      "originalInterior": {
+        "lon": 105.23529802912154,
+        "lat": 29.977025
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 105.23529802912154,
+        "lat": 29.977025
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.85358224999999,
+        "lat": 30.183563
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-191-0",
+      "originalInterior": {
+        "lon": 104.1778565,
+        "lat": 31.0137175
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.1778565,
+        "lat": 31.0137175
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.1778565,
+        "lat": 31.0137175
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-256-0",
+      "originalInterior": {
+        "lon": 104.548645,
+        "lat": 30.7115935
+      },
+      "maskedInterior": {
+        "lon": 104.548645,
+        "lat": 30.7115935
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-239-0",
+      "originalInterior": {
+        "lon": 104.7216795,
+        "lat": 29.953537
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.7216795,
+        "lat": 29.953537
+      },
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-182-0",
+      "originalInterior": {
+        "lon": 104.4916535,
+        "lat": 30.6621555
+      },
+      "maskedInterior": {
+        "lon": 104.4916535,
+        "lat": 30.6621555
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-176-0",
+      "originalInterior": {
+        "lon": 104.393463,
+        "lat": 30.4355625
+      },
+      "maskedInterior": {
+        "lon": 104.393463,
+        "lat": 30.4355625
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-193-0",
+      "originalInterior": {
+        "lon": 104.436722,
+        "lat": 31.079635500000002
+      },
+      "maskedInterior": {
+        "lon": 104.40584325,
+        "lat": 30.939334549999998
+      },
+      "outsideMaskInterior": {
+        "lon": 104.436722,
+        "lat": 31.079635500000002
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.436722,
+        "lat": 31.079635500000002
+      },
+      "crossesMask": true
+    },
+    {
+      "id": "sichuan-197-0",
+      "originalInterior": {
+        "lon": 104.5101925,
+        "lat": 31.2966155
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.5101925,
+        "lat": 31.2966155
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.5101925,
+        "lat": 31.2966155
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-244-0",
+      "originalInterior": {
+        "lon": 104.64546250000001,
+        "lat": 30.134811499999998
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.64546250000001,
+        "lat": 30.134811499999998
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.625549,
+        "lat": 30.153350500000002
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-171-0",
+      "originalInterior": {
+        "lon": 104.2382815,
+        "lat": 30.230255
+      },
+      "maskedInterior": {
+        "lon": 104.29291549999999,
+        "lat": 30.265851849999997
+      },
+      "outsideMaskInterior": {
+        "lon": 104.19101784918468,
+        "lat": 30.222405799999997
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.19101784918468,
+        "lat": 30.222405799999997
+      },
+      "crossesMask": true
+    },
+    {
+      "id": "sichuan-241-0",
+      "originalInterior": {
+        "lon": 104.6756745,
+        "lat": 30.094986
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.6756745,
+        "lat": 30.094986
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.655075,
+        "lat": 30.1128385
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-250-0",
+      "originalInterior": {
+        "lon": 104.599457,
+        "lat": 30.234375
+      },
+      "maskedInterior": {
+        "lon": 104.598734525,
+        "lat": 30.23453435
+      },
+      "outsideMaskInterior": {
+        "lon": 104.59999225612674,
+        "lat": 30.233484699999998
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.59999225612674,
+        "lat": 30.233484699999998
+      },
+      "crossesMask": true
+    },
+    {
+      "id": "sichuan-190-0",
+      "originalInterior": {
+        "lon": 104.225922,
+        "lat": 30.9876255
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.225922,
+        "lat": 30.9876255
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.225922,
+        "lat": 30.9876255
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-252-0",
+      "originalInterior": {
+        "lon": 104.6083835,
+        "lat": 30.2899935
+      },
+      "maskedInterior": {
+        "lon": 104.6083835,
+        "lat": 30.2899935
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-303-0",
+      "originalInterior": {
+        "lon": 104.9256135,
+        "lat": 30.3476715
+      },
+      "maskedInterior": {
+        "lon": 104.78555727032091,
+        "lat": 30.3896604
+      },
+      "outsideMaskInterior": {
+        "lon": 105.00769755333951,
+        "lat": 30.34725045
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.747772,
+        "lat": 30.236435
+      },
+      "crossesMask": true
+    },
+    {
+      "id": "sichuan-179-0",
+      "originalInterior": {
+        "lon": 104.4202425,
+        "lat": 30.4506685
+      },
+      "maskedInterior": {
+        "lon": 104.4202425,
+        "lat": 30.4506685
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-187-0",
+      "originalInterior": {
+        "lon": 104.415436,
+        "lat": 30.798111
+      },
+      "maskedInterior": {
+        "lon": 104.415436,
+        "lat": 30.798111
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-178-0",
+      "originalInterior": {
+        "lon": 104.4181825,
+        "lat": 30.449295
+      },
+      "maskedInterior": {
+        "lon": 104.4181825,
+        "lat": 30.449295
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-174-0",
+      "originalInterior": {
+        "lon": 104.3309785,
+        "lat": 30.4245755
+      },
+      "maskedInterior": {
+        "lon": 104.3309785,
+        "lat": 30.4245755
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-240-0",
+      "originalInterior": {
+        "lon": 104.5925905,
+        "lat": 30.0249485
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.5925905,
+        "lat": 30.0249485
+      },
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-169-0",
+      "originalInterior": {
+        "lon": 104.40033,
+        "lat": 29.842987
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.40033,
+        "lat": 29.842987
+      },
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-177-0",
+      "originalInterior": {
+        "lon": 103.74321,
+        "lat": 30.4410555
+      },
+      "maskedInterior": {
+        "lon": 103.74321,
+        "lat": 30.4410555
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-66-0",
+      "originalInterior": {
+        "lon": 99.8561236937108,
+        "lat": 30.439681999999998
+      },
+      "maskedInterior": {
+        "lon": 103.07119783964569,
+        "lat": 30.786967
+      },
+      "outsideMaskInterior": {
+        "lon": 99.8561236937108,
+        "lat": 30.439681999999998
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 103.0165705,
+        "lat": 31.124268
+      },
+      "crossesMask": true
+    },
+    {
+      "id": "sichuan-170-0",
+      "originalInterior": {
+        "lon": 104.33509799999999,
+        "lat": 30.082626
+      },
+      "maskedInterior": {
+        "lon": 104.450988325,
+        "lat": 30.1646229
+      },
+      "outsideMaskInterior": {
+        "lon": 104.33853149999999,
+        "lat": 30.060654
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.49683027776473,
+        "lat": 30.14377515
+      },
+      "crossesMask": true
+    },
+    {
+      "id": "sichuan-246-0",
+      "originalInterior": {
+        "lon": 104.651642,
+        "lat": 30.1883695
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.651642,
+        "lat": 30.1883695
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.651642,
+        "lat": 30.1883695
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-188-0",
+      "originalInterior": {
+        "lon": 104.391403,
+        "lat": 30.873642
+      },
+      "maskedInterior": {
+        "lon": 104.391403,
+        "lat": 30.873642
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-259-0",
+      "originalInterior": {
+        "lon": 104.6914675,
+        "lat": 31.237564
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.6914675,
+        "lat": 31.237564
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.6914675,
+        "lat": 31.237564
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-249-0",
+      "originalInterior": {
+        "lon": 104.60495,
+        "lat": 30.228195
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.60495,
+        "lat": 30.228195
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.60495,
+        "lat": 30.228195
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-173-0",
+      "originalInterior": {
+        "lon": 104.339218,
+        "lat": 30.3984835
+      },
+      "maskedInterior": {
+        "lon": 104.339218,
+        "lat": 30.3984835
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-245-0",
+      "originalInterior": {
+        "lon": 104.574051,
+        "lat": 30.159531
+      },
+      "maskedInterior": {
+        "lon": 104.5575715,
+        "lat": 30.224075499999998
+      },
+      "outsideMaskInterior": {
+        "lon": 104.5754245,
+        "lat": 30.1409915
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.575424,
+        "lat": 30.1540375
+      },
+      "crossesMask": true
+    },
+    {
+      "id": "sichuan-198-0",
+      "originalInterior": {
+        "lon": 104.491653,
+        "lat": 31.307602
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.491653,
+        "lat": 31.307602
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.491653,
+        "lat": 31.307602
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-194-0",
+      "originalInterior": {
+        "lon": 104.27948,
+        "lat": 31.1029815
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.27948,
+        "lat": 31.1029815
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.27948,
+        "lat": 31.1029815
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-189-0",
+      "originalInterior": {
+        "lon": 104.2554475,
+        "lat": 30.9560395
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.2554475,
+        "lat": 30.9560395
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.2554475,
+        "lat": 30.9560395
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-185-0",
+      "originalInterior": {
+        "lon": 104.3447115,
+        "lat": 30.7390595
+      },
+      "maskedInterior": {
+        "lon": 104.3447115,
+        "lat": 30.7390595
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-183-0",
+      "originalInterior": {
+        "lon": 104.3028255,
+        "lat": 30.7102205
+      },
+      "maskedInterior": {
+        "lon": 104.3028255,
+        "lat": 30.7102205
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-242-0",
+      "originalInterior": {
+        "lon": 104.6276095,
+        "lat": 30.127945
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.6276095,
+        "lat": 30.127945
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.6276095,
+        "lat": 30.127945
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-261-0",
+      "originalInterior": {
+        "lon": 104.5603175,
+        "lat": 31.3707735
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.5603175,
+        "lat": 31.3707735
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.5603175,
+        "lat": 31.3707735
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-238-0",
+      "originalInterior": {
+        "lon": 104.63859550000001,
+        "lat": 29.939804000000002
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.63859550000001,
+        "lat": 29.939804000000002
+      },
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-184-0",
+      "originalInterior": {
+        "lon": 104.365997,
+        "lat": 30.7212065
+      },
+      "maskedInterior": {
+        "lon": 104.365997,
+        "lat": 30.7212065
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-186-0",
+      "originalInterior": {
+        "lon": 104.35844399999999,
+        "lat": 30.7775115
+      },
+      "maskedInterior": {
+        "lon": 104.35844399999999,
+        "lat": 30.7775115
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-175-0",
+      "originalInterior": {
+        "lon": 104.429855,
+        "lat": 30.4355625
+      },
+      "maskedInterior": {
+        "lon": 104.429855,
+        "lat": 30.4355625
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-195-0",
+      "originalInterior": {
+        "lon": 104.3852235,
+        "lat": 31.103668499999998
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.3852235,
+        "lat": 31.103668499999998
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.3852235,
+        "lat": 31.103668499999998
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-247-0",
+      "originalInterior": {
+        "lon": 104.6083835,
+        "lat": 30.224075499999998
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.6083835,
+        "lat": 30.224075499999998
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.6083835,
+        "lat": 30.224075499999998
+      },
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-254-0",
+      "originalInterior": {
+        "lon": 104.5939635,
+        "lat": 30.515213000000003
+      },
+      "maskedInterior": {
+        "lon": 104.5939635,
+        "lat": 30.515213000000003
+      },
+      "outsideMaskInterior": null,
+      "outsideMaskWithinBounds": null,
+      "crossesMask": false
+    },
+    {
+      "id": "sichuan-196-0",
+      "originalInterior": {
+        "lon": 104.36325049999999,
+        "lat": 31.1785125
+      },
+      "maskedInterior": null,
+      "outsideMaskInterior": {
+        "lon": 104.36325049999999,
+        "lat": 31.1785125
+      },
+      "outsideMaskWithinBounds": {
+        "lon": 104.36325049999999,
+        "lat": 31.1785125
+      },
+      "crossesMask": false
+    }
+  ]
+}

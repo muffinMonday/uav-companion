@@ -37,6 +37,7 @@ function validate(meta, dir) {
   if (!SEMANTICS.has(meta.semantics)) throw new Error(`${meta.id}: semantics must be one of ${[...SEMANTICS].join('|')}`);
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(meta.id) || !meta.id.startsWith(`${meta.country}-`)) throw new Error(`${meta.id}: id must be lowercase and start with "${meta.country}-"`);
   const selected = meta.sourceConfidence?.mode === 'selected-source';
+  if (meta.maskToBoundary !== undefined && (meta.maskToBoundary !== true || !meta.boundary || !selected || meta.coverageMarginM)) throw new Error(`${meta.id}: maskToBoundary requires a selected source, boundary and no coverage margin`);
   if (meta.coverageMode !== undefined && meta.coverageMode !== 'positive-only') throw new Error(`${meta.id}: unsupported coverageMode`);
   if (selected && (meta.coverageMode !== 'positive-only' || meta.semantics !== 'allow')) throw new Error(`${meta.id}: selected suitable-flight sources require positive-only coverage`);
   if (!meta.source.authority || (!meta.source.effective && !(selected && meta.source.effective === null))) throw new Error(`${meta.id}: source.authority and source.effective are required (explicit null is supported for selected sources)`);
@@ -64,7 +65,7 @@ export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS
   let boundary = null;
   let coverageBounds = bounds;
   if (meta.boundary) {
-    // Coverage polygon, always WGS84. Used only to tell "outside the zones" from "no data here".
+    // Coverage polygon, always WGS84; strict masks also limit rendering and positive queries.
     const text = fs.readFileSync(path.join(dir, meta.boundary));
     boundary = `${countryId}/${id}.boundary.${hash(text)}.json`;
     fs.writeFileSync(path.join(OUT, boundary), text);
@@ -76,6 +77,11 @@ export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS
       Math.min(bounds[0], ...pts.map((p) => p[0])), Math.min(bounds[1], ...pts.map((p) => p[1])),
       Math.max(bounds[2], ...pts.map((p) => p[0])), Math.max(bounds[3], ...pts.map((p) => p[1])),
     ];
+    if (meta.maskToBoundary) {
+      const { maskPolygons } = await import('../src/coverage-mask.js');
+      maskPolygons(g);
+      coverageBounds = [Math.min(...pts.map(p => p[0])), Math.min(...pts.map(p => p[1])), Math.max(...pts.map(p => p[0])), Math.max(...pts.map(p => p[1]))];
+    }
   }
   let pointsFile = null;
   if (points?.length) {
@@ -84,7 +90,8 @@ export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS
     fs.writeFileSync(path.join(OUT, pointsFile), text);
   }
   return {
-    id, country: countryId, name: meta.name, nameZh: meta.nameZh, file, boundary, bounds, coverageBounds,
+    id, country: countryId, name: meta.name, nameZh: meta.nameZh, file, boundary, bounds: meta.maskToBoundary ? coverageBounds : bounds, coverageBounds,
+    ...(meta.maskToBoundary && { maskToBoundary: true }),
     cells: features.length, minZoom: MIN_Z, maxZoom: MAX_Z,
     semantics: meta.semantics, maxHeightM: meta.maxHeightM ?? null,
     source, license: meta.license, crs: meta.crs, crsVerified: !!meta.crsVerified,

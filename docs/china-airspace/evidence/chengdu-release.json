@@ -1,0 +1,153 @@
+{
+  "status": "validated candidate; deployment deferred for active mascot work",
+  "checkedOn": "2026-11-15",
+  "baselineSource": "f18cdc1",
+  "productionBaseline": "de81956bede48477ef25ffca0e1505f3e5c9b96e",
+  "rollback": {
+    "file": "planning/chengdu/production-baseline.zip",
+    "sha256": "7fb203ea9ed23070df2ccba2cecee8d6dfad80640cdeea49434c086c35925146"
+  },
+  "source": {
+    "provider": "KDji third-party UOM reference mirror",
+    "snapshotAt": "2026-09-22T05:49:15.173Z",
+    "acquiredOn": "2026-11-14",
+    "captures": [
+      {
+        "id": "0-0",
+        "sha256": "ea31059ccb0e2f1a09e1023a177a22eb41d7d2c552eb0b17c73fe4623fc9b64b",
+        "features": 3
+      },
+      {
+        "id": "0-1",
+        "sha256": "f5d7d7cfc3da631206353e24492b10112cb84ed7c0ac1201c3f6a8f33a1d3c71",
+        "features": 56
+      }
+    ],
+    "occurrences": 59,
+    "features": 57,
+    "identicalDuplicates": 2,
+    "conflicts": 0,
+    "contentSha256": "bac39add1ed4fe93fb9c7627b44869c9a3c192d12a3f151fffafe2d00a3e56be",
+    "originalFileSha256": "cf71f5e6ad41a4732720ecf869fa9b5f5180837b12b93243124de8287748ab3d",
+    "allOriginalFeaturesUnchanged": true
+  },
+  "boundary": {
+    "provider": "OpenStreetMap contributors via Nominatim",
+    "url": "https://www.openstreetmap.org/relation/2110264",
+    "relationVersion": 72,
+    "relationTimestamp": "2026-07-25T09:08:46Z",
+    "adminLevel": "5",
+    "divisionCode": "510100",
+    "crs": "WGS84 / EPSG:4326 longitude,latitude; Nominatim GeoJSON",
+    "license": "ODbL-1.0",
+    "rawCaptureSha256": "195723d498b63eb78ff0fa11f0ba9784cf91d39558f0fb13b32f50d9d5e5dc0b",
+    "relationMetadataSha256": "5cd32ce5119fe3e188c6b47e7dbcb063b62df7b31c5734f6c001bebf4b2a47a1",
+    "bounds": [
+      102.989623,
+      30.0916339,
+      104.8948475,
+      31.4370968
+    ],
+    "areaKm2Approx": 14278.72386071443,
+    "geometryUnchangedFromDownload": true
+  },
+  "geos": {
+    "valid": true,
+    "features": 57,
+    "intersectingFeatures": 31,
+    "crossingFeatures": 8,
+    "outsideFeatures": 26,
+    "shapely": "2.2.0",
+    "geos": "3.14.1",
+    "witnesses": "chengdu-mask-geos.json",
+    "witnessesSha256": "68151bee0207596cea46de6a9e9ebb0286f8b9b3cf8e236e0031cd324e99f05d"
+  },
+  "pmtiles": {
+    "file": "cn/cn-chengdu.66de882a.pmtiles",
+    "sha256": "66de882a82a0a9300ca9008e0bca9280b10d13aa54128a1004162f38fbb800f1",
+    "bytes": 5744094,
+    "sourceFeatureInteriorsChecked": 57,
+    "tiles": 92940
+  },
+  "mask": {
+    "file": "cn/cn-chengdu.boundary.a54e47db.json",
+    "sha256": "a54e47db27521d76fb1d25d9443d0294706c1d96d973564f3f699ed6d71d0e92",
+    "bytes": 171437
+  },
+  "existingProductionRegions": [
+    {
+      "id": "cn-chongqing",
+      "features": 777,
+      "file": "cn/cn-chongqing.a1d54094.pmtiles",
+      "unchanged": true
+    },
+    {
+      "id": "cn-guangdong",
+      "features": 101,
+      "file": "cn/cn-guangdong.550bc53c.pmtiles",
+      "unchanged": true
+    },
+    {
+      "id": "cn-hubei",
+      "features": 84863,
+      "file": "cn/cn-hubei.566a4850.pmtiles",
+      "unchanged": true
+    },
+    {
+      "id": "cn-hunan",
+      "features": 53,
+      "file": "cn/cn-hunan.b0935b4d.pmtiles",
+      "unchanged": true
+    },
+    {
+      "id": "cn-jilin",
+      "features": 140,
+      "file": "cn/cn-jilin.f11867c2.pmtiles",
+      "unchanged": true
+    },
+    {
+      "id": "cn-ningxia",
+      "features": 79,
+      "file": "cn/cn-ningxia.99868b1d.pmtiles",
+      "unchanged": true
+    }
+  ],
+  "singaporeUnchanged": true,
+  "candidatePackage": {
+    "file": "planning/chengdu/validated-data.zip",
+    "sha256": "3592d490921952ca56c2fea045ac91c4846c1caf4019e75d721f6012b5b77335",
+    "contents": [
+      "public/data",
+      "data/regions/cn/chengdu"
+    ]
+  },
+  "validation": {
+    "focusedTests": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "command": "node --test tests/city-mask.test.mjs tests/selected-airspace.test.mjs"
+    },
+    "unitSuites": {
+      "passed": 62,
+      "failed": 0,
+      "environment": "normal Windows account; initial sandbox places-unit locale mismatch"
+    },
+    "applicationBuild": "passed with existing public Supabase build configuration; bundle-size warning only",
+    "productionDataPreflight": {
+      "candidateRegions": 8,
+      "productionRegions": 7,
+      "removed": 0,
+      "added": 1
+    },
+    "existingRegionalDescriptorsAndArtifacts": "byte-identical to production baseline; descriptors deep-equal",
+    "fullBrowserSuite": "not run, per task scope; focused real-browser map and query tests passed",
+    "realPhone": "not verified",
+    "independentSourceAlignment": "unverified"
+  },
+  "coordination": {
+    "mainRechecked": "f18cdc1869de9d2377127738263ae67ac2901ffe",
+    "claudeCheckout": "main at 36cd22b with active mascot/CSS/onboarding edits and untracked mascot assets; read-only status check",
+    "deploy": "deferred; no merge or production writes"
+  }
+}
