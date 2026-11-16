@@ -1,6 +1,6 @@
 # Motor Diagnostics Backlog: Addendum 1 (proposed)
 
-**Status:** Revised 2026-11-16 after owner review of Phase 0 (direction approved; revisions 1 to 8 applied). **Not yet approved** as a whole. Does not change the backlog until approved.
+**Status:** **Superseded 2026-11-16.** Owner approved this addendum with corrections; it is merged into [the consolidated backlog](UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md), which is the sole authoritative specification. This file is kept only as decision history. Where it differs from the backlog, the backlog wins.
 **Date:** 2026-11-16
 **Amends:** [UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md](UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md)
 **Evidence:** [Phase 0 research](UAV_COMPANION_MOTOR_DIAGNOSTICS_PHASE0_RESEARCH.md) (finding IDs F1 to F25, items M1 to M8)
@@ -228,6 +228,7 @@ Replace or add in backlog section 15:
 | Date | Event |
 | --- | --- |
 | 2026-11-16 | Addendum drafted from the owner's Phase 0 brief and the research pass (commit `fc88b470`, pushed to `main`). Proposed, not approved. |
+| 2026-11-16 | Owner approved with corrections; merged into the consolidated backlog; superseded. |
 | 2026-11-16 | Owner review: Phase 0 direction approved, Addendum 1 not yet approved. Revisions applied: (1) `ALWAYS` token, (2) multi-segment bench logs, (3) stop verification semantics, (4) page-lifecycle wording, (5) Blackbox timing quality, (6) durable unclean-exit marker, (7) "Aircraft diagnostic data" Privacy section, (8) status correction. Owner decisions recorded in section 20; Phase 1 inventory in section 21. |
 
 ## 20. Owner decisions recorded 2026-11-16

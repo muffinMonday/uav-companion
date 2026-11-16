@@ -1,6 +1,6 @@
 # Motor Diagnostics: Phase 0 Research
 
-**Status:** Research complete; owner review 2026-11-16 approved the direction and requested the revisions applied in this version (sections 3, 4.6, 5, 7, 8, 9, 10). No application code, motor control, deployment or dashboard entry was touched.
+**Status:** Research complete; evidence only. The specification is the [consolidated backlog](UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md) (Addendum 1 approved and merged 2026-11-16). Section 10 (next prompt) is executed by the active handoff and is no longer actionable here.
 **Date:** 2026-11-16
 **Related:** [Backlog](UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md), [Addendum 1](UAV_COMPANION_MOTOR_DIAGNOSTICS_ADDENDUM_1.md)
 

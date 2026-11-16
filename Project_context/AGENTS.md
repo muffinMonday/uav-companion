@@ -84,3 +84,7 @@ For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map
 
 ## Backlog: Flight Sessions Discover, Previews, People and Automatic Attendance
 - `docs/backlogs/completed/FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md`: Today filter, tile-grid previews, participant list with Add friend, automatic attendance. **Completed 2026-11-15 with Wave E descoped by the owner** (more time needed to review the automatic-attendance architecture). Waves A, B1, B2, C, D are released (evidence in its section 14); `auto_attendance_enabled` stays 0 on the hosted project, so no automatic XP exists, and it must not be set to 1 without a new owner-approved plan. Residual risks in its section 13. The earlier commit/push/migration/deploy authorization was for waves A to D and has expired.
+
+## Backlog: Automated Motor Diagnostics
+- `docs/backlogs/in-progress/UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md`: **sole authoritative specification** (Addendum 1 merged 2026-11-16). `..._ADDENDUM_1.md` is superseded decision history; `..._PHASE0_RESEARCH.md` is evidence. Hazard analysis (mandatory Phase 3 entry gate): `docs/MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md`. Active handoff: `docs/handoffs/active/MOTOR_DIAGNOSTICS_PHASE1_2_HANDOFF.md`.
+- **Authorized:** read-only Phase 1 and Phase 2 behind a build-time flag that defaults off. **Not authorized:** motor commands, CLI, configuration writes, log erasure, reflashing, 4-way interface, Phase 3, deployment. No UI or report may claim "safe to fly", airworthiness, certification or definitive diagnosis.
