@@ -1,4 +1,10 @@
-## Latest: offline place-name index removed; place names search online only (2026-11-16; committed `857a457`, pushed to `main`, `npm run deploy:live` published gh-pages `49743e1`)
+## Latest: Motor Diagnostics Phase 0 research and Addendum 1 (2026-11-16; docs only, committed locally, not pushed)
+- Files in `backlogs/for-review/`: `UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md` (unchanged), `..._ADDENDUM_1.md` (proposed amendments, unapproved), `..._PHASE0_RESEARCH.md` (findings F1-F25, MSP/CLI matrix, resolvability, Android, versions, timings, validation plan, 11 owner decisions, next prompt).
+- No application code, motor control, flag, dashboard entry, push or deploy. No hardware was tested; every timing and `u = 0.8` is provisional.
+- Key findings: zero = external 1000; `blackbox_mode` is not readable over MSP; 4.5+ logs `gyroUnfilt` natively; `invalidPct` is unreliable on builds without DShot stats; polyfill is a no-go, native Android Web Serial depends on device coverage.
+- Next: owner reviews section 9 of the research doc, then the Phase 1/2 prompt (no motor commands).
+
+## Previous: offline place-name index removed; place names search online only (2026-11-16; committed `857a457`, pushed to `main`, `npm run deploy:live` published gh-pages `49743e1`)
 - Removed: `data/places/` (the Chinese/English place list), its build step (`scripts/build-data.js`), the preflight handling of `places` (`scripts/lib/prod-data.js`), the loader's place lists (`src/app/region-loader.js`, `src/main.js`), the offline lookup in `src/search.js`, and `places` in `public/data/index.json` (generated, git-ignored; the first deploy after this drops `public/data/places/`).
 - Place names: nothing is searched while typing. Enter, or the "Search online" row, sends one request (Photon, then Nominatim when Photon has nothing or fails). Coordinates and map links are never sent. Failure messages: offline in the browser, no connection, an HTTP error with its status, unreadable answer, no results.
 - Privacy: the search box keeps its explicit-action rule. The `lookupNames` switch still governs only the AI-import name lookup, as before; the search box does not read it (unchanged behaviour, noted for the owner).
