@@ -1,12 +1,18 @@
 # Handoff: Motor Diagnostics Phase 1 and Phase 2 (read-only)
 
-**Status:** Active, 2026-11-16. Phase 1 (commit `389cdaf`) and Phase 2 (read-only, flag off) are implemented and pushed; what remains is hardware work (inventory of the five aircraft, Android phone tests, M1 to M8) and owner decisions. Phase 3 is not authorized.
+**Status:** Active, 2026-11-16. Phase 1 (`389cdaf`) and Phase 2 (`366af13`) are implemented and pushed. The lab page was published live with the flag on (`10410c4`, gh-pages `3b6d919`) at owner request for remote testing. What remains is hardware work (inventory of the five aircraft, Android phone tests, M1 to M8) and owner decisions. Phase 3 is not authorized.
 **Backlog (authoritative):** [UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md](../../backlogs/in-progress/UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md)
 **Hazard analysis:** [MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md](../../MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md)
 
 ## Authorized
 
-Documentation, Phase 1 and Phase 2 read-only code, tests, commit and push to `main`.
+Documentation, Phase 1 and Phase 2 read-only code, tests, commit and push to `main`. One live deployment of the read-only lab with the flag on (done). Any further deployment needs owner instruction.
+
+## How the lab is deployed
+
+- Build and publish: `VITE_PREFLIGHT_DIAGNOSTICS=1 node scripts/deploy-live.js` (reads the public Supabase values from `.env.development.local`; the flag must be set on the same command). Do not omit the flag, or the live lab shows only the disabled notice.
+- If publishing fails with "Permission denied" removing `data/places/`, delete `node_modules/.cache/gh-pages` (a disposable clone) and retry. Confirm with `git ls-remote origin gh-pages`.
+- Check after publishing: `/tools/preflight-spike/` returns 200, the mock button yields 15 gate rows, and the main page returns 200.
 
 ## Not authorized (stop if a task needs any of these)
 

@@ -1,10 +1,10 @@
 # UAV Companion Automated Motor Diagnostics
 
-**Status:** In progress. Phase 0 done; Phase 1 and Phase 2 (read-only, flag off) authorized 2026-11-16. Phase 3 is **not** authorized.
+**Status:** In progress. Phase 0 done; Phase 1 and Phase 2 (read-only) implemented 2026-11-16. The lab page is live with the build flag on (owner decision, see status history). Phase 3 is **not** authorized.
 **Date:** 2026-11-16
 **Authoritative:** This document is the **sole authoritative build specification**. It supersedes [Addendum 1](UAV_COMPANION_MOTOR_DIAGNOSTICS_ADDENDUM_1.md), which is kept only as decision history (the owner approved it with corrections on 2026-11-16 and it is merged here). The [Phase 0 research](UAV_COMPANION_MOTOR_DIAGNOSTICS_PHASE0_RESEARCH.md) is evidence (finding IDs F1 to F25), not specification.
 **Related:** [Active handoff](../../handoffs/active/MOTOR_DIAGNOSTICS_PHASE1_2_HANDOFF.md) · [Hazard analysis (Phase 3 entry gate)](../../MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md)
-**Authorization:** Documentation, Phase 1 and Phase 2 read-only implementation, commit and push to `main`. No deployment. No motor command, CLI access, configuration write, log erasure, reflashing, 4-way interface or Phase 3 work. Each of those, and any deployment, needs separate owner authorization.
+**Authorization:** Documentation, Phase 1 and Phase 2 read-only implementation, commit and push to `main`; one live deployment of the read-only lab page with the flag on (2026-11-16, owner instruction). No motor command, CLI access, configuration write, log erasure, reflashing, 4-way interface or Phase 3 work. Each of those, and any further deployment, needs separate owner authorization.
 
 ## Status history
 
@@ -13,6 +13,8 @@
 | 2026-11-16 | Backlog drafted (for review). |
 | 2026-11-16 | Phase 0 research and Addendum 1 drafted; owner review requested revisions 1 to 8 (applied). |
 | 2026-11-16 | Owner approved Addendum 1 with corrections. Merged into this document; addendum superseded. Moved to `in-progress/`. Phases 1 and 2 authorized (read-only). |
+| 2026-11-16 | Phase 1 (`389cdaf`) and Phase 2 (`366af13`) pushed to `main`. Tests: `npm run test:unit` all pass; browser `preflight-lab` 31 pass. |
+| 2026-11-16 | Build input added (`10410c4`). Live deploy with `VITE_PREFLIGHT_DIAGNOSTICS=1`: gh-pages `49743e1` -> `3b6d919`. Lab at `/tools/preflight-spike/`, read-only, no dashboard or map entry. **Owner decision, sole user:** this overrides section 2's "no user-visible entry point before the final release gate" and the feature-flag rule for the lab page only; the main app is unchanged. Residual risk: the lab is reachable by anyone with the URL. Not tested on a real aircraft or phone (synthetic mock only). |
 
 ## Tags
 
