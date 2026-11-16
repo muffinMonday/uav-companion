@@ -76,7 +76,18 @@ All ten fields of `REQUIRED_FIELDS` in `src/benchtest/allowlist.js`: `variant` (
 
 ## 10. Deployment and rollback
 
-DEPLOYMENT_FACTS_PLACEHOLDER
+**Deployed 2026-11-17 (isolated lab only):** https://uavcompanion.com/tools/motor-bench-lab/ . Source commit `96b9187` on `main`. Published with both flags on so the existing read-only lab stays live: `VITE_PREFLIGHT_DIAGNOSTICS=1 VITE_BENCH_PHASE3=1 node scripts/deploy-live.js` (PowerShell: set both with `$env:`, run, then remove them). gh-pages `3b6d919` -> `933dd9e`. `CNAME` (`uavcompanion.com`) kept; the main app, data regions (preflight: 8 regions, none added or removed) and custom domain are unchanged.
+
+**Rollback revision:** gh-pages `3b6d91987986d1b8905b37aa9ca29f4703b24a70` (the previous live site: read-only lab only, no bench route).
+- Preferred rollback: redeploy from `main` **without** the Phase 3 flag: `VITE_PREFLIGHT_DIAGNOSTICS=1 node scripts/deploy-live.js`. The build then has no bench page at all (the page is a Vite input only when `VITE_BENCH_PHASE3=1`), so `/tools/motor-bench-lab/` returns 404. No code change needed.
+- Hard rollback to the exact previous site: `git push --force origin 3b6d91987986d1b8905b37aa9ca29f4703b24a70:gh-pages` (overwrites the publish branch; owner decision).
+- If publishing fails with "Permission denied" on `data/places/`, delete `node_modules/.cache/gh-pages` (a disposable clone) and retry (see the Phase 1 and 2 handoff).
+
+**Live verification (synthetic only, headless; a canned in-page fake serial port stood in for a device, so no real hardware was touched):** main app 200 and renders, no Phase 3 control, text or link; read-only lab 200, 15 gate rows, no motor control; bench route 200, `noindex`, synthetic and read-only by default, no active control before a connection; a full synthetic workflow (checklist, power, zero verification, one motor with stop proof and position confirmation, USB-loss fault screen) ran; real mode starts locked, the unlock disappears on reload, no nonzero path exists after the unlock, and no motor frame was written; no console errors. The script was a one-off outside the repo; `tests/bench-lab.mjs` covers the same checks against local servers.
+
+**Build facts:** without the flag a production build has no `tools/motor-bench-lab` and no bench code anywhere in `dist` (checked by searching the built files); with the flag the page and its own chunks appear and the main bundle holds none of the bench text.
+
+**Tests before deploy:** `npm run test:unit` all pass; the full `npm test` (157 suites: 80 unit, 77 browser) passed in 816 s with the app on :5173, including `preflight-lab` (31) and `bench-lab` (61 checks in that run). Six keyboard and switch-access checks were added to `bench-lab` afterwards; it was re-run alone (67 pass, no console errors).
 
 ## 11. Known limitations and open decisions
 

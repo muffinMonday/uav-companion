@@ -1,6 +1,7 @@
 # Handoff: Motor Diagnostics Phase 1 and Phase 2 (read-only)
 
 **Status:** Active, 2026-11-16. Phase 1 (`389cdaf`) and Phase 2 (`366af13`) are implemented and pushed. The lab page was published live with the flag on (`10410c4`, gh-pages `3b6d919`) at owner request for remote testing. What remains is hardware work (inventory of the five aircraft, Android phone tests, M1 to M8) and owner decisions. Phase 3 is not authorized.
+**Phase 3 (developer bench prototype, mock-tested, isolated live lab) has its own handoff: [MOTOR_DIAGNOSTICS_PHASE3_HANDOFF.md](MOTOR_DIAGNOSTICS_PHASE3_HANDOFF.md).** This file still describes the read-only phases; its "Phase 3 is not authorized" wording is superseded by that handoff (authorization 2026-11-17 is limited to the synthetic prototype).
 **Backlog (authoritative):** [UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md](../../backlogs/in-progress/UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md)
 **Hazard analysis:** [MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md](../../MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md)
 
