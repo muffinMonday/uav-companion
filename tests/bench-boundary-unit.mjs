@@ -6,7 +6,7 @@ import { OWNER_APPROVED, REQUIRED_FIELDS, SYNTHETIC_ALLOWLIST, matchAllowlist, v
 import { createMarkerStore } from '../src/benchtest/recovery-marker.js';
 import { BENCH_TIMINGS, MOTOR, RECOVERY_KEY } from '../src/benchtest/constants.js';
 import { STATE, createMachine } from '../src/benchtest/state-machine.js';
-import { FakeClock, memoryStorage, makeHarness } from './bench-helpers.mjs';
+import { FakeClock, REAL_ENTRY, memoryStorage, makeHarness } from './bench-helpers.mjs';
 import { benchFcTransport } from '../src/benchtest/mock-bench-fc.js';
 import { encodeRequest, encodeResponseV1 } from '../src/preflight/msp-codec.js';
 
@@ -141,7 +141,7 @@ const mkBoundary = (authorize = permissive, tOpts = {}) => {
     assert.equal(matchAllowlist({ ...id, [f]: '' }, 'mock', SYNTHETIC_ALLOWLIST).entry, null, `an unknown ${f} does not match`);
   }
   const real = { ...id, targetName: 'REAL', boardId: 'REAL', approvedBy: 'owner', approvedOn: '2026-12-01' };
-  const entry = { variant: 'BTFL', firmware: '2025.12.5', api: '1.47', targetName: 'REAL', boardId: 'REAL', escFamily: 'Bluejay', escModel: 'x', motorProtocol: 'DSHOT600', approvedBy: 'owner', approvedOn: '2026-12-01' };
+  const entry = { ...REAL_ENTRY, targetName: 'REAL', boardId: 'REAL', escModel: 'x' };
   assert.equal(validateEntry(entry), null);
   assert.ok(matchAllowlist({ ...id, targetName: 'REAL', boardId: 'REAL', escModel: 'x' }, 'web-serial', [entry]).entry, 'an owner entry matches exactly');
   assert.equal(matchAllowlist({ ...id, targetName: 'REAL', boardId: 'REAL', escModel: 'x' }, 'mock', [entry]).entry, null, 'a real entry never authorizes the mock');

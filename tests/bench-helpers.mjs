@@ -33,12 +33,15 @@ export function memoryStorage(opts = {}) {
   return {
     getItem: (k) => { if (opts.failRead) throw new Error('blocked'); return m.has(k) ? m.get(k) : null; },
     setItem: (k, v) => { if (opts.failWrite) throw new Error('quota'); m.set(k, opts.corruptWrite ? v + 'x' : String(v)); },
-    removeItem: (k) => { if (opts.failRemove) throw new Error('blocked'); m.delete(k); },
+    removeItem: (k) => { if (opts.failRemove) throw new Error('blocked'); if (opts.ignoreRemove) return; m.delete(k); },
     _map: m,
   };
 }
 
 export const ESC = { escFamily: 'Bluejay', escModel: 'synthetic' };
+
+// A fully formed TEST fixture for a real-hardware allowlist entry (identity of the synthetic aircraft plus reviewed evidence). Never in src.
+export const REAL_ENTRY = Object.freeze({ variant: 'BTFL', firmware: '2025.12.5', api: '1.47', targetName: 'SYNTH', boardId: 'SYN1', escFamily: 'Bluejay', escModel: 'synthetic', motorProtocol: 'DSHOT600', approvedBy: 'test owner', approvedOn: '2026-12-02', stopValidatedOn: '2026-12-01', stopValidatedBy: 'test owner', stopValidationTraceSha256: 'a'.repeat(64), externalStopValue: 1000, poweredStopValidated: true });
 
 export async function makeHarness({ fc = {}, storage = memoryStorage(), allowlist, transportOpts } = {}) {
   const clock = new FakeClock();
