@@ -1,6 +1,6 @@
 # Motor Diagnostics: Phase 0 Research
 
-**Status:** Research complete; awaiting owner review. No application code, motor control, deployment or dashboard entry was touched.
+**Status:** Research complete; owner review 2026-11-16 approved the direction and requested the revisions applied in this version (sections 3, 4.6, 5, 7, 8, 9, 10). No application code, motor control, deployment or dashboard entry was touched.
 **Date:** 2026-11-16
 **Related:** [Backlog](UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md), [Addendum 1](UAV_COMPANION_MOTOR_DIAGNOSTICS_ADDENDUM_1.md)
 
@@ -17,10 +17,10 @@
 | --- | --- | --- | --- | --- |
 | F1 | `MSP_SET_MOTOR` only writes `motor_disarmed[i] = motorConvertFromExternal(u16)` for each motor. Size check only (`dataSize >= motorCount*2`). No timeout, no arming check, no cap. | `msp.c` `case MSP_SET_MOTOR` | V | Confirms the backlog's residual risk (4.2). The FC holds the last value until changed or reboot. |
 | F2 | While disarmed, `motor[i] = motor_disarmed[i]` every mixer cycle. | `mixer.c` ("Disarmed mode") | V | Same. A held value persists after the host disappears. |
-| F3 | `MSP_MOTOR` returns `motorConvertToExternal(motor[i])` for 8 slots, 0 for disabled motors. | `msp.c` `case MSP_MOTOR` | V | The app can read back the FC-side command and verify it equals what was sent, independent of ACK. Interlock input. |
+| F3 | `MSP_MOTOR` returns `motorConvertToExternal(motor[i])` for 8 slots, 0 for disabled motors. | `msp.c` `case MSP_MOTOR` | V | `MSP_MOTOR` read-back verifies only the FC-side commanded value. It does not verify delivery to the ESC, physical motor stoppage or electrical de-energisation. It is one input to the stop verification in section 7, never a substitute for valid RPM telemetry and user confirmation. |
 | F4 | External values are constrained to 1000..2000; non-3D DShot maps external `1000` to `DSHOT_CMD_MOTOR_STOP`. | `dshot.c` `dshotConvertFromExternal` | V | "Zero" is external **1000**, not 0. The backlog says "zero" without a number. |
-| F5 | `BLACKBOX_MODE_MOTOR_TEST` logging starts when `!ARMED && areMotorsRunning()` (any `motor_disarmed[i] != disarmMotorOutput`), and stops 5 s after all motors return to minimum. Each run is a separate log if the gap exceeds 5 s. | `blackbox.c` `inMotorTestMode`, `blackboxUpdate` | V | Works with MSP motor testing as required. Logging starts only if the device is not full. Pauses over 5 s between sweeps create separate logs. |
-| F6 | Modes: `NORMAL=0`, `MOTOR_TEST=1`, `ALWAYS_ON=2`. `MOTOR_TEST` code is present in 4.3.2, 4.4.3, 4.5.5, 2025.12.5, 2026.6.2 and master. CLI `blackbox_mode` exists from 4.4.3 in `settings.c` (4.3.2 `settings.c` not checked). | `blackbox.h`; tag blackbox.c; `settings.c` | V | `MOTOR_TEST` or `ALWAYS_ON` are the compatible disarmed modes. `NORMAL` logs only while armed, so it fails the bench gate. |
+| F5 | `BLACKBOX_MODE_MOTOR_TEST` logging starts when `!ARMED && areMotorsRunning()` (any `motor_disarmed[i] != disarmMotorOutput`), and stops 5 s after all motors return to minimum. Each run is a separate log if the gap exceeds 5 s. | `blackbox.c` `inMotorTestMode`, `blackboxUpdate` | V | Works with MSP motor testing as required. Logging starts only if the device is not full. A pause over 5 s between sweeps creates another log segment. This is expected and must not shorten or skip any safety step; the bench design accepts multiple segments (section 8.4). |
+| F6 | Modes: `NORMAL=0`, `MOTOR_TEST=1`, `ALWAYS=2` as CLI values (`lookupTableBlackboxMode` is `NORMAL`, `MOTOR_TEST`, `ALWAYS`; the internal C enum is `BLACKBOX_MODE_ALWAYS_ON`, mentioned only as the internal name). `MOTOR_TEST` code is present in 4.3.2, 4.4.3, 4.5.5, 2025.12.5, 2026.6.2 and master. CLI `blackbox_mode` exists from 4.4.3 in `settings.c` (4.3.2 `settings.c` not checked). | `blackbox.h`; tag blackbox.c; `settings.c` | V | `MOTOR_TEST` or `ALWAYS` are the compatible disarmed modes. `NORMAL` logs only while armed, so it fails the bench gate. |
 | F7 | `MSP_BLACKBOX_CONFIG` does **not** carry `blackbox_mode`. It returns: supported, device, rate numerator (fixed 1), rate denominator, P ratio (u16), `sample_rate`, and (API 1.45+) `fields_disabled_mask`. | `msp.c` `case MSP_BLACKBOX_CONFIG`; write counts 12 (4.3.2) vs 13 (4.4.3 onward) | V | `blackbox_mode` is CLI-only. See the read-only fallback proposal (RQ-1). |
 | F8 | From 4.5.5 on, a dedicated `gyroUnfilt` field set (`gyro.gyroADC`, pre-software-filter) is logged when `GYROUNFILT` is not disabled in `fields_disabled_mask`. In 4.3.2 and 4.4.3 there is no such field; unfiltered gyro appears only via `debug_mode = GYRO_SCALED` in the `debug[]` fields (`DEBUG_GYRO_SCALED` exists in 4.4.3 `debug.h`). | `blackbox.c` field table per tag; `debug.h` | V | 4.5.x and newer need no debug mode for unfiltered gyro. 4.3/4.4 do, and the debug field has only 4 slots. |
 | F9 | `debug_mode` is readable over MSP (`MSP_ADVANCED_CONFIG`, API 1.42+, byte plus `DEBUG_COUNT`). | `msp.c` | V | The gate can validate it without CLI. |
@@ -36,7 +36,7 @@
 | F19 | `web-serial-polyfill` is archived (2025-01-23), latest 1.0.15 (2023-11), with open claim failures ("Device or resource busy") on several phones. | npm registry; GitHub issues #54, #60 | V | The polyfill route is a no-go for a launch requirement. |
 | F20 | WebUSB protected interface classes exclude CDC (0x02, 0x0A). | WICG WebUSB spec | V | Claiming CDC is permitted by the spec; on Android the OS must not have bound a driver (the polyfill failure mode). |
 | F21 | Android USB permission is granted by the OS "only until the device is disconnected"; users can set a default app. | Android `UsbManager` docs | V | Expect a permission step on each attach. Whether Chrome adds its own grant: **U**. |
-| F22 | Hidden pages: frozen pages run no JS or timers. Basic throttling 1 Hz hidden; intensive throttling after 5 min. `pagehide`/`unload` are not fired on mobile app close. | Page Lifecycle docs; Chrome 88 timer throttling | V | A host-side watchdog cannot rely on timers once hidden. The only dependable safeguard is the FC state plus the battery. Whether the USB handle survives shade, lock, app switch or swipe: **U**. |
+| F22 | Hidden pages: frozen pages run no JS or timers. Basic throttling 1 Hz hidden; intensive throttling after 5 min. `pagehide`/`unload` are not fired on mobile app close. | Page Lifecycle docs; Chrome 88 timer throttling | V | A hidden page cannot be relied upon to execute commands or timers within the required safety deadlines; a frozen or terminated page executes no JavaScript. The only dependable safeguard is the FC state plus the battery. Whether the USB handle survives shade, lock, app switch or swipe: **U**. |
 | F23 | Screen Wake Lock needs a secure context and is released when the page is hidden; it keeps the screen on, not the page alive. | MDN, W3C spec | V | Mitigates screen timeout only. |
 | F24 | The Betaflight App uses Capacitor with a custom serial plugin over `mik3y/usb-serial-for-android` (MIT; CDC-ACM detection since 3.5.0). It has a known issue: after accepting the permission dialog the port does not appear until a replug or a manual find. | betaflight-configurator PR #4698, #4706 | V | Precedent for the bridge. The permission and discovery issue is a design input. |
 | F25 | OTG power limits and phone battery effect: no primary source found. | | U | Needs measurement. |
@@ -44,7 +44,7 @@
 ## 2. Corrections to the backlog supported by primary sources
 
 1. "Zero" must be defined as external 1000 (F4).
-2. The Blackbox gate needs a **mode** check (`MOTOR_TEST` or `ALWAYS_ON`) (F5, F6).
+2. The Blackbox gate needs a **mode** check (`MOTOR_TEST` or `ALWAYS`) (F5, F6).
 3. "Unfiltered gyro" differs by firmware: a dedicated field in 4.5+, a debug mode in 4.3/4.4 (F8).
 4. A fixed 1 kHz requirement is not an adequate basis for 1x to 3x order analysis (F11, section 4).
 5. `blackbox_mode` is not exposed over MSP (F7); a gate that reads it needs a read-only CLI query or attestation.
@@ -82,14 +82,14 @@ Proposed allowlist is read-only in every row. `MSP_SET_MOTOR` is the only write 
 | --- | --- |
 | Query | Exactly `get blackbox_mode`, sent after entering CLI mode and followed by an immediate `exit`. No other command. |
 | Why | `blackbox_mode` is the only gate value that has no MSP source (F7). |
-| Expected response | A text line of the form `blackbox_mode = <NORMAL|MOTOR_TEST|ALWAYS_ON>` plus the allowed-values line; parser accepts only those three tokens. |
+| Expected response | A text line of the form `blackbox_mode = <NORMAL|MOTOR_TEST|ALWAYS>` plus the allowed-values line; parser accepts only those three tokens. |
 | Firmware range | 4.4.3 and later (confirmed); 4.3.x unconfirmed. |
 | Timeout | 2 s provisional, measure. |
 | Failure | Unknown or malformed response, timeout, or an FC that does not leave CLI mode: fail closed and show the attestation path. |
 | Risks to resolve first | Entering CLI sets `ARMING_DISABLED_CLI` and on some firmware leaving CLI can trigger a reboot or settings side effects; some boards re-enumerate. This must be proven harmless on the five aircraft before adoption. |
 | Alternative with no CLI | The user attests the mode after the app shows the manual steps, and the log header confirms the actual mode indirectly (a non-empty motor-test log appears). This weakens the gate to "attested". |
 
-Recommendation: start with the attestation path in the first implementation; adopt RQ-1 only after a hardware check shows entering and leaving CLI is side-effect-free on every supported family.
+Recommendation (owner decision 2026-11-16): use user attestation only in the initial read-only and mock implementation; production gating stays unresolved pending the supervised RQ-1 hardware experiment; adopt RQ-1 only after a hardware check shows entering and leaving CLI is side-effect-free on every supported family.
 
 ## 4. Blackbox rate and resolvability
 
@@ -97,7 +97,7 @@ Recommendation: start with the attestation path in the first implementation; ado
 
 For order `k` and RPM `r`: `order_frequency_hz = k * r / 60`.
 
-The effective rate `fs` is derived from the log itself (median inter-frame time delta of main frames), never from the configured value. The usable band is `f_use = u * fs / 2` with usable fraction `u`.
+The effective rate `fs` is computed **per valid window** from the log's reconstructed frame times (section 4.6), never from the configured value and never from median frame spacing alone. The usable band is `f_use = u * fs / 2` with usable fraction `u`.
 
 **Proposed `u = 0.8` (provisional).** Reasoning: (a) the logger takes single samples with no anti-alias filter (F11), so energy near Nyquist is contaminated by folded content; (b) RPM varies inside a window, so the order frequency drifts across the window edge; (c) windowing and spectral peak width need margin; (d) a margin of about 20% below Nyquist is a conservative engineering choice, not a measured value. To be validated against recorded logs (section 8).
 
@@ -140,17 +140,31 @@ Aliasing caveat: even resolvable orders can be contaminated by folded motor nois
 - Proposed budgets (provisional): decode streaming in a Web Worker with a bounded chunk (for example 1 MB), keep per-window features and a decimated series rather than all samples, cap an imported file at 64 MB for Android and 256 MB desktop until measured, and show a clear "file too large" message rather than failing.
 - Raw logs and large derived arrays live in IndexedDB; only small metadata in `uavzones.` keys.
 
+### 4.6 Timing quality and windowing (owner revision 2026-11-16)
+
+Analysis validity is not derived from median frame spacing. The decoder and analysis layers must:
+
+1. **Reconstruct a timestamp for every main frame** from the log's own time field (with rollover handling), never assume a constant interval.
+2. **Detect and record** missing frames (gaps larger than the expected interval), duplicate or non-monotonic timestamps, and excessive jitter (a jitter limit to be set from recorded logs, provisional until measured).
+3. **Form contiguous valid windows** for spectral and order analysis. A window may not span a gap, a duplicate region or a jitter excursion.
+4. **Reject or segment** around any gap. A window that cannot be made contiguous is discarded and reported as unavailable. A discarded window never counts toward coverage.
+5. **Compute `fs` per valid window** from that window's reconstructed times, then apply the usable-band rule of section 4.1 to that window.
+6. **Document every resampling rule.** Resampling is allowed only inside a valid contiguous window, to a stated uniform grid, with the method and its alias behaviour recorded. Interpolating across a gap is forbidden.
+7. **Test that resampling cannot convert missing data into a normal result:** synthetic logs with removed frames, duplicated frames and jitter must produce "unavailable" or a reduced-coverage report, never a pass or a "no anomaly" contribution from the gap region.
+
+`u = 0.8` stays provisional.
+
 ## 5. Android transport go / no-go
 
 | Option | Finding | Verdict |
 | --- | --- | --- |
 | Native Web Serial on Chrome Android 148+ | API exists; coverage limited to devices that expose wired serial ports; Android OS/Chrome interplay uncertain (F18). | **Conditional: test on hardware.** Not enough evidence to assume it works on arbitrary phones. |
 | WebUSB + `web-serial-polyfill` | Archived; claim failures on several phones (F19). | **No-go** for a launch requirement. |
-| Capacitor bridge on `usb-serial-for-android` (MIT) | Betaflight App precedent (F24); needs permission/discovery handling. | **Fallback; recommended to prepare in Phase 1** if the native test fails. Narrow scope: serial open/read/write/close only. |
+| Capacitor bridge on `usb-serial-for-android` (MIT) | Betaflight App precedent (F24); needs permission/discovery handling. | **Fallback; recommended to prepare in Phase 1** if the native test fails. Narrow scope: serial open/read/write/close only. A transport-only prototype is inside the Phase 1 spike boundary; adopting a native wrapper, build pipeline or distribution path needs a separate architecture and owner decision (owner decision 2026-11-16). |
 
 Unmeasured items needed from a phone test (M-list in section 9): `getPorts()` / `requestPort()` listing the FC on at least two phone brands and two Android versions; OS and Chrome permission dialogs per attach; grant persistence after reload and re-attach; behaviour on `disconnect`, on FC reboot re-enumeration and DFU; whether the connection survives notification shade, screen lock (with and without wake lock), app switch and swipe-away; timer drift and MSP latency while hidden; battery drain and whether USB-C to USB-C cables power the FC; throughput at 115,200 baud and above.
 
-Lifecycle implication regardless of transport (F22): a hidden or frozen page cannot send zeros. The design must therefore treat any `visibilitychange` to hidden during a powered state as a fault, show the battery instruction on return, and rely on F1/F2 plus the physical cutoff. The unclean-exit recovery state in the addendum covers swipe-away.
+Lifecycle implication regardless of transport (F22): a hidden page cannot be relied upon to execute commands or timers within the required safety deadlines; a frozen or terminated page executes no JavaScript. A `visibilitychange` to hidden during a powered state remains a fault: attempt zero immediately where execution is still available, but never represent that attempt as guaranteed; show the battery instruction on return; rely on F1/F2 plus the physical cutoff. The unclean-exit recovery state in the addendum covers swipe-away.
 
 **Recommendation:** Phase 1 runs a two-track spike: native Web Serial on at least two phones, and a minimal Capacitor serial bridge prototype if native fails or covers fewer than the target devices. A go for public launch needs the owner to approve the chosen Android path after the spike.
 
@@ -180,7 +194,7 @@ All values are **provisional** unless noted. None is measured. They live in one 
 | Motor command acknowledgement | 150 ms; failure to ACK twice in a row is a fault | A shorter limit than reads because motor state matters. | Provisional |
 | Telemetry poll cadence | 25 Hz (40 ms) | Gives several samples per 300 to 500 ms ramp step. | Provisional |
 | Stale-telemetry fault | No valid telemetry for 200 ms (5 missed polls) | Must be shorter than the 300 to 500 ms dwell per step. | Provisional |
-| Zero command cadence and count | Resend zero every 50 ms, at least 10 attempts (500 ms), then read back `MSP_MOTOR` equals 1000 for all motors and RPM zero for 1 s | Repetition covers a dropped frame; read-back (F3) verifies FC state independent of the ACK. | Provisional |
+| Zero command cadence and count | Resend zero every 50 ms, at least 10 attempts (500 ms), then, in order: `MSP_MOTOR` read-back equals 1000 for every enabled motor; valid RPM telemetry reports zero for every motor for 1 s; the user visibly confirms that no motor is rotating | Repetition covers a dropped frame. Read-back (F3) verifies only the FC-side command, not ESC delivery or physical stop. RPM telemetry and the user confirmation cover the rest. **If RPM telemetry is unavailable or stale during a powered session, fail closed and require battery disconnection.** | Provisional |
 | Reconnect grace after battery connect (`POWER_CONNECT_RECONNECT`) | 15 s | Allows ESC init and USB re-enumeration; instruct battery removal after expiry. | Provisional; measure re-enumeration time per FC |
 | ESC-ready wait before zero verification | 5 s | ESC boot tones; adjust per measured time. | Provisional |
 | Powered-zero observation | 3 s continuous, all RPM zero, at least 60 telemetry samples | Short enough to be practical, long enough to catch a creeping motor. | Provisional |
@@ -199,11 +213,11 @@ Battery-voltage background (I, not verified): a smoke stopper sits in series wit
 | Synthetic MSP frames | Generated | Framing, parsing, CRC, corruption, truncation, timeouts. |
 | Synthetic Blackbox streams | Generated by our own encoder from the documented format | Decoder correctness for all frame types and encodings, predictors, corruption and truncation. |
 | Synthetic spectra | Generated sine / swept orders with known aliasing | Resolvability rule, order tracking, confidence. |
-| Healthy bench logs | Recorded by the owner during a supervised checkpoint on the five aircraft | Healthy distributions (see 8.2). |
+| Healthy bench logs | Recorded by the owner during a supervised checkpoint on the five aircraft | Healthy distributions (see 8.2). Complete raw logs stay outside Git; only the trimmed, scrubbed fixtures described below are committed. |
 | Healthy flight logs | The owner's existing healthy logs | Segmentation and window classification. |
 | Known-fault logs | **None available** | Not required for Phase 0; see 8.3. |
 
-Clean-room rule: decoder written from the format documentation and our own fixtures. No Betaflight App or Blackbox Viewer source is copied. Recorded logs are the owner's data; check that none contain personal data (GPS home position) before committing a fixture, and prefer stripping or synthesising.
+Clean-room rule: decoder written from the format documentation and our own fixtures. No Betaflight App or Blackbox Viewer source is copied. **Fixture policy (owner decision 2026-11-16):** complete raw logs are never committed; they remain outside Git. A committed fixture is minimal and trimmed, scrubbed of GPS and home position, identifying metadata and unrelated fields, and has a manifest recording source, consent, transformation, retained signals and checksum.
 
 ### 8.2 Measurements to take at supervised checkpoints (M-list)
 
@@ -230,23 +244,49 @@ Clean-room rule: decoder written from the format documentation and our own fixtu
 - First run: peer comparison and data-quality checks only. The result states "no historical baseline exists" and lowers confidence. Missing data is reported as unavailable, never as a pass.
 - Stop level (empirical): reserved. Only deterministic safety conditions produce "Stop" in the first release; an empirical anomaly never produces "Stop" unless it also trips a deterministic rule. A Stop cannot be overridden in the same powered session.
 
-## 9. Unresolved decisions requiring the owner
+### 8.4 Multi-segment bench sessions (owner revision 2026-11-16)
 
-1. Approve the **zero = external 1000** definition and the read-back interlock (F3, F4).
-2. Choose between `blackbox_mode` attestation only (recommended first) and the read-only CLI query RQ-1 after a hardware check.
-3. Confirm 4.5.5, 2025.12.5 and 2026.6.2 as the initial candidates, and 4.3/4.4 unsupported.
-4. Approve `u = 0.8` and the sample-rate recommendations as provisional.
-5. Android: approve a two-track spike (native Web Serial first, Capacitor bridge prototype as fallback), and say whether a bridge changes the "no wider application rewrite" boundary, since a Capacitor shell packages the whole app as a native wrapper.
-6. Approve the starting provisional timing table, to be refined by measurement.
-7. Confirm the provisional "Inspection recommended" evidence bar in 8.3, including controlled bench-fixture faults only.
-8. Confirm that empirical findings never reach "Stop" in the first release.
-9. Tell me which firmware version each of the five aircraft runs, and the board flash type and size (dataflash or SD).
-10. Agree how recorded logs are scrubbed and stored as fixtures (location, personal data such as GPS home).
-11. The `Check aircraft` flag name and whether it is a build-time constant or a stored preference.
+- Safety confirmation and deliberate initiation take priority over logging convenience. The workflow never asks or encourages the user to start the next sweep within the 5 s `MOTOR_TEST` window (F5).
+- Every bench session accepts **multiple Blackbox log segments**. A pause that creates another log neither reduces safety nor invalidates the session, provided all required segments are present.
+- Segments are associated to the session by: session metadata (aircraft identity, session start, the motor order tested), ordering of segments on the device, timestamps, and detected motor activity inside each segment (which motor's RPM and output moved, matching the sweep record).
+- A session is complete only when every required sweep has a matching segment. A missing or unmatched segment makes that sweep's analysis unavailable and is reported; it is not guessed.
+- Never silently analyse a segment of uncertain match; show the match rationale and let the user choose (consistent with the log-selection screen in the backlog).
+
+## 9. Owner decisions (recorded 2026-11-16) and remaining open items
+
+### 9.1 Decided by the owner
+
+1. **External 1000 is motor stop.** Stop is verified by repeated external-1000 commands, FC-side `MSP_MOTOR` read-back of 1000 for every enabled motor, valid RPM telemetry reporting zero for the observation period, and user-visible confirmation that no motor is rotating. Read-back alone is never sufficient (F3). Unavailable or stale RPM telemetry in a powered session fails closed and requires battery disconnection.
+2. **`blackbox_mode` gate.** User attestation is acceptable only for the initial read-only and mock implementation. Production gating is unresolved pending the supervised RQ-1 hardware experiment.
+3. **Firmware versions.** 4.5.5, 2025.12.5 and 2026.6.2 are **candidate versions only**. The actual five-aircraft firmware, API and storage matrix is inventoried first (no reflashing). No row is promoted to supported until that inventory and the hardware checks exist.
+4. **Provisional values.** `u = 0.8` and the timing table are approved as provisional measurement values only.
+5. **Android.** The two-track spike is approved (native Web Serial first, transport-only Capacitor / `usb-serial-for-android` prototype as the second track). The prototype is inside the Phase 1 spike boundary. Adopting a native wrapper, build pipeline or distribution path requires a separate architecture and owner decision.
+6. **"Inspection recommended" evidence bar** (8.3) approved as provisional. Controlled fault collection is limited to contained, non-flying fixtures or naturally failed or retired components. A flyable aircraft is never modified to create damage.
+7. **Empirical anomalies never produce Stop** in the first release.
+8. **Feature flag.** A build-time flag that defaults off. Test overrides are explicit and non-persistent. A normal stored user preference is not used.
+9. **Fixtures.** Complete raw logs are not committed and stay outside Git. Committed fixtures are minimal, trimmed, scrubbed of GPS and home position, identifying metadata and unrelated fields, with a manifest recording source, consent, transformation, retained signals and checksum.
+
+### 9.2 Still open
+
+- Production gating for `blackbox_mode` (RQ-1 experiment result).
+- The five-aircraft inventory (firmware, API, MCU/target, storage type and size, telemetry fields returned); to be collected by the Phase 1 inventory report (section 10).
+- Whether CLI enter and exit is side-effect-free on every supported family.
+- The Android path after the spike, and any native-wrapper decision.
+- Whether the missing DShot error percentage on stats-less builds is acceptable or blocking.
+- The jitter limit for the timing-quality rule (section 4.6), set from recorded logs.
+- Measurements M1 to M8.
 
 ## 10. Recommended next implementation prompt
 
-> Implement Phase 1 and Phase 2 of the Automated Motor Diagnostics backlog (plus Addendum 1) **without any motor command capability**. Scope: (a) `src/preflight/msp-codec.js` with only read-only messages from the Phase 0 allowlist and a unit-tested frame parser (corruption, truncation, timeouts), (b) `src/preflight/transport.js` with a desktop Web Serial adapter and a mock transport, behind a disabled feature flag with no dashboard entry, (c) `src/preflight/readiness.js` evaluating the gates in Addendum 1 section 3 against a mock FC and reporting exact detected and required values, (d) the version table in section 6 as data, (e) the timing constants module from section 7 with deterministic tests, (f) the Android spike harness as a separate non-shipping page for the supervised phone tests. Do not implement `MSP_SET_MOTOR`, any CLI query, the bench state machine, Blackbox decoding, UI or storage. Before committing, run `npm run test:unit` and the affected browser suites; update `CURRENT_STATUS.md`; ask before commit, push or deploy.
+> Implement Phase 1 and Phase 2 of the Automated Motor Diagnostics backlog (plus Addendum 1 once approved) **without any motor command capability**. Scope:
+> (a) `src/preflight/msp-codec.js` with only read-only messages from the Phase 0 allowlist and a unit-tested frame parser (corruption, truncation, timeouts, fail-closed on unknown responses);
+> (b) `src/preflight/transport.js` with a desktop Web Serial adapter and a mock transport, behind a **build-time feature flag that defaults off** (explicit, non-persistent test override only; no stored user preference) and with no dashboard entry;
+> (c) `src/preflight/readiness.js` evaluating the gates in Addendum 1 against a mock FC and reporting exact detected and required values; the Blackbox mode gate uses `NORMAL`, `MOTOR_TEST`, `ALWAYS` and, for the mock and read-only implementation only, user attestation;
+> (d) the version table as data, with 4.5.5, 2025.12.5 and 2026.6.2 as **candidates only**;
+> (e) the timing constants module with deterministic tests, all values marked provisional;
+> (f) a **read-only inventory report**, displayed and exportable locally for each connected aircraft: FC identifier and MCU/target; firmware and MSP API; motor count, protocol, bidirectional DShot and pole count; Blackbox device, rate, field mask and capacity; dataflash or SD storage and size; telemetry fields actually returned; Android phone, browser and transport details. It must not require reflashing and must not send any write;
+> (g) the Android spike harness as a separate non-shipping page: native Web Serial track and a transport-only Capacitor / `usb-serial-for-android` prototype. Do not adopt a native wrapper, build pipeline or distribution path.
+> Do not implement `MSP_SET_MOTOR`, any CLI query, the bench state machine, Blackbox decoding, motor controls, diagnostics UI or storage. Do not commit raw logs. Before committing, run `npm run test:unit` and the affected browser suites; update `CURRENT_STATUS.md`; ask before commit, push or deploy.
 
 ## 11. Source index
 

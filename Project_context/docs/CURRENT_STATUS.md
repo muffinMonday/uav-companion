@@ -1,8 +1,9 @@
-## Latest: Motor Diagnostics Phase 0 research and Addendum 1 (2026-11-16; docs only, committed locally, not pushed)
+## Latest: Motor Diagnostics Phase 0 research and Addendum 1 (2026-11-16; docs only; commit `fc88b470` is pushed to `main`; owner-requested revisions applied in the next docs commit)
 - Files in `backlogs/for-review/`: `UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md` (unchanged), `..._ADDENDUM_1.md` (proposed amendments, unapproved), `..._PHASE0_RESEARCH.md` (findings F1-F25, MSP/CLI matrix, resolvability, Android, versions, timings, validation plan, 11 owner decisions, next prompt).
 - No application code, motor control, flag, dashboard entry, push or deploy. No hardware was tested; every timing and `u = 0.8` is provisional.
 - Key findings: zero = external 1000; `blackbox_mode` is not readable over MSP; 4.5+ logs `gyroUnfilt` natively; `invalidPct` is unreliable on builds without DShot stats; polyfill is a no-go, native Android Web Serial depends on device coverage.
-- Next: owner reviews section 9 of the research doc, then the Phase 1/2 prompt (no motor commands).
+- Owner review 2026-11-16: direction approved, Addendum 1 **not yet approved**. Revisions applied to the backlog docs: `ALWAYS` token (not `ALWAYS_ON`), multi-segment bench logs, stop verification (read-back is not enough), page-lifecycle wording, Blackbox timing quality (per-window `fs`, gap rejection), durable unclean-exit marker, "Aircraft diagnostic data" Privacy section, and owner decisions (addendum section 20; research doc 9.1). Phase 1 adds a read-only inventory report (addendum section 21).
+- Next: Phase 1/2 prompt (research doc section 10): read-only transport, readiness gates, inventory report, Android spike; no motor commands, no application UI, build-time flag off.
 
 ## Previous: offline place-name index removed; place names search online only (2026-11-16; committed `857a457`, pushed to `main`, `npm run deploy:live` published gh-pages `49743e1`)
 - Removed: `data/places/` (the Chinese/English place list), its build step (`scripts/build-data.js`), the preflight handling of `places` (`scripts/lib/prod-data.js`), the loader's place lists (`src/app/region-loader.js`, `src/main.js`), the offline lookup in `src/search.js`, and `places` in `public/data/index.json` (generated, git-ignored; the first deploy after this drops `public/data/places/`).
