@@ -59,8 +59,9 @@ for (const f of [...walk(path.join(ROOT, 'src')).filter((x) => !x.includes(path.
 }
 assert.deepEqual(refs, [], 'no app file references the motor diagnostics modules');
 const vite = fs.readFileSync(path.join(ROOT, 'vite.config.js'), 'utf8');
-assert.ok(!/tools|preflight-spike/.test(vite), 'vite.config.js does not add the lab page as a build input');
-pass('no app source, component, index.html or Vite input references the diagnostics: there is no dashboard entry');
+assert.deepEqual(vite.match(/tools\/[\w/-]+(?:\.html)?/g), ['tools/preflight-spike/index.html'],'the only build input for tools/ is the lab page');
+assert.ok(!/src\/preflight/.test(vite), 'vite.config.js does not import the diagnostics modules');
+pass('no app source, component or index.html references the diagnostics; the lab page is the only extra Vite input');
 
 // 5. the feature flag defaults off, an override is explicit and in memory only
 assert.equal(preflightEnabled(), false);
