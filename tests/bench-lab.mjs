@@ -230,6 +230,67 @@ try {
   await kb.click('#btn-stop-zero');
   await waitState(kb, 'LOCKED_FAULT');
 
+  // ---------- powered stop validation (synthetic) and verified marker deletion, from a fresh profile
+  const pv = await fresh();
+  await pv.goto(U, { waitUntil: 'networkidle' });
+  await pv.click('#btn-connect-mock'); await waitState(pv, 'READ_ONLY_READINESS');
+  await pv.check('[data-attest="armSwitchOff"]'); await pv.check('[data-attest="batteryDisconnected"]');
+  await pv.selectOption('select[data-attest="blackboxMode"]', 'MOTOR_TEST');
+  await pv.waitForFunction(() => !document.querySelector('#btn-stopval').disabled);
+  ok(await pv.locator('#btn-powered-stopval').isDisabled(), 'the powered stop validation is locked until the USB-only validation is recorded');
+  ok(/USB-only stop validation/.test(await text(pv, '#btn-stopval')) && /battery disconnected/.test(await text(pv, '#btn-stopval')), 'the USB-only validation is labelled as such');
+  await pv.click('#btn-stopval'); await waitState(pv, 'STOP_VALIDATION_ONLY');
+  ok(/cannot show that a motor stopped/.test(await text(pv, '#bt-sec-stopval')) && /FC command and read-back check/.test(await text(pv, '#bt-sec-stopval')), 'the USB-only state says it cannot prove a physical stop');
+  ok((await pv.locator('#bt-battery-state').getAttribute('data-battery')) === 'attested-disconnected', 'the battery state is shown as attested disconnected');
+  await pv.waitForSelector('#btn-no-rotation', { timeout: 10000 }); await pv.click('#btn-no-rotation');
+  await pv.click('#btn-stopval-done'); await waitState(pv, 'READ_ONLY_READINESS');
+  ok(!(await pv.locator('#btn-powered-stopval').isDisabled()), 'the powered stop validation unlocks after the USB-only validation is recorded');
+  await pv.click('#btn-powered-stopval'); await waitState(pv, 'SAFETY_CHECKLIST', 25000);
+  ok(/Powered stop validation/.test(await text(pv, '.bt-note')), 'the workflow says it is a powered stop validation with no motor start');
+  for (const cb of await pv.locator('[data-item]').all()) await cb.check();
+  await pv.waitForFunction(() => !document.querySelector('#hold-final').disabled);
+  await hold(pv, '#hold-final', 1200); await waitState(pv, 'READY_TO_CONNECT_POWER');
+  ok(await pv.evaluate(() => !!localStorage.getItem('uavzones.benchtest.unclean.v1')), 'the recovery marker is set before the battery step of the powered stop validation');
+  await pv.click('#btn-battery-connected'); await waitState(pv, 'POWERED_STOP_VALIDATION', 30000);
+  ok((await pv.locator('#bt-battery-state').getAttribute('data-battery')) === 'declared-connected', 'the battery state is shown as declared connected');
+  ok((await pv.locator('#hold-start, [id^="btn-motor-"], #btn-finish').count()) === 0, 'the powered stop validation shows no motor selection and no start control');
+  ok((await pv.locator('#btn-stop-zero').count()) === 1, 'Stop & zero is present during the powered stop validation');
+  await pv.waitForSelector('#btn-no-rotation', { timeout: 15000 });
+  ok(await pv.locator('#btn-powered-stopval-done').isDisabled(), 'finishing needs the user no-rotation confirmation');
+  await pv.click('#btn-no-rotation'); await pv.click('#btn-powered-stopval-done'); await waitState(pv, 'BENCH_COMPLETE');
+  ok(await pv.evaluate(() => !!localStorage.getItem('uavzones.benchtest.unclean.v1')), 'the marker is kept after the powered proof, until the battery is confirmed disconnected');
+  ok(await pv.locator('#btn-battery-removed').count() === 1, 'the battery-disconnection confirmation is requested');
+  // a failed marker deletion keeps the screen locked and blocks Reset
+  await pv.evaluate(() => { window.__realRemove = Storage.prototype.removeItem; Storage.prototype.removeItem = function () { throw new Error('blocked'); }; });
+  await pv.click('#btn-battery-removed');
+  await pv.waitForSelector('#btn-retry-marker');
+  ok((await state(pv)) === 'BENCH_COMPLETE' && await pv.locator('#btn-reset').isDisabled(), 'a failed marker deletion keeps BENCH_COMPLETE and keeps Reset disabled');
+  ok(/battery disconnected/.test(await text(pv, '#bt-sec-complete')) && /cannot resume/.test(await text(pv, '#bt-sec-complete')), 'the message says to keep the battery disconnected and that ordinary testing cannot resume');
+  await pv.click('#btn-retry-marker');
+  ok(await pv.locator('#btn-reset').isDisabled() && (await pv.locator('#btn-retry-marker').count()) === 1, 'a retry that fails again stays locked');
+  await pv.evaluate(() => { Storage.prototype.removeItem = window.__realRemove; });
+  await pv.click('#btn-retry-marker');
+  await pv.waitForFunction(() => !document.querySelector('#btn-reset').disabled);
+  ok(await pv.evaluate(() => localStorage.getItem('uavzones.benchtest.unclean.v1') === null), 'the deliberate retry removes the marker and only then enables Reset');
+  await pv.click('#btn-reset'); await waitState(pv, 'DISCONNECTED');
+
+  // a reload during the powered stop validation enters unclean-exit recovery
+  const pr = await fresh();
+  await pr.goto(U, { waitUntil: 'networkidle' });
+  await pr.click('#btn-connect-mock'); await waitState(pr, 'READ_ONLY_READINESS');
+  await pr.check('[data-attest="armSwitchOff"]'); await pr.check('[data-attest="batteryDisconnected"]');
+  await pr.selectOption('select[data-attest="blackboxMode"]', 'MOTOR_TEST');
+  await pr.waitForFunction(() => !document.querySelector('#btn-stopval').disabled);
+  await pr.click('#btn-stopval'); await pr.waitForSelector('#btn-no-rotation', { timeout: 10000 }); await pr.click('#btn-no-rotation'); await pr.click('#btn-stopval-done');
+  await waitState(pr, 'READ_ONLY_READINESS'); await pr.click('#btn-powered-stopval'); await waitState(pr, 'SAFETY_CHECKLIST', 25000);
+  for (const cb of await pr.locator('[data-item]').all()) await cb.check();
+  await pr.waitForFunction(() => !document.querySelector('#hold-final').disabled);
+  await hold(pr, '#hold-final', 1200); await waitState(pr, 'READY_TO_CONNECT_POWER');
+  await pr.click('#btn-battery-connected'); await waitState(pr, 'POWERED_STOP_VALIDATION', 30000);
+  await pr.reload({ waitUntil: 'networkidle' });
+  ok((await text(pr, '.bt-overlay')).startsWith('Disconnect the flight battery now.'), 'a reload during the powered stop validation leads with "Disconnect the flight battery now."');
+  ok((await pr.locator('#hold-start, #hold-final, [data-item], #btn-proceed, #btn-powered-stopval').count()) === 0, 'no ordinary control is offered after the reload');
+
   // ---------- real-hardware mode (fake serial port): starts locked, unlock is session-only
   const ctx2 = await b.newContext({ viewport: { width: 1000, height: 900 } });
   const r = await ctx2.newPage();

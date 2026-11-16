@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { ALL_STATES, STATE, createMachine } from '../src/benchtest/state-machine.js';
 import { MOTOR } from '../src/benchtest/constants.js';
 import { startInterlocks } from '../src/benchtest/interlocks.js';
-import { EXPECTED_POSITIONS, makeHarness } from './bench-helpers.mjs';
+import { CHECKLIST_ITEMS, EXPECTED_POSITIONS, makeHarness, memoryStorage } from './bench-helpers.mjs';
 
 const pass = (t) => console.log('PASS  ' + t);
 const seen = new Set(); // "FROM|EVENT|TO" of every accepted transition observed in any scenario
@@ -54,6 +54,15 @@ const collect = () => { for (const h of harnesses) for (const e of h.m.trace) if
   reloaded.machine.dispatch('BATTERY_REMOVED_CONFIRMED', { now: 1 });
   await reloaded.connect(t5); await S1.clock.advance(4000); reloaded.confirmNoRotation();
   harnesses.push({ m: reloaded.machine });
+  // powered stop validation flow (review finding 1) and verified marker deletion (finding 2)
+  const V = await mk(); await V.toReadiness(); V.c.startStopValidation(); await V.adv(3000); V.c.confirmNoRotation(); V.c.finishStopValidation();
+  V.c.startPoweredStopValidation(); await V.adv(1500); for (const i of CHECKLIST_ITEMS) V.c.setChecklistItem(i.key, true); V.c.confirmChecklist(1000);
+  V.c.declareBatteryConnected(); await V.adv(5100); await V.adv(3500); await V.adv(1500); V.c.confirmNoRotation(); V.c.finishPoweredStopValidation();
+  const W = await mk({ storage: memoryStorage({ failRemove: true }) }); await W.toMotorReady(); W.c.finishBench(); await W.adv(3000); W.c.confirmNoRotation(); W.c.completeFinish();
+  W.c.confirmBatteryRemoved(); W.c.retryMarkerClear(); W.storage.removeItem = (k) => W.storage._map.delete(k); W.c.retryMarkerClear(); W.c.reset(); // BENCH_COMPLETE: failed clear, retry fails, retry succeeds
+  const X = await mk({ storage: memoryStorage({ failRemove: true }) }); await X.toMotorReady(); X.c.stopAndZero(); await X.adv(3000); X.c.confirmNoRotation(); X.c.beginBatteryRemoval(); X.c.confirmBatteryRemoved();
+  const tX = (await import('../src/benchtest/mock-bench-fc.js')).benchFcTransport(); await X.t.disconnect(); await X.c.connect(tX); await X.adv(4000); X.c.confirmNoRotation();
+  X.c.completeRecovery(); X.storage.removeItem = (k) => X.storage._map.delete(k); X.c.retryMarkerClear(); // recovery: failed clear keeps the lock, retry succeeds
   collect();
   const table = createMachine()._tableForTests;
   const missing = [];
@@ -75,9 +84,9 @@ const collect = () => { for (const h of harnesses) for (const e of h.m.trace) if
   const EVENTS = ['CONNECT', 'READINESS_UPDATE', 'UNLOCK', 'LOCK', 'READINESS_OK', 'ENTER_STOP_VALIDATION', 'STOP_VALIDATION_DONE', 'LEAVE_STOP_VALIDATION', 'SAFE_STATE_DONE', 'CHECKLIST_ITEM',
     'FINAL_HOLD_DONE', 'MARKER_RESULT', 'CHECKLIST_COMPLETE', 'BATTERY_DECLARED', 'ESC_READY', 'RECONNECTED', 'GRACE_EXPIRED', 'ZERO_VERIFIED', 'SELECT_MOTOR', 'CONFIRM_TARGET',
     'START_HOLD_COMPLETE', 'FINISH_BENCH', 'RUN_COMPLETE', 'RUN_ABORTED', 'USER_CONFIRMS_NO_ROTATION', 'POSITION_REPORTED', 'FINISH_STOP_DONE', 'BEGIN_BATTERY_REMOVAL',
-    'BATTERY_REMOVED_CONFIRMED', 'RECOVERY_COMPLETE', 'RESET', 'NOT_AN_EVENT', 'constructor', '__proto__', 'toString', 'hasOwnProperty', ''];
+    'BATTERY_REMOVED_CONFIRMED', 'RECOVERY_COMPLETE', 'RESET', 'ENTER_POWERED_STOP_VALIDATION', 'ZERO_VERIFIED_STOPVAL', 'POWERED_STOP_VALIDATION_DONE', 'MARKER_CLEAR_RESULT', 'RETRY_MARKER_CLEAR', 'NOT_AN_EVENT', 'constructor', '__proto__', 'toString', 'hasOwnProperty', ''];
   const FAULTING = new Set([STATE.STOP_VALIDATION_ONLY, STATE.SAFE_STATE_INIT, STATE.SAFETY_CHECKLIST, STATE.READY_TO_CONNECT_POWER, STATE.POWER_CONNECT_RECONNECT,
-    STATE.POWERED_ZERO_VERIFICATION, STATE.MOTOR_READY, STATE.RUNNING, STATE.VERIFYING_STOP]);
+    STATE.POWERED_ZERO_VERIFICATION, STATE.POWERED_STOP_VALIDATION, STATE.MOTOR_READY, STATE.RUNNING, STATE.VERIFYING_STOP]);
   const table = createMachine()._tableForTests;
   let checked = 0;
   for (const st of ALL_STATES) {
@@ -164,6 +173,10 @@ const collect = () => { for (const h of harnesses) for (const e of h.m.trace) if
     'blackbox shutdown period': (h) => { h.m.ctx.lastStopProofAt = h.clock.now() - 1000; },
     'transport unavailable': (h) => { h.m.ctx.transportAvailable = false; },
     'locked': (h) => { h.m.ctx.fault = { reason: 'x' }; },
+    'DShot statistics unavailable': (h) => { h.m.ctx.dshot = { status: 'unavailable', since: null, lastAt: h.clock.now() }; },
+    'DShot errors excessive': (h) => { h.m.ctx.dshot = { status: 'excessive', since: null, lastAt: h.clock.now() }; },
+    'DShot statistics not usable for long enough': (h) => { h.m.ctx.dshot = { status: 'usable', since: h.clock.now() - 100, lastAt: h.clock.now() }; },
+    'DShot statistics never observed': (h) => { h.m.ctx.dshot = { status: 'unknown', since: null, lastAt: null }; },
     'real mode but locked': (h) => { h.m.ctx.mode = 'real'; h.m.ctx.unlocked = false; },
   };
   for (const [name, mutate] of Object.entries(cases)) {

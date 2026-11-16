@@ -46,6 +46,16 @@ export const BENCH_TIMINGS = deepFreeze({
   voltageSagFault_cV: 300, // drop from the powered-zero baseline that is a fault
 });
 
+// DShot error statistics (`invalidPct` in MSP_MOTOR_TELEMETRY, hundredths of a percent). Fail-closed policy for the first
+// hardware release (owner decision): real nonzero testing needs LIVE statistics after the ESCs are powered.
+// The sentinel 10000 (100.00 %) is what a build without DShot statistics reports; it means "unavailable", never "100 % errors".
+// Statistics are ignored while the ESCs are unpowered (USB-only states). All three numbers are provisional and unmeasured.
+export const DSHOT_STATS = deepFreeze({
+  unavailableSentinel_centi: 10000,
+  excessiveErrors_centi: 100, // 1.00 %: at or above this the statistics are "excessive" (the one place to change it)
+  usableForMs: 1000, // continuous usable, low-error readings on every motor before a nonzero test may start
+});
+
 export const CHECKLIST_ITEMS = Object.freeze([
   ['propsRemoved', 'Every propeller is physically removed from every motor.'],
   ['benchSecured', 'The aircraft is secured on a clear, nonconductive bench.'],

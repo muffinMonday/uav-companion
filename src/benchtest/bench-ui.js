@@ -6,6 +6,19 @@ import { el } from '../cards.js';
 import { renderReadiness, viewState } from '../preflight/readiness-ui.js';
 import { ESC_FIRMWARE_FAMILIES } from '../preflight/versions.js';
 import { BATTERY_INSTRUCTION, BENCH_PROVISIONAL, BENCH_TIMINGS, CHECKLIST_ITEMS, EXPECTED_POSITIONS, MOTOR, POSITION_NONE, UNLOCK_PHRASE } from './constants.js';
+
+const BATTERY_STATE_TEXT = Object.freeze({
+  'attested-disconnected': 'you confirmed the flight battery is disconnected',
+  'declared-connected': 'you declared the flight battery connected',
+  unknown: 'unknown: treat the battery as connected',
+  'removed-confirmed': 'you confirmed the flight battery is disconnected again',
+});
+const DSHOT_TEXT = Object.freeze({
+  unknown: 'not observed yet',
+  usable: 'available and below the provisional error limit',
+  unavailable: 'unavailable (this firmware build may not report them, or telemetry is not active)',
+  excessive: 'at or above the provisional error limit',
+});
 import { STATE } from './state-machine.js';
 
 const REASON_TEXT = Object.freeze({
@@ -34,6 +47,8 @@ const REASON_TEXT = Object.freeze({
   'handler-exception': 'An internal error occurred.',
   'different-flight-controller-after-reconnect': 'A different flight controller reconnected.',
   'unclean-exit': 'A previous bench session may have ended with the battery connected.',
+  'dshot-statistics-unavailable': 'DShot error statistics became unavailable during the run.',
+  'dshot-errors-excessive': 'The DShot error percentage reached the provisional limit during the run.',
 });
 const reasonText = (r) => REASON_TEXT[r] || (String(r).startsWith('visibility-or-focus-lost') ? 'The page was hidden or lost focus while powered.' : String(r).startsWith('invalid-transition') || String(r).startsWith('guard:') ? 'An unexpected action occurred.' : String(r));
 
@@ -135,6 +150,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
       if (c.canConfirmNoRotation) overlay.append(btn('No motor is rotating (I am looking at the motors)', () => controller.confirmNoRotation(), { id: 'btn-no-rotation' }));
       if (c.canCompleteRecovery) overlay.append(btn('Complete recovery and clear the marker', () => controller.completeRecovery(), { id: 'btn-complete-recovery' }));
       if (v.notes.markerError) overlay.append(el('p', 'bt-warn', v.notes.markerError));
+      if (c.canRetryMarkerClear) overlay.append(btn('Retry deleting the recovery marker', () => controller.retryMarkerClear(), { id: 'btn-retry-marker' }));
     }
     const td = el('details', 'bt-trace-fault'); td.append(el('summary', '', 'State and transition trace'));
     const tp = el('pre'); tp.id = 'bt-trace-fault'; tp.textContent = traceText(v); td.append(tp); overlay.append(td);
@@ -169,6 +185,9 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     body.dataset.state = st;
     const stateLine = el('p', 'bt-stateline'); stateLine.id = 'bt-state'; stateLine.textContent = st; stateLine.dataset.state = st;
     body.append(stateLine);
+    const bs = el('p', 'bt-small'); bs.id = 'bt-battery-state'; bs.dataset.battery = c.batteryState; bs.textContent = `Battery state: ${BATTERY_STATE_TEXT[c.batteryState] || c.batteryState}.`;
+    body.append(bs);
+    if (c.flow === 'powered-stopval') body.append(el('p', 'bt-note', 'Powered stop validation: this workflow sends external 1000 and nothing else. No motor can be started.'));
     if (v.notes.error || v.notes.message) { const m = el('p', 'bt-note', v.notes.error || v.notes.message); m.setAttribute('role', 'status'); body.append(m); }
 
     if (st === STATE.DISCONNECTED) {
@@ -178,11 +197,11 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
       body.append(s);
     } else if (st === STATE.READ_ONLY_READINESS) drawReadiness(v);
     else if (st === STATE.STOP_VALIDATION_ONLY) {
-      const s = section('Stop validation only', 'bt-sec-stopval');
-      s.append(el('p', '', 'This state can send external 1000 and nothing else. It checks the stop proof for this combination without any nonzero output.'));
+      const s = section('USB-only stop validation (flight battery disconnected)', 'bt-sec-stopval');
+      s.append(el('p', '', 'The flight battery must be disconnected. This state sends external 1000 and nothing else and reads it back from the flight controller. It is an FC command and read-back check: with the ESCs unpowered it cannot show that a motor stopped. The powered stop validation, with the safety checklist, is a separate step.'));
       s.append(proofList(c.proof));
       if (c.canConfirmNoRotation) s.append(btn('No motor is rotating (I am looking at the motors)', () => controller.confirmNoRotation(), { id: 'btn-no-rotation' }));
-      s.append(btn('Record the stop validation and return', () => controller.finishStopValidation(), { id: 'btn-stopval-done', disabled: !c.proof.complete }));
+      s.append(btn('Record the USB-only stop validation and return', () => controller.finishStopValidation(), { id: 'btn-stopval-done', disabled: !c.proof.complete }));
       s.append(btn('Leave without recording', () => controller.leaveStopValidation(), { id: 'btn-stopval-leave' }));
       body.append(s);
     } else if (st === STATE.SAFE_STATE_INIT) {
@@ -207,6 +226,15 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     } else if (st === STATE.POWERED_ZERO_VERIFICATION) {
       const s = section('Powered-zero verification', 'bt-sec-zero');
       s.append(el('p', '', `Observing all four motors for ${BENCH_TIMINGS.poweredZeroObservationMs / 1000} s continuous zero RPM (at least ${BENCH_TIMINGS.poweredZeroMinSamples} samples).`));
+      const dl = el('p', 'bt-small', `DShot error statistics with the ESCs powered: ${DSHOT_TEXT[c.dshot.status]}.`); dl.id = 'bt-dshot'; s.append(dl);
+      body.append(s);
+    } else if (st === STATE.POWERED_STOP_VALIDATION) {
+      const s = section('Powered stop validation (flight battery connected)', 'bt-sec-powered-stopval');
+      s.append(el('p', '', 'The app sends external 1000 repeatedly, reads it back from the flight controller and checks for zero RPM. Look at all four motors. If anything moves, press Stop & zero and disconnect the battery.'));
+      const dl = el('p', 'bt-small', `DShot error statistics with the ESCs powered: ${DSHOT_TEXT[c.dshot.status]}. This is recorded for your review and does not block this validation.`); dl.id = 'bt-dshot'; s.append(dl);
+      s.append(proofList(c.proof));
+      if (c.canConfirmNoRotation) s.append(btn('No motor is rotating (I am looking at the motors)', () => controller.confirmNoRotation(), { id: 'btn-no-rotation' }));
+      s.append(btn('Finish the powered stop validation', () => controller.finishPoweredStopValidation(), { id: 'btn-powered-stopval-done', disabled: !c.canFinishPoweredStopValidation }));
       body.append(s);
     } else if (st === STATE.MOTOR_READY) drawMotorReady(v);
     else if (st === STATE.RUNNING) drawRunning(v);
@@ -224,9 +252,15 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
       body.append(s);
     } else if (st === STATE.BENCH_COMPLETE) {
       const s = section('Bench session finished', 'bt-sec-complete');
-      s.append(el('p', '', 'The stop proof is complete. Disconnect the flight battery and confirm. No result or health judgement is produced here.'));
+      s.append(el('p', '', c.poweredStopValidated ? 'The powered stop validation is complete. Disconnect the flight battery and confirm. Download the trace below for review; nothing here is a result about the aircraft.' : 'The stop proof is complete. Disconnect the flight battery and confirm. No result or health judgement is produced here.'));
       if (!c.batteryRemoved) s.append(btn('The flight battery is disconnected', () => controller.confirmBatteryRemoved(), { id: 'btn-battery-removed', disabled: !c.canConfirmBatteryRemoved }));
-      else s.append(btn('Start over', () => controller.reset(), { id: 'btn-reset', disabled: !c.canReset }));
+      else {
+        if (c.markerClearFailed) {
+          s.append(el('p', 'bt-warn', v.notes.markerError || 'The recovery marker could not be deleted. Keep the flight battery disconnected: ordinary testing cannot resume until it is removed.'));
+          s.append(btn('Retry deleting the recovery marker', () => controller.retryMarkerClear(), { id: 'btn-retry-marker' }));
+        }
+        s.append(btn('Start over', () => controller.reset(), { id: 'btn-reset', disabled: !c.canReset }));
+      }
       body.append(s);
     }
     if (v.transportKind === 'mock' && inject && st !== STATE.DISCONNECTED) body.append(injectPanel());
@@ -251,7 +285,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     esc.append(l1, l2); body.append(esc);
 
     const pol = section('Phase 3 policy', 'bt-sec-policy');
-    pol.append(el('p', '', 'Nonzero output needs: every readiness gate free of "Blocked" and "Not confirmed", an exact match on the owner-approved test allowlist, and for real hardware the session unlock.'));
+    pol.append(el('p', '', 'Nonzero output needs: every readiness gate free of "Blocked" and "Not confirmed", an exact match on the owner-approved test allowlist (whose entry carries reviewed powered stop-validation evidence), usable DShot error statistics with the ESCs powered, and for real hardware the session unlock.'));
     const pl = el('ul', 'bt-blockers'); pl.id = 'bt-blockers';
     const pol3 = c.policy;
     if (pol3) { for (const b of pol3.blockers) pl.append(el('li', '', b.reason)); if (!pol3.nonzeroOk) pl.append(el('li', 'bt-allow', 'Allowlist: ' + pol3.comboReason)); }
@@ -273,7 +307,10 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
 
     const act = el('div', 'bt-actions');
     act.append(btn('Continue to safe-state initialization', () => controller.proceed(), { id: 'btn-proceed', cls: 'bt-primary', disabled: !c.canProceed }));
-    act.append(btn('Stop validation only (external 1000, no nonzero output)', () => controller.startStopValidation(), { id: 'btn-stopval', disabled: !c.canStopValidation }));
+    act.append(btn('USB-only stop validation (battery disconnected, external 1000 only)', () => controller.startStopValidation(), { id: 'btn-stopval', disabled: !c.canStopValidation }));
+    act.append(btn('Powered stop validation (full safety checklist, battery connected, external 1000 only)', () => controller.startPoweredStopValidation(), { id: 'btn-powered-stopval', disabled: !c.canPoweredStopValidation }));
+    if (!c.usbStopValidated) act.append(el('p', 'bt-small', 'The powered stop validation needs the USB-only stop validation to be recorded first in this connection.'));
+    else act.append(el('p', 'bt-small', 'USB-only stop validation recorded for this connection.'));
     act.append(btn('Read again', () => controller.reread(), { id: 'btn-reread' }));
     act.append(btn('Disconnect', () => controller.disconnect(), { id: 'btn-disconnect' }));
     body.append(act);
@@ -356,7 +393,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     pre.textContent = traceText(v);
     traceBox.append(pre);
     traceBox.append(btn('Download trace (JSON)', () => {
-      const a = el('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ provisional: BENCH_PROVISIONAL, mode: v.caps.mode, trace: v.trace }, null, 2)], { type: 'application/json' })); a.download = 'bench-trace.json'; document.body.append(a); a.click(); a.remove();
+      const a = el('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ provisional: BENCH_PROVISIONAL, mode: v.caps.mode, externalStopValue: MOTOR.stopValue, usbStopValidated: v.caps.usbStopValidated, poweredStopValidated: v.caps.poweredStopValidated, dshotStatistics: v.caps.dshot.status, trace: v.trace }, null, 2)], { type: 'application/json' })); a.download = 'bench-trace.json'; document.body.append(a); a.click(); a.remove();
     }, { id: 'btn-trace-download' }));
     traceBox.open = wasOpen;
   }
@@ -390,7 +427,8 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     const c = v.caps;
     return JSON.stringify([c.state, c.mode, c.unlocked, c.selectedMotor, c.targetConfirmed, c.canStart, c.interlocks.map((i) => i.ok), controller.machine.ctx.checklist, c.proof.partsDone, c.proof.complete, c.proof.userNoRotation, c.proof.readbackOk, c.proof.zeroOk,
       c.proof.attempts >= BENCH_TIMINGS.stopMinAttempts, c.batteryDeclared, c.batteryRemoved, c.transportAvailable, c.fault && c.fault.reason, v.notes.markerError, v.notes.proofFailed, v.notes.error, v.notes.message, c.completedMotors,
-      c.policy && [c.policy.nonzeroOk, c.policy.stopValidationOk, c.policy.blockers.length], v.readiness && v.readiness.counts, v.attestations, v.manual, c.canConfirmNoRotation, c.needsPosition, c.canReset, c.canCompleteRecovery, c.markerAvailable, !!v.snapshot]);
+      c.policy && [c.policy.nonzeroOk, c.policy.stopValidationOk, c.policy.blockers.length], v.readiness && v.readiness.counts, v.attestations, v.manual, c.canConfirmNoRotation, c.needsPosition, c.canReset, c.canCompleteRecovery, c.markerAvailable, !!v.snapshot,
+      c.flow, c.batteryState, c.dshot.status, c.usbStopValidated, c.poweredStopValidated, c.canPoweredStopValidation, c.canFinishPoweredStopValidation, c.markerClearFailed, c.markerClearPending, c.canRetryMarkerClear]);
   }
 
   function render() {

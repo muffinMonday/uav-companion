@@ -6,7 +6,7 @@ import { benchFcTransport } from '../src/benchtest/mock-bench-fc.js';
 import { parseMotorFrame } from '../src/benchtest/motor-control.js';
 import { BATTERY_INSTRUCTION, BENCH_TIMINGS, CHECKLIST_ITEMS, EXPECTED_POSITIONS, MOTOR, RECOVERY_KEY, UNLOCK_PHRASE } from '../src/benchtest/constants.js';
 import { STATE } from '../src/benchtest/state-machine.js';
-import { FakeClock, makeHarness, memoryStorage } from './bench-helpers.mjs';
+import { FakeClock, REAL_ENTRY, makeHarness, memoryStorage } from './bench-helpers.mjs';
 
 const pass = (t) => console.log('PASS  ' + t);
 const nonzero = (h, from = 0) => h.fc.received.slice(from).filter((v) => v.some((x) => x !== 1000));
@@ -97,11 +97,11 @@ const reach = {
   h.c.confirmNoRotation();
   assert.equal(h.c.finishStopValidation().ok, true);
   assert.ok(h.fc.received.length >= 10 && h.fc.received.every(allStop), 'only external 1000 was ever sent');
-  assert.equal(h.caps().stopValidationRecorded, true);
+  assert.equal(h.caps().usbStopValidated, true);
   pass('stop-validation-only: needs the unlock, sends only external 1000 (permission ceiling 1000), completes with the four-part proof; no nonzero path exists');
 
   // a real-transport entry on the allowlist is honoured only after the unlock
-  const entry = { variant: 'BTFL', firmware: '2025.12.5', api: '1.47', targetName: 'SYNTH', boardId: 'SYN1', escFamily: 'Bluejay', escModel: 'synthetic', motorProtocol: 'DSHOT600', approvedBy: 'test owner', approvedOn: '2026-12-01' };
+  const entry = { ...REAL_ENTRY };
   const g = await makeHarness({ allowlist: [entry] }); g.t.kind = 'web-serial'; await g.toReadiness();
   assert.equal(g.c.proceed().ok, false, 'locked first');
   g.c.unlock(UNLOCK_PHRASE, true);

@@ -1,6 +1,26 @@
 // Motor bench test (Phase 3): interlock rules as pure functions. The state machine is the only caller that acts on them;
 // the UI only displays the results. Nothing here sends anything.
-import { BENCH_TIMINGS, CHECKLIST_ITEMS, MOTOR } from './constants.js';
+import { BENCH_TIMINGS, CHECKLIST_ITEMS, DSHOT_STATS, MOTOR } from './constants.js';
+
+// DShot error statistics (invalidPct per motor, hundredths of a percent) as 'usable' | 'excessive' | 'unavailable'.
+// The sentinel 10000 is what a build without DShot statistics reports: "unavailable", never a 100 % failure and never a
+// motor-health verdict. Anything missing or malformed is also unavailable (fail closed). Unavailable wins over excessive.
+export function dshotStatus(values) {
+  if (!Array.isArray(values) || values.length !== MOTOR.enabledMotors) return 'unavailable';
+  let excessive = false;
+  for (const v of values) {
+    if (!Number.isFinite(v) || v < 0 || v >= DSHOT_STATS.unavailableSentinel_centi) return 'unavailable';
+    if (v >= DSHOT_STATS.excessiveErrors_centi) excessive = true;
+  }
+  return excessive ? 'excessive' : 'usable';
+}
+
+const DSHOT_WHY = Object.freeze({
+  unavailable: 'DShot error statistics are unavailable with the ESCs powered (this firmware build may not report them, or the telemetry is not active). Nonzero testing stays blocked. This is not a motor-health result.',
+  excessive: 'The DShot error percentage is at or above the provisional limit. Nonzero testing stays blocked. This is not a motor-health result.',
+  unknown: 'DShot error statistics have not been observed with the ESCs powered yet.',
+  short: 'DShot error statistics have not been usable for long enough yet.',
+});
 
 // Phase 3 readiness policy over a Phase 2 report (src/preflight/readiness.js).
 // The Phase 2 gates are the evidence. Policy: no gate may be 'fail' or 'unknown'. 'warn' (candidate firmware, attested items,
@@ -55,6 +75,9 @@ export function startInterlocks(ctx, facts, now) {
   add('checklist', checklistComplete(ctx.checklist) && ctx.checklist.finalHold === true, 'The physical safety checklist and final confirmation are not complete.');
   add('marker', ctx.markerVerified === true, 'The unclean-session marker is not written and verified.');
   add('powered-zero', ctx.zeroVerified === true, 'Powered-zero verification is not complete.');
+  const d = ctx.dshot || {};
+  const dshotOk = d.status === 'usable' && Number.isFinite(d.since) && Number.isFinite(d.lastAt) && d.lastAt - d.since >= DSHOT_STATS.usableForMs && now - d.lastAt <= stale;
+  add('dshot-stats', dshotOk, DSHOT_WHY[d.status === 'usable' ? 'short' : d.status] || DSHOT_WHY.unknown);
   add('disarmed', f.armed === false, 'The aircraft is not confirmed disarmed.');
   add('one-motor', Number.isInteger(ctx.selectedMotor) && ctx.selectedMotor >= 0 && ctx.selectedMotor < MOTOR.enabledMotors, 'Exactly one motor must be selected.');
   add('target-confirmed', ctx.selectedMotor !== null && ctx.targetConfirmed === ctx.selectedMotor, 'The physical motor to be tested is not confirmed.');

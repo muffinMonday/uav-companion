@@ -15,6 +15,8 @@ import { MotorBoundary } from './motor-control.js';
 import { createMarkerStore } from './recovery-marker.js';
 import { STATE, createMachine } from './state-machine.js';
 
+const MARKER_CLEAR_FAILED_TEXT = 'The recovery marker could not be deleted. Keep the flight battery disconnected: ordinary testing cannot resume until the marker is confirmed removed. Retry the deletion; if it keeps failing, clear this site\'s browser data by hand and reload.';
+
 const realClock = { now: () => Date.now(), setTimeout: (f, ms) => setTimeout(f, ms), clearTimeout: (h) => clearTimeout(h) };
 const n = BENCH_TIMINGS;
 
@@ -56,7 +58,12 @@ export function createBenchController(opts = {}) {
       case 'start-stop-validation': runStopLoop('proof'); break;
       case 'start-safe-state': runStopLoop('safe-state'); break;
       case 'start-sweep': beginSweep(); break;
-      case 'clear-marker': if (!marker.clear()) notes.markerError = 'The recovery marker could not be cleared. Clear it manually after reading the handoff.'; break;
+      case 'clear-marker': { // a verified transition: the machine stays locked until it is told the marker is confirmed absent
+        const ok = marker.clear() === true && marker.status() === 'absent';
+        notes.markerError = ok ? '' : MARKER_CLEAR_FAILED_TEXT;
+        dispatch('MARKER_CLEAR_RESULT', { ok });
+        break;
+      }
       default: break;
     }
   }
@@ -103,12 +110,12 @@ export function createBenchController(opts = {}) {
           return;
         }
       } else {
-        if (![STATE.VERIFYING_STOP, STATE.LOCKED_FAULT, STATE.STOP_VALIDATION_ONLY, STATE.BATTERY_REMOVAL_RECOVERY].includes(st)) return;
+        if (![STATE.VERIFYING_STOP, STATE.LOCKED_FAULT, STATE.STOP_VALIDATION_ONLY, STATE.POWERED_STOP_VALIDATION, STATE.BATTERY_REMOVAL_RECOVERY].includes(st)) return;
         if (caps.proof.complete) return;
       }
       if (now() - t0 > n.stopProofTimeoutMs && !(goal === 'proof' && caps.proof.partsDone)) {
         if (goal === 'safe-state') dispatch('FAULT', { reason: 'safe-state-incomplete' });
-        else { notes.proofFailed = true; if (st === STATE.VERIFYING_STOP) dispatch('FAULT', { reason: 'stop-proof-incomplete' }); else emit(); }
+        else { notes.proofFailed = true; if (st === STATE.VERIFYING_STOP || st === STATE.POWERED_STOP_VALIDATION) dispatch('FAULT', { reason: 'stop-proof-incomplete' }); else emit(); }
         return;
       }
       const slow = goal === 'proof' && caps.proof.partsDone;
@@ -137,7 +144,6 @@ export function createBenchController(opts = {}) {
     if (t - sweep.startedAt > n.runTimeoutMs) { dispatch('TIMEOUT', { reason: 'run-timeout' }); return; }
     const rpm = obs.telemetry && obs.telemetryAt !== null && t - obs.telemetryAt <= n.staleTelemetryFaultMs ? obs.telemetry.motors[sweep.motor] : null;
     const spinning = !!rpm && rpm.rpm > 0;
-    const errorsHigh = !!rpm && rpm.invalidPct_centi < 10000 && rpm.invalidPct_centi >= 100; // 10000 means "unavailable", not an error rate
     const stepUp = () => {
       const next = sweep.value + MOTOR.step;
       if (next > MOTOR.cap) { try { boundary.sendStop().catch(() => {}); } catch { /* machine decides */ } dispatch('RUN_ABORTED', { reason: 'no-stable-rotation-by-cap' }); sweep = null; return; }
@@ -149,7 +155,7 @@ export function createBenchController(opts = {}) {
         if (spinning) { sweep.phase = 'validate'; sweep.windowStart = t; } else stepUp();
       }
     } else if (sweep.phase === 'validate') {
-      if (!spinning || errorsHigh) { stepUp(); return; }
+      if (!spinning) { stepUp(); return; }
       if (t - sweep.windowStart >= MOTOR.candidateValidationMs) {
         sweep.threshold = sweep.value;
         const target = Math.min(MOTOR.cap, sweep.threshold + MOTOR.plateauOffset);
@@ -196,6 +202,7 @@ export function createBenchController(opts = {}) {
     dispatch('OBSERVE', {
       telemetryAt: obs.telemetryAt, rpm: obs.telemetry ? obs.telemetry.motors.map((m) => m.rpm) : null,
       tempsC: obs.telemetry ? obs.telemetry.motors.map((m) => m.temperatureC) : [],
+      dshotInvalidPct_centi: obs.telemetry ? obs.telemetry.motors.map((m) => m.invalidPct_centi) : null, // the machine classifies these (usable, excessive, unavailable)
       armed: obs.armed, armedAt: obs.armedAt, voltage_cV: obs.voltage_cV,
       commanded: boundary ? boundary.commandedValues() : null, readback: rb,
     });
@@ -314,7 +321,10 @@ export function createBenchController(opts = {}) {
     unlock(phrase, acknowledged) { const r = dispatch('UNLOCK', { phrase, acknowledged }); refreshReadiness(); if (!r.ok) notes.error = r.reason; return r; },
     lock() { const r = dispatch('LOCK'); refreshReadiness(); return r; },
     proceed() { return dispatch('READINESS_OK'); },
-    startStopValidation() { return dispatch('ENTER_STOP_VALIDATION'); },
+    startStopValidation() { return dispatch('ENTER_STOP_VALIDATION'); }, // USB-only (battery disconnected): FC command and read-back check
+    startPoweredStopValidation() { return dispatch('ENTER_POWERED_STOP_VALIDATION'); }, // the full safety flow, then external 1000 with the battery connected
+    finishPoweredStopValidation() { return dispatch('POWERED_STOP_VALIDATION_DONE'); },
+    retryMarkerClear() { return dispatch('RETRY_MARKER_CLEAR'); },
     leaveStopValidation() { return dispatch('LEAVE_STOP_VALIDATION'); },
     finishStopValidation() { return dispatch('STOP_VALIDATION_DONE'); },
     setChecklistItem(key, value) { return dispatch('CHECKLIST_ITEM', { key, value }); },

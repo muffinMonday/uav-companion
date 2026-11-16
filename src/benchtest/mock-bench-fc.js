@@ -21,6 +21,7 @@ export function benchFc(over = {}) {
     stuckReadback: null, // array of four values returned by MSP_MOTOR regardless of commands
     ignoreStop: false, // motor frames are acknowledged but the model does not change (RPM stays, readback stays)
     rpmFrozen: null, // array of four RPM values reported regardless of the model
+    invalidPct_centi: null, // array of four DShot invalidPct values (10000 = statistics unavailable); null = a build with working statistics (0)
     telemetrySilent: false, // MSP_MOTOR_TELEMETRY gets no reply
     telemetryError: false, // MSP error frame
     extraRpm: null, // { index, rpm }: another motor reports rotation
@@ -68,7 +69,7 @@ export function benchFcTransport(over = {}, opts = {}) {
     if (name === 'MSP_MOTOR_TELEMETRY') {
       if (i.telemetrySilent) return null;
       if (i.telemetryError) return 'error';
-      fc.telemetry = rpmFor(fc).map((rpm) => ({ rpm, invalidPct: 0, temp: i.tempC, volt: 0, cur: 0, cons: 0 }));
+      fc.telemetry = rpmFor(fc).map((rpm, k) => ({ rpm, invalidPct: i.invalidPct_centi ? i.invalidPct_centi[k] : 0, temp: i.tempC, volt: 0, cur: 0, cons: 0 }));
     }
     if ((name === 'MSP_STATUS_EX' || name === 'MSP_BOXIDS') && i.statusSilent) return null;
     if (name === 'MSP_STATUS_EX') fc.armed = i.armed;
