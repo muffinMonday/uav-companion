@@ -1,6 +1,6 @@
 # UAV Companion Automated Motor Diagnostics
 
-**Status:** In progress. Phase 0 done; Phase 1 and Phase 2 (read-only) implemented 2026-11-16. The read-only lab is live with its flag on (owner decision, see status history). **Phase 3 prototype implemented 2026-11-17: mock-tested, deployed only as an isolated developer lab (own flag, unlinked, noindex), NOT hardware-validated, no real motor command ever issued, no FC/ESC combination approved for nonzero testing, not complete for release. Phase 4 has not started.**
+**Status:** In progress. Phase 0 done; Phase 1 and Phase 2 (read-only) implemented 2026-11-16. The read-only lab is live with its flag on (owner decision, see status history). **Phase 3 review corrections 2026-11-17: four findings investigated, all confirmed and corrected in source (powered stop validation, verified marker deletion, DShot statistics fail-closed policy, stop-validation evidence bound to the allowlist); NOT deployed: the live Phase 3 route is still the earlier build and is unsuitable for real hardware until the corrected build is reviewed and separately deployed; no real-hardware test is authorized until then.** **Phase 3 prototype implemented 2026-11-17: mock-tested, deployed only as an isolated developer lab (own flag, unlinked, noindex), NOT hardware-validated, no real motor command ever issued, no FC/ESC combination approved for nonzero testing, not complete for release. Phase 4 has not started.**
 **Date:** 2026-11-17 (status); first written 2026-11-16
 **Authoritative:** This document is the **sole authoritative build specification**. It supersedes [Addendum 1](UAV_COMPANION_MOTOR_DIAGNOSTICS_ADDENDUM_1.md), which is kept only as decision history (the owner approved it with corrections on 2026-11-16 and it is merged here). The [Phase 0 research](UAV_COMPANION_MOTOR_DIAGNOSTICS_PHASE0_RESEARCH.md) is evidence (finding IDs F1 to F25), not specification.
 **Related:** [Phase 3 handoff](../../handoffs/active/MOTOR_DIAGNOSTICS_PHASE3_HANDOFF.md) · [Phase 1 and 2 handoff](../../handoffs/active/MOTOR_DIAGNOSTICS_PHASE1_2_HANDOFF.md) · [Fault-injection matrix](../../MOTOR_DIAGNOSTICS_FAULT_INJECTION_MATRIX.md) · [Hazard analysis (Phase 3 entry gate)](../../MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md)
@@ -16,6 +16,7 @@
 | 2026-11-16 | Owner approved Addendum 1 with corrections. Merged into this document; addendum superseded. Moved to `in-progress/`. Phases 1 and 2 authorized (read-only). |
 | 2026-11-16 | Phase 1 (`389cdaf`) and Phase 2 (`366af13`) pushed to `main`. Tests: `npm run test:unit` all pass; browser `preflight-lab` 31 pass. |
 | 2026-11-17 | **Phase 3 prototype** (`96b9187`, pushed): `src/benchtest/` state machine, single guarded motor boundary, empty allowlist, marker, synthetic FC with fault injection, lab page `tools/motor-bench-lab/` behind `VITE_BENCH_PHASE3`. Also fixes the stale `NetworkError` message in the read-only lab. Tests: all unit suites and the full `npm test` (157 suites) pass; `bench-lab` 67, `preflight-lab` 31. Deployed with both flags (gh-pages `3b6d919` -> `933dd9e`; rollback `3b6d919`); live checks synthetic only. See the Phase 3 handoff. Hardware checks M1 to M8 and the stop validation per ESC family remain open. |
+| 2026-11-17 | **Phase 3 review corrections** (source and tests only, synthetic and mocked; not deployed; no hardware): (1) USB-only and powered stop validation separated; the powered flow runs the full safety checklist, marker, battery tracking and grace flow and can only send external 1000 (new state `POWERED_STOP_VALIDATION`); (2) marker deletion is a verified transition (`MARKER_CLEAR_RESULT`, `RETRY_MARKER_CLEAR`); (3) DShot error statistics: fail closed for real nonzero testing (owner decision), ignored while the ESCs are unpowered; (4) every real allowlist entry carries reviewed powered stop-validation evidence. Details: Phase 3 handoff section 12. Residual: the live route is outdated; the first allowlist entry and all hardware checks remain open. |
 | 2026-11-16 | Build input added (`10410c4`). Live deploy with `VITE_PREFLIGHT_DIAGNOSTICS=1`: gh-pages `49743e1` -> `3b6d919`. Lab at `/tools/preflight-spike/`, read-only, no dashboard or map entry. **Owner decision, sole user:** this overrides section 2's "no user-visible entry point before the final release gate" and the feature-flag rule for the lab page only; the main app is unchanged. Residual risk: the lab is reachable by anyone with the URL. Not tested on a real aircraft or phone (synthetic mock only). |
 
 ## Tags
@@ -102,6 +103,7 @@ Stock `MSP_SET_MOTOR` does not provide a dependable motor-output timeout. A brow
 ### 4.3 Software interlocks
 
 - All motor commands go through one allowlisted motor-test state machine.
+- **Stop validation has two flows [DEC, 2026-11-17].** USB-only (battery attested disconnected) is an FC command and read-back check and never proves a physical stop. Powered stop validation (external 1000 only, battery connected) needs the USB-only validation first and then the full physical-safety flow: fresh checklist, final hold, a recovery marker written and read back, an explicit "ready to connect power" step, battery declaration, the 15 s reconnect grace flow, powered-zero verification and the four-part stop proof; the marker stays until the battery is confirmed disconnected. Neither flow can send a nonzero value or reach `MOTOR_READY`.
 - Nonzero commands are forbidden outside the active `RUNNING` state.
 - **"Zero" means external value 1000** for non-3D DShot, not 0 [SRC F4][RES]. Every "zero output" in this document means external 1000.
 - Starting or reconnecting always sends external 1000 before other motor commands, regardless of any stored marker.
@@ -559,7 +561,7 @@ Read-only sources (`MSP_SET_MOTOR` is the only write and is confined to the Phas
 | Commanded motor values | `MSP_MOTOR` | all | FC-side only (F3) |
 | RPM, `invalidPct`, temperature, voltage, current | `MSP_MOTOR_TELEMETRY` | 1.42+ | `invalidPct` build dependent |
 
-**DShot error evidence [SRC F12, F13]:** use `MSP_MOTOR_TELEMETRY` `invalidPct`; no debug mode is needed. On builds without DShot stats `invalidPct` reads 100% regardless of health, so the parser treats "RPM present and 100% invalid" as **error data unavailable**, not as a failing channel. Without error data the bench may continue only if RPM data is valid, and confidence is lowered. **Open decision:** whether this is acceptable or the gate becomes blocking on hardware (section 25).
+**DShot error evidence [SRC F12, F13]:** use `MSP_MOTOR_TELEMETRY` `invalidPct`; no debug mode is needed. On builds without DShot stats `invalidPct` reads 100% regardless of health, so the parser treats "RPM present and 100% invalid" as **error data unavailable**, not as a failing channel. Without error data the bench may continue only if RPM data is valid, and confidence is lowered. **Decision for the first hardware release (owner, 2026-11-17): fail closed.** Real nonzero testing is blocked if DShot error statistics remain unavailable after the ESCs are powered; the "unavailable" semantics are preserved (never a motor-health verdict). Statistics are ignored while the ESCs are unpowered, so USB-only and external-1000 stop validation are not blocked. Statistics lost or excessive during a run abort to the stop path. The excessive limit (1.00 %) and the 1 s usable period are provisional and centralized (`DSHOT_STATS`). Relaxing this needs a new owner decision after the supervised M4 evidence.
 
 ## 21. Read-only configuration access [DEC]
 
@@ -571,7 +573,7 @@ Read-only sources (`MSP_SET_MOTOR` is the only write and is confined to the Phas
 
 - Persist only the minimum local marker that a powered session may have ended abnormally (a boolean and a timestamp under a `uavzones.` key; no telemetry).
 - The marker is set durably **before** battery connection is allowed, and cleared only after all of: nonzero output is no longer permitted; FC read-back is 1000 for every enabled motor; valid RPM zero is verified; battery removal is confirmed.
-- **Fail closed:** if durable storage is unavailable or a marker write cannot be verified (written, then read back), active powered testing is not allowed.
+- **Fail closed:** if durable storage is unavailable or a marker write cannot be verified (written, then read back), active powered testing is not allowed. **Deletion is verified too [DEC, 2026-11-17]:** the machine only requests the deletion; it is cleared in state (and recovery or Reset become available) only when the controller reports the marker confirmed absent. A failed deletion keeps the locked recovery or complete state, shows that the battery must stay disconnected and ordinary testing cannot resume, and allows a deliberate retry.
 - Defence in depth, not a substitute: external 1000 is still sent on every new or reconnected FC session regardless of the marker.
 - On next load or FC reconnection: treat battery state as unknown; do not restore an active motor state; prohibit nonzero commands; lead with "Disconnect the flight battery now"; require battery removal, reconnection, safe-state initialization and powered-zero verification before a new test.
 
@@ -595,7 +597,7 @@ Read-only sources (`MSP_SET_MOTOR` is the only write and is confined to the Phas
 ## 25. Open decisions and limits
 
 - Production gating for `blackbox_mode` (RQ-1 experiment result; attestation is read-only/mock only).
-- **Unavailable DShot error statistics:** acceptable with lowered confidence, or blocking? Decide after hardware (M4).
+- **Unavailable DShot error statistics:** decided for the first hardware release (blocking for nonzero testing, section 20). Revisit only after the supervised M4 evidence.
 - **Timestamp-jitter limit** for the timing-quality rule, set from recorded logs.
 - Whether CLI enter/exit is side-effect-free on every supported family.
 - The Android path after the Phase 1 spike and any native-wrapper decision.

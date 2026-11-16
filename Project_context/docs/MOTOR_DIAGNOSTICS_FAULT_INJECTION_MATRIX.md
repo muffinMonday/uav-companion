@@ -2,7 +2,8 @@
 
 **Status:** 2026-11-17. Maps every hazard in [MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md](MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md) and every abort trigger of the Phase 3 task to the automated test that exercises it and to the hardware-only check that is still missing.
 **Scope:** *mock* means the synthetic flight controller (`src/benchtest/mock-bench-fc.js`) on a mocked transport with a deterministic clock. Nothing here was run against real hardware. *HW* items are unverified and are the owner's supervised checks (handoff section 8).
-**Test files:** `tests/bench-machine-unit.mjs` (M), `tests/bench-boundary-unit.mjs` (B), `tests/bench-controller-unit.mjs` (C), `tests/bench-safety-unit.mjs` (S), `tests/bench-lab.mjs` (browser, L), `tests/preflight-status-unit.mjs` (N). Injection flags live in `fc.inject` of the synthetic FC.
+**Review corrections 2026-11-17:** the "Review findings" section below maps the four confirmed findings to `tests/bench-findings-unit.mjs` (F). The corrected build is not deployed.
+**Test files:** `tests/bench-findings-unit.mjs` (F), `tests/bench-machine-unit.mjs` (M), `tests/bench-boundary-unit.mjs` (B), `tests/bench-controller-unit.mjs` (C), `tests/bench-safety-unit.mjs` (S), `tests/bench-lab.mjs` (browser, L), `tests/preflight-status-unit.mjs` (N). Injection flags live in `fc.inject` of the synthetic FC.
 
 ## Hazard rows
 
@@ -23,6 +24,23 @@
 | H8 | Arming changes | `armed` true in three powered states; unreadable or unknown arming state | Fault | C "arming..."; C "unreadable arming state" | ARM bit identification per tag |
 | H9 | Unsupported or misidentified firmware | No allowlist entry; other firmware; unsupported firmware; synthetic entry on a real transport; malformed entry | No nonzero path | C "unapproved hardware"; B allowlist; C stop-validation-only | Real API minor per aircraft |
 | H10 | Logging configuration | NORMAL mode, disabled fields, no device, missing attestations | Readiness policy blocks | C "unapproved hardware"; Phase 2 readiness suite | Mode gating (RQ-1) is still open |
+
+## Review findings (2026-11-17)
+
+| Finding | Injected condition (mock) | Expected result | Automated test |
+| --- | --- | --- | --- |
+| 1 Powered stop validation | Powered validation from read-only readiness; after an unrecorded USB-only run; from a previous connection | Refused, nothing sent | F "cannot be entered directly" |
+| 1 | Each of the six checklist items missing; short hold | Not ready to connect power, no marker | F "missing checklist item" |
+| 1 | Marker write fails, reads back differently, storage unavailable | Powered flow blocked | F "failed, unverifiable or unavailable" |
+| 1 | Full powered flow | Marker before power, battery tracked, repeated 1000, read-back, zero RPM, user confirmation; marker kept until battery removal; only 1000 sent | F "marker before power" |
+| 1 | Reload or crash after the marker is set | UNCLEAN_EXIT_RECOVERY with the battery instruction | F "reload or crash"; L reload during powered validation |
+| 1 | Visibility loss, USB loss, stale telemetry, rotation, arming, bad read-back in the powered validation | LOCKED_FAULT, battery instruction first, marker kept | F "visibility loss, USB loss" |
+| 1 | USB reset after the battery is declared; grace expiry | Grace flow then powered validation (never MOTOR_READY); expiry locks | F "15-second USB-reset" |
+| 1 | Every nonzero value in USB-only and powered validation; START_HOLD_COMPLETE; ZERO_VERIFIED | Refused at the machine, the boundary and the frame builder | F "permission ceiling is exactly 1000"; F "bench flow" |
+| 2 Marker deletion | `removeItem` throws, or the marker stays readable; at normal completion and in fault/unclean recovery | State stays locked, Reset blocked, message shown, retry possible, success only when the marker is absent | F "failed marker deletion"; L failed deletion |
+| 2 | Result nobody asked for | Refused | F "MARKER_CLEAR_RESULT" |
+| 3 DShot statistics | Unavailable while USB-only; unavailable after power; low valid; excessive; lost during a sweep; never present | Stop validation not blocked; nonzero blocked with a reason; run aborted on loss or excess | F "DShot statistics" blocks; M single-condition failures |
+| 4 Allowlist evidence | Identity-only real entry; each evidence field missing or malformed; malformed dates, digest, stop value; synthetic entries; changed identity fields | Never matches | F "allowlist evidence"; B allowlist |
 
 ## Abort triggers of the Phase 3 task
 
@@ -48,12 +66,12 @@
 
 | Requirement | Test |
 | --- | --- |
-| Every permitted transition | M "every permitted transition" (52 table entries driven by scenarios) |
+| Every permitted transition | M "every permitted transition" (60 table entries driven by scenarios, including the powered stop validation and marker-deletion paths) |
 | Rejection of every invalid transition | M "invalid transitions" |
 | No command above 1100; one motor only; external 1000 semantics | B "hard limits"; B "one motor at a time"; B "exact external-1000" |
 | No nonzero before all interlocks | M "single-condition failures" (21 cases) |
 | Stop cadence 50 ms, at least 10 attempts | C "stop semantics, cadence and count" |
-| Stop-validation-only cannot send nonzero | C "stop-validation-only"; B "stop-only permission" |
+| Stop-validation (USB-only and powered) cannot send nonzero | C "stop-validation-only"; B "stop-only permission"; F "permission ceiling is exactly 1000" |
 | Session unlock expires on reload, reconnect, fault | C "session unlock"; L reload removes the unlock |
 | Recovery needs battery-removal confirmation | C "recovery needs battery-removal confirmation"; L recovery flow |
 | No production or app entry exposes active controls | S "no entry point"; L flag-off and app pages |
