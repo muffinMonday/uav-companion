@@ -1,4 +1,9 @@
-## Latest: Motor Diagnostics docs reconciled; Phase 1 and 2 (read-only) in progress (2026-11-16)
+## Latest: Motor Diagnostics Phase 1 (read-only foundations) done (2026-11-16)
+- Added `scripts/motor-msp-compare.mjs` and its report `docs/MOTOR_DIAGNOSTICS_MSP_COMPARISON.md` (five tags, source only), `src/preflight/` (constants, versions, read-only msp-codec, transport, session, mock-fc, inventory, flag), `tools/preflight-spike/` (non-shipping harness, not a Vite entry), five new unit suites (all in `npm run test:unit`, all pass). No app file references the diagnostics; the flag `VITE_PREFLIGHT_DIAGNOSTICS` defaults off; the build output contains no diagnostics code.
+- Findings: mask bit positions differ per tag (RPM 12 on 4.5.5, 13 later; GYROUNFILT 13 versus 14; MOTOR 10 versus 11); `MSP_FC_VERSION` is CalVer from API 1.47. Hardware not touched; every hardware-dependent item is listed as unresolved in the comparison report.
+- Not done and not authorized: motor commands, CLI, writes, erase, reflash, 4-way, Phase 3, deploy.
+
+## Previous: Motor Diagnostics docs reconciled; Phase 1 and 2 (read-only) in progress (2026-11-16)
 - Owner approved Addendum 1 with corrections. Merged into the consolidated backlog `docs/backlogs/in-progress/UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md` (sole authority); addendum and Phase 0 research moved to `in-progress/` as history/evidence. New: `docs/MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md` (Phase 3 gate), `docs/handoffs/active/MOTOR_DIAGNOSTICS_PHASE1_2_HANDOFF.md`.
 - Authorized: read-only Phase 1/2, flag off, commit and push. Not authorized: motor commands, CLI, writes, erase, reflash, 4-way, Phase 3, deploy.
 

@@ -521,17 +521,20 @@ The allowlist is by exact tested firmware version and API pair, not a range. Row
 | master / pre-release / RC | 1.49 | | | | | Unsupported |
 | other 4.5.x | | | | | | Unsupported until each tag is checked |
 
-**Not yet verified; Phase 1 must compare per tag with the scripted check (never assume):**
+**Phase 1 comparison result (2026-11-16, source only; produced by `scripts/motor-msp-compare.mjs`, [full report](../../MOTOR_DIAGNOSTICS_MSP_COMPARISON.md)):**
 
-- exact byte layouts of `MSP_MOTOR_CONFIG`, `MSP_ADVANCED_CONFIG`, `MSP_ANALOG`, `MSP_BLACKBOX_CONFIG` and `MSP_MOTOR_TELEMETRY` and the API gates of each trailing field;
-- `fields_disabled_mask` bit positions (research lists `GYRO` 7, `MOTOR` 11, `RPM` 13, `GYROUNFILT` 14, set = disabled, **from one reading, confirm per tag**);
-- the `motorProtocol` enum mapping for DShot values per tag;
-- the mixer-read message and custom motor-order mapping (still unknown);
-- the status flight-mode box bit for ARM (still unknown);
-- whether `invalidPct` is usable on a given target (hardware dependent, F12);
-- the API minor a real build reports versus its tag (hardware dependent).
+- `fields_disabled_mask` bit positions differ per tag. `GYRO` is 7 in all; `MOTOR` 10 (4.3.2 to 4.5.5) and 11 (2025.12.5, 2026.6.2); `RPM` 12 (4.5.5) and 13; `GYROUNFILT` 13 (4.5.5) and 14. The Phase 0 reading (11, 13, 14) holds only from 2025.12.5. The mask is tested as `mask & (1 << field)` in every tag (a set bit disables the group). Readiness uses the per-tag table in `src/preflight/versions.js`.
+- `MSP_FC_VERSION` changes meaning at API 1.47: year minus 2000, month, patch, then a version string. Earlier tags send major, minor, patch.
+- `MSP_MOTOR_CONFIG` is 10 bytes in all tags; from 2025.12.5 the first field (`minthrottle`) is sent as 0. `MSP_ADVANCED_CONFIG` is 20 bytes in all tags with the same offsets for protocol (3) and debug mode (18); some fields are renamed or zeroed from 2025.12.5. `MSP_ANALOG` (9 bytes) and `MSP_MOTOR_TELEMETRY` (1 + 13 per motor) are identical in all five tags. `MSP_BLACKBOX_CONFIG` is 7 bytes in 4.3.2 and 11 bytes from 4.4.3.
+- DShot values of the motor protocol (5, 6, 7 for 150, 300, 600) are identical in all tags. The CLI tokens are `"NORMAL", "MOTOR_TEST", "ALWAYS"` in all tags. `MOTOR_TEST` logging exists in all tags; a dedicated `gyroUnfilt` field exists from 4.5.5.
 
-The scripted comparison (`scripts/motor-msp-compare.mjs`, Phase 1) writes its result to [MOTOR_DIAGNOSTICS_MSP_COMPARISON.md](../../MOTOR_DIAGNOSTICS_MSP_COMPARISON.md) and distinguishes automatically verified facts from hardware-dependent or unresolved ones.
+**Still unresolved or hardware-dependent (never assume):**
+
+- the actual API minor and `invalidPct` usability of a real build (hardware dependent, F12);
+- the mixer-read message and custom motor-order mapping;
+- the arm-switch position: the ARM flight-mode bit is the armed state (found through the `MSP_BOXIDS` order, never a fixed bit), so the switch itself is attested by the user;
+- the `ARM_SWITCH` arming-disable bit position per tag (not used);
+- the scale of `rpm` in `MSP_MOTOR_TELEMETRY` (not used in Phases 1 and 2).
 
 ## 20. Readability matrix and DShot error evidence
 
