@@ -6,6 +6,7 @@
 // Everything here is read-only: transports reject any write that is not an allowlisted read request.
 import { preflightEnabled } from '../../src/preflight/flag.js';
 import { el } from '../../src/cards.js';
+import { beginRead, finishReadOk, finishReadFailed, transportClosed, statusText } from '../../src/preflight/session-status.js';
 
 // onState(S) is called after every change; the Phase 2 page uses it to draw the readiness view.
 export async function mountSpike(root, { onState } = {}) {
@@ -35,7 +36,7 @@ export async function mountSpike(root, { onState } = {}) {
   }
   function draw() {
     S.inventory = S.snapshot ? buildInventory({ snapshot: S.snapshot, manual: S.manual, client: collectClientInfo(navigator, S.transport ? S.transport.kind : 'unknown') }) : null;
-    status.textContent = S.error || (S.reading ? 'Reading the flight controller...' : S.message || (S.snapshot ? 'Read complete (read-only).' : 'Not connected.'));
+    status.textContent = statusText(S);
     if (S.inventory) {
       renderInventoryPanel(invRoot, {
         inventory: S.inventory, manual: S.manual,
@@ -46,22 +47,23 @@ export async function mountSpike(root, { onState } = {}) {
     if (onState) onState(S);
   }
   async function readAll(transport) {
-    S.reading = true; S.error = null; draw();
+    beginRead(S); draw();
     try {
       S.transport = transport; await transport.open();
-      transport.onClose((r) => { note('transport-closed', { reason: String(r) }); S.message = 'The connection closed (' + r + ').'; draw(); });
+      transport.onClose((r) => { note('transport-closed', { reason: String(r) }); if (transportClosed(S, transport, String(r))) draw(); });
       S.session = new ReadOnlySession(transport);
       S.snapshot = await S.session.collectSnapshot();
       note('snapshot', { failedReads: Object.entries(S.snapshot.reads).filter(([, r]) => !r.ok).map(([k, r]) => `${k}:${r.error}`) });
-    } catch (e) { S.error = 'Could not read the flight controller: ' + (e && e.message ? e.message : e); note('error', { message: String(e) }); }
-    S.reading = false; draw();
+      finishReadOk(S);
+    } catch (e) { finishReadFailed(S, 'Could not read the flight controller: ' + (e && e.message ? e.message : e)); note('error', { message: String(e) }); }
+    draw();
   }
 
   mkBtn('Connect aircraft (USB)', async () => {
     try { note('request-port-click'); await readAll(await WebSerialTransport.request(navigator)); } catch (e) { S.error = String(e.message || e); note('request-port-failed', { message: String(e) }); draw(); }
   }, 'btn-connect');
   mkBtn('Use synthetic aircraft (mock, not real)', () => readAll(mockFcTransport()), 'btn-mock');
-  mkBtn('Read again', async () => { if (S.session) { S.reading = true; draw(); S.snapshot = await S.session.collectSnapshot(); S.reading = false; draw(); } }, 'btn-reread');
+  mkBtn('Read again', async () => { if (S.session) { beginRead(S); draw(); S.snapshot = await S.session.collectSnapshot(); finishReadOk(S); draw(); } }, 'btn-reread');
 
   // ---- spike panel (backlog section 3, Android boundary; Phase 0 list M8). All read-only.
   const env = () => ({

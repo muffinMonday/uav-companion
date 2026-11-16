@@ -90,6 +90,8 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `data/regions/<country>/<region>/{source.json,boundary.geojson}` | Committed region definitions; raw data local |
 | `supabase/migrations/`, `supabase/README.md` | Database; see `DATABASE.md` |
 | `tests/` (`run.mjs`, `lib*.mjs`) | Suites; see `DEVELOPMENT.md` |
+| `src/preflight/` (read-only), `tools/preflight-spike/` | Motor diagnostics Phases 1 and 2: read-only MSP, readiness gates, inventory; flag `VITE_PREFLIGHT_DIAGNOSTICS`. Never any motor command. Backlog and handoff in `docs/backlogs/in-progress/`, `docs/handoffs/active/` |
+| `src/benchtest/`, `tools/motor-bench-lab/` | Motor diagnostics Phase 3 developer bench prototype (synthetic-tested only): `state-machine.js` (single safety authority), `motor-control.js` (the only module that builds or names the motor-command message), `controller.js`, `interlocks.js`, `allowlist.js` (empty by default), `recovery-marker.js`, `mock-bench-fc.js`, `bench-ui.js`. Flag `VITE_BENCH_PHASE3`; page is a build input only when the flag is set; no app entry. See `docs/handoffs/active/MOTOR_DIAGNOSTICS_PHASE3_HANDOFF.md` |
 | `docs/` | `AI.md`, `ATTRIBUTIONS.md`, `regions/` |
 
 ## Start-up modules (`src/app/`, refactor Phase 2)

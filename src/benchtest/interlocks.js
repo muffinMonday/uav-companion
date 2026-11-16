@@ -1,0 +1,67 @@
+// Motor bench test (Phase 3): interlock rules as pure functions. The state machine is the only caller that acts on them;
+// the UI only displays the results. Nothing here sends anything.
+import { BENCH_TIMINGS, CHECKLIST_ITEMS, MOTOR } from './constants.js';
+
+// Phase 3 readiness policy over a Phase 2 report (src/preflight/readiness.js).
+// The Phase 2 gates are the evidence. Policy: no gate may be 'fail' or 'unknown'. 'warn' (candidate firmware, attested items,
+// flag-only bidirectional DShot) is acceptable ONLY because the allowlist match and the live checks later in the flow
+// carry the real decision. The report's own `eligibleForActiveTest` is always false and is never consulted.
+export function phase3Policy({ report, combo, mode, unlocked, transportKind }) {
+  const blockers = [];
+  if (!report || !Array.isArray(report.gates)) blockers.push({ id: 'readiness', reason: 'No readiness report.' });
+  else {
+    for (const g of report.gates) {
+      if (g.status === 'fail') blockers.push({ id: g.id, reason: `${g.title}: ${g.detected} (needs ${g.required})` });
+      else if (g.status === 'unknown') blockers.push({ id: g.id, reason: `${g.title}: not established` });
+    }
+    const by = Object.fromEntries(report.gates.map((g) => [g.id, g]));
+    for (const id of ['motor-count', 'protocol', 'bidir', '3d', 'arming', 'blackbox', 'bb-mode', 'bb-fields', 'telemetry', 'firmware']) {
+      if (!by[id]) blockers.push({ id, reason: `Gate ${id} is missing from the report.` });
+    }
+    if (by.transport) {
+      const okKind = (transportKind === 'web-serial' && by.transport.status === 'pass') || (transportKind === 'mock' && by.transport.status === 'warn');
+      if (!okKind) blockers.push({ id: 'transport', reason: 'The transport is not a granted USB serial connection or the synthetic mock.' });
+    }
+  }
+  if (mode !== 'mock' && mode !== 'real') blockers.push({ id: 'mode', reason: 'Unknown mode.' });
+  if (mode === 'real' && unlocked !== true) blockers.push({ id: 'unlock', reason: 'Real-hardware controls are locked for this session.' });
+  const gatesOk = blockers.length === 0;
+  const comboOk = !!(combo && combo.entry);
+  return Object.freeze({
+    gatesOk,
+    stopValidationOk: gatesOk, // external 1000 only; allowed without an allowlist entry
+    nonzeroOk: gatesOk && comboOk, // nonzero output needs an exact allowlist entry too
+    comboReason: comboOk ? '' : (combo && combo.reason) || 'This combination is not on the owner-approved test allowlist.',
+    blockers: Object.freeze(blockers),
+  });
+}
+
+export function checklistComplete(checklist) {
+  return !!checklist && CHECKLIST_ITEMS.every((i) => checklist.items[i.key] === true);
+}
+
+// Every condition that must hold before a nonzero output can be authorized. Returns [{ id, ok, why }].
+// `facts` is the latest observation; `ctx` is the machine's context. A missing fact is a failed check (fail closed).
+export function startInterlocks(ctx, facts, now) {
+  const f = facts || {};
+  const stale = BENCH_TIMINGS.staleTelemetryFaultMs;
+  const rpm = Array.isArray(f.rpm) ? f.rpm : null;
+  const c = [];
+  const add = (id, ok, why) => c.push({ id, ok: ok === true, why });
+  add('mode-unlocked', ctx.mode === 'mock' || (ctx.mode === 'real' && ctx.unlocked === true), 'Real-hardware controls are locked.');
+  add('allowlist', !!(ctx.policy && ctx.policy.nonzeroOk), ctx.policy ? ctx.policy.comboReason || 'Readiness gates are not all satisfied.' : 'No readiness policy.');
+  add('four-motors', ctx.motorCount === MOTOR.enabledMotors, 'Exactly four motors are required.');
+  add('safe-state', ctx.safeStateDone === true, 'USB-only external 1000 initialization with FC-side read-back is not done.');
+  add('checklist', checklistComplete(ctx.checklist) && ctx.checklist.finalHold === true, 'The physical safety checklist and final confirmation are not complete.');
+  add('marker', ctx.markerVerified === true, 'The unclean-session marker is not written and verified.');
+  add('powered-zero', ctx.zeroVerified === true, 'Powered-zero verification is not complete.');
+  add('disarmed', f.armed === false, 'The aircraft is not confirmed disarmed.');
+  add('one-motor', Number.isInteger(ctx.selectedMotor) && ctx.selectedMotor >= 0 && ctx.selectedMotor < MOTOR.enabledMotors, 'Exactly one motor must be selected.');
+  add('target-confirmed', ctx.selectedMotor !== null && ctx.targetConfirmed === ctx.selectedMotor, 'The physical motor to be tested is not confirmed.');
+  add('telemetry-fresh', rpm !== null && rpm.length === MOTOR.enabledMotors && Number.isFinite(f.telemetryAt) && now - f.telemetryAt <= stale, 'RPM telemetry is not fresh and valid.');
+  add('all-rpm-zero', rpm !== null && rpm.every((r) => r === 0), 'A motor reports nonzero RPM.');
+  add('sweep-gap', ctx.lastStopProofAt === null || now - ctx.lastStopProofAt >= BENCH_TIMINGS.minSweepGapMs, 'Wait for the Blackbox shutdown period after the previous sweep.');
+  add('transport', ctx.transportAvailable === true, 'The connection is not available.');
+  add('no-fault', ctx.fault === null, 'The session is locked.');
+  return c;
+}

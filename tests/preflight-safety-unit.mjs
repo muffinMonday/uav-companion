@@ -53,13 +53,14 @@ pass('no storage, no network call and no repeating timer in src/preflight or the
 
 // 4. the app has no entry point: nothing outside src/preflight and tools/ references it; the build input is index.html only
 const refs = [];
-for (const f of [...walk(path.join(ROOT, 'src')).filter((x) => !x.includes(path.join('src', 'preflight'))), path.join(ROOT, 'index.html'), ...walk(path.join(ROOT, 'src/components'))]) {
+// src/benchtest is the separate Phase 3 module and imports ../preflight by design; tests/bench-safety-unit.mjs applies the stricter rules to it and checks that nothing else references it.
+for (const f of [...walk(path.join(ROOT, 'src')).filter((x) => !x.includes(path.join('src', 'preflight')) && !x.includes(path.join('src', 'benchtest'))), path.join(ROOT, 'index.html'), ...walk(path.join(ROOT, 'src/components'))]) {
   if (!/\.(js|html|css)$/.test(f)) continue;
   if (/preflight|motor-diagnostics|Check aircraft/i.test(fs.readFileSync(f, 'utf8'))) refs.push(path.relative(ROOT, f));
 }
 assert.deepEqual(refs, [], 'no app file references the motor diagnostics modules');
 const vite = fs.readFileSync(path.join(ROOT, 'vite.config.js'), 'utf8');
-assert.deepEqual(vite.match(/tools\/[\w/-]+(?:\.html)?/g), ['tools/preflight-spike/index.html'],'the only build input for tools/ is the lab page');
+assert.deepEqual(vite.match(/tools\/[\w/-]+(?:\.html)?/g), ['tools/motor-bench-lab/index.html', 'tools/preflight-spike/index.html'], 'the only build inputs for tools/ are the read-only lab page and the flag-gated Phase 3 lab page (checked in bench-safety-unit)');
 assert.ok(!/src\/preflight/.test(vite), 'vite.config.js does not import the diagnostics modules');
 pass('no app source, component or index.html references the diagnostics; the lab page is the only extra Vite input');
 

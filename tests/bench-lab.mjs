@@ -1,0 +1,293 @@
+// Phase 3 browser suite: the isolated bench lab page against the SYNTHETIC flight controller, plus a fake Web Serial port
+// (a canned in-page responder, not hardware) to check that real-hardware mode starts locked. It starts its own Vite dev
+// servers (flag on and off). No real device, no real serial port, no real motor is used.
+import { spawn } from 'node:child_process';
+import path from 'node:path';
+import { CHANNEL, chromium, ROOT } from './lib.mjs';
+import { defaultFc, payloadFor } from '../src/preflight/mock-fc.js';
+import { ALLOWED_REQUESTS, encodeResponseV1 } from '../src/preflight/msp-codec.js';
+
+const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
+const VITE = path.join(ROOT, 'node_modules/vite/bin/vite.js');
+
+function startVite(port, env2) {
+  const env = { ...process.env, ...env2 };
+  for (const k of ['VITE_BENCH_PHASE3', 'VITE_PREFLIGHT_DIAGNOSTICS']) if (!(k in env2)) delete env[k];
+  const child = spawn(process.execPath, [VITE, '--port', String(port), '--strictPort', '--host', '127.0.0.1'], { cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] });
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('vite did not start on ' + port)), 60000);
+    child.stdout.on('data', (d) => { if (/Local:|ready in/i.test(String(d))) { clearTimeout(t); resolve(child); } });
+    child.stderr.on('data', (d) => { if (/EADDRINUSE|error/i.test(String(d))) { clearTimeout(t); reject(new Error(String(d))); } });
+  });
+}
+
+// canned responses for the fake serial port: id -> bytes
+const fc = { ...defaultFc(), target: 'REALFAKE', motors: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000] };
+const canned = {};
+for (const [name, id] of Object.entries(ALLOWED_REQUESTS)) { const p = payloadFor(name, fc); if (p) canned[id] = Array.from(encodeResponseV1(id, p)); }
+const FAKE_SERIAL = `(() => {
+  const canned = ${JSON.stringify(canned)};
+  window.__written = [];
+  let ctl;
+  const readable = new ReadableStream({ start(c) { ctl = c; } });
+  const port = {
+    open: async () => {}, close: async () => {}, getInfo: () => ({}),
+    readable: { getReader: () => readable.getReader() },
+    writable: { getWriter: () => ({ releaseLock() {}, write: async (b) => {
+      window.__written.push(Array.from(b));
+      const id = b[4];
+      if (id === 214) ctl.enqueue(Uint8Array.from([0x24, 0x4d, 0x3e, 0, 214, 214]));
+      else if (canned[id]) ctl.enqueue(Uint8Array.from(canned[id]));
+    } }) },
+  };
+  Object.defineProperty(navigator, 'serial', { value: { requestPort: async () => port, getPorts: async () => [], addEventListener() {} } });
+})();`;
+
+const on = await startVite(5190, { VITE_BENCH_PHASE3: '1' });
+const off = await startVite(5191, {});
+const b = await chromium.launch({ channel: CHANNEL, headless: true });
+const errs = [], hosts = new Set();
+const U = 'http://127.0.0.1:5190/tools/motor-bench-lab/';
+const text = (p, sel) => p.locator(sel).innerText();
+const state = (p) => p.locator('#bt-state').getAttribute('data-state');
+const waitState = (p, s, timeout = 20000) => p.waitForSelector(`#bt-state[data-state="${s}"]`, { timeout });
+async function hold(p, sel, ms = 1200) {
+  const box = await p.locator(sel).boundingBox();
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await p.mouse.down(); await p.waitForTimeout(ms); await p.mouse.up();
+}
+async function toChecklist(p) {
+  await p.goto(U, { waitUntil: 'networkidle' });
+  await p.click('#btn-connect-mock');
+  await waitState(p, 'READ_ONLY_READINESS');
+  await p.check('[data-attest="armSwitchOff"]'); await p.check('[data-attest="batteryDisconnected"]');
+  await p.selectOption('select[data-attest="blackboxMode"]', 'MOTOR_TEST');
+  await p.waitForFunction(() => !document.querySelector('#btn-proceed').disabled);
+  await p.click('#btn-proceed');
+  await waitState(p, 'SAFETY_CHECKLIST');
+}
+async function toReadyToPower(p) {
+  await toChecklist(p);
+  for (const cb of await p.locator('[data-item]').all()) await cb.check();
+  await p.waitForFunction(() => !document.querySelector('#hold-final').disabled);
+  await hold(p, '#hold-final');
+  await waitState(p, 'READY_TO_CONNECT_POWER');
+}
+async function toMotorReady(p) {
+  await toReadyToPower(p);
+  await p.click('#btn-battery-connected');
+  await waitState(p, 'MOTOR_READY', 25000);
+}
+
+try {
+  // ---------- flag ON, synthetic mode
+  const ctx = await b.newContext({ viewport: { width: 1000, height: 900 } });
+  let p = await ctx.newPage();
+  p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
+  p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
+  p.on('request', (r) => { try { hosts.add(new URL(r.url()).host); } catch { /* data: urls */ } });
+  await p.goto(U, { waitUntil: 'networkidle' });
+  ok((await p.locator('meta[name="robots"][content="noindex"]').count()) === 1, 'the page carries noindex');
+  const banner = await text(p, '.bt-banner');
+  ok(/Experimental developer bench tool/.test(banner), 'it says it is an experimental developer bench tool');
+  ok(/not access control/.test(banner), 'it says an unlinked static route is not access control');
+  ok(/synthetic and read-only/.test(await text(p, '#bt-mode')), 'it defaults to synthetic / read-only mode');
+  ok((await p.locator('#btn-stop-zero').count()) === 0 && (await p.locator('#hold-start, #hold-final, [data-item]').count()) === 0, 'before connecting there is no Stop & zero and no active control');
+  ok((await p.locator('a[href]').count()) === 0, 'the page has no outgoing links');
+
+  await toChecklist(p);
+  ok(/SYNTHETIC MODE/.test(await text(p, '#bt-mode')) && (await p.locator('#bt-mode').getAttribute('data-mode')) === 'mock', 'the synthetic mode is shown conspicuously');
+  ok((await p.locator('#btn-stop-zero').count()) === 1, 'the persistent Stop & zero button is present once powered testing can start');
+  const stopStyle = await p.locator('#btn-stop-zero').evaluate((e) => getComputedStyle(e).backgroundColor);
+  ok(stopStyle === 'rgb(204, 0, 0)', 'Stop & zero is red');
+  ok((await p.locator('[data-item]').count()) === 6, 'six individual physical-safety checks are shown');
+  ok(await p.locator('#hold-final').isDisabled(), 'the final confirmation is locked until every item is ticked');
+  await p.locator('[data-item]').first().check();
+  ok(await p.locator('#hold-final').isDisabled(), 'one tick is not enough');
+  for (const cb of await p.locator('[data-item]').all()) await cb.check();
+  await p.waitForFunction(() => !document.querySelector('#hold-final').disabled);
+  await hold(p, '#hold-final', 300);
+  ok((await state(p)) === 'SAFETY_CHECKLIST', 'a short press does not confirm the checklist');
+  await hold(p, '#hold-final', 1200);
+  await waitState(p, 'READY_TO_CONNECT_POWER');
+  ok(await p.evaluate(() => !!localStorage.getItem('uavzones.benchtest.unclean.v1')), 'the recovery marker is set before the battery step');
+
+  // reload with the marker present: recovery leads
+  await p.reload({ waitUntil: 'networkidle' });
+  ok((await text(p, '.bt-overlay')).startsWith('Disconnect the flight battery now.'), 'after a reload with the marker the screen leads with "Disconnect the flight battery now."');
+  ok((await p.locator('#hold-start, #hold-final, [data-item], #btn-proceed').count()) === 0, 'no ordinary navigation or active control is offered during recovery');
+  await p.click('#btn-battery-removed');
+  await p.click('#btn-connect-mock');
+  await waitState(p, 'BATTERY_REMOVAL_RECOVERY');
+  await p.waitForSelector('#btn-no-rotation', { timeout: 10000 });
+  await p.click('#btn-no-rotation');
+  await p.click('#btn-complete-recovery');
+  await waitState(p, 'DISCONNECTED');
+  ok(await p.evaluate(() => localStorage.getItem('uavzones.benchtest.unclean.v1') === null), 'recovery clears the marker only after the proof and battery-removal confirmation');
+
+  // full synthetic run of one motor
+  await toMotorReady(p);
+  ok((await p.locator('.bt-selected').count()) === 0, 'no motor is selected by default');
+  await p.click('#btn-motor-1');
+  ok((await p.locator('.bt-selected').count()) === 1 && /rear right/.test(await text(p, '.bt-selected')), 'the selected motor and its position are highlighted');
+  ok(await p.locator('#hold-start').isDisabled(), 'start is locked until the physical motor is confirmed');
+  ok(/not confirmed/i.test(await text(p, '#bt-interlocks')), 'the locked reason is shown');
+  await p.click('#btn-confirm-target');
+  await p.waitForFunction(() => !document.querySelector('#hold-start').disabled);
+  await hold(p, '#hold-start', 300);
+  ok((await state(p)) === 'MOTOR_READY', 'a brief press does not start a sweep');
+  await hold(p, '#hold-start', 1200);
+  await waitState(p, 'RUNNING');
+  ok(/Motor 1 running/.test(await text(p, '#bt-sec-run h2')), 'a focused active-motor view is shown');
+  await p.waitForFunction(() => Number(document.getElementById('rd-output').textContent) >= 1020);
+  ok(/^\d+ ms$/.test(await text(p, '#rd-age')) && /s$/.test(await text(p, '#rd-elapsed')), 'output, RPM, telemetry age and elapsed time are shown');
+  ok((await p.locator('#bt-sec-run details.bt-adv').count()) === 1, 'advanced readings are in an expandable section');
+  ok((await p.locator('#btn-stop-zero').count()) === 1, 'Stop & zero stays visible while running');
+  await waitState(p, 'VERIFYING_STOP', 20000);
+  await p.waitForSelector('#btn-no-rotation', { timeout: 10000 });
+  await p.click('#btn-no-rotation');
+  await p.click('#btn-pos-rear-right');
+  await waitState(p, 'MOTOR_READY');
+  ok(/Completed motors: 1/.test(await text(p, '#bt-sec-ready')), 'the first motor is recorded after the stop proof and the position confirmation');
+  ok(!/healthy|faulty|failed motor|pass(ed)? the test|result/i.test((await text(p, 'body')).replace(/Passed/g, '')), 'no motor-health result is produced');
+
+  // position mismatch locks
+  await p.click('#btn-motor-2'); await p.click('#btn-confirm-target');
+  await p.waitForFunction(() => !document.querySelector('#hold-start').disabled, null, { timeout: 15000 });
+  await hold(p, '#hold-start', 1200);
+  await waitState(p, 'VERIFYING_STOP', 25000);
+  await p.waitForSelector('#btn-no-rotation', { timeout: 10000 }); await p.click('#btn-no-rotation');
+  await p.click('#btn-pos-rear-left'); // motor 2 is expected at front right
+  await waitState(p, 'LOCKED_FAULT');
+  ok(/Disconnect the flight battery now\./.test(await text(p, '.bt-overlay')) && /not the one expected/.test(await text(p, '.bt-overlay')), 'a motor-position mismatch locks the workflow with the mismatch explained');
+
+  // ---------- Stop & zero during a run, and USB loss, from fresh browser profiles (the fault above left its recovery marker, as designed)
+  const fresh = async () => { const pg = await (await b.newContext({ viewport: { width: 1000, height: 900 } })).newPage(); pg.on('pageerror', (e) => errs.push('pageerror ' + e.message)); pg.on('console', (m) => m.type() === 'error' && errs.push(m.text())); return pg; };
+  const keep = p;
+  p = await fresh();
+  await toMotorReady(p);
+  await p.click('#btn-motor-3'); await p.click('#btn-confirm-target');
+  await p.waitForFunction(() => !document.querySelector('#hold-start').disabled, null, { timeout: 15000 });
+  await hold(p, '#hold-start', 1200); await waitState(p, 'RUNNING');
+  await p.click('#btn-stop-zero');
+  await waitState(p, 'LOCKED_FAULT');
+  ok(/You pressed Stop & zero/.test(await text(p, '.bt-overlay')), 'Stop & zero is one action with no confirmation and locks the session');
+  await p.waitForSelector('#btn-no-rotation', { timeout: 10000 });
+  ok((await p.locator('#bt-proof li.bt-done').count()) === 3, 'three of the four stop-proof parts are met automatically before the user confirmation');
+  ok((await p.locator('#btn-stop-zero').count()) === 1, 'Stop & zero stays on the fault screen');
+
+  void keep; p = await fresh();
+  await toMotorReady(p);
+  await p.click('#btn-motor-1'); await p.click('#btn-confirm-target');
+  await p.waitForFunction(() => !document.querySelector('#hold-start').disabled, null, { timeout: 15000 });
+  await hold(p, '#hold-start', 1200); await waitState(p, 'RUNNING');
+  await p.click('#inj-disconnect');
+  await waitState(p, 'LOCKED_FAULT');
+  const ov = await text(p, '.bt-overlay');
+  ok(ov.startsWith('Disconnect the flight battery now.') && /cannot stop or verify the motors/.test(ov), 'USB loss shows the full-screen battery instruction and does not claim a stop');
+  ok((await p.locator('#btn-no-rotation').count()) === 0, 'no stop confirmation is offered without a transport');
+  ok(await p.evaluate(() => { const r = document.querySelector('.bt-overlay').getBoundingClientRect(); return r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }), 'the warning is full screen');
+
+  // trace
+  ok((await p.locator('.bt-overlay #bt-trace-fault').count()) === 1, 'the trace is also reachable from the fault screen');
+  const trace = await p.evaluate(() => document.getElementById('bt-trace').textContent);
+  ok(/MOTOR_READY -> RUNNING {2}START_HOLD_COMPLETE/.test(trace) && /TRANSPORT_LOST/.test(trace), 'the transition trace lists the transitions for review');
+
+  // narrow viewport
+  await p.setViewportSize({ width: 360, height: 740 });
+  await p.waitForTimeout(200);
+  ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'at 360 px width there is no horizontal page scroll');
+  const small = await p.evaluate(() => [...document.querySelectorAll('button')].filter((e) => e.getBoundingClientRect().height < 44).length);
+  ok(small === 0, `all buttons are at least 44 px tall (${small} smaller)`);
+  ok([...hosts].every((h) => /^(127\.0\.0\.1|localhost)(:\d+)?$/.test(h)), `only the local server was contacted (${[...hosts].join(', ')})`);
+  ok(errs.length === 0, 'no console or page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
+  console.log('errors: ' + (errs.length ? errs.join(' | ') : 'none'));
+
+  // ---------- keyboard and switch-accessible equivalents of press-and-hold (fresh profile)
+  const kb = await fresh();
+  await toChecklist(kb);
+  for (const cb of await kb.locator('[data-item]').all()) await cb.check();
+  await kb.waitForFunction(() => !document.querySelector('#hold-final').disabled);
+  await kb.locator('#hold-final').focus();
+  await kb.keyboard.down(' '); await kb.waitForTimeout(300); await kb.keyboard.up(' ');
+  ok((await state(kb)) === 'SAFETY_CHECKLIST', 'a short key press does not confirm the checklist');
+  await kb.keyboard.down('Enter'); await kb.waitForTimeout(1250); await kb.keyboard.up('Enter');
+  await waitState(kb, 'READY_TO_CONNECT_POWER');
+  ok(true, 'holding Enter or Space for one second confirms the checklist (keyboard equivalent)');
+  await kb.click('#btn-battery-connected');
+  await waitState(kb, 'MOTOR_READY', 25000);
+  await kb.click('#btn-motor-4'); await kb.click('#btn-confirm-target');
+  await kb.waitForFunction(() => !document.querySelector('#hold-start').disabled, null, { timeout: 15000 });
+  await kb.click('#hold-start-timed');
+  ok(/Confirming in 1 s/.test(await text(kb, '.bt-holdstatus')), 'the timed confirm announces its countdown');
+  await kb.click('#hold-start-timed');
+  ok(/Cancelled/.test(await text(kb, '.bt-holdstatus')), 'activating it again cancels');
+  await kb.waitForTimeout(1300);
+  ok((await state(kb)) === 'MOTOR_READY', 'a cancelled timed confirm starts nothing');
+  await kb.click('#hold-start-timed');
+  await waitState(kb, 'RUNNING');
+  ok(true, 'the timed confirm (single-switch equivalent) starts a sweep after its countdown');
+  await kb.click('#btn-stop-zero');
+  await waitState(kb, 'LOCKED_FAULT');
+
+  // ---------- real-hardware mode (fake serial port): starts locked, unlock is session-only
+  const ctx2 = await b.newContext({ viewport: { width: 1000, height: 900 } });
+  const r = await ctx2.newPage();
+  await r.addInitScript(FAKE_SERIAL);
+  const rerrs = [];
+  r.on('pageerror', (e) => rerrs.push(e.message));
+  await r.goto(U, { waitUntil: 'networkidle' });
+  await r.click('#btn-connect-real');
+  await waitState(r, 'READ_ONLY_READINESS');
+  ok((await r.locator('#bt-mode').getAttribute('data-mode')) === 'real' && /REAL HARDWARE MODE/.test(await text(r, '#bt-mode')), 'real-hardware mode is conspicuously indicated');
+  ok(await r.locator('#btn-proceed').isDisabled() && await r.locator('#btn-stopval').isDisabled(), 'real mode starts locked: no way forward before the unlock');
+  ok((await r.locator('#btn-stop-zero').count()) === 0 && (await r.locator('#hold-start, [data-item]').count()) === 0, 'no motor control appears in read-only real mode');
+  ok((await r.evaluate(() => window.__written.every((w) => w[2] === 0x3c && w[3] === 0))) === true, 'only payload-free read requests were written before the unlock');
+  await r.check('[data-attest="armSwitchOff"]'); await r.check('[data-attest="batteryDisconnected"]');
+  await r.selectOption('select[data-attest="blackboxMode"]', 'MOTOR_TEST');
+  await r.selectOption('#bt-esc-family', 'Bluejay'); await r.fill('#bt-esc-model', 'fake'); await r.locator('#bt-esc-model').blur();
+  ok(await r.locator('#btn-stopval').isDisabled(), 'still locked with every gate satisfied: the session unlock is missing');
+  await r.fill('#bt-unlock-phrase', 'UNLOCK BENCH TEST'); await r.click('#btn-unlock');
+  ok(await r.locator('#btn-unlock').count() === 1 && await r.locator('#btn-stopval').isDisabled(), 'the phrase without the acknowledgement does not unlock');
+  await r.check('#bt-unlock-ack'); await r.click('#btn-unlock');
+  await r.waitForSelector('.bt-unlocked');
+  ok(await r.locator('#btn-proceed').isDisabled(), 'unlocked, but no FC/ESC combination is on the owner allowlist: no nonzero path');
+  ok(/allowlist/i.test(await text(r, '#bt-blockers')), 'the allowlist reason is displayed');
+  ok(!(await r.locator('#btn-stopval').isDisabled()), 'stop validation (external 1000 only) becomes available');
+  await r.click('#btn-stopval');
+  await waitState(r, 'STOP_VALIDATION_ONLY');
+  await r.waitForSelector('#btn-no-rotation', { timeout: 10000 });
+  const frames = await r.evaluate(() => window.__written.filter((w) => w[4] === 214));
+  ok(frames.length >= 10 && frames.every((f) => f.slice(5, 21).every((v, i) => (i % 2 === 0 ? v === (1000 & 255) : v === (1000 >> 8)))), `only external 1000 was written to the fake port (${frames.length} motor frames)`);
+  ok((await r.locator('#hold-start, [data-item]').count()) === 0, 'stop-validation-only shows no start control');
+  // reload removes the unlock
+  await r.reload({ waitUntil: 'networkidle' });
+  await r.click('#btn-connect-real');
+  await waitState(r, 'READ_ONLY_READINESS');
+  ok((await r.locator('.bt-unlocked').count()) === 0 && (await r.locator('#bt-unlock-phrase').count()) === 1, 'a reload removes the session unlock');
+  ok(rerrs.length === 0, 'no page errors in real mode' + (rerrs.length ? ': ' + rerrs[0] : ''));
+
+  // ---------- flag OFF
+  const p2 = await (await b.newContext()).newPage();
+  const e2 = [];
+  p2.on('pageerror', (e) => e2.push(e.message));
+  await p2.goto('http://127.0.0.1:5191/tools/motor-bench-lab/', { waitUntil: 'networkidle' });
+  ok((await p2.locator('[data-disabled]').count()) === 1 && (await p2.locator('button').count()) === 0, 'flag off: the page shows only the disabled notice and no control');
+  const p3 = await (await b.newContext()).newPage();
+  await p3.addInitScript(() => { try { localStorage.setItem('VITE_BENCH_PHASE3', '1'); localStorage.setItem('uavzones.v1.bench', '1'); } catch { /* ignore */ } });
+  await p3.goto('http://127.0.0.1:5191/tools/motor-bench-lab/?bench=1&VITE_BENCH_PHASE3=1', { waitUntil: 'networkidle' });
+  ok((await p3.locator('[data-disabled]').count()) === 1, 'flag off: storage keys and URL parameters cannot switch the feature on');
+  const p4 = await (await b.newContext()).newPage();
+  await p4.goto('http://127.0.0.1:5191/', { waitUntil: 'networkidle' }); await p4.waitForTimeout(1200);
+  ok(!/motor-bench|bench test|motor bench/i.test(await p4.content()), 'the app page (flag off) has no reference to the bench lab');
+  const p5 = await (await b.newContext()).newPage();
+  await p5.goto('http://127.0.0.1:5190/', { waitUntil: 'networkidle' }); await p5.waitForTimeout(1200);
+  ok(!/motor-bench|bench test|motor bench|Stop & zero/i.test(await p5.content()), 'the app page (flag ON) still has no entry, link or control for the bench lab');
+  ok((await p5.locator('a[href*="motor-bench"], a[href*="preflight"]').count()) === 0, 'no link to either lab anywhere in the app');
+  // the existing read-only lab on the flag-on server never gains a motor control
+  await p5.goto('http://127.0.0.1:5190/tools/preflight-spike/', { waitUntil: 'networkidle' });
+  ok((await p5.locator('#btn-stop-zero, #hold-start, [data-item], .bt-stop').count()) === 0 && !/Stop & zero|bench/i.test(await p5.locator('body').innerText()), 'the read-only lab has no motor control');
+  ok(e2.length === 0, 'flag off: no page errors');
+} finally {
+  await b.close(); on.kill(); off.kill();
+}

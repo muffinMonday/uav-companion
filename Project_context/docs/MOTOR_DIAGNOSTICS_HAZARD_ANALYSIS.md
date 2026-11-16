@@ -1,6 +1,6 @@
 # Motor Diagnostics: Hazard Analysis
 
-**Status:** Draft, 2026-11-16. **Mandatory Phase 3 entry gate** of the [consolidated backlog](backlogs/in-progress/UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md) (section 24). Documentation only; it authorizes nothing. Phase 3 must not start until the owner reviews it and every row has a passing verification plan.
+**Status:** Draft, 2026-11-16; mock verification added 2026-11-17 (see the sign-off table). **Mandatory Phase 3 entry gate** of the [consolidated backlog](backlogs/in-progress/UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md) (section 24). Documentation only; it authorizes nothing. Phase 3 must not start until the owner reviews it and every row has a passing verification plan.
 **Conventions:** "Stop" means external value 1000 plus the four-part stop proof (repeated 1000, FC read-back of 1000 for every enabled motor, valid RPM zero for the observation period, user confirmation that no motor is rotating). All timings are provisional. Tests marked *mock* run on a mocked transport; tests marked *HW* need supervised hardware and are unverified today.
 
 | ID | Hazard | Initiating failure | Mitigation | Detection | Recovery | Verification test |
@@ -25,6 +25,6 @@ Physical hazards that software cannot remove: the battery plug is the only guara
 | Item | Status |
 | --- | --- |
 | Hazard rows reviewed by the owner | Pending |
-| Every row has an executed *mock* test | Pending (Phase 3) |
-| Every *HW* test defined with a supervised procedure | Pending |
-| Owner authorization for Phase 3 | **Not given** |
+| Every row has an executed *mock* test | Done 2026-11-17 for the Phase 3 prototype: see [MOTOR_DIAGNOSTICS_FAULT_INJECTION_MATRIX.md](MOTOR_DIAGNOSTICS_FAULT_INJECTION_MATRIX.md). Mock results are not hardware evidence. |
+| Every *HW* test defined with a supervised procedure | Proposed in the [Phase 3 handoff](handoffs/active/MOTOR_DIAGNOSTICS_PHASE3_HANDOFF.md) section 8; not executed, not owner-approved |
+| Owner authorization for Phase 3 | Given 2026-11-17 for a **developer-only bench prototype validated with synthetic and mocked transports only**, including an isolated live lab route with its own flag. **Not given:** any real motor command, so the *HW* rows stay unverified |
