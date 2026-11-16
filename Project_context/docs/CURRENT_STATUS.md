@@ -1,4 +1,9 @@
-## Latest: Motor Diagnostics Phase 1 (read-only foundations) done (2026-11-16)
+## Latest: Motor Diagnostics Phase 2 (read-only readiness, flag off) done (2026-11-16)
+- Added `src/preflight/readiness.js` (15 gates; eligibility is always false; unknown blocks), `readiness-ui.js`, and the lab page entry `tools/preflight-spike/lab.js`. Flag `VITE_PREFLIGHT_DIAGNOSTICS` defaults off; the override is an in-memory test call; no dashboard entry exists. Run the lab: `$env:VITE_PREFLIGHT_DIAGNOSTICS='1'; npm run dev`, open `/tools/preflight-spike/`.
+- Tests: `npm run test:unit` all pass (new: preflight-readiness-unit); browser suite `preflight-lab` 31 pass (starts its own Vite servers on 5188/5189, flag on and off); `dashboard`, `prefs`, `smoke` pass; `npm run build` ok and the bundle has no diagnostics code. Full `npm test` not re-run (no app file changed; a static test proves nothing references the diagnostics).
+- Hardware: nothing tested. Blackbox mode is attestation only. Phase 3 blockers are in the handoff and the hazard analysis.
+
+## Previous: Motor Diagnostics Phase 1 (read-only foundations) done (2026-11-16)
 - Added `scripts/motor-msp-compare.mjs` and its report `docs/MOTOR_DIAGNOSTICS_MSP_COMPARISON.md` (five tags, source only), `src/preflight/` (constants, versions, read-only msp-codec, transport, session, mock-fc, inventory, flag), `tools/preflight-spike/` (non-shipping harness, not a Vite entry), five new unit suites (all in `npm run test:unit`, all pass). No app file references the diagnostics; the flag `VITE_PREFLIGHT_DIAGNOSTICS` defaults off; the build output contains no diagnostics code.
 - Findings: mask bit positions differ per tag (RPM 12 on 4.5.5, 13 later; GYROUNFILT 13 versus 14; MOTOR 10 versus 11); `MSP_FC_VERSION` is CalVer from API 1.47. Hardware not touched; every hardware-dependent item is listed as unresolved in the comparison report.
 - Not done and not authorized: motor commands, CLI, writes, erase, reflash, 4-way, Phase 3, deploy.

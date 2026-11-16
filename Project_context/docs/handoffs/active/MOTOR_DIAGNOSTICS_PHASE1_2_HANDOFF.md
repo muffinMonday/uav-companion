@@ -1,6 +1,6 @@
 # Handoff: Motor Diagnostics Phase 1 and Phase 2 (read-only)
 
-**Status:** Active, 2026-11-16.
+**Status:** Active, 2026-11-16. Phase 1 (commit `389cdaf`) and Phase 2 (read-only, flag off) are implemented and pushed; what remains is hardware work (inventory of the five aircraft, Android phone tests, M1 to M8) and owner decisions. Phase 3 is not authorized.
 **Backlog (authoritative):** [UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md](../../backlogs/in-progress/UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md)
 **Hazard analysis:** [MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md](../../MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md)
 

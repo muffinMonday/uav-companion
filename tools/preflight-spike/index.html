@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
 <title>Motor diagnostics lab (read-only, not shipped)</title>
 <style>
   body { font: 16px/1.45 system-ui, sans-serif; margin: 0 auto; max-width: 52rem; padding: 1rem 16px 4rem; color: #1b1b1b; background: #fff; }
@@ -27,6 +28,6 @@
 <h1>Motor diagnostics lab</h1>
 <p>Read-only. Not part of the shipped app. It never sends a motor command, a configuration write or a CLI line.</p>
 <div id="lab"></div>
-<script type="module">import { mountSpike } from "./spike.js"; mountSpike(document.getElementById("lab"));</script>
+<script type="module" src="./lab.js"></script>
 </body>
 </html>
