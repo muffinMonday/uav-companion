@@ -2,6 +2,7 @@
 
 **Status:** In progress. Phase 0 done; Phase 1 and Phase 2 (read-only) implemented 2026-11-16. The read-only lab is live with its flag on (owner decision, see status history). **Phase 3 review corrections 2026-11-17: four findings investigated, all confirmed and corrected in source (powered stop validation, verified marker deletion, DShot statistics fail-closed policy, stop-validation evidence bound to the allowlist); corrected build deployed to the isolated lab (gh-pages `d6567c4`); no real-hardware test is authorized yet.** **Phase 3 prototype implemented 2026-11-17: mock-tested, deployed only as an isolated developer lab (own flag, unlinked, noindex), NOT hardware-validated, no real motor command ever issued, no FC/ESC combination approved for nonzero testing, not complete for release. Phase 4 has not started.**
 **Date:** 2026-11-17 (status); first written 2026-11-16
+**Scope pivot 2026-11-17 (owner decision):** Blackbox binary decoding and follow-up flight-log analysis are **Deferred — not proportionate to pursue at present**. The current supported direction is the **live MSP/DShot bench analysis** (section 0, Phase 4, [MOTOR_DIAGNOSTICS_LIVE_ANALYSIS.md](../../MOTOR_DIAGNOSTICS_LIVE_ANALYSIS.md)). Blackbox readiness gates and `blackbox_mode = MOTOR_TEST` are no longer bench requirements. Where section 0 and a later section disagree about Blackbox or flight-log analysis, **section 0 wins**; the older text is kept as marked decision history. The physical-safety posture is unchanged.
 **Authoritative:** This document is the **sole authoritative build specification**. It supersedes [Addendum 1](UAV_COMPANION_MOTOR_DIAGNOSTICS_ADDENDUM_1.md), which is kept only as decision history (the owner approved it with corrections on 2026-11-16 and it is merged here). The [Phase 0 research](UAV_COMPANION_MOTOR_DIAGNOSTICS_PHASE0_RESEARCH.md) is evidence (finding IDs F1 to F25), not specification.
 **Related:** [Phase 3 handoff](../../handoffs/active/MOTOR_DIAGNOSTICS_PHASE3_HANDOFF.md) · [Phase 1 and 2 handoff](../../handoffs/active/MOTOR_DIAGNOSTICS_PHASE1_2_HANDOFF.md) · [Fault-injection matrix](../../MOTOR_DIAGNOSTICS_FAULT_INJECTION_MATRIX.md) · [Hazard analysis (Phase 3 entry gate)](../../MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md)
 **Authorization:** Documentation, Phase 1 and Phase 2 read-only implementation, commit and push to `main`; one live deployment of the read-only lab page with the flag on (2026-11-16, owner instruction). No motor command, CLI access, configuration write, log erasure, reflashing, 4-way interface or Phase 3 work. Each of those, and any further deployment, needs separate owner authorization.
@@ -17,6 +18,7 @@
 | 2026-11-16 | Phase 1 (`389cdaf`) and Phase 2 (`366af13`) pushed to `main`. Tests: `npm run test:unit` all pass; browser `preflight-lab` 31 pass. |
 | 2026-11-17 | **Phase 3 prototype** (`96b9187`, pushed): `src/benchtest/` state machine, single guarded motor boundary, empty allowlist, marker, synthetic FC with fault injection, lab page `tools/motor-bench-lab/` behind `VITE_BENCH_PHASE3`. Also fixes the stale `NetworkError` message in the read-only lab. Tests: all unit suites and the full `npm test` (157 suites) pass; `bench-lab` 67, `preflight-lab` 31. Deployed with both flags (gh-pages `3b6d919` -> `933dd9e`; rollback `3b6d919`); live checks synthetic only. See the Phase 3 handoff. Hardware checks M1 to M8 and the stop validation per ESC family remain open. |
 | 2026-11-17 | **Phase 3 review corrections** (source and tests, synthetic and mocked; deployed to the isolated lab only, gh-pages `933dd9e` -> `d6567c4`, both flags on; no hardware): (1) USB-only and powered stop validation separated; the powered flow runs the full safety checklist, marker, battery tracking and grace flow and can only send external 1000 (new state `POWERED_STOP_VALIDATION`); (2) marker deletion is a verified transition (`MARKER_CLEAR_RESULT`, `RETRY_MARKER_CLEAR`); (3) DShot error statistics: fail closed for real nonzero testing (owner decision), ignored while the ESCs are unpowered; (4) every real allowlist entry carries reviewed powered stop-validation evidence. Details: Phase 3 handoff section 12. Residual: the live route is outdated; the first allowlist entry and all hardware checks remain open. |
+| 2026-11-17 | **Scope pivot (owner decision):** the available parser rejected Betaflight 2025.12.5 and owning a binary decoder means ongoing compatibility work, so Blackbox decoding and flight-log analysis are deferred. Blackbox gates, attestation and `MOTOR_TEST` removed from the live bench workflow (the owner restores `NORMAL` by hand; the app never enters CLI or changes Blackbox configuration). **Phase 4 redefined** as live MSP/DShot bench analysis: passive collector, derived metrics, observational result, derived local history, result screen; implemented behind the existing flag, synthetic and mocked tests only. Old phases 4 and 5 deferred. See section 0. |
 | 2026-11-16 | Build input added (`10410c4`). Live deploy with `VITE_PREFLIGHT_DIAGNOSTICS=1`: gh-pages `49743e1` -> `3b6d919`. Lab at `/tools/preflight-spike/`, read-only, no dashboard or map entry. **Owner decision, sole user:** this overrides section 2's "no user-visible entry point before the final release gate" and the feature-flag rule for the lab page only; the main app is unchanged. Residual risk: the lab is reachable by anyone with the URL. Not tested on a real aircraft or phone (synthetic mock only). |
 
 ## Tags
@@ -29,7 +31,59 @@
 - No UI, report, export or document may claim "safe to fly", airworthiness, certification, guaranteed fault detection or a definitive component diagnosis. The most positive label is **No anomaly detected**.
 - **An aircraft that fails the compatibility gates is a normal, supported inventory outcome.** It is recorded with the exact detected and required values and the manual steps, and is not treated as an error.
 
+## 0. Scope decision 2026-11-17: live MSP/DShot analysis, Blackbox deferred [DEC]
+
+**Decision (owner, 2026-11-17).** Automated Betaflight Blackbox binary decoding and follow-up flight-log analysis are **Deferred — not proportionate to pursue at present**. This is a scope decision, not a finding that it is impossible.
+
+**Reason.** The available parser rejected Betaflight `2025.12.5`; owning a decoder would create compatibility work each time Betaflight changes its format; the cost is disproportionate for the current product. The useful pre-flight value can be delivered from live MSP and bidirectional-DShot telemetry already collected during the bench sweep.
+
+**Status of the first hardware run (2026-11-17).** Phase 3 completed its first supervised run: propellers removed, one motor at a time, automatic sweep from external 1020 in steps of 5, cap 1100, plateau at most two seconds, external 1000 stop path, all four motors started consistently, expected positions matched, no fault observed, the approved allowlist entry present, traces retained. The retained bench transition traces are **safety and workflow evidence, not Blackbox diagnostic data**. The owner's Blackbox file from that run is not used or modified.
+
+**What changes.**
+- `blackbox_mode = MOTOR_TEST` is not required. The owner restores the aircraft to `NORMAL` by hand. UAV Companion never enters CLI and never changes Blackbox configuration.
+- Blackbox mode attestation, logging device, mode, fields, sample rate and storage availability are **no longer blockers** of the live bench test; there is no switch-to-`MOTOR_TEST` and restore transaction. The gates remain in `evaluateReadiness` only behind `includeBlackbox: true` (deferred) and never block the bench policy.
+- General Blackbox functionality elsewhere in UAV Companion is untouched; this change is limited to motor diagnostics.
+- Not to be implemented now: binary decoding, CSV analysis, log matching, automated flight-log analysis, a custom Blackbox viewer. The parser investigation is closed.
+
+**What stays.** Every Phase 3 safety interlock, the single command boundary, the 1100 output cap, the allowlist, the recovery marker, the four-part stop proof and the fail-closed state machine. `minSweepGapMs` (5 s) is kept as a settle interval between sweeps (it was the Blackbox shutdown period).
+
+**Current direction.** Live MSP/DShot bench analysis answers: *What did UAV Companion directly observe during the controlled low-output sweep?* Conservative observational statements only. It never claims the aircraft is safe to fly, that a motor is mechanically healthy, that the battery is healthy, that motor direction is known, or that subtle vibration faults are ruled out. Full design, formulas, units and every provisional threshold: [MOTOR_DIAGNOSTICS_LIVE_ANALYSIS.md](../../MOTOR_DIAGNOSTICS_LIVE_ANALYSIS.md).
+
+**Current result categories** (replacing the four levels of section 10 for the current scope; there is no safe, healthy, passed or airworthy state): *Completed — no issue observed in the live checks*; *Difference observed — inspect and monitor* (provisional peer comparison, never a confirmed fault); *Inspection recommended* (direct evidence only, exact reason stated); *Test incomplete*. A peer outlier alone never produces a critical Stop.
+
+**Current phase numbering.**
+
+| Phase | Scope | State |
+| --- | --- | --- |
+| 0 | Research | Done |
+| 1 | Read-only foundations | Done |
+| 2 | Read-only readiness (Blackbox gates removed from the current requirements) | Done |
+| 3 | Bench prototype and first supervised hardware run | Done; first run reviewed 2026-11-17 |
+| **4** | **Live MSP/DShot bench analysis** (collector, metrics, observational result, derived local history, result screen) | **Implemented 2026-11-17 with synthetic and mocked tests, behind the flag; needs another supervised hardware validation** |
+| 5 | Release review (hardware matrix including Android, residual-risk acceptance, wording review, privacy, authorization) | Not started; no dashboard entry until then |
+| D1 | Blackbox decoding and bench analysis from logs (old Phase 4) | **Deferred — not proportionate to pursue at present** |
+| D2 | Flight-log capture and analysis (old Phase 5) | **Deferred — not proportionate to pursue at present** |
+
+**Current acceptance criteria (Phases 4 and 5).**
+- (a) No unsupported configuration can reach a nonzero motor command, and every Phase 3 safety test still passes.
+- (b) The collector is passive: a failing collector never blocks or delays Stop & zero (tested).
+- (c) Every sample is timestamped; missing and stale data are marked and never fabricated; memory and sample count are bounded; an incomplete sweep is identifiable.
+- (d) Metrics use only contiguous fresh windows, with every unit documented.
+- (e) The result uses only the four conservative categories, states the exact observed reason for Inspection recommended, and has no safe, healthy, passed or airworthy wording (tested).
+- (f) Every comparison threshold is provisional, centralized and labelled in code, UI and documentation.
+- (g) Derived records are local, separate from the Diagnostics log, excluded from trip export, sharing and sync, deletable in Privacy and schema-versioned; live-sample retention is off by default.
+- (h) No raw FC UID in any export.
+- (i) The workspace stays behind the feature flag until the synthetic tests pass and another supervised hardware validation succeeds.
+- (j) The Android path, the legal wording review and release authorization of section 15 still apply to a public release.
+- (k) Implementation, commit, push and deployment receive separate owner authorization.
+
+The Blackbox-era criteria of section 15 are kept below as deferred history.
+
+**Reconsidering Blackbox analysis** needs a new owner decision and a compatibility plan (supported firmware versions, who maintains the decoder, a fixture set per Betaflight format change).
+
 ## 1. Objective
+
+> **Partly superseded by section 0** (owner decision 2026-11-17): the objective is now the live MSP/DShot bench analysis only. Item 2 (ordinary flight-log analysis) and the use of Blackbox data in item 1 are deferred.
 
 Add a local-first diagnostic workflow that combines:
 
@@ -120,6 +174,8 @@ Stock `MSP_SET_MOTOR` does not provide a dependable motor-output timeout. A brow
 
 ## 5. Bench-test flow
 
+> **Partly superseded by section 0** (owner decision 2026-11-17): step 2 no longer includes Blackbox gates and no Blackbox mode is required. The "repeat each motor once after a pause" line of step 7 is a procedure option, not an app requirement.
+
 1. Connect the FC by USB with the flight battery disconnected.
 2. Complete the supported-environment and Blackbox gates.
 3. Complete the compatibility gates; the physical-preparation acknowledgement follows the USB-only safe state (step 4) [RES].
@@ -141,9 +197,14 @@ Stock `MSP_SET_MOTOR` does not provide a dependable motor-output timeout. A brow
 
 ### 5.1 Blackbox segmentation [SRC F5][DEC]
 
+> **Deferred — not proportionate to pursue at present** (owner decision 2026-11-17, section 0). Kept as decision history; do not implement without a new owner decision and a compatibility plan.
+
 Under `MOTOR_TEST`, logging starts when any motor value leaves minimum while disarmed and stops 5 s after all return to minimum. The workflow never requires or encourages the next sweep within five seconds; safety confirmation and deliberate initiation take priority, and the logging shutdown period is never rushed. Every bench session accepts **multiple Blackbox segments**, associated by session metadata (aircraft, session start, motor order tested), device order, timestamps and detected motor activity. A gap that creates another log neither reduces safety nor invalidates the session when all required segments are present. A missing or unmatched segment makes that sweep's analysis unavailable and is never guessed; an uncertain match is shown with its rationale for the user to choose.
 
 ## 6. Bench analysis
+
+> **Deferred — not proportionate to pursue at present** (owner decision 2026-11-17, section 0). Kept as decision history; do not implement without a new owner decision and a compatibility plan.
+> The current analysis is the live MSP/DShot analysis of section 0; items that need Blackbox gyro data (unfiltered gyro RMS, vibration energy, order tracking) are deferred.
 
 Use DShot telemetry and high-rate Blackbox data together to calculate:
 
@@ -160,6 +221,8 @@ The analysis may identify an abnormal motor/ESC channel or RPM-correlated vibrat
 
 ## 7. Transition to flight
 
+> **Deferred — not proportionate to pursue at present** (owner decision 2026-11-17, section 0). Kept as decision history; do not implement without a new owner decision and a compatibility plan.
+
 Flight-log collection is offered only if no stop-level bench anomaly exists.
 
 Before propellers are installed, the app must confirm:
@@ -174,6 +237,8 @@ If capacity is insufficient, block capture, instruct the user to download existi
 
 ## 8. Flight-log capture
 
+> **Deferred — not proportionate to pursue at present** (owner decision 2026-11-17, section 0). Kept as decision history; do not implement without a new owner decision and a compatibility plan.
+
 The default instruction is:
 
 > Fly normally in a safe open area. If comfortable, include approximately five seconds of steady hover after takeoff and before landing. Do not attempt unfamiliar manoeuvres for this test.
@@ -183,6 +248,8 @@ Support ordinary circuits and spontaneous freestyle. Do not require full-throttl
 **Log retrieval [DEC]:** onboard dataflash through the read-only path (`MSP_DATAFLASH_SUMMARY`, `MSP_DATAFLASH_READ`); local import of previously downloaded Blackbox files; SD-card logs by manual file import [SRC F16]; no automation of USB mass-storage mode; no automatic erase.
 
 ## 9. Flight-log analysis
+
+> **Deferred — not proportionate to pursue at present** (owner decision 2026-11-17, section 0). Kept as decision history; do not implement without a new owner decision and a compatibility plan.
 
 Automatically validate the log, then classify usable windows such as:
 
@@ -206,6 +273,8 @@ Analyse matched windows rather than one whole-flight spectrum. Use RPM-normalise
 If coverage is inadequate, report which conclusions are unavailable and what optional, comfortable flight segment would improve them. Never convert missing evidence into a pass.
 
 ## 10. Results and retention
+
+> **Partly superseded by section 0** (owner decision 2026-11-17): the four result levels below (including "Stop: do not continue testing" for empirical anomalies) are replaced by the four categories of section 0; raw Blackbox logs are deferred. Derived local history and the separate **Aircraft diagnostic data** Privacy section stand.
 
 Use four result levels:
 
@@ -412,6 +481,8 @@ Do not copy GPL-3.0 Betaflight App or Blackbox Viewer source into the MIT-licens
 
 ## 14. Delivery phases
 
+> **Partly superseded by section 0** (owner decision 2026-11-17): phases 4 to 7 below are renumbered in section 0: Blackbox bench analysis (old 4) and flight analysis (old 5) are deferred; the live MSP/DShot analysis is the current Phase 4; release review is the current Phase 5.
+
 0. **Research (done):** Phase 0 research and the amendments merged here.
 1. **Read-only foundations and Android spike:** version/MSP comparison script, read-only MSP codec and transport (desktop Web Serial plus mock), inventory report, two-track Android spike. No motor commands. Supervised hardware checkpoints for M1 to M8 on the five aircraft; any powered motor test needs separate owner authorization.
 2. **Read-only readiness:** firmware, DShot, Blackbox, storage, battery and telemetry validation behind the build-time flag (default off). No motor commands.
@@ -422,6 +493,8 @@ Do not copy GPL-3.0 Betaflight App or Blackbox Viewer source into the MIT-licens
 7. **Release review:** hardware matrix, residual-risk acceptance, legal wording review, documentation, privacy and production authorization.
 
 ## 15. Acceptance criteria
+
+> **Partly superseded by section 0** (owner decision 2026-11-17): the current criteria are in section 0. The list below is the full-scope (Blackbox and flight-log) list, kept as deferred history.
 
 The backlog is complete only when:
 
@@ -580,6 +653,8 @@ Read-only sources (`MSP_SET_MOTOR` is the only write and is confined to the Phas
 **`POWER_CONNECT_RECONNECT`** (Phase 3): entered from `READY_TO_POWER` on an expected USB reset while the battery is connected. Nonzero output stays prohibited and battery state is unknown. A controlled reconnection may repeat safe-state initialization and the reboot-affected compatibility conditions, then powered-zero verification. If reconnection does not complete within the grace period (15 s, provisional), instruct battery disconnection. Any communication loss **after** a nonzero command was permitted is a locked fault, not a normal reset.
 
 ## 23. Blackbox timing quality and resolvability [DEC][PROV]
+
+> **Deferred — not proportionate to pursue at present** (owner decision 2026-11-17, section 0). Kept as decision history; do not implement without a new owner decision and a compatibility plan.
 
 - `order_frequency_hz = k * r / 60`.
 - **Timing quality:** reconstruct a timestamp for every main frame (with rollover handling); detect missing frames, gaps, duplicates and excessive jitter; form contiguous valid windows for spectral and order analysis; reject or segment around gaps; document every resampling rule (only inside a valid contiguous window, to a stated uniform grid; interpolation across a gap is forbidden); test that resampling cannot turn missing data into a normal result. Validity is never derived from median frame spacing.

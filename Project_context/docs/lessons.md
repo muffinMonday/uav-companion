@@ -45,3 +45,11 @@ Patterns learned from corrections. One line each: what went wrong, the rule that
 - A persisted safety flag must change in the state machine only after the side effect reports success: the machine marked the recovery marker cleared before the controller tried to delete it, so a failed delete left the workflow unlocked. Make such effects request/result event pairs (`MARKER_CLEAR_RESULT`), and test with a storage fixture whose `removeItem` fails and one where it silently does nothing.
 - One state serving two physical situations (USB-only and powered stop validation) hid a missing safety flow behind a handoff instruction. Give each physical situation its own flow and entry guard, and make the handoff procedure match what the machine enforces.
 - In a browser suite that runs a flow ending in a deliberate fault with a persisted recovery marker, start the next scenario in a fresh browser context: the marker correctly sends the reloaded page to recovery (`tests/bench-lab.mjs`).
+
+## 2026-11-17 (live MSP/DShot analysis)
+- A `node -e` edit written inside a bash string can miss silently (a replace that matches nothing is not an error): after every scripted edit, grep for the expected result, or use the Edit tool. One missed call (`initAircraftDiagnostics`) only showed up in the browser test.
+- A test command started as `( a; b ) &` inside a background task dies with the task but can leave its Vite server running, and the next run fails with "Port in use". Start the test command itself with `run_in_background`, and check the lab ports (5188, 5189, 5190) before a rerun.
+- `innerText` applies CSS `text-transform`: a kicker styled uppercase reads "ACTIVE SWEEP". Use `textContent` for exact strings in browser suites.
+- Collect analysis samples before the tick's own output decision, and expect a first sample at command 1000 (before any output was sent); assertions on commanded values must allow it.
+- The static wording test also rejects "faulty motor" (and "diagnosis") in any bench string; the one sentence that states what a result does NOT mean is exempt by exact match in `tests/bench-safety-unit.mjs`.
+- When a machine ends a sweep at the same instant telemetry goes stale, the collector never sees the gap: record the stale stretch from the last frame when the sweep ends.

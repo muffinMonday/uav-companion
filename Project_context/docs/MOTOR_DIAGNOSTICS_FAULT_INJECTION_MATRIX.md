@@ -82,3 +82,18 @@
 ## Not covered by software (unchanged)
 
 The battery plug is the only guaranteed emergency action. A frozen, crashed or terminated page runs no JavaScript. An operator who ignores the screen, a mechanical motor failure and ESC or battery thermal events remain physical hazards.
+
+## Live analysis layer (2026-11-17)
+
+Synthetic and mocked only. Test files: `tests/bench-analysis-unit.mjs` (A), `tests/bench-analysis-controller-unit.mjs` (AC). Design: [MOTOR_DIAGNOSTICS_LIVE_ANALYSIS.md](MOTOR_DIAGNOSTICS_LIVE_ANALYSIS.md).
+
+| ID | Injected fault (mock) | Expected result | Automated test | Remaining HW-only test |
+| --- | --- | --- | --- | --- |
+| H11 | Collector `begin`, `sample` and `end` all throw | The sweep still starts and runs; Stop & zero sends 1000 synchronously and keeps its cadence; no command-path error | AC "passive collection" | Timing of Stop & zero with the collector active on a phone |
+| H11 | Static check | The motor-command message stays in `motor-control.js` only; no new storage in `src/benchtest` | `tests/bench-safety-unit.mjs` | none |
+| H6 | Telemetry silent mid-sweep | Sweep incomplete, gap listed, no invented samples, Inspection recommended with the exact reason | AC "telemetry silence" | USB congestion on hardware |
+| H6 | Stale, repeated or missing frames; 100 % DShot sentinel; 0 °C | Excluded from samples and windows; shown as unavailable | A "collector", "metrics" | none |
+| H1 | Wrong motor confirmed; peer motor rotation; no rotation by the cap | Sweep incomplete, direct evidence stated, Inspection recommended | AC "wrong motor", "no stable rotation", "peer rotation" | Real mapping versus the default order |
+| H3, H8 | Voltage fault, temperature fault, armed | Inspection recommended with the exact reason | AC fault table | Real sag and temperature under load |
+| H12 | Result wording scan; single outlier; shared-command rule; fewer than three motors | No safe, healthy, passed or airworthy claim; outlier is Difference observed only; RPM compared only at a shared command | A "result" | Validation against known-bad motors (none exist yet) |
+| H12 | Four identical sweeps | Completed — no issue observed in the live checks | A, AC "four completed motors" | A real four-motor run |
