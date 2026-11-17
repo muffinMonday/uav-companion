@@ -6,6 +6,11 @@ const DATA_BASE = new URL(base.endsWith('/') ? base : `${base}/`, document.baseU
 
 export const dataUrl = (p) => new URL(p, DATA_BASE).href;
 
+// The widest view the map may show: the largest region in the dataset (Sichuan), [west, south, east, north].
+// Zooming out stops once the whole of it fits on screen, so a zoomed-out map never loads more than this area.
+// Hardcoded: update it when a larger region is added to the dataset.
+export const MAX_VIEW_BOUNDS = [97.382812, 26.049327, 108.542536, 34.314628];
+
 // Regions built with "publish": false live in ./data-local/, next to the page. They exist on the machine that built them only
 // (the deploy strips them), so the app looks for them on localhost and private network addresses, never on the public site.
 export const localUrl = (p) => new URL(p, new URL('./data-local/', document.baseURI)).href;

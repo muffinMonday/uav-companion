@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import { leafletLayer, PolygonSymbolizer } from 'protomaps-leaflet';
-import { regionUrl } from './config.js';
+import { regionUrl, MAX_VIEW_BOUNDS } from './config.js';
 import { sharedArchive } from './pmtiles-source.js';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -42,6 +42,16 @@ export function createMap(initial = {}) {
    .setView(v ? [v.lat, v.lon] : [35, 105], v ? v.zoom : 4);
   const makeScale = (units) => L.control.scale({ metric: units !== 'imperial', imperial: units === 'imperial', position: 'bottomleft', maxWidth: 140 }).addTo(map);
   let scale = makeScale(initial.units);
+
+  // Minimum zoom = the zoom at which the largest region fills the view. Recomputed on resize, since it depends on the screen size.
+  const largest = L.latLngBounds([MAX_VIEW_BOUNDS[1], MAX_VIEW_BOUNDS[0]], [MAX_VIEW_BOUNDS[3], MAX_VIEW_BOUNDS[2]]);
+  const applyMinZoom = () => {
+    const min = map.getBoundsZoom(largest);
+    map.setMinZoom(min);
+    if (map.getZoom() < min) map.setZoom(min, { animate: false });
+  };
+  applyMinZoom();
+  map.on('resize', applyMinZoom);
 
   let base = L.tileLayer(...baseTiles(initial.basemap)).addTo(map);
   const switchBase = (key) => {
