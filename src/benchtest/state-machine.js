@@ -21,6 +21,8 @@ export const STATE = Object.freeze({
   READY_TO_CONNECT_POWER: 'READY_TO_CONNECT_POWER',
   POWER_CONNECT_RECONNECT: 'POWER_CONNECT_RECONNECT',
   POWERED_ZERO_VERIFICATION: 'POWERED_ZERO_VERIFICATION',
+  ESC_IDENTIFICATION: 'ESC_IDENTIFICATION', // read-only 4-way scan: the FC speaks 4-way, MSP (so any motor command, Stop & zero included) is unavailable; powered, no motor output
+  POST_SCAN_RESTORE: 'POST_SCAN_RESTORE', // 4-way left, MSP back: re-read identity, external 1000 with read-back, valid zero RPM; external 1000 only
   POWERED_STOP_VALIDATION: 'POWERED_STOP_VALIDATION', // powered stop validation flow only: external 1000 and nothing else, battery connected
   MOTOR_READY: 'MOTOR_READY',
   RUNNING: 'RUNNING',
@@ -34,10 +36,10 @@ const S = STATE;
 
 // States in which an external 1000 may be sent. DISCONNECTED and READ_ONLY_READINESS have no motor path at all.
 const STOP_CAPABLE = new Set([S.STOP_VALIDATION_ONLY, S.SAFE_STATE_INIT, S.SAFETY_CHECKLIST, S.READY_TO_CONNECT_POWER, S.POWER_CONNECT_RECONNECT,
-  S.POWERED_ZERO_VERIFICATION, S.POWERED_STOP_VALIDATION, S.MOTOR_READY, S.RUNNING, S.VERIFYING_STOP, S.LOCKED_FAULT, S.BATTERY_REMOVAL_RECOVERY, S.UNCLEAN_EXIT_RECOVERY, S.BENCH_COMPLETE]);
+  S.POWERED_ZERO_VERIFICATION, S.POST_SCAN_RESTORE, S.POWERED_STOP_VALIDATION, S.MOTOR_READY, S.RUNNING, S.VERIFYING_STOP, S.LOCKED_FAULT, S.BATTERY_REMOVAL_RECOVERY, S.UNCLEAN_EXIT_RECOVERY, S.BENCH_COMPLETE]);
 // Invalid events in these states fault the session; elsewhere they are only rejected.
 const FAULT_ON_INVALID = new Set([S.STOP_VALIDATION_ONLY, S.SAFE_STATE_INIT, S.SAFETY_CHECKLIST, S.READY_TO_CONNECT_POWER, S.POWER_CONNECT_RECONNECT,
-  S.POWERED_ZERO_VERIFICATION, S.POWERED_STOP_VALIDATION, S.MOTOR_READY, S.RUNNING, S.VERIFYING_STOP]);
+  S.POWERED_ZERO_VERIFICATION, S.ESC_IDENTIFICATION, S.POST_SCAN_RESTORE, S.POWERED_STOP_VALIDATION, S.MOTOR_READY, S.RUNNING, S.VERIFYING_STOP]);
 const QUIET = new Set(['OBSERVE', 'STOP_SENT', 'STOP_ACKED', 'READBACK', 'ACK_RESULT']);
 const TRACE_MAX = 600;
 const n = BENCH_TIMINGS;
@@ -45,6 +47,7 @@ const n = BENCH_TIMINGS;
 const freshStop = () => ({ attempts: 0, acks: 0, readbackOk: false, zeroSince: null, zeroOk: false, userNoRotation: false });
 const freshZero = () => ({ since: null, samples: 0, lastAt: null });
 const freshDshot = () => ({ status: 'unknown', since: null, lastAt: null }); // DShot error statistics seen with the ESCs powered
+const freshEsc = (enabled = false) => ({ enabled, scanned: false, phase: 'idle', result: null, ackRequired: false, acknowledged: false, identityOk: false }); // phase: idle | scanning | restoring
 const freshMarkerClear = () => ({ pending: false, failed: false });
 
 function freshCtx(extra = {}) {
@@ -58,17 +61,18 @@ function freshCtx(extra = {}) {
     fault: null, stop: freshStop(), facts: null, runStartedAt: null, batteryRemoved: false, markerCleared: false, graceStartedAt: null,
     flow: null, // 'usb-stopval' | 'powered-stopval' | 'bench': which workflow this connection is in; only 'bench' can ever reach MOTOR_READY
     usbStopValidated: false, poweredStopValidated: false,
-    dshot: freshDshot(), markerClear: freshMarkerClear(),
+    dshot: freshDshot(), markerClear: freshMarkerClear(), esc: freshEsc(),
     ...extra,
   };
 }
 
-const isPowered = (state, ctx) => state === S.POWER_CONNECT_RECONNECT || state === S.POWERED_ZERO_VERIFICATION || state === S.POWERED_STOP_VALIDATION || state === S.MOTOR_READY || state === S.RUNNING
+const isPowered = (state, ctx) => state === S.POWER_CONNECT_RECONNECT || state === S.ESC_IDENTIFICATION || state === S.POST_SCAN_RESTORE || state === S.POWERED_ZERO_VERIFICATION || state === S.POWERED_STOP_VALIDATION || state === S.MOTOR_READY || state === S.RUNNING
   || state === S.VERIFYING_STOP || (state === S.READY_TO_CONNECT_POWER && ctx.batteryDeclared);
 const proofParts = (ctx) => ctx.stop.attempts >= n.stopMinAttempts && ctx.stop.readbackOk && ctx.stop.zeroOk;
 const proofComplete = (ctx) => proofParts(ctx) && ctx.stop.userNoRotation;
 
 export function createMachine(opts = {}) {
+  const fourwayFor = typeof opts.fourway === 'function' ? opts.fourway : () => false; // is the ESC identification step part of this connection's workflow?
   let state = opts.markerPresent ? S.UNCLEAN_EXIT_RECOVERY : S.DISCONNECTED;
   let ctx = freshCtx({ markerAvailable: opts.markerAvailable !== false });
   const trace = [];
@@ -133,7 +137,7 @@ export function createMachine(opts = {}) {
     const telFresh = rpm !== null && Number.isFinite(p.telemetryAt) && now - p.telemetryAt <= n.staleTelemetryFaultMs;
 
     // stop-proof zero tracking (also used for recovery proofs)
-    if (state === S.VERIFYING_STOP || state === S.LOCKED_FAULT || state === S.BATTERY_REMOVAL_RECOVERY || state === S.STOP_VALIDATION_ONLY || state === S.POWERED_STOP_VALIDATION || state === S.SAFE_STATE_INIT) {
+    if (state === S.VERIFYING_STOP || state === S.LOCKED_FAULT || state === S.BATTERY_REMOVAL_RECOVERY || state === S.STOP_VALIDATION_ONLY || state === S.POWERED_STOP_VALIDATION || state === S.SAFE_STATE_INIT || state === S.POST_SCAN_RESTORE) {
       if (telFresh && rpm.every((r) => r === 0)) {
         if (ctx.stop.zeroSince === null) ctx.stop.zeroSince = p.telemetryAt;
         if (now - ctx.stop.zeroSince >= n.stopProofZeroRpmMs && ctx.stop.attempts > 0) ctx.stop.zeroOk = true;
@@ -187,6 +191,7 @@ export function createMachine(opts = {}) {
   const connectApply = (p) => {
     ctx = freshCtx({ markerAvailable: ctx.markerAvailable, batteryRemoved: ctx.batteryRemoved && state === S.UNCLEAN_EXIT_RECOVERY });
     ctx.transportKind = p.transportKind; ctx.mode = p.transportKind === 'mock' ? 'mock' : 'real'; ctx.transportAvailable = true;
+    ctx.esc = freshEsc(!!fourwayFor(p.transportKind));
     return [];
   };
 
@@ -255,11 +260,29 @@ export function createMachine(opts = {}) {
       TRANSPORT_LOST: T(SELF, null, () => { ctx.transportAvailable = false; ctx.reconnected = false; ctx.safeStateDone = false; return []; }),
     },
     [S.POWERED_ZERO_VERIFICATION]: {
-      ZERO_VERIFIED: T(S.MOTOR_READY, () => (ctx.flow !== 'bench' ? 'this workflow can never reach MOTOR_READY' : zeroDone() ? true : 'zero verification is not complete'),
+      ZERO_VERIFIED: T(S.MOTOR_READY, () => (ctx.flow !== 'bench' ? 'this workflow can never reach MOTOR_READY' : ctx.esc.enabled && !ctx.esc.scanned ? 'the ESC identification step comes first' : zeroDone() ? true : 'zero verification is not complete'),
         () => { ctx.zeroVerified = true; ctx.baselineVoltage_cV = ctx.facts && Number.isFinite(ctx.facts.voltage_cV) && ctx.facts.voltage_cV > 0 ? ctx.facts.voltage_cV : null; return []; }),
       // powered stop validation flow: after the powered-zero window, prove the stop with the battery connected (external 1000 only)
       ZERO_VERIFIED_STOPVAL: T(S.POWERED_STOP_VALIDATION, () => (ctx.flow !== 'powered-stopval' ? 'not the powered stop validation workflow' : zeroDone() ? true : 'zero verification is not complete'),
         () => { ctx.zeroVerified = true; ctx.purpose = 'stopval'; ctx.stop = freshStop(); return [{ type: 'start-stop-proof' }]; }),
+    },
+    [S.ESC_IDENTIFICATION]: {
+      // The controller reports the outcome of the whole scan in ONE event: the scan result and whether 4-way was left AND ordinary MSP
+      // answered again. Anything unproven is a fault with the battery instruction. Nothing in this state can send a motor value.
+      FOURWAY_FINISHED: T(S.POST_SCAN_RESTORE, (p) => (p.exitProven === true ? true : 'leaving 4-way mode and restoring MSP is not proven'),
+        (p) => { ctx.esc.scanned = true; ctx.esc.result = p.result || null; ctx.esc.phase = 'restoring'; ctx.esc.ackRequired = !(p.result && p.result.status === 'identified'); ctx.esc.acknowledged = false; ctx.esc.identityOk = false;
+          ctx.stop = freshStop(); ctx.safeStateDone = false; return [{ type: 'start-restore' }]; }),
+      FOURWAY_UNPROVEN: T(S.LOCKED_FAULT, null, (p) => { ctx.esc.result = p.result || null; ctx.esc.phase = 'idle'; return enterFault(p.reason || 'fourway-exit-unproven', false, p.now); }),
+    },
+    [S.POST_SCAN_RESTORE]: {
+      RESTORE_IDENTITY: T(SELF, null, (p) => { if (p.ok === true) { ctx.esc.identityOk = true; return []; } return enterFault('different-flight-controller-after-scan', true, p.now); }),
+      SAFE_STATE_DONE: T(SELF, () => (ctx.stop.acks >= 1 && ctx.stop.attempts >= n.stopMinAttempts && ctx.stop.readbackOk ? true : 'safe-state re-initialization is not complete'), () => { ctx.safeStateDone = true; return []; }),
+      ESC_ACK: T(SELF, () => (ctx.esc.ackRequired ? true : 'no acknowledgement is needed'), () => { ctx.esc.acknowledged = true; return []; }),
+      // Back to the powered-zero check, which must pass again (fresh telemetry, zero RPM, disarmed) before any motor can be chosen.
+      RESTORE_COMPLETE: T(S.POWERED_ZERO_VERIFICATION, () => (!ctx.esc.identityOk ? 'the flight controller identity was not re-read'
+        : !ctx.safeStateDone ? 'external 1000 with read-back is not re-proven' : !proofParts(ctx) ? 'valid zero RPM after the scan is not proven'
+          : ctx.esc.ackRequired && !ctx.esc.acknowledged ? 'the identification warning is not acknowledged' : true),
+      () => { ctx.zero = freshZero(); ctx.dshot = freshDshot(); ctx.zeroVerified = false; ctx.esc.phase = 'idle'; return []; }),
     },
     [S.POWERED_STOP_VALIDATION]: {
       USER_CONFIRMS_NO_ROTATION: T(SELF, () => (proofParts(ctx) ? true : 'stop proof parts 1 to 3 are not complete'), () => { ctx.stop.userNoRotation = true; return []; }),
@@ -371,6 +394,11 @@ export function createMachine(opts = {}) {
             const a = apply(own(state, 'ZERO_VERIFIED_STOPVAL'), 'ZERO_VERIFIED_STOPVAL', payload, at, from);
             return { ...a, reason: a.ok ? 'zero-verified' : a.reason };
           }
+          if (ctx.flow === 'bench' && ctx.esc.enabled && !ctx.esc.scanned) {
+            state = S.ESC_IDENTIFICATION; ctx.zeroVerified = true; ctx.baselineVoltage_cV = Number.isFinite(payload.voltage_cV) && payload.voltage_cV > 0 ? payload.voltage_cV : null; ctx.esc.phase = 'scanning';
+            log(at, from, 'ZERO_VERIFIED', state, true, 'auto: ESC identification');
+            return { ...result(true, 'zero-verified'), effects: [{ type: 'start-fourway-scan' }] };
+          }
           state = S.MOTOR_READY; ctx.zeroVerified = true; ctx.baselineVoltage_cV = Number.isFinite(payload.voltage_cV) && payload.voltage_cV > 0 ? payload.voltage_cV : null; log(at, from, 'ZERO_VERIFIED', state, true, 'auto'); return result(true, 'zero-verified');
         }
         return result(true);
@@ -424,7 +452,7 @@ export function createMachine(opts = {}) {
     if (g !== true) {
       let fx = [];
       // a refused start is not a fault; a refused powered-state step that the controller should never have attempted is
-      if (FAULT_ON_INVALID.has(state) && !['START_HOLD_COMPLETE', 'CONFIRM_TARGET', 'SELECT_MOTOR', 'CHECKLIST_ITEM', 'FINAL_HOLD_DONE', 'CHECKLIST_COMPLETE', 'USER_CONFIRMS_NO_ROTATION', 'POSITION_REPORTED', 'SAFE_STATE_DONE', 'STOP_VALIDATION_DONE', 'ZERO_VERIFIED', 'ESC_READY', 'FINISH_STOP_DONE', 'RECONNECTED', 'RUN_COMPLETE', 'ZERO_VERIFIED_STOPVAL', 'POWERED_STOP_VALIDATION_DONE'].includes(event)) {
+      if (FAULT_ON_INVALID.has(state) && !['START_HOLD_COMPLETE', 'CONFIRM_TARGET', 'SELECT_MOTOR', 'CHECKLIST_ITEM', 'FINAL_HOLD_DONE', 'CHECKLIST_COMPLETE', 'USER_CONFIRMS_NO_ROTATION', 'POSITION_REPORTED', 'SAFE_STATE_DONE', 'STOP_VALIDATION_DONE', 'ZERO_VERIFIED', 'ESC_READY', 'FINISH_STOP_DONE', 'RECONNECTED', 'RUN_COMPLETE', 'ZERO_VERIFIED_STOPVAL', 'POWERED_STOP_VALIDATION_DONE', 'RESTORE_COMPLETE', 'ESC_ACK', 'FOURWAY_FINISHED'].includes(event)) {
         fx = enterFault(`guard:${event}`, ctx.transportAvailable, at);
       } else if (event === 'POSITION_REPORTED' && state === S.VERIFYING_STOP && proofComplete(ctx) && ctx.purpose === 'run') {
         fx = enterFault('motor-position-mismatch', ctx.transportAvailable, at); // the wrong motor moved or the answer was none: lock
@@ -456,7 +484,11 @@ export function createMachine(opts = {}) {
     return {
       state: st, mode: ctx.mode, unlocked: ctx.unlocked, locked,
       showBatteryInstruction: needBatteryNow,
-      stopButton: known && STOP_CAPABLE.has(st) && st !== S.UNCLEAN_EXIT_RECOVERY,
+      stopButton: known && (STOP_CAPABLE.has(st) || st === S.ESC_IDENTIFICATION) && st !== S.UNCLEAN_EXIT_RECOVERY,
+      // honest control state: in 4-way mode the ordinary zero command cannot be delivered; Stop & zero then abandons the scan and tries to leave 4-way
+      stopDelivers: known && STOP_CAPABLE.has(st) && st !== S.UNCLEAN_EXIT_RECOVERY,
+      esc: { enabled: ctx.esc.enabled, phase: ctx.esc.phase, scanned: ctx.esc.scanned, result: ctx.esc.result, ackRequired: ctx.esc.ackRequired, acknowledged: ctx.esc.acknowledged, identityOk: ctx.esc.identityOk,
+        canAcknowledge: st === S.POST_SCAN_RESTORE && ctx.esc.ackRequired && !ctx.esc.acknowledged },
       maxOutput: known && STOP_CAPABLE.has(st) ? (st === S.RUNNING ? MOTOR.cap : MOTOR.stopValue) : 0,
       canConnect: st === S.DISCONNECTED || st === S.UNCLEAN_EXIT_RECOVERY,
       realControlsVisible: ctx.mode === 'mock' || ctx.unlocked === true,

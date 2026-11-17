@@ -506,7 +506,7 @@ const reach = {
   // transport loss: reconnecting starts from nothing
   h = await full(); h.t.disconnect();
   assert.equal(h.state(), STATE.DISCONNECTED);
-  await h.c.connect(benchFcTransport()); h.c.setAttestation({ armSwitchOff: true, batteryDisconnected: true }); h.c.setManual({ escFamily: 'Bluejay', escModel: 'synthetic' });
+  await h.c.connect(benchFcTransport()); h.c.setAttestation({ armSwitchOff: true, throttleMin: true, batteryDisconnected: true });
   h.c.proceed(); await h.adv(1500);
   assert.equal(h.state(), STATE.SAFETY_CHECKLIST);
   assert.equal(h.caps().canFinalHold, false, 'no item survived the reconnect');

@@ -26,7 +26,7 @@ const errs = [];
 const ON = 'http://127.0.0.1:5193/', OFF = 'http://127.0.0.1:5194/';
 const RETURNING = { showOnStart: true, welcomed: true, seen: LATEST_SEEN };
 const text = (p, sel) => p.locator(sel).innerText();
-const waitState = (p, s, timeout = 25000) => p.waitForSelector(`#bt-state[data-state="${s}"]`, { state: 'attached', timeout }).catch(async (e) => { console.log('STATE WAIT FAILED for ' + s + ': now ' + (await p.locator('#bt-state').getAttribute('data-state').catch(() => '?')) + ' | ' + (await p.locator('.bt-overlay').innerText().catch(() => '')).slice(0, 700)); throw e; });
+const waitState = (p, s, timeout = 25000) => p.waitForSelector(`#bt-state[data-state="${s}"]`, { state: 'attached', timeout }).catch(async (e) => { console.log('STATE WAIT FAILED for ' + s + ': now ' + (await p.locator('#bt-state').getAttribute('data-state').catch(() => '?')) + ' | ' + (await p.locator('#bt-overlay').innerText().catch(() => '')).slice(0, 700)); throw e; });
 async function hold(p, sel, ms = 1200) {
   await p.locator(sel).evaluate((e) => e.scrollIntoView({ block: 'center' })); // centred, so the fixed Stop & zero bar does not cover it
   const box = await p.locator(sel).boundingBox();
@@ -85,8 +85,8 @@ try {
     await p.click('#diag-history'); await p.waitForURL('**/motor-diagnostics/#history');
     await p.waitForSelector('#bt-sec-history');
     ok(/BTFL · 2025.12.5 · STM32F7X2 \/ F722 · ESC BLHeli_32/.test(await text(p, '#bt-sec-history')), 'history is grouped by the aircraft (FC and ESC identity)');
-    await p.click('#bt-sec-history details summary'); await p.waitForSelector('#bt-sec-history .bt-result');
-    ok((await p.locator('#bt-sec-history .bt-result').count()) === 1 && /does not mean/.test(await text(p, '#bt-sec-history .bt-result')), 'a saved result opens with the same result view and its limits statement');
+    await p.click('#bt-sec-history details summary'); await p.waitForSelector('#bt-sec-history .dg-result');
+    ok((await p.locator('#bt-sec-history .dg-result').count()) === 1 && /does not mean/.test(await text(p, '#bt-sec-history .dg-result')), 'a saved result opens with the same result view and its limits statement');
     await ctx.close();
   }
 
@@ -96,7 +96,7 @@ try {
     const body = (await p.evaluate(() => document.body.innerText)).replace(/This is a record of what[\s\S]*?subtle vibration faults\./, '');
     ok((await p.locator('#btn-connect-mock, #bt-inject, #bt-trace, [data-attest="blackboxMode"]').count()) === 0, 'no synthetic connection, fault injection, trace or Blackbox control');
     ok(!/Phase 3|prototype|developer|synthetic|state machine|transition|READ_ONLY|DISCONNECTED/i.test(body), 'no developer wording or raw state names are displayed');
-    ok(await p.locator('#bt-state').isHidden() && /^Step 1 of 8/.test(await text(p, '#bt-step')), 'the raw state is hidden and a plain-language step is shown');
+    ok(await p.locator('#bt-state').isHidden() && /^Step 1 of 9/.test(await text(p, '#bt-step')), 'the raw state is hidden and a plain-language step is shown');
     ok(!/safe to fly|airworth|healthy|certified/i.test(body), 'no safe-to-fly, airworthiness or health wording outside the limits statement');
     ok(/does not mean/.test(await text(p, '#bt-sec-connect')) && /propellers removed/.test(await text(p, '#bt-sec-connect')), 'the limits and the compatibility explanation are shown before connecting');
     ok((await p.locator('#btn-connect-real').count()) === 1, 'a USB connect action is offered');
@@ -113,11 +113,11 @@ try {
     ok((await p.locator('[data-gate="bb-mode"], [data-gate="blackbox"], [data-gate="storage"], select[data-attest="blackboxMode"]').count()) === 0 && !/blackbox/i.test(await text(p, '#bt-readiness')), 'no Blackbox readiness gate or mode control');
     ok((await p.locator('#bt-identity').count()) === 1 && /BTFL/.test(await text(p, '#bt-identity')), 'the detected aircraft is shown to confirm');
     ok((await p.locator('#btn-stopval, #btn-powered-stopval').count()) === 0, 'the owner-only stop-validation procedures are not offered');
-    ok(/Safety and readiness check/i.test(await p.locator('#bt-sec-policy .bt-kicker').textContent()) && /^Step 2 of 8/.test(await text(p, '#bt-step')), 'readiness is labelled as a safety check and the step is in plain language');
+    ok(/Safety and readiness/i.test(await p.locator('#bt-sec-summary .eyebrow').textContent()) && /^Step 2 of 9/.test(await text(p, '#bt-step')), 'readiness is labelled as a safety check and the step is in plain language');
     ok(await noHScroll(p), 'readiness has no horizontal scroll at 412 px');
-    await p.check('[data-attest="armSwitchOff"]'); await p.check('[data-attest="batteryDisconnected"]');
+    await p.check('[data-attest="armSwitchOff"]'); await p.check('[data-attest="throttleMin"]'); await p.check('[data-attest="batteryDisconnected"]');
     await p.waitForFunction(() => !document.querySelector('#btn-proceed').disabled);
-    ok((await text(p, '#btn-proceed')) === 'Begin active motor test', 'the primary action is "Begin active motor test"');
+    ok((await text(p, '#btn-proceed')) === 'Continue to the safety checklist', 'the primary action is "Continue to the safety checklist"');
     // keyboard: the primary action is reachable by Tab and shows a visible focus ring
     let focused = false;
     for (let i = 0; i < 60 && !focused; i++) { await p.keyboard.press('Tab'); focused = await p.evaluate(() => document.activeElement && document.activeElement.id === 'btn-proceed'); }
@@ -157,10 +157,10 @@ try {
     }
     await p.waitForSelector('#bt-sec-result');
     ok(/Completed — no issue observed|Difference observed/.test(await text(p, '#bt-result-headline')), 'after four motors a result headline is shown: ' + (await text(p, '#bt-result-headline')));
-    ok((await p.locator('.bt-rescell').count()) === 4 && (await p.locator('details.bt-card').count()) === 4, 'the quad and four expandable motor cards are shown');
+    ok((await p.locator('.dg-quad-result .dg-motor').count()) === 4 && (await p.locator('details.dg-card').count()) === 4, 'the quad and four expandable motor cards are shown');
     ok(/1020 to 1100/.test(await text(p, '#bt-sec-result')) && /propeller-free/.test(await text(p, '#bt-sec-result')) && /does not mean/.test(await text(p, '#bt-sec-result')), 'range, cap, the propeller-free limitation and the not-a-certification statement are shown');
-    await p.locator('details.bt-card').first().locator('summary').click();
-    ok(/Start threshold/.test(await text(p, 'details.bt-card[open]')) && /DShot errors/.test(await text(p, 'details.bt-card[open]')), 'a motor card expands to its evidence');
+    await p.locator('details.dg-card').first().locator('summary').click();
+    ok(/Start threshold/.test(await text(p, 'details.dg-card[open]')) && /DShot errors/.test(await text(p, 'details.dg-card[open]')), 'a motor card expands to its evidence');
     ok(await noHScroll(p), 'the result has no horizontal scroll at 412 px');
     await p.setViewportSize({ width: 360, height: 740 }); ok(await noHScroll(p), 'the result has no horizontal scroll at 360 px');
     await p.setViewportSize({ width: 1200, height: 850 }); ok(await noHScroll(p), 'the result has no horizontal scroll at desktop width');
@@ -195,7 +195,7 @@ try {
   {
     const { ctx, p } = await open(ON + 'motor-diagnostics/?synthetic=1');
     await p.click('#btn-connect-mock'); await waitState(p, 'READ_ONLY_READINESS');
-    await p.check('[data-attest="armSwitchOff"]'); await p.check('[data-attest="batteryDisconnected"]');
+    await p.check('[data-attest="armSwitchOff"]'); await p.check('[data-attest="throttleMin"]'); await p.check('[data-attest="batteryDisconnected"]');
     await p.waitForFunction(() => !document.querySelector('#btn-proceed').disabled);
     await p.click('#btn-proceed'); await waitState(p, 'SAFETY_CHECKLIST');
     for (const cb of await p.locator('[data-item]').all()) await cb.check();
@@ -209,9 +209,9 @@ try {
   }
   {
     const { ctx, p } = await open(ON + 'motor-diagnostics/?synthetic=1', { init: { 'uavzones.benchtest.unclean.v1': JSON.stringify({ v: 1, unclean: true, at: 1 }) } });
-    await p.waitForSelector('.bt-overlay');
-    ok((await text(p, '.bt-overlay')).startsWith('Disconnect the flight battery now.'), 'after an interrupted session the user route leads with "Disconnect the flight battery now."');
-    ok((await p.locator('#bt-back, #btn-proceed, #hold-final, #hold-start').count()) === 0 && (await p.locator('.bt-overlay [data-state], .bt-overlay pre').count()) === 0, 'no ordinary navigation, active control, raw state or trace is offered during recovery');
+    await p.waitForSelector('#bt-overlay');
+    ok((await text(p, '#bt-overlay')).startsWith('Disconnect the flight battery now.'), 'after an interrupted session the user route leads with "Disconnect the flight battery now."');
+    ok((await p.locator('#bt-back, #btn-proceed, #hold-final, #hold-start').count()) === 0 && (await p.locator('#bt-overlay [data-state], #bt-overlay pre').count()) === 0, 'no ordinary navigation, active control, raw state or trace is offered during recovery');
     await p.click('#btn-battery-removed'); await p.click('#btn-connect-mock');
     await waitState(p, 'BATTERY_REMOVAL_RECOVERY');
     await p.waitForSelector('#btn-no-rotation', { timeout: 15000 }); await p.click('#btn-no-rotation');

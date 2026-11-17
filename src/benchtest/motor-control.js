@@ -67,6 +67,9 @@ export class MotorBoundary {
     transport.onClose(() => this._failAll('transport-closed'));
   }
 
+  // After a 4-way session the bytes the FC sent in that mode may have left a half frame in the parser: start clean.
+  resetParser() { this.parser = new MspParser(); }
+
   _onData(bytes) {
     for (const ev of this.parser.push(bytes)) {
       if (ev.type !== 'frame' || ev.cmd !== MSP_SET_MOTOR_ID) continue;

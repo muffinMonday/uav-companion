@@ -5,11 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:,">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff">
+<script>/* theme before first paint: same rule as index.html and resolveTheme in src/theme.js */try{var t=JSON.parse(localStorage.getItem('uavzones.v1.prefs')||'{}').theme;document.documentElement.dataset.theme=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}catch(e){}</script>
 <title>Motor bench test (developer prototype, not shipped)</title>
 </head>
 <body>
 <div id="bench"></div>
-<p class="bt-small" id="bench-status" role="status"></p>
+<p class="hint dg-status" id="bench-status" role="status"></p>
 <script type="module" src="./lab.js"></script>
 </body>
 </html>

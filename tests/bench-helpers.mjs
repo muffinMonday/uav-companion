@@ -2,6 +2,7 @@
 // the controller against the synthetic flight controller. Synthetic and mocked only; nothing here touches hardware.
 import { createBenchController } from '../src/benchtest/controller.js';
 import { benchFcTransport } from '../src/benchtest/mock-bench-fc.js';
+import { attachFourWay } from '../src/fourway/mock-fourway-fc.js';
 import { STATE } from '../src/benchtest/state-machine.js';
 import { createMarkerStore } from '../src/benchtest/recovery-marker.js';
 import { CHECKLIST_ITEMS, EXPECTED_POSITIONS } from '../src/benchtest/constants.js';
@@ -38,16 +39,16 @@ export function memoryStorage(opts = {}) {
   };
 }
 
-export const ESC = { escFamily: 'Bluejay', escModel: 'synthetic' };
 
 // A fully formed TEST fixture for a real-hardware allowlist entry (identity of the synthetic aircraft plus reviewed evidence). Never in src.
-export const REAL_ENTRY = Object.freeze({ variant: 'BTFL', firmware: '2025.12.5', api: '1.47', targetName: 'SYNTH', boardId: 'SYN1', escFamily: 'Bluejay', escModel: 'synthetic', motorProtocol: 'DSHOT600', approvedBy: 'test owner', approvedOn: '2026-12-02', stopValidatedOn: '2026-12-01', stopValidatedBy: 'test owner', stopValidationTraceSha256: 'a'.repeat(64), externalStopValue: 1000, poweredStopValidated: true });
+export const REAL_ENTRY = Object.freeze({ variant: 'BTFL', firmware: '2025.12.5', api: '1.47', targetName: 'SYNTH', boardId: 'SYN1', motorProtocol: 'DSHOT600', approvedBy: 'test owner', approvedOn: '2026-12-02', stopValidatedOn: '2026-12-01', stopValidatedBy: 'test owner', stopValidationTraceSha256: 'a'.repeat(64), externalStopValue: 1000, poweredStopValidated: true });
 
-export async function makeHarness({ fc = {}, storage = memoryStorage(), allowlist, transportOpts, diagStorage } = {}) {
+export async function makeHarness({ fc = {}, storage = memoryStorage(), allowlist, transportOpts, diagStorage, fourway = null } = {}) {
   const clock = new FakeClock();
   const marker = createMarkerStore(storage);
-  const c = createBenchController({ clock, marker, ...(allowlist ? { allowlist } : {}), ...(diagStorage ? { diagStorage } : {}) });
+  const c = createBenchController({ clock, marker, ...(allowlist ? { allowlist } : {}), ...(diagStorage ? { diagStorage } : {}), ...(fourway ? { fourway: () => true } : {}) });
   const t = benchFcTransport(fc, transportOpts);
+  if (fourway) attachFourWay(t, { escCount: 4, channels: [{ kind: 'bluejay' }, { kind: 'bluejay' }, { kind: 'bluejay' }, { kind: 'bluejay' }], exit: 'ok', afterExit: { motorsDisabled: false }, ...fourway });
   const h = {
     clock, marker, storage, c, t, m: c.machine, fc: t.fc,
     state: () => c.machine.state,
@@ -58,8 +59,8 @@ export async function makeHarness({ fc = {}, storage = memoryStorage(), allowlis
     sentMotorFrames: () => t.fc.received,
     async toReadiness() {
       await c.connect(t);
-      c.setAttestation({ armSwitchOff: true, batteryDisconnected: true });
-      c.setManual(ESC);
+      c.setAttestation({ armSwitchOff: true, throttleMin: true, batteryDisconnected: true });
+      
       return h;
     },
     async toSafeState() { await h.toReadiness(); c.proceed(); await h.adv(1500); return h; },

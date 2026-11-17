@@ -16,6 +16,8 @@ import { buildEvidenceExport, buildHistoryRecord, approxBytes } from './history.
 import { deleteAll as deleteStoredDiagnostics, listRecords as listStoredDiagnostics, saveRecord as saveStoredDiagnostic, approxSize as storedDiagnosticsSize } from '../aircraft-diag-data.js';
 import { OWNER_APPROVED, SYNTHETIC_ALLOWLIST, matchAllowlist } from './allowlist.js';
 import { MotorBoundary } from './motor-control.js';
+import { fourwayEnabledFor } from './flag.js';
+import { deriveFingerprint } from './fingerprint.js';
 import { createMarkerStore } from './recovery-marker.js';
 import { STATE, createMachine } from './state-machine.js';
 
@@ -29,10 +31,14 @@ export function createBenchController(opts = {}) {
   const marker = opts.marker || createMarkerStore();
   const lists = opts.allowlist ? { mock: opts.allowlist, real: opts.allowlist } : { mock: SYNTHETIC_ALLOWLIST, real: OWNER_APPROVED };
   const mstatus = marker.status();
-  const machine = createMachine({ markerPresent: mstatus === 'present', markerAvailable: mstatus !== 'unavailable' });
+  const machine = createMachine({ markerPresent: mstatus === 'present', markerAvailable: mstatus !== 'unavailable', fourway: opts.fourway || fourwayEnabledFor });
 
   let transport = null, session = null, boundary = null, snapshot = null, boxIds = null, identityKey = null;
-  let attestations = {}, manual = { escFamily: '', escModel: '' };
+  let attestations = {}, fingerprint = null;
+  // 4-way identification: fwBusy is true from just before 4-way starts until ordinary MSP has answered again (or the session faulted). While it is true
+  // the controller sends NO MSP at all (polling, stop loops and the motor boundary are all gated), because the FC parses 4-way frames, not MSP.
+  let fwBusy = false, scanRun = 0, scanAbort = false;
+  const fwView = { phase: 'idle', channels: [0, 1, 2, 3].map((i) => ({ channel: i + 1, state: 'waiting' })) };
   let polling = false, loopTimer = null, graceTimer = null, escTimer = null, disposed = false, tickCount = 0;
   let proofRun = 0;
   const obs = { telemetry: null, telemetryAt: null, armed: null, armedAt: null, voltage_cV: null, voltageAt: null, readback: null, lastSendAt: -1, lastAck: null };
@@ -85,7 +91,11 @@ export function createBenchController(opts = {}) {
 
   function runEffect(fx) {
     switch (fx.type) {
-      case 'stop-and-prove': immediateStop(); runStopLoop('proof', true); break;
+      case 'stop-and-prove':
+        if (fwBusy) { scanAbort = true; break; } // in 4-way mode no zero command can be delivered: the scan finishes by leaving 4-way, then the stop proof runs
+        immediateStop(); runStopLoop('proof', true); break;
+      case 'start-fourway-scan': runFourWayScan(); break;
+      case 'start-restore': runRestore(); break;
       case 'start-stop-proof': immediateStop(); runStopLoop('proof', true); break;
       case 'start-stop-validation': runStopLoop('proof'); break;
       case 'start-safe-state': runStopLoop('safe-state'); break;
@@ -111,10 +121,10 @@ export function createBenchController(opts = {}) {
   }
 
   // ---- stop path
-  function transportAlive() { return !!(transport && session && !session.closed && machine.capabilities().transportAvailable); }
+  function transportAlive() { return !!(transport && session && !session.closed && !fwBusy && machine.capabilities().transportAvailable); }
 
   function sendStopTracked() {
-    if (!boundary) return false;
+    if (!boundary || fwBusy) return false;
     try {
       obs.lastSendAt = now();
       boundary.sendStop().catch(() => {});
@@ -157,6 +167,95 @@ export function createBenchController(opts = {}) {
         session.request('MSP_MOTOR').then((v) => { dispatch('READBACK', { values: v.values.slice(0, MOTOR.enabledMotors) }); }).catch(() => { dispatch('READBACK', { values: null }); }).finally(() => { readbackBusy = false; });
       }
       await sleep(slow ? n.stopCadenceMs * 10 : n.stopCadenceMs);
+    }
+  }
+
+  // ---- ESC identification (read-only 4-way scan) and the proof that ordinary MSP is back. Every decision is the machine's; this only drives I/O.
+  const MOTORS_STOPPED = (v) => Array.isArray(v) && v.length === MOTOR.enabledMotors && v.every((x) => x === MOTOR.stopValue);
+  async function mspAnswers() { // the strongest available proof that the FC is NOT in 4-way mode: it answers an MSP read
+    for (let a = 0; a < 3; a++) { try { if (!session || session.closed) return false; await session.request('MSP_API_VERSION'); return true; } catch { await sleep(200); } }
+    return false;
+  }
+  async function runFourWayScan() {
+    const id = ++scanRun;
+    scanAbort = false; fwBusy = true; fwView.phase = 'preparing'; fwView.channels = [0, 1, 2, 3].map((i) => ({ channel: i + 1, state: 'waiting' })); emit();
+    const finish = async (result, entered) => {
+      // restoration is proven by MSP answering, not by 4-way's own exit reply
+      const alive = id === scanRun && !disposed && (await mspAnswers());
+      if (id !== scanRun || disposed) return;
+      if (boundary && typeof boundary.resetParser === 'function') boundary.resetParser();
+      fwBusy = false; fwView.phase = 'idle';
+      if (machine.state === STATE.ESC_IDENTIFICATION) {
+        dispatch(alive ? 'FOURWAY_FINISHED' : 'FOURWAY_UNPROVEN', { result, exitProven: alive, reason: 'fourway-exit-unproven', entered });
+      } else if (machine.state === STATE.LOCKED_FAULT) { // the user stopped (or something faulted) during the scan: prove the stop now, or say the link is unusable
+        if (alive) runStopLoop('proof', true); else dispatch('TRANSPORT_LOST', { reason: 'fourway-exit-unproven' });
+      }
+      emit();
+    };
+    let result = null, entered = false;
+    try {
+      const [{ FourWayBoundary }, scan] = await Promise.all([import('../fourway/boundary.js'), import('../fourway/scan-result.js')]);
+      // let in-flight MSP requests finish, then require the preconditions: every command so far was external 1000, disarmed
+      for (let i = 0; i < 40 && Object.values(inflight).some(Boolean); i++) await sleep(25);
+      const pre = boundary && MOTORS_STOPPED(boundary.commandedValues()) && obs.armed === false && !Object.values(inflight).some(Boolean);
+      if (!pre || scanAbort || id !== scanRun) {
+        result = scan.buildScanResult({ reportedCount: null, channels: [], entered: false, exit: { ok: true, reason: 'not entered' }, error: scanAbort ? 'aborted-before-start' : 'preconditions-not-met' });
+        return await finish(result, false);
+      }
+      const fb = new FourWayBoundary({ transport, clock });
+      fwView.phase = 'scanning'; emit();
+      const ent = await fb.enter();
+      entered = ent.ok;
+      let raw = [];
+      if (ent.ok && !scanAbort && id === scanRun) {
+        raw = await fb.identifyAll({
+          count: ent.escCount, shouldAbort: () => scanAbort || id !== scanRun,
+          onProgress: ({ phase, channel }) => { const c = fwView.channels[channel]; if (c && phase === 'init') { c.state = 'connecting'; emit(); } },
+        });
+        if (raw.some((r) => r && r.init)) await fb.resetChannels(raw.filter((r) => r && r.init).map((r) => r.channel));
+      }
+      fwView.phase = 'leaving'; emit();
+      const exit = fb.active ? await fb.exit() : { ok: true, reason: 'not entered' };
+      result = scan.buildScanResult({ reportedCount: ent.ok ? ent.escCount : null, channels: raw, entered: ent.ok, exit, error: ent.ok ? null : ent.reason });
+      const entry = machine.ctx.combo && machine.ctx.combo.entry;
+      if (entry && entry.referenceEscFamily) result.warnings.push(...scan.compareToReference(result, entry.referenceEscFamily));
+      return await finish(result, entered);
+    } catch (e) {
+      result = result || { status: 'unavailable', expected: 4, reportedCount: null, channels: [], consistent: null, warnings: ['The scan stopped on an internal error.'], exit: { ok: false, reason: 'error' }, note: 'Retail model cannot be independently verified' };
+      return finish(result, entered);
+    }
+  }
+  function tryFinishRestore() { if (machine.state === STATE.POST_SCAN_RESTORE) dispatch('RESTORE_COMPLETE'); }
+  // After 4-way: re-read the identity (a different board is a fault), then external 1000 with read-back and valid zero RPM until proven.
+  async function runRestore() {
+    const id = ++proofRun;
+    let ok = false;
+    try {
+      const names = ['MSP_API_VERSION', 'MSP_FC_VARIANT', 'MSP_FC_VERSION', 'MSP_BOARD_INFO', 'MSP_UID', 'MSP_MOTOR_CONFIG', 'MSP_ADVANCED_CONFIG'];
+      const snap = await session.collectSnapshot(names);
+      const same = (n, f) => { const a = snapshot && snapshot.reads[n] && snapshot.reads[n].ok ? f(snapshot.reads[n].value) : null; const b = snap.reads[n] && snap.reads[n].ok ? f(snap.reads[n].value) : null; return a !== null && a === b; };
+      ok = rawKey(snap) === identityKey && same('MSP_FC_VERSION', (v) => v.text) && same('MSP_FC_VARIANT', (v) => v.variant) && same('MSP_API_VERSION', (v) => v.text) && same('MSP_BOARD_INFO', (v) => v.boardId);
+    } catch { ok = false; }
+    if (id !== proofRun || disposed) return;
+    dispatch('RESTORE_IDENTITY', { ok });
+    if (!ok || machine.state !== STATE.POST_SCAN_RESTORE) return;
+    let t0 = now(), proven = false, readbackBusy = false;
+    immediateStop();
+    while (id === proofRun && !disposed) {
+      if (machine.state !== STATE.POST_SCAN_RESTORE || !transportAlive()) return;
+      const caps = machine.capabilities(now());
+      if (caps.proof.partsDone) {
+        t0 = now();
+        if (!proven) { const r = dispatch('SAFE_STATE_DONE'); proven = r.ok; }
+        tryFinishRestore();
+        if (machine.state !== STATE.POST_SCAN_RESTORE) return;
+      } else if (now() - t0 > n.stopProofTimeoutMs) { dispatch('FAULT', { reason: 'restore-incomplete' }); return; }
+      sendStopTracked();
+      if (caps.proof.attempts >= n.stopMinAttempts && !caps.proof.partsDone && !readbackBusy && session) {
+        readbackBusy = true;
+        session.request('MSP_MOTOR').then((v) => { dispatch('READBACK', { values: v.values.slice(0, MOTOR.enabledMotors) }); }).catch(() => { dispatch('READBACK', { values: null }); }).finally(() => { readbackBusy = false; });
+      }
+      await sleep(caps.proof.partsDone ? n.stopCadenceMs * 10 : n.stopCadenceMs);
     }
   }
 
@@ -246,7 +345,7 @@ export function createBenchController(opts = {}) {
     loopTimer = null;
     if (!polling || disposed) return;
     try {
-      pollOnce();
+      if (!fwBusy) pollOnce(); // never MSP while the FC speaks 4-way
       if (machine.state !== STATE.DISCONNECTED && machine.state !== STATE.READ_ONLY_READINESS) observe();
       collectSample(); // records the observation as the machine just saw it, before this tick changes the output
       advanceSweep();
@@ -266,8 +365,22 @@ export function createBenchController(opts = {}) {
     const api = r('MSP_API_VERSION'), fv = r('MSP_FC_VERSION'), vr = r('MSP_FC_VARIANT'), bi = r('MSP_BOARD_INFO'), adv = r('MSP_ADVANCED_CONFIG'), uid = r('MSP_UID');
     return {
       variant: vr && vr.variant, firmware: fv && fv.text, api: api && api.text, targetName: bi && bi.targetName, boardId: bi && bi.boardId,
-      motorProtocol: adv ? PROTOCOL_NAMES[adv.motorProtocol] : null, escFamily: manual.escFamily, escModel: manual.escModel, uidHex: uid ? uid.hex : null,
+      motorProtocol: adv ? PROTOCOL_NAMES[adv.motorProtocol] : null, fcFingerprint: fingerprint,
     };
+  }
+  // The raw UID is used here, in memory, only to notice a different board after a reconnect or a scan. It is never part of identity(), the view, a record or an export.
+  function rawKey(snap = snapshot) {
+    const r = (name) => (snap && snap.reads[name] && snap.reads[name].ok ? snap.reads[name].value : null);
+    const uid = r('MSP_UID'), bi = r('MSP_BOARD_INFO');
+    return JSON.stringify([uid ? uid.hex : null, bi && bi.targetName]);
+  }
+
+  // the view (what the UI can reach) never carries the raw UID
+  function redactedSnapshot() {
+    if (!snapshot) return snapshot;
+    const reads = { ...snapshot.reads };
+    if (reads.MSP_UID) reads.MSP_UID = reads.MSP_UID.ok ? { ok: true, value: { redacted: true } } : reads.MSP_UID;
+    return { ...snapshot, reads };
   }
 
   function refreshReadiness() {
@@ -298,7 +411,7 @@ export function createBenchController(opts = {}) {
 
   function onTransportClosed(t, reason) {
     if (t !== transport) return; // a late event from an old transport
-    stopPolling(); proofRun++; sweep = null;
+    stopPolling(); proofRun++; scanRun++; fwBusy = false; sweep = null;
     notes.message = `The connection closed (${reason}).`;
     dispatch('TRANSPORT_LOST', { reason: String(reason) });
   }
@@ -314,7 +427,7 @@ export function createBenchController(opts = {}) {
         const r = dispatch('CONNECT', { transportKind: t.kind });
         if (!r.ok) { notes.error = r.reason; return r; }
         startPolling();
-        if (machine.state === STATE.READ_ONLY_READINESS) { snapshot = await session.collectSnapshot(); const b = snapshot.reads.MSP_BOXIDS; boxIds = b && b.ok ? b.value : null; identityKey = JSON.stringify([identity().uidHex, identity().targetName]); refreshReadiness(); }
+        if (machine.state === STATE.READ_ONLY_READINESS) { snapshot = await session.collectSnapshot(); const b = snapshot.reads.MSP_BOXIDS; boxIds = b && b.ok ? b.value : null; identityKey = rawKey(); fingerprint = await deriveFingerprint(((snapshot.reads.MSP_UID && snapshot.reads.MSP_UID.ok && snapshot.reads.MSP_UID.value.hex) || null), identity().targetName); refreshReadiness(); }
         emit();
         return r;
       }
@@ -327,7 +440,7 @@ export function createBenchController(opts = {}) {
         if (st === STATE.POWER_CONNECT_RECONNECT) {
           const snap = await session.collectSnapshot(); const b = snap.reads.MSP_BOXIDS; boxIds = b && b.ok ? b.value : boxIds;
           snapshot = snap;
-          if (JSON.stringify([identity().uidHex, identity().targetName]) !== identityKey) dispatch('FAULT', { reason: 'different-flight-controller-after-reconnect' });
+          if (rawKey() !== identityKey) dispatch('FAULT', { reason: 'different-flight-controller-after-reconnect' });
         }
         emit();
         return r;
@@ -354,7 +467,8 @@ export function createBenchController(opts = {}) {
     connect,
     async reread() { if (session && machine.state === STATE.READ_ONLY_READINESS) { snapshot = await session.collectSnapshot(); refreshReadiness(); } },
     setAttestation(p) { attestations = { ...attestations, ...p }; for (const k of Object.keys(attestations)) if (attestations[k] === undefined) delete attestations[k]; refreshReadiness(); },
-    setManual(p) { manual = { ...manual, ...p }; refreshReadiness(); },
+    // The user accepts that ESC identification was incomplete (warning path). Only meaningful in POST_SCAN_RESTORE; the machine decides.
+    acknowledgeEscWarning() { const r = dispatch('ESC_ACK'); if (r.ok) tryFinishRestore(); return r; },
     unlock(phrase, acknowledged) { const r = dispatch('UNLOCK', { phrase, acknowledged }); refreshReadiness(); if (!r.ok) notes.error = r.reason; return r; },
     lock() { const r = dispatch('LOCK'); refreshReadiness(); return r; },
     proceed() { return dispatch('READINESS_OK'); },
@@ -396,7 +510,7 @@ export function createBenchController(opts = {}) {
     view() {
       const t = now();
       return {
-        caps: machine.capabilities(t), trace: machine.trace, attestations, manual, notes: { ...notes }, snapshot, identity: identity(),
+        caps: machine.capabilities(t), trace: machine.trace, attestations, escScan: { busy: fwBusy, phase: fwView.phase, channels: fwView.channels.map((c) => ({ ...c })) }, notes: { ...notes }, snapshot: redactedSnapshot(), identity: identity(),
         telemetry: obs.telemetry, telemetryAgeMs: obs.telemetryAt === null ? null : t - obs.telemetryAt, armed: obs.armed, voltage_cV: obs.voltage_cV,
         readiness: machine.ctx.readinessReport, markerStatus: marker.status(),
         sweep: sweep ? { motor: sweep.motor, phase: sweep.phase, output: sweep.output, elapsedMs: t - sweep.startedAt, threshold: sweep.threshold } : null,
@@ -420,20 +534,21 @@ export function createBenchController(opts = {}) {
       try {
         const result = api.analysisResult();
         if (!result) return { ok: false, reason: 'no-result' };
-        const record = buildHistoryRecord({ result, identity: identity(), now: Date.now(), samplesRetained: retainSamples === true });
-        const set = retainSamples === true ? buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), now: Date.now() }) : null;
+        const record = buildHistoryRecord({ result, identity: identity(), now: Date.now(), samplesRetained: retainSamples === true, esc: machine.ctx.esc.result });
+        const set = retainSamples === true ? buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), now: Date.now(), esc: machine.ctx.esc.result }) : null;
         const r = saveStoredDiagnostic(record, set, diagStorage);
         return { ...r, id: record.id, recordBytes: approxBytes(record), sampleBytes: set ? approxBytes(set) : 0 };
       } catch { return { ok: false, reason: 'error' }; }
     },
     // Approximate size of the live samples, shown before the user chooses to keep them.
-    approxSampleBytes() { try { const result = api.analysisResult(); return result ? approxBytes(buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity() })) : 0; } catch { return 0; } },
-    exportEvidence() { try { const result = api.analysisResult(); return result ? buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity() }) : null; } catch { return null; } },
+    approxSampleBytes() { try { const result = api.analysisResult(); return result ? approxBytes(buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), esc: machine.ctx.esc.result })) : 0; } catch { return 0; } },
+    exportEvidence() { try { const result = api.analysisResult(); return result ? buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), esc: machine.ctx.esc.result }) : null; } catch { return null; } },
     savedDiagnostics() { return { ...listStoredDiagnostics(diagStorage), size: storedDiagnosticsSize(diagStorage) }; },
     deleteSavedDiagnostics() { return deleteStoredDiagnostics(diagStorage); },
     // test access
     _collector: collector,
     _obs: obs,
+    _rawUidHexForTests: () => (snapshot && snapshot.reads.MSP_UID && snapshot.reads.MSP_UID.ok ? snapshot.reads.MSP_UID.value.hex : null),
     _sweepForTests: () => sweep,
   };
   return api;

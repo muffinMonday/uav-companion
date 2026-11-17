@@ -52,6 +52,7 @@ const text = (p, sel) => p.locator(sel).innerText();
 const state = (p) => p.locator('#bt-state').getAttribute('data-state');
 const waitState = (p, s, timeout = 20000) => p.waitForSelector(`#bt-state[data-state="${s}"]`, { timeout });
 async function hold(p, sel, ms = 1200) {
+  await p.locator(sel).evaluate((e) => e.scrollIntoView({ block: 'center' })); // centred, so the fixed Stop & zero bar does not cover it
   const box = await p.locator(sel).boundingBox();
   await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await p.mouse.down(); await p.waitForTimeout(ms); await p.mouse.up();
@@ -60,7 +61,7 @@ async function toChecklist(p) {
   await p.goto(U, { waitUntil: 'networkidle' });
   await p.click('#btn-connect-mock');
   await waitState(p, 'READ_ONLY_READINESS');
-  await p.check('[data-attest="armSwitchOff"]'); await p.check('[data-attest="batteryDisconnected"]');
+  await p.check('[data-attest="armSwitchOff"]'); await p.check('[data-attest="throttleMin"]'); await p.check('[data-attest="batteryDisconnected"]');
   await p.waitForFunction(() => !document.querySelector('#btn-proceed').disabled);
   await p.click('#btn-proceed');
   await waitState(p, 'SAFETY_CHECKLIST');
@@ -87,22 +88,22 @@ try {
   p.on('request', (r) => { try { hosts.add(new URL(r.url()).host); } catch { /* data: urls */ } });
   await p.goto(U, { waitUntil: 'networkidle' });
   ok((await p.locator('meta[name="robots"][content="noindex"]').count()) === 1, 'the page carries noindex');
-  const banner = await text(p, '.bt-banner');
-  ok(/Experimental developer bench tool/.test(banner), 'it says it is an experimental developer bench tool');
+  const banner = await text(p, '#bt-header');
+  ok(/Engineering lab/.test(banner), 'it says it is the engineering lab');
   ok(/not access control/.test(banner), 'it says an unlinked static route is not access control');
-  ok(/synthetic and read-only/.test(await text(p, '#bt-mode')), 'it defaults to synthetic / read-only mode');
+  ok(/Not connected/.test(await text(p, '#bt-mode')) && /synthetic/i.test(await text(p, '#bt-header')), 'it starts unconnected and offers the synthetic mode');
   ok((await p.locator('#btn-stop-zero').count()) === 0 && (await p.locator('#hold-start, #hold-final, [data-item]').count()) === 0, 'before connecting there is no Stop & zero and no active control');
   ok((await p.locator('a[href]').count()) === 0, 'the page has no outgoing links');
 
   await p.click('#btn-connect-mock'); await waitState(p, 'READ_ONLY_READINESS');
-  ok((await text(p, '#btn-proceed')) === 'Begin active motor test' && /Safe-state initialization happens first/.test(await text(p, '.bt-actions')), 'the readiness action is "Begin active motor test" and says safe-state initialization happens first');
+  ok((await text(p, '#btn-proceed')) === 'Continue to the safety checklist' && /Zero-output initialization happens first/.test(await text(p, '#bt-actions')), 'the readiness action is "Continue to the safety checklist" and says zero-output initialization happens first');
   ok((await p.locator('select[data-attest="blackboxMode"], [data-gate="bb-mode"], [data-gate="blackbox"]').count()) === 0 && !/blackbox/i.test(await text(p, '#bt-readiness')), 'no Blackbox control, gate or message in the live workflow');
-  ok((await p.locator('#bt-sec-policy').count()) === 1 && (await p.locator('#bt-sec-policy .bt-kicker').textContent()) === 'Safety and readiness check', 'readiness is labelled as a safety and readiness check');
+  ok((await p.locator('#bt-sec-summary').count()) === 1 && (await p.locator('#bt-sec-summary .eyebrow').textContent()) === 'Safety and readiness' && (await p.locator('#bt-sec-confirm, #bt-sec-checks').count()) === 2, 'readiness has its three sections, labelled as a safety and readiness check');
   await toChecklist(p);
-  ok(/SYNTHETIC MODE/.test(await text(p, '#bt-mode')) && (await p.locator('#bt-mode').getAttribute('data-mode')) === 'mock', 'the synthetic mode is shown conspicuously');
+  ok(/Practice mode/.test(await text(p, '#bt-mode')) && (await p.locator('#bt-mode').getAttribute('data-mode')) === 'mock', 'the synthetic mode is shown conspicuously');
   ok((await p.locator('#btn-stop-zero').count()) === 1, 'the persistent Stop & zero button is present once powered testing can start');
   const stopStyle = await p.locator('#btn-stop-zero').evaluate((e) => getComputedStyle(e).backgroundColor);
-  ok(stopStyle === 'rgb(204, 0, 0)', 'Stop & zero is red');
+  ok(stopStyle === 'rgb(198, 40, 40)', 'Stop & zero is red (the app\'s own danger fill)');
   ok((await p.locator('[data-item]').count()) === 6, 'six individual physical-safety checks are shown');
   ok(await p.locator('#hold-final').isDisabled(), 'the final confirmation is locked until every item is ticked');
   await p.locator('[data-item]').first().check();
@@ -117,7 +118,7 @@ try {
 
   // reload with the marker present: recovery leads
   await p.reload({ waitUntil: 'networkidle' });
-  ok((await text(p, '.bt-overlay')).startsWith('Disconnect the flight battery now.'), 'after a reload with the marker the screen leads with "Disconnect the flight battery now."');
+  ok((await text(p, '#bt-overlay')).startsWith('Disconnect the flight battery now.'), 'after a reload with the marker the screen leads with "Disconnect the flight battery now."');
   ok((await p.locator('#hold-start, #hold-final, [data-item], #btn-proceed').count()) === 0, 'no ordinary navigation or active control is offered during recovery');
   await p.click('#btn-battery-removed');
   await p.click('#btn-connect-mock');
@@ -130,9 +131,9 @@ try {
 
   // full synthetic run of one motor
   await toMotorReady(p);
-  ok((await p.locator('.bt-selected').count()) === 0, 'no motor is selected by default');
+  ok((await p.locator('.dg-selected').count()) === 0, 'no motor is selected by default');
   await p.click('#btn-motor-1');
-  ok((await p.locator('.bt-selected').count()) === 1 && /rear right/.test(await text(p, '.bt-selected')), 'the selected motor and its position are highlighted');
+  ok((await p.locator('.dg-selected').count()) === 1 && /rear right/.test(await text(p, '.dg-selected')), 'the selected motor and its position are highlighted');
   ok(await p.locator('#hold-start').isDisabled(), 'start is locked until the physical motor is confirmed');
   ok(/not confirmed/i.test(await text(p, '#bt-interlocks')), 'the locked reason is shown');
   await p.click('#btn-confirm-target');
@@ -142,28 +143,28 @@ try {
   await hold(p, '#hold-start', 1200);
   await waitState(p, 'RUNNING');
   ok(/Motor 1 running/.test(await text(p, '#bt-sec-run h2')), 'a focused active-motor view is shown');
-  ok((await p.locator('#bt-sec-run .bt-kicker').textContent()) === 'Active sweep' && (await p.locator('#rd-big').count()) === 1 && (await p.locator('#rd-progress').count()) === 1, 'the active sweep is labelled and shows a large command and RPM readout with a progress bar');
+  ok((await p.locator('#bt-sec-run .eyebrow').textContent()) === 'Active test' && (await p.locator('#rd-big').count()) === 1 && (await p.locator('#rd-progress').count()) === 1, 'the active sweep is labelled and shows a large command and RPM readout with a progress bar');
   await p.setViewportSize({ width: 360, height: 740 });
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1) && await p.locator('#btn-stop-zero').isVisible(), 'the active-sweep view has no horizontal scroll at 360 px and Stop & zero stays visible');
   await p.setViewportSize({ width: 1000, height: 900 });
   await p.waitForFunction(() => Number(document.getElementById('rd-output').textContent) >= 1020);
   ok(/^\d+ ms$/.test(await text(p, '#rd-age')) && /s$/.test(await text(p, '#rd-elapsed')), 'output, RPM, telemetry age and elapsed time are shown');
-  ok((await p.locator('#bt-sec-run details.bt-adv').count()) === 1, 'advanced readings are in an expandable section');
+  ok((await p.locator('#bt-sec-run details.dg-details').count()) === 1, 'advanced readings are in an expandable section');
   ok((await p.locator('#btn-stop-zero').count()) === 1, 'Stop & zero stays visible while running');
   await waitState(p, 'VERIFYING_STOP', 20000);
   await p.waitForSelector('#btn-no-rotation', { timeout: 10000 });
   await p.click('#btn-no-rotation');
   await p.click('#btn-pos-rear-right');
   await waitState(p, 'MOTOR_READY');
-  ok(/Completed motors: 1/.test(await text(p, '#bt-sec-ready')), 'the first motor is recorded after the stop proof and the position confirmation');
-  ok((await p.locator('#bt-sec-result').count()) === 1 && /Test incomplete/.test(await text(p, '#bt-result-headline')) && (await p.locator('#bt-sec-result .bt-kicker').textContent()) === 'Observational result', 'after one motor the observational result says "Test incomplete"');
-  ok((await p.locator('.bt-rescell').count()) === 4 && (await p.locator('details.bt-card').count()) === 4 && (await p.locator('.bt-rescell[data-status="incomplete"], .bt-rescell[data-status="not-run"], .bt-rescell[data-status="completed"]').count()) === 4, 'a quad diagram and four expandable motor cards are shown, each with a text status');
-  ok((await p.locator('details.bt-card[data-motor="0"] summary').innerText()).includes('rear right'), 'the first motor card names its position');
+  ok(/Tested motors: 1/.test(await text(p, '#bt-sec-ready')), 'the first motor is recorded after the stop proof and the position confirmation');
+  ok((await p.locator('#bt-sec-result').count()) === 1 && /Test incomplete/.test(await text(p, '#bt-result-headline')) && (await p.locator('#bt-sec-result .eyebrow').textContent()) === 'Observed result', 'after one motor the observational result says "Test incomplete"');
+  ok((await p.locator('.dg-quad-result .dg-motor').count()) === 4 && (await p.locator('details.dg-card').count()) === 4 && (await p.locator('.dg-quad-result .dg-motor[data-state="unavailable"], .dg-quad-result .dg-motor[data-state="waiting"], .dg-quad-result .dg-motor[data-state="passed"]').count()) === 4, 'a quad diagram and four expandable motor cards are shown, each with a text status');
+  ok((await p.locator('details.dg-card[data-motor="0"] summary').innerText()).includes('rear right'), 'the first motor card names its position');
   const resText = await p.evaluate(() => { const c = document.getElementById('bt-sec-result').cloneNode(true); for (const q of c.querySelectorAll('p')) if (/does not mean/.test(q.textContent)) q.remove(); return c.textContent; });
   ok(!/healthy|faulty|passed|airworth|safe to fly|certified/i.test(resText), 'the result makes no health, pass or safety claim outside the one limits statement');
   ok(/does not mean/.test(await text(p, '#bt-sec-result')) && /propeller-free/.test(await text(p, '#bt-sec-result')), 'the limits statement and the propeller-free reminder are shown');
   ok(/1020 to 1100/.test(await text(p, '#bt-sec-result')), 'the output range and cap are shown');
-  ok(/Off by default/.test(await text(p, '#bt-sec-result .bt-keep')) && (await p.locator('#bt-retain').isChecked()) === false, 'keeping the live samples is off by default and the approximate size is shown');
+  ok(/Off by default/.test(await text(p, '#bt-keep')) && (await p.locator('#bt-retain').isChecked()) === false, 'keeping the live samples is off by default and the approximate size is shown');
   await p.click('#btn-save-result');
   await p.setViewportSize({ width: 360, height: 740 });
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'the result screen has no horizontal scroll at 360 px');
@@ -184,7 +185,7 @@ try {
   await p.waitForSelector('#btn-no-rotation', { timeout: 10000 }); await p.click('#btn-no-rotation');
   await p.click('#btn-pos-rear-left'); // motor 2 is expected at front right
   await waitState(p, 'LOCKED_FAULT');
-  ok(/Disconnect the flight battery now\./.test(await text(p, '.bt-overlay')) && /not the one expected/.test(await text(p, '.bt-overlay')), 'a motor-position mismatch locks the workflow with the mismatch explained');
+  ok(/Disconnect the flight battery now\./.test(await text(p, '#bt-overlay')) && /not the one expected/.test(await text(p, '#bt-overlay')), 'a motor-position mismatch locks the workflow with the mismatch explained');
 
   // ---------- Stop & zero during a run, and USB loss, from fresh browser profiles (the fault above left its recovery marker, as designed)
   const fresh = async () => { const pg = await (await b.newContext({ viewport: { width: 1000, height: 900 } })).newPage(); pg.on('pageerror', (e) => errs.push('pageerror ' + e.message)); pg.on('console', (m) => m.type() === 'error' && errs.push(m.text())); return pg; };
@@ -196,9 +197,9 @@ try {
   await hold(p, '#hold-start', 1200); await waitState(p, 'RUNNING');
   await p.click('#btn-stop-zero');
   await waitState(p, 'LOCKED_FAULT');
-  ok(/You pressed Stop & zero/.test(await text(p, '.bt-overlay')), 'Stop & zero is one action with no confirmation and locks the session');
+  ok(/You pressed Stop & zero/.test(await text(p, '#bt-overlay')), 'Stop & zero is one action with no confirmation and locks the session');
   await p.waitForSelector('#btn-no-rotation', { timeout: 10000 });
-  ok((await p.locator('#bt-proof li.bt-done').count()) === 3, 'three of the four stop-proof parts are met automatically before the user confirmation');
+  ok((await p.locator('#bt-proof li.done').count()) === 3, 'three of the four stop-proof parts are met automatically before the user confirmation');
   ok((await p.locator('#btn-stop-zero').count()) === 1, 'Stop & zero stays on the fault screen');
 
   void keep; p = await fresh();
@@ -208,13 +209,13 @@ try {
   await hold(p, '#hold-start', 1200); await waitState(p, 'RUNNING');
   await p.click('#inj-disconnect');
   await waitState(p, 'LOCKED_FAULT');
-  const ov = await text(p, '.bt-overlay');
+  const ov = await text(p, '#bt-overlay');
   ok(ov.startsWith('Disconnect the flight battery now.') && /cannot stop or verify the motors/.test(ov), 'USB loss shows the full-screen battery instruction and does not claim a stop');
   ok((await p.locator('#btn-no-rotation').count()) === 0, 'no stop confirmation is offered without a transport');
-  ok(await p.evaluate(() => { const r = document.querySelector('.bt-overlay').getBoundingClientRect(); return r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }), 'the warning is full screen');
+  ok(await p.evaluate(() => { const r = document.querySelector('#bt-overlay').getBoundingClientRect(); return r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }), 'the warning is full screen');
 
   // trace
-  ok((await p.locator('.bt-overlay #bt-trace-fault').count()) === 1, 'the trace is also reachable from the fault screen');
+  ok((await p.locator('#bt-overlay #bt-trace-fault').count()) === 1, 'the trace is also reachable from the fault screen');
   const trace = await p.evaluate(() => document.getElementById('bt-trace').textContent);
   ok(/MOTOR_READY -> RUNNING {2}START_HOLD_COMPLETE/.test(trace) && /TRANSPORT_LOST/.test(trace), 'the transition trace lists the transitions for review');
 
@@ -244,9 +245,9 @@ try {
   await kb.click('#btn-motor-4'); await kb.click('#btn-confirm-target');
   await kb.waitForFunction(() => !document.querySelector('#hold-start').disabled, null, { timeout: 15000 });
   await kb.click('#hold-start-timed');
-  ok(/Confirming in 1 s/.test(await text(kb, '.bt-holdstatus')), 'the timed confirm announces its countdown');
+  ok(/Confirming in 1 s/.test(await text(kb, '.dg-holdstatus')), 'the timed confirm announces its countdown');
   await kb.click('#hold-start-timed');
-  ok(/Cancelled/.test(await text(kb, '.bt-holdstatus')), 'activating it again cancels');
+  ok(/Cancelled/.test(await text(kb, '.dg-holdstatus')), 'activating it again cancels');
   await kb.waitForTimeout(1300);
   ok((await state(kb)) === 'MOTOR_READY', 'a cancelled timed confirm starts nothing');
   await kb.click('#hold-start-timed');
@@ -259,7 +260,7 @@ try {
   const pv = await fresh();
   await pv.goto(U, { waitUntil: 'networkidle' });
   await pv.click('#btn-connect-mock'); await waitState(pv, 'READ_ONLY_READINESS');
-  await pv.check('[data-attest="armSwitchOff"]'); await pv.check('[data-attest="batteryDisconnected"]');
+  await pv.check('[data-attest="armSwitchOff"]'); await pv.check('[data-attest="throttleMin"]'); await pv.check('[data-attest="batteryDisconnected"]');
   await pv.waitForFunction(() => !document.querySelector('#btn-stopval').disabled);
   ok(await pv.locator('#btn-powered-stopval').isDisabled(), 'the powered stop validation is locked until the USB-only validation is recorded');
   ok(/USB-only stop validation/.test(await text(pv, '#btn-stopval')) && /battery disconnected/.test(await text(pv, '#btn-stopval')), 'the USB-only validation is labelled as such');
@@ -270,7 +271,7 @@ try {
   await pv.click('#btn-stopval-done'); await waitState(pv, 'READ_ONLY_READINESS');
   ok(!(await pv.locator('#btn-powered-stopval').isDisabled()), 'the powered stop validation unlocks after the USB-only validation is recorded');
   await pv.click('#btn-powered-stopval'); await waitState(pv, 'SAFETY_CHECKLIST', 25000);
-  ok(/Powered stop validation/.test(await text(pv, '.bt-note')), 'the workflow says it is a powered stop validation with no motor start');
+  ok(/Powered stop validation/.test(await text(pv, '.dg-body .status >> nth=0')), 'the workflow says it is a powered stop validation with no motor start');
   for (const cb of await pv.locator('[data-item]').all()) await cb.check();
   await pv.waitForFunction(() => !document.querySelector('#hold-final').disabled);
   await hold(pv, '#hold-final', 1200); await waitState(pv, 'READY_TO_CONNECT_POWER');
@@ -302,7 +303,7 @@ try {
   const pr = await fresh();
   await pr.goto(U, { waitUntil: 'networkidle' });
   await pr.click('#btn-connect-mock'); await waitState(pr, 'READ_ONLY_READINESS');
-  await pr.check('[data-attest="armSwitchOff"]'); await pr.check('[data-attest="batteryDisconnected"]');
+  await pr.check('[data-attest="armSwitchOff"]'); await pr.check('[data-attest="throttleMin"]'); await pr.check('[data-attest="batteryDisconnected"]');
   await pr.waitForFunction(() => !document.querySelector('#btn-stopval').disabled);
   await pr.click('#btn-stopval'); await pr.waitForSelector('#btn-no-rotation', { timeout: 10000 }); await pr.click('#btn-no-rotation'); await pr.click('#btn-stopval-done');
   await waitState(pr, 'READ_ONLY_READINESS'); await pr.click('#btn-powered-stopval'); await waitState(pr, 'SAFETY_CHECKLIST', 25000);
@@ -311,7 +312,7 @@ try {
   await hold(pr, '#hold-final', 1200); await waitState(pr, 'READY_TO_CONNECT_POWER');
   await pr.click('#btn-battery-connected'); await waitState(pr, 'POWERED_STOP_VALIDATION', 30000);
   await pr.reload({ waitUntil: 'networkidle' });
-  ok((await text(pr, '.bt-overlay')).startsWith('Disconnect the flight battery now.'), 'a reload during the powered stop validation leads with "Disconnect the flight battery now."');
+  ok((await text(pr, '#bt-overlay')).startsWith('Disconnect the flight battery now.'), 'a reload during the powered stop validation leads with "Disconnect the flight battery now."');
   ok((await pr.locator('#hold-start, #hold-final, [data-item], #btn-proceed, #btn-powered-stopval').count()) === 0, 'no ordinary control is offered after the reload');
 
   // ---------- real-hardware mode (fake serial port): starts locked, unlock is session-only
@@ -323,19 +324,19 @@ try {
   await r.goto(U, { waitUntil: 'networkidle' });
   await r.click('#btn-connect-real');
   await waitState(r, 'READ_ONLY_READINESS');
-  ok((await r.locator('#bt-mode').getAttribute('data-mode')) === 'real' && /REAL HARDWARE MODE/.test(await text(r, '#bt-mode')), 'real-hardware mode is conspicuously indicated');
+  ok((await r.locator('#bt-mode').getAttribute('data-mode')) === 'real' && /Connected/.test(await text(r, '#bt-mode')), 'real-hardware mode is conspicuously indicated');
   ok(await r.locator('#btn-proceed').isDisabled() && await r.locator('#btn-stopval').isDisabled(), 'real mode starts locked: no way forward before the unlock');
   ok((await r.locator('#btn-stop-zero').count()) === 0 && (await r.locator('#hold-start, [data-item]').count()) === 0, 'no motor control appears in read-only real mode');
   ok((await r.evaluate(() => window.__written.every((w) => w[2] === 0x3c && w[3] === 0))) === true, 'only payload-free read requests were written before the unlock');
-  await r.check('[data-attest="armSwitchOff"]'); await r.check('[data-attest="batteryDisconnected"]');
-  await r.selectOption('#bt-esc-family', 'Bluejay'); await r.fill('#bt-esc-model', 'fake'); await r.locator('#bt-esc-model').blur();
+  await r.check('[data-attest="armSwitchOff"]'); await r.check('[data-attest="throttleMin"]'); await r.check('[data-attest="batteryDisconnected"]');
+  ok((await r.locator('#bt-esc-family, #bt-esc-model').count()) === 0, 'there is no manual ESC family or model field');
   ok(await r.locator('#btn-stopval').isDisabled(), 'still locked with every gate satisfied: the session unlock is missing');
   await r.fill('#bt-unlock-phrase', 'UNLOCK BENCH TEST'); await r.click('#btn-unlock');
   ok(await r.locator('#btn-unlock').count() === 1 && await r.locator('#btn-stopval').isDisabled(), 'the phrase without the acknowledgement does not unlock');
   await r.check('#bt-unlock-ack'); await r.click('#btn-unlock');
-  await r.waitForSelector('.bt-unlocked');
+  await r.waitForSelector('.dg-unlocked');
   ok(await r.locator('#btn-proceed').isDisabled(), 'unlocked, but no FC/ESC combination is on the owner allowlist: no nonzero path');
-  ok(/allowlist/i.test(await text(r, '#bt-blockers')), 'the allowlist reason is displayed');
+  ok(/allowlist/i.test(await text(r, '#bt-needs')), 'the allowlist reason is displayed');
   ok(!(await r.locator('#btn-stopval').isDisabled()), 'stop validation (external 1000 only) becomes available');
   await r.click('#btn-stopval');
   await waitState(r, 'STOP_VALIDATION_ONLY');
@@ -347,7 +348,7 @@ try {
   await r.reload({ waitUntil: 'networkidle' });
   await r.click('#btn-connect-real');
   await waitState(r, 'READ_ONLY_READINESS');
-  ok((await r.locator('.bt-unlocked').count()) === 0 && (await r.locator('#bt-unlock-phrase').count()) === 1, 'a reload removes the session unlock');
+  ok((await r.locator('.dg-unlocked').count()) === 0 && (await r.locator('#bt-unlock-phrase').count()) === 1, 'a reload removes the session unlock');
   ok(rerrs.length === 0, 'no page errors in real mode' + (rerrs.length ? ': ' + rerrs[0] : ''));
 
   // ---------- flag OFF
@@ -369,7 +370,7 @@ try {
   ok((await p5.locator('a[href*="motor-bench"], a[href*="preflight"]').count()) === 0, 'no link to either lab anywhere in the app');
   // the existing read-only lab on the flag-on server never gains a motor control
   await p5.goto('http://127.0.0.1:5190/tools/preflight-spike/', { waitUntil: 'networkidle' });
-  ok((await p5.locator('#btn-stop-zero, #hold-start, [data-item], .bt-stop').count()) === 0 && !/Stop & zero|bench/i.test(await p5.locator('body').innerText()), 'the read-only lab has no motor control');
+  ok((await p5.locator('#btn-stop-zero, #hold-start, [data-item], .dg-stop').count()) === 0 && !/Stop & zero|bench/i.test(await p5.locator('body').innerText()), 'the read-only lab has no motor control');
   ok(e2.length === 0, 'flag off: no page errors');
 } finally {
   await b.close(); on.kill(); off.kill();

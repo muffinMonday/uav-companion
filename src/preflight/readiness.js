@@ -56,10 +56,10 @@ export function evaluateReadiness({ snapshot, attestations = {}, transportKind =
 
   // 7 arming state (read-only); the switch position cannot be read, so it is attested
   const armed = armedFromStatus(st, boxes);
-  const switchOff = attestations.armSwitchOff === true;
+  const switchOff = attestations.armSwitchOff === true && attestations.throttleMin === true; // both are the user's word: neither can be read from the flight controller
   if (armed === null) gates.push(gate('arming', 'Disarmed', 'unknown', 'not established', 'disarmed and arm switch off', 'The armed state could not be read. Unknown fails closed.', 'Check the connection and retry.'));
   else if (armed) gates.push(gate('arming', 'Disarmed', 'fail', 'armed', 'disarmed and arm switch off', 'The aircraft is armed.', 'Switch the transmitter arm switch off.'));
-  else if (!switchOff) gates.push(gate('arming', 'Disarmed', 'unknown', 'disarmed; switch not confirmed', 'disarmed and arm switch off', 'The arm switch position cannot be read from the flight controller.', 'Confirm the transmitter arm switch is off and throttle is at minimum.', { needsAttestation: 'armSwitchOff' }));
+  else if (!switchOff) gates.push(gate('arming', 'Disarmed', 'unknown', 'disarmed; switch not confirmed', 'disarmed and arm switch off', 'The arm switch position cannot be read from the flight controller.', 'Confirm the transmitter arm switch is off and the throttle is at minimum.', { needsAttestation: 'armSwitchOff' }));
   else gates.push(gate('arming', 'Disarmed', 'warn', 'disarmed; switch off (confirmed by you)', 'disarmed and arm switch off', 'The switch position is your confirmation, not a reading.', '', { hardwareUnverified: true }));
 
   // 8-11 Blackbox gates: DEFERRED (owner decision 2026-11-17). Not part of the active motor-test workflow; evaluated only when a caller asks for them (includeBlackbox), kept for a future owner-approved reconsideration.

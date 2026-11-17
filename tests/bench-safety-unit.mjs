@@ -43,7 +43,7 @@ pass('MSP_SET_MOTOR, its id 214 and the frame builder appear only in src/benchte
 // 2. raw transport writes: only the boundary and the transport layer itself
 const RAW = /\._write\s*\(/;
 const rawHits = SOURCES.filter((f) => RAW.test(code(f))).map(rel).sort();
-assert.deepEqual(rawHits, [BOUNDARY, 'src/benchtest/mock-bench-fc.js', 'src/preflight/transport.js'].sort(), 'raw transport writes');
+assert.deepEqual(rawHits, [BOUNDARY, 'src/benchtest/mock-bench-fc.js', 'src/preflight/transport.js', 'src/fourway/boundary.js'].sort(), 'raw transport writes (the 4-way boundary and its synthetic FC are audited by tests/fourway-static-unit.mjs)');
 assert.ok(/super\._write/.test(code(path.join(ROOT, 'src/benchtest/mock-bench-fc.js'))), 'the synthetic FC only delegates to the base class');
 assert.ok(/isAllowedRequestFrame/.test(code(path.join(ROOT, 'src/preflight/transport.js'))), 'transport.write() still enforces the read-only gate');
 pass('the only raw write call sites are the guarded boundary, the transport base class and the synthetic FC override');
@@ -68,11 +68,20 @@ const FORBIDDEN = [
   [/\bsetInterval\s*\(/, 'repeating timer'],
   [/ALWAYS_ON/, 'ALWAYS_ON'],
 ];
+// The read-only 4-way ESC identification step lives in src/fourway (audited by tests/fourway-static-unit.mjs). Only these bench files may refer to it:
+// they drive it, show it or carry its result; none of them can build a 4-way frame.
+const FOURWAY_AWARE = new Set(['src/benchtest/controller.js', 'src/benchtest/state-machine.js', 'src/benchtest/flag.js', 'src/benchtest/bench-ui.js', 'src/benchtest/esc-ui.js', 'src/benchtest/history.js', 'src/benchtest/history-ui.js', 'src/benchtest/interlocks.js', 'src/preflight/ui-parts.js', 'tools/motor-bench-lab/lab.js', 'motor-diagnostics/user.js']);
 for (const f of [...BENCH, ...pageFiles]) {
   const c = code(f).replace(/^import .*$/gm, '').replace(/MSP_DATAFLASH_SUMMARY/g, '');
-  for (const [re, name] of FORBIDDEN) assert.ok(!re.test(c), `${rel(f)} matches ${name}`);
+  for (const [re, name] of FORBIDDEN) { if (name === '4-way / passthrough' && FOURWAY_AWARE.has(rel(f))) continue; if (name === 'reflash' && rel(f) === 'src/benchtest/esc-ui.js') continue; assert.ok(!re.test(c), `${rel(f)} matches ${name}`); }
 }
-const storageHits = [...BENCH, ...pageFiles].filter((f) => /localStorage|sessionStorage|indexedDB|document\.cookie|caches\./.test(code(f))).map(rel);
+// The two pages carry the same pre-paint theme line as index.html: one READ of the app's own preferences key, nothing written.
+const THEME_READ = /<script>\/\* theme before first paint[^\n]*localStorage\.getItem\('uavzones\.v1\.prefs'\)[^\n]*<\/script>/;
+const raw = (f) => fs.readFileSync(f, 'utf8');
+for (const html of ['motor-diagnostics/index.html', 'tools/motor-bench-lab/index.html']) assert.ok(THEME_READ.test(raw(path.join(ROOT, html))) && !/setItem|removeItem/.test(raw(path.join(ROOT, html))), html + ' only reads the theme preference');
+const STORAGE = /localStorage|sessionStorage|indexedDB|document.cookie|caches./;
+// html pages are read raw (their inline theme line is removed first); scripts go through code(), which also drops comments
+const storageHits = [...BENCH, ...pageFiles].filter((f) => STORAGE.test(f.endsWith('.html') ? raw(f).replace(THEME_READ, '') : code(f))).map(rel);
 assert.deepEqual(storageHits, ['src/benchtest/recovery-marker.js'], 'only the recovery marker touches browser storage');
 pass('no CLI, 4-way, erase, reflash, other MSP write, network call or repeating timer; browser storage only in recovery-marker.js');
 
@@ -136,7 +145,7 @@ pass('no string in the bench code claims safe to fly, airworthiness, certificati
 
 // 10. required wording is present
 const ui = fs.readFileSync(path.join(ROOT, 'src/benchtest/bench-ui.js'), 'utf8');
-for (const must of ['Disconnect the flight battery now.', 'Stop & zero', 'not access control', 'Experimental developer bench tool', 'REAL HARDWARE MODE', 'SYNTHETIC MODE']) assert.ok(ui.includes(must) || fs.readFileSync(path.join(ROOT, 'src/benchtest/constants.js'), 'utf8').includes(must), `missing wording: ${must}`);
+for (const must of ['Disconnect the flight battery now.', 'Stop & zero', 'not access control', 'Engineering lab', 'Practice mode', 'Connected · battery connected']) assert.ok(ui.includes(must) || fs.readFileSync(path.join(ROOT, 'src/benchtest/constants.js'), 'utf8').includes(must), `missing wording: ${must}`);
 pass('the battery instruction, Stop & zero, the access-control caveat and the mode labels are in the UI source');
 
 console.log('ALL OK');

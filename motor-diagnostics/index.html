@@ -5,12 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff">
+<script>/* theme before first paint: same rule as index.html and resolveTheme in src/theme.js */try{var t=JSON.parse(localStorage.getItem('uavzones.v1.prefs')||'{}').theme;document.documentElement.dataset.theme=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}catch(e){}</script>
 <link rel="icon" href="data:,">
 <title>Motor diagnostics — UAV Companion</title>
 </head>
 <body>
 <main id="bench" aria-label="Motor diagnostics"></main>
-<p class="bt-small" id="bench-status" role="status"></p>
+<p class="hint dg-status" id="bench-status" role="status"></p>
 <script type="module" src="./user.js"></script>
 </body>
 </html>

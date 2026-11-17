@@ -80,6 +80,9 @@ export function startInterlocks(ctx, facts, now) {
   add('checklist', checklistComplete(ctx.checklist) && ctx.checklist.finalHold === true, 'The physical safety checklist and final confirmation are not complete.');
   add('marker', ctx.markerVerified === true, 'The unclean-session marker is not written and verified.');
   add('powered-zero', ctx.zeroVerified === true, 'Powered-zero verification is not complete.');
+  // when the ESC identification step is part of the workflow: it must have run, 4-way must have been left with MSP proven, and a warning must be acknowledged
+  const esc = ctx.esc || { enabled: false };
+  add('esc-identification', !esc.enabled || (esc.scanned === true && esc.identityOk === true && (!esc.ackRequired || esc.acknowledged === true)), 'The ESC identification step, or its warning acknowledgement, is not complete.');
   const d = ctx.dshot || {};
   const dshotOk = d.status === 'usable' && Number.isFinite(d.since) && Number.isFinite(d.lastAt) && d.lastAt - d.since >= DSHOT_STATS.usableForMs && now - d.lastAt <= stale;
   add('dshot-stats', dshotOk, DSHOT_WHY[d.status === 'usable' ? 'short' : d.status] || DSHOT_WHY.unknown);

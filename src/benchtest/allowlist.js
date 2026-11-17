@@ -19,12 +19,15 @@ export const REQUIRED_FIELDS = Object.freeze([
   'api', // MSP_API_VERSION text, e.g. "1.47"
   'targetName', // MSP_BOARD_INFO target name
   'boardId', // MSP_BOARD_INFO four-letter board id
-  'escFamily', // manual entry: BLHeli_S, Bluejay, BLHeli_32, AM32, ...
-  'escModel', // manual entry: ESC hardware/firmware version, as printed or read in a configurator
   'motorProtocol', // DSHOT150 | DSHOT300 | DSHOT600
   'approvedBy', // owner name or handle
   'approvedOn', // calendar date, YYYY-MM-DD
 ]);
+
+// Optional, informational ESC description recorded when the combination was approved. NEVER matched and never a gate: since the
+// automatic read-only 4-way scan replaced the manual ESC entry (2026-11-17), eligibility is decided by the flight controller
+// identity alone. These notes only let the scan result say "differs from the ESC family this approval was recorded with".
+export const REFERENCE_FIELDS = Object.freeze(['referenceEscFamily', 'referenceEscNote']);
 
 // Reviewed evidence of the powered stop validation. Required on every real entry, never on a synthetic one.
 export const EVIDENCE_FIELDS = Object.freeze([
@@ -44,8 +47,8 @@ export const OWNER_APPROVED = Object.freeze([
     api: '1.47',
     targetName: 'STM32F7X2',
     boardId: 'F722',
-    escFamily: 'BLHeli_32',
-    escModel: 'Flycolor Raptor 5 — BLHeli_32 Rev31.x prototype sample (Proto 31.10.1)',
+    referenceEscFamily: 'BLHeli_32', // typed by the owner at approval; a scan warning compares against it, nothing more
+    referenceEscNote: 'Flycolor Raptor 5, BLHeli_32 Rev31.x prototype sample (Proto 31.10.1), as typed by the owner on 2026-11-17',
     motorProtocol: 'DSHOT600',
     approvedBy: 'muffinMonday',
     approvedOn: '2026-11-17',
@@ -61,12 +64,15 @@ export const OWNER_APPROVED = Object.freeze([
 export const SYNTHETIC_ALLOWLIST = Object.freeze([
   Object.freeze({
     synthetic: true, variant: 'BTFL', firmware: '2025.12.5', api: '1.47', targetName: 'SYNTH', boardId: 'SYN1',
-    escFamily: 'Bluejay', escModel: 'synthetic', motorProtocol: 'DSHOT600', approvedBy: 'synthetic fixture', approvedOn: '2026-11-16',
+    referenceEscFamily: 'Bluejay', motorProtocol: 'DSHOT600', approvedBy: 'synthetic fixture', approvedOn: '2026-11-16',
   }),
 ]);
 
 const nonEmpty = (v) => typeof v === 'string' && v.trim().length > 0;
-const IDENTITY_FIELDS = Object.freeze(['variant', 'firmware', 'api', 'targetName', 'boardId', 'escFamily', 'escModel', 'motorProtocol']);
+// What an entry is matched on: the flight controller identity and the motor protocol only. The ESC is not a matching input.
+// Documented limitation: the approval's powered stop validation ran with one ESC set; a different ESC set behind the same
+// flight controller now matches. The 4-way scan result, and a visible warning when the reported family differs, compensate.
+const IDENTITY_FIELDS = Object.freeze(['variant', 'firmware', 'api', 'targetName', 'boardId', 'motorProtocol']);
 
 // A real calendar date in YYYY-MM-DD form (2026-02-30 and 2026-13-01 are rejected).
 export function isCalendarDate(v) {
@@ -81,6 +87,7 @@ export function validateEntry(e) {
   if (!e || typeof e !== 'object') return 'entry is not an object';
   for (const f of REQUIRED_FIELDS) if (!nonEmpty(e[f])) return `missing ${f}`;
   if (!isCalendarDate(e.approvedOn)) return 'approvedOn must be a calendar date, YYYY-MM-DD';
+  for (const f of REFERENCE_FIELDS) if (e[f] !== undefined && !nonEmpty(e[f])) return `${f} must be a non-empty string when present`;
   if (e.synthetic === true) return null;
   if (e.synthetic !== undefined && e.synthetic !== false) return 'synthetic must be absent, false or true';
   for (const f of EVIDENCE_FIELDS) if (e[f] === undefined || e[f] === null || e[f] === '') return `missing ${f}`;
@@ -93,7 +100,7 @@ export function validateEntry(e) {
   return null;
 }
 
-// identity: { variant, firmware, api, targetName, boardId, motorProtocol } read from the FC, plus { escFamily, escModel } entered by the user.
+// identity: { variant, firmware, api, targetName, boardId, motorProtocol } read from the flight controller. Extra keys are ignored.
 // Returns { entry } on an exact match, else { entry: null, reason }.
 export function matchAllowlist(identity, transportKind, list = OWNER_APPROVED) {
   if (!identity) return { entry: null, reason: 'no identity' };

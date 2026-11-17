@@ -137,7 +137,7 @@ const mkBoundary = (authorize = permissive, tOpts = {}) => {
   assert.equal(matchAllowlist(id, 'web-serial', SYNTHETIC_ALLOWLIST).entry, null, 'a synthetic entry never authorizes a real transport');
   assert.equal(matchAllowlist(id, 'web-serial').entry, null, 'the owner list does not approve a different combination');
   assert.equal(matchAllowlist(id, 'mock').entry, null);
-  for (const f of ['variant', 'firmware', 'api', 'targetName', 'boardId', 'escFamily', 'escModel', 'motorProtocol']) {
+  for (const f of ['variant', 'firmware', 'api', 'targetName', 'boardId', 'motorProtocol']) {
     assert.equal(matchAllowlist({ ...id, [f]: f === 'firmware' ? '2026.6.2' : 'other' }, 'mock', SYNTHETIC_ALLOWLIST).entry, null, `a different ${f} does not match`);
     assert.equal(matchAllowlist({ ...id, [f]: '' }, 'mock', SYNTHETIC_ALLOWLIST).entry, null, `an unknown ${f} does not match`);
   }

@@ -183,11 +183,11 @@ async function fullSession(fc, diagStorage) {
   assert.equal(dstore.getItem(SAMPLES_KEY), null, 'raw-sample retention is off by default');
   const rec = h.c.savedDiagnostics().records[0];
   assert.equal(rec.result.category, CATEGORY.COMPLETED); assert.equal(rec.firmware.firmware, '2025.12.5'); assert.equal(rec.motors.length, 4);
-  assert.ok(!JSON.stringify(rec).includes(h.c.view().identity.uidHex), 'no UID in the stored record');
+  assert.ok(!JSON.stringify(rec).includes(h.c._rawUidHexForTests()), 'no UID in the stored record');
   const withSamples = h.c.saveAnalysis({ retainSamples: true });
   assert.equal(withSamples.ok, true); assert.ok(withSamples.sampleBytes > 10000); assert.notEqual(dstore.getItem(SAMPLES_KEY), null);
   const exported = JSON.stringify(h.c.exportEvidence());
-  assert.ok(!exported.includes(h.c.view().identity.uidHex), 'the evidence export has no UID'); assert.ok(h.c.view().identity.uidHex.length > 8);
+  assert.ok(!exported.includes(h.c._rawUidHexForTests()), 'the evidence export has no UID'); assert.ok(h.c._rawUidHexForTests().length > 8); assert.ok(!JSON.stringify(h.c.view()).includes(h.c._rawUidHexForTests()), 'the view carries no raw UID');
   assert.equal(JSON.parse(exported).sweeps.length, 4);
   assert.equal(h.c.deleteSavedDiagnostics(), true); assert.equal(dstore.getItem(RECORDS_KEY), null); assert.equal(dstore.getItem(SAMPLES_KEY), null);
   assert.equal(h.c.savedDiagnostics().records.length, 0);
@@ -235,25 +235,25 @@ async function fullSession(fc, diagStorage) {
 // ---------- Blackbox is gone from the live workflow
 {
   const h = await makeHarness({ fc: { blackbox: { supported: true, device: 0, rateDenom: 1, pRatio: 1, sampleRate: 0, mask: 0, maskPresent: true } } });
-  await h.c.connect(h.t); h.c.setAttestation({ armSwitchOff: true, batteryDisconnected: true }); h.c.setManual({ escFamily: 'Bluejay', escModel: 'synthetic' });
+  await h.c.connect(h.t); h.c.setAttestation({ armSwitchOff: true, throttleMin: true, batteryDisconnected: true });
   const ids = h.c.view().readiness.gates.map((g) => g.id);
   for (const gone of ['blackbox', 'bb-mode', 'bb-fields', 'bb-rate', 'storage']) assert.ok(!ids.includes(gone), `${gone} is not a gate of the live workflow`);
   assert.ok(!('blackboxMode' in h.c.view().attestations));
   assert.equal(h.c.proceed().ok, true, 'no Blackbox device, no mode and no storage: the live workflow still proceeds');
   // the deferred gates remain available only on request (kept for a future owner decision), and even then never block the bench policy
-  const withBb = evaluateReadiness({ snapshot: h.c.view().snapshot, attestations: { armSwitchOff: true, batteryDisconnected: true }, transportKind: 'mock', includeBlackbox: true });
+  const withBb = evaluateReadiness({ snapshot: h.c.view().snapshot, attestations: { armSwitchOff: true, throttleMin: true, batteryDisconnected: true }, transportKind: 'mock', includeBlackbox: true });
   assert.ok(withBb.gates.some((g) => g.id === 'bb-mode') && withBb.overall !== 'conditional');
-  const g = await makeHarness(); await g.c.connect(g.t); g.c.setAttestation({ armSwitchOff: true, batteryDisconnected: true }); g.c.setManual({ escFamily: 'Bluejay', escModel: 'synthetic' });
+  const g = await makeHarness(); await g.c.connect(g.t); g.c.setAttestation({ armSwitchOff: true, throttleMin: true, batteryDisconnected: true });
   const { phase3Policy } = await import('../src/benchtest/interlocks.js');
-  const rep = evaluateReadiness({ snapshot: g.c.view().snapshot, attestations: { armSwitchOff: true, batteryDisconnected: true }, transportKind: 'mock', includeBlackbox: true });
+  const rep = evaluateReadiness({ snapshot: g.c.view().snapshot, attestations: { armSwitchOff: true, throttleMin: true, batteryDisconnected: true }, transportKind: 'mock', includeBlackbox: true });
   const p = phase3Policy({ report: rep, combo: { entry: {} }, mode: 'mock', unlocked: false, transportKind: 'mock' });
   assert.ok(!p.blockers.some((b) => ['blackbox', 'bb-mode', 'bb-fields', 'bb-rate', 'storage'].includes(b.id)), 'Blackbox gates never block the bench policy');
   for (const f of ['controller.js', 'bench-ui.js', 'state-machine.js', 'result-ui.js', 'result.js', 'metrics.js', 'live-collector.js', 'history.js']) {
     assert.ok(!/blackbox|MOTOR_TEST/i.test(fs.readFileSync(new URL('../src/benchtest/' + f, import.meta.url), 'utf8')), `${f} has no Blackbox logic`);
   }
-  assert.ok(fs.readFileSync(new URL('../src/benchtest/bench-ui.js', import.meta.url), 'utf8').includes('Begin active motor test'), 'the ambiguous readiness action is renamed');
+  assert.ok(fs.readFileSync(new URL('../src/benchtest/bench-ui.js', import.meta.url), 'utf8').includes('Continue to the safety checklist'), 'the ambiguous readiness action is renamed');
   assert.ok(!fs.readFileSync(new URL('../src/benchtest/bench-ui.js', import.meta.url), 'utf8').includes('Continue to safe-state initialization'));
-  pass('Blackbox: no gate, attestation or mode control in the live workflow; deferred gates only on request and never a bench blocker; the readiness action is "Begin active motor test"');
+  pass('Blackbox: no gate, attestation or mode control in the live workflow; deferred gates only on request and never a bench blocker; the readiness action is "Continue to the safety checklist"');
 }
 
 console.log('ALL OK');

@@ -63,6 +63,10 @@ const collect = () => { for (const h of harnesses) for (const e of h.m.trace) if
   const X = await mk({ storage: memoryStorage({ failRemove: true }) }); await X.toMotorReady(); X.c.stopAndZero(); await X.adv(3000); X.c.confirmNoRotation(); X.c.beginBatteryRemoval(); X.c.confirmBatteryRemoved();
   const tX = (await import('../src/benchtest/mock-bench-fc.js')).benchFcTransport(); await X.t.disconnect(); await X.c.connect(tX); await X.adv(4000); X.c.confirmNoRotation();
   X.c.completeRecovery(); X.storage.removeItem = (k) => X.storage._map.delete(k); X.c.retryMarkerClear(); // recovery: failed clear keeps the lock, retry succeeds
+  // ESC identification (4-way scan): unavailable with MSP restored (warning, acknowledgement, restore), and 4-way exit unproven
+  const spin = async (hh, n) => { for (let i = 0; i < n; i++) { await hh.adv(250); await new Promise((r) => setTimeout(r, 8)); } };
+  const Y = await mk({ fourway: { channels: [{ kind: 'bluejay' }, { kind: 'silent' }, { kind: 'bluejay' }, { kind: 'bluejay' }] } }); await Y.toZeroVerification(); await spin(Y, 220); Y.c.acknowledgeEscWarning(); await spin(Y, 60);
+  const Z = await mk({ fourway: { exit: 'never' } }); await Z.toZeroVerification(); await spin(Z, 200);
   collect();
   const table = createMachine()._tableForTests;
   const missing = [];
@@ -84,9 +88,9 @@ const collect = () => { for (const h of harnesses) for (const e of h.m.trace) if
   const EVENTS = ['CONNECT', 'READINESS_UPDATE', 'UNLOCK', 'LOCK', 'READINESS_OK', 'ENTER_STOP_VALIDATION', 'STOP_VALIDATION_DONE', 'LEAVE_STOP_VALIDATION', 'SAFE_STATE_DONE', 'CHECKLIST_ITEM',
     'FINAL_HOLD_DONE', 'MARKER_RESULT', 'CHECKLIST_COMPLETE', 'BATTERY_DECLARED', 'ESC_READY', 'RECONNECTED', 'GRACE_EXPIRED', 'ZERO_VERIFIED', 'SELECT_MOTOR', 'CONFIRM_TARGET',
     'START_HOLD_COMPLETE', 'FINISH_BENCH', 'RUN_COMPLETE', 'RUN_ABORTED', 'USER_CONFIRMS_NO_ROTATION', 'POSITION_REPORTED', 'FINISH_STOP_DONE', 'BEGIN_BATTERY_REMOVAL',
-    'BATTERY_REMOVED_CONFIRMED', 'RECOVERY_COMPLETE', 'RESET', 'ENTER_POWERED_STOP_VALIDATION', 'ZERO_VERIFIED_STOPVAL', 'POWERED_STOP_VALIDATION_DONE', 'MARKER_CLEAR_RESULT', 'RETRY_MARKER_CLEAR', 'NOT_AN_EVENT', 'constructor', '__proto__', 'toString', 'hasOwnProperty', ''];
+    'BATTERY_REMOVED_CONFIRMED', 'RECOVERY_COMPLETE', 'RESET', 'ENTER_POWERED_STOP_VALIDATION', 'ZERO_VERIFIED_STOPVAL', 'POWERED_STOP_VALIDATION_DONE', 'MARKER_CLEAR_RESULT', 'RETRY_MARKER_CLEAR', 'FOURWAY_FINISHED', 'FOURWAY_UNPROVEN', 'RESTORE_IDENTITY', 'RESTORE_COMPLETE', 'ESC_ACK', 'NOT_AN_EVENT', 'constructor', '__proto__', 'toString', 'hasOwnProperty', ''];
   const FAULTING = new Set([STATE.STOP_VALIDATION_ONLY, STATE.SAFE_STATE_INIT, STATE.SAFETY_CHECKLIST, STATE.READY_TO_CONNECT_POWER, STATE.POWER_CONNECT_RECONNECT,
-    STATE.POWERED_ZERO_VERIFICATION, STATE.POWERED_STOP_VALIDATION, STATE.MOTOR_READY, STATE.RUNNING, STATE.VERIFYING_STOP]);
+    STATE.POWERED_ZERO_VERIFICATION, STATE.ESC_IDENTIFICATION, STATE.POST_SCAN_RESTORE, STATE.POWERED_STOP_VALIDATION, STATE.MOTOR_READY, STATE.RUNNING, STATE.VERIFYING_STOP]);
   const table = createMachine()._tableForTests;
   let checked = 0;
   for (const st of ALL_STATES) {
@@ -126,7 +130,7 @@ const collect = () => { for (const h of harnesses) for (const e of h.m.trace) if
     const stop = m.motorCommandPermission({ kind: 'stop' });
     const nz = m.motorCommandPermission({ kind: 'output', motor: 0, value: 1050 });
     assert.equal(nz.ok, false, `${st}: no nonzero output without an authorized run`);
-    if (st === STATE.DISCONNECTED || st === STATE.READ_ONLY_READINESS) assert.equal(stop.ok, false, `${st} has no motor path`);
+    if (st === STATE.DISCONNECTED || st === STATE.READ_ONLY_READINESS || st === STATE.ESC_IDENTIFICATION) assert.equal(stop.ok, false, `${st} has no motor path (in 4-way mode not even a stop can be delivered)`);
     else assert.deepEqual([stop.ok, stop.maxValue], [true, 1000], `${st}: stop only`);
   }
   const h = await mk(); await h.toMotorReady();

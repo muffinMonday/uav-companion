@@ -2,16 +2,19 @@
 // modules unchanged; only the presentation differs from the developer lab (tools/motor-bench-lab/). It exists in the build only
 // when VITE_BENCH_PHASE3=1, which is also the kill switch for the dashboard entry. No synthetic or fault-injection control is
 // offered here; a simulated flight controller is available only to tests and local development (never in a production build).
-import '../src/benchtest/bench.css';
-import { benchEnabled } from '../src/benchtest/flag.js';
+import '../src/styles.css'; // the main app's own stylesheet: tokens, buttons, badges, cards, alerts, form controls
+import '../src/preflight/ui-parts.css'; // arrangement of the shared parts only (same tokens)
+import { applyTheme } from '../src/theme.js';
+import { benchEnabled, fourwayEnabledFor } from '../src/benchtest/flag.js';
 import { installLifecycle } from '../src/benchtest/lifecycle.js';
 
+applyTheme(); // the app's light/dark choice (the same preference the main app writes)
 const root = document.getElementById('bench');
 const status = document.getElementById('bench-status');
 
 if (!benchEnabled()) {
   const p = document.createElement('p');
-  p.className = 'disabled-note'; p.dataset.disabled = 'true';
+  p.className = 'dg-disabled'; p.dataset.disabled = 'true';
   p.textContent = 'Motor diagnostics is not available in this build.';
   root.append(p);
 } else {
@@ -35,8 +38,9 @@ if (!benchEnabled()) {
     const { benchFcTransport } = await import('../src/benchtest/mock-bench-fc.js');
     connectMock = async () => {
       say('');
-      const r = await controller.connect(benchFcTransport());
-      if (r && r.ok !== false && controller.machine.state === STATE.READ_ONLY_READINESS) controller.setManual({ escFamily: 'Bluejay', escModel: 'synthetic' });
+      const t = benchFcTransport();
+      if (fourwayEnabledFor('mock')) { const { attachFourWay } = await import('../src/fourway/mock-fourway-fc.js'); attachFourWay(t, { escCount: 4, channels: [{ kind: 'bluejay' }, { kind: 'bluejay' }, { kind: 'bluejay' }, { kind: 'bluejay' }], exit: 'ok', afterExit: { motorsDisabled: false } }); }
+      await controller.connect(t);
     };
   }
 

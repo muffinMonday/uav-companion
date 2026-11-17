@@ -466,7 +466,7 @@ const unavailable = [10000, 10000, 10000, 10000];
   pass('a synthetic entry never authorizes a real transport and cannot satisfy the evidence requirement');
 
   // changing any identity field prevents a match
-  for (const f of ['variant', 'firmware', 'api', 'targetName', 'boardId', 'escFamily', 'escModel', 'motorProtocol']) {
+  for (const f of ['variant', 'firmware', 'api', 'targetName', 'boardId', 'motorProtocol']) {
     assert.equal(matchAllowlist({ ...id, [f]: id[f] + 'x' }, 'web-serial', [REAL_ENTRY]).entry, null, `a different ${f} does not match`);
     assert.equal(matchAllowlist({ ...id, [f]: '' }, 'web-serial', [REAL_ENTRY]).entry, null);
   }

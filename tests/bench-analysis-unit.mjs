@@ -273,7 +273,7 @@ const IDENT = { variant: 'BTFL', firmware: '2025.12.5', api: '1.47', targetName:
   const result = buildBenchResult(sweeps);
   const rec = buildHistoryRecord({ result, identity: IDENT, now: Date.UTC(2026, 10, 17, 3, 0, 0) });
   assert.equal(rec.schemaVersion, 1); assert.equal(rec.analysisSchemaVersion, ANALYSIS_SCHEMA_VERSION); assert.equal(rec.date, '2026-11-17'); assert.equal(rec.samplesRetained, false);
-  assert.equal(rec.firmware.firmware, '2025.12.5'); assert.equal(rec.firmware.escFamily, 'Bluejay'); assert.equal(rec.association.kind, 'fc-esc-identity');
+  assert.equal(rec.firmware.firmware, '2025.12.5'); assert.equal('escFamily' in rec.firmware, false, 'no typed ESC identity any more'); assert.equal(rec.association.kind, 'fc-identity'); assert.equal(rec.escObservation, null);
   assert.equal(rec.constants.motor.cap, MOTOR.cap); assert.equal(rec.constants.peerComparison.provisional, true); assert.ok(rec.constants.metricRules.gapMs);
   assert.equal(rec.motors.length, 4); assert.ok(rec.motors[0].metrics.plateauRpm);
   assert.ok(!JSON.stringify(rec).includes('"samples"'), 'a derived record carries no live samples');

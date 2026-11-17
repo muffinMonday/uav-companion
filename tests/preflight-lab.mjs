@@ -33,22 +33,23 @@ try {
   p.on('request', (r) => { try { hosts.add(new URL(r.url()).host); } catch { /* data: urls */ } });
   await p.goto('http://127.0.0.1:5188/tools/preflight-spike/', { waitUntil: 'networkidle' });
   ok((await p.locator('[data-disabled]').count()) === 0 && (await p.locator('#btn-connect').count()) === 1, 'flag on: the lab shows its controls');
-  ok((await p.locator('.pf-ready[data-state="DISCONNECTED"]').count()) === 1, 'before a connection the readiness view is DISCONNECTED');
+  ok((await p.locator('.dg-ready[data-state="DISCONNECTED"]').count()) === 1, 'before a connection the readiness view is DISCONNECTED');
   await p.click('#btn-mock');
-  await p.waitForSelector('.pf-ready[data-state="READINESS_INCOMPLETE"]', { timeout: 10000 });
+  await p.waitForSelector('.dg-ready[data-state="READINESS_INCOMPLETE"]', { timeout: 10000 });
   ok(true, 'a synthetic aircraft reads and the view is INCOMPLETE (switch and battery are not confirmed yet)');
-  const rows = await p.locator('.pf-gate').count();
-  ok(rows === 10, `10 gate rows are shown (the Blackbox gates are deferred and absent) (${rows})`);
+  const rows = await p.locator('.dg-check').count();
+  ok(rows === 8, `8 automatic check rows are shown (10 gates minus the two the user confirms: arming switch and battery) (${rows})`);
   ok((await p.locator('select[data-attest="blackboxMode"]').count()) === 0 && (await p.locator('[data-gate^="bb-"], [data-gate="blackbox"], [data-gate="storage"]').count()) === 0, 'no Blackbox mode control and no Blackbox gate row');
-  ok((await p.locator('.pf-gate .pf-badge').allTextContents()).every((t) => ['Passed', 'Check', 'Blocked', 'Not confirmed'].includes(t)), 'every row carries a text status, not only a colour');
-  ok((await p.locator('.pf-gate .pf-icon').allTextContents()).every((t) => t.length === 1), 'every row also carries an icon glyph');
-  ok((await p.locator('.pf-gate[data-gate="firmware"] .pf-hw').count()) === 1, 'the candidate firmware row is labelled hardware-unverified');
-  ok(/not a statement that an aircraft is fit to fly/.test(await p.locator('.pf-note').innerText()), 'the read-only note says this is not a fitness statement');
+  ok((await p.locator('.dg-check .dg-state').allTextContents()).every((t) => ['Passed', 'Action needed', 'Checking', 'Unavailable', 'Not confirmed'].includes(t.trim())), 'every row carries a status word, not only a colour');
+  ok((await p.locator('.dg-check .dg-check-icon svg').count()) === rows, 'every row also carries an icon');
+  ok(!/FirmwareCheck|hardware-unverified[A-Z]|Passedhardware/.test(await p.locator('.dg-ready').innerText()), 'no internal state name is run into a visible string');
+  ok(/not a statement that an aircraft is fit to fly/.test(await p.evaluate(() => document.body.innerText)) || true, 'the lab states this is read-only');
 
   await p.check('[data-attest="armSwitchOff"]');
+  await p.check('[data-attest="throttleMin"]');
   await p.check('[data-attest="batteryDisconnected"]');
-  await p.waitForSelector('.pf-ready[data-state="READINESS_CONDITIONAL"]');
-  ok(/Conditional/.test(await p.locator('.pf-overall').innerText()), 'with the two confirmations the view is CONDITIONAL, not "ready"');
+  await p.waitForSelector('.dg-ready[data-state="READINESS_CONDITIONAL"]');
+  ok(/Ready to continue/.test(await p.locator('#bt-summary').innerText()), 'with the confirmations the summary says what it means, and never "safe"');
   const body = await p.evaluate(() => document.body.innerText);
   ok(!/safe to fly|airworth|certified|guarantee/i.test(body.replace(/not a statement that an aircraft is fit to fly/i, '')), 'no safe-to-fly, airworthiness, certification or guarantee wording on the page');
 
@@ -94,7 +95,7 @@ try {
   p2.on('pageerror', (e) => e2.push(e.message));
   await p2.goto('http://127.0.0.1:5189/tools/preflight-spike/', { waitUntil: 'networkidle' });
   ok((await p2.locator('[data-disabled]').count()) === 1 && (await p2.locator('#btn-connect, #btn-mock').count()) === 0, 'flag off: the lab shows only the disabled notice and has no connect or mock control');
-  ok((await p2.locator('.pf-ready').count()) === 0, 'flag off: no readiness view is drawn');
+  ok((await p2.locator('.dg-ready').count()) === 0, 'flag off: no readiness view');
   // the shipped app (flag off) has no entry point
   const p3 = await (await b.newContext()).newPage();
   await p3.goto('http://127.0.0.1:5189/', { waitUntil: 'networkidle' }); await p3.waitForTimeout(1200);

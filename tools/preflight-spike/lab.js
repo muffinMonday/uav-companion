@@ -1,5 +1,7 @@
 // Motor diagnostics lab page (Phase 2): the Phase 1 harness plus the read-only readiness view.
 // Behind the same build-time flag (default off); not a Vite entry, so not in `dist`. See spike.js for how to run it.
+import '../../src/styles.css'; // the app's own stylesheet; the readiness view is made of the shared production parts
+import '../../src/preflight/ui-parts.css';
 import { mountSpike } from './spike.js';
 import { preflightEnabled } from '../../src/preflight/flag.js';
 
