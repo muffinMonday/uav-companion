@@ -20,49 +20,58 @@ fs.mkdirSync(path.join(out, 'responses'), { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const round = (v) => Math.round(v * 1e5) / 1e5;
 
-// plan: key "all" then grid cells expanded by 5% of the cell size, clamped to the envelope
+// plan: the full envelope (optional: the provider may refuse it) plus grid cells expanded by 5%; a window the provider refuses
+// ("tooWide" 422) or fails on server-side (PHP memory fatal, HTML body) is split into four overlapping quadrants, to a bounded depth.
 const [W, S, E, N] = env;
 const grid = gridArg || Math.max(3, Math.ceil(Math.max(E - W, N - S) / 3.2));
+const MAX_DEPTH = 4;
 const cw = (E - W) / grid, ch = (N - S) / grid;
-const requests = [{ key: 'all', bbox: env }];
-for (let r = 0; r < grid; r++) for (let c = 0; c < grid; c++) {
-  requests.push({ key: `${r}-${c}`, bbox: [round(Math.max(W, W + c * cw - cw * .05)), round(Math.max(S, S + r * ch - ch * .05)), round(Math.min(E, W + (c + 1) * cw + cw * .05)), round(Math.min(N, S + (r + 1) * ch + ch * .05))] });
-}
-for (const q of requests) q.url = `https://kdji.cn/nfz-api.php?action=uom&province=${province}&west=${q.bbox[0]}&south=${q.bbox[1]}&east=${q.bbox[2]}&north=${q.bbox[3]}`;
-fs.writeFileSync(path.join(out, 'plan.json'), JSON.stringify({ province, envelope: env, grid, requests }, null, 2));
-if (dry) { console.log(requests.length + ' requests planned'); process.exit(0); }
+const urlOf = (b) => `https://kdji.cn/nfz-api.php?action=uom&province=${province}&west=${b[0]}&south=${b[1]}&east=${b[2]}&north=${b[3]}`;
+const initial = [{ key: 'all', bbox: env, depth: MAX_DEPTH, optional: true }];
+for (let r = 0; r < grid; r++) for (let c = 0; c < grid; c++) initial.push({ key: `${r}-${c}`, depth: 0, bbox: [round(Math.max(W, W + c * cw - cw * .05)), round(Math.max(S, S + r * ch - ch * .05)), round(Math.min(E, W + (c + 1) * cw + cw * .05)), round(Math.min(N, S + (r + 1) * ch + ch * .05))] });
+fs.writeFileSync(path.join(out, 'plan.json'), JSON.stringify({ province, envelope: env, grid, initial: initial.map(({ key, bbox }) => ({ key, bbox, url: urlOf(bbox) })) }, null, 2));
+if (dry) { console.log(initial.length + ' initial requests planned'); process.exit(0); }
 
 const log = (o) => fs.appendFileSync(path.join(out, 'acquisition.jsonl'), JSON.stringify({ at: new Date().toISOString(), ...o }) + '\n');
-const meta = {};
-for (const q of requests) {
-  const file = path.join(out, 'responses', q.key + '.json'), mfile = file + '.meta';
-  if (fs.existsSync(file) && fs.existsSync(mfile)) { meta[q.key] = JSON.parse(fs.readFileSync(mfile, 'utf8')); continue; }
+const meta = {}, requests = [], refusals = [];
+const headers = { 'user-agent': 'uav-companion-airspace-acquisition/1.0 (owner-authorized)' };
+async function fetchWindow(q) {
+  const file = path.join(out, 'responses', q.key + '.json'), mfile = file + '.meta', rfile = file + '.refused';
+  if (fs.existsSync(rfile)) return { refused: JSON.parse(fs.readFileSync(rfile, 'utf8')) };
+  if (fs.existsSync(file) && fs.existsSync(mfile)) {
+    const m = JSON.parse(fs.readFileSync(mfile, 'utf8'));
+    if (m.status === 422) return { refused: { key: q.key, bbox: q.bbox, url: m.url, status: 422, reason: 'tooWide', sha256: m.sha256 } };
+    return { meta: m };
+  }
+  const url = urlOf(q.bbox);
   let res;
   for (let attempt = 1; ; attempt++) {
-    try {
-      res = await fetch(q.url, { redirect: 'manual', signal: AbortSignal.timeout(TIMEOUT_MS), headers: { 'user-agent': 'uav-companion-airspace-acquisition/1.0 (owner-authorized)' } });
-      break;
-    } catch (e) {
-      log({ key: q.key, attempt, error: String(e) });
-      if (attempt >= 3) throw new Error(`network failure ${province}/${q.key}: ${e}`);
-      await sleep(SPACING_MS * 2 ** attempt);
-    }
+    try { res = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(TIMEOUT_MS), headers }); break; }
+    catch (e) { log({ key: q.key, attempt, error: String(e) }); if (attempt >= 3) throw new Error(`network failure ${province}/${q.key}: ${e}`); await sleep(SPACING_MS * 2 ** attempt); }
   }
-  if (res.status === 422 && q.key === 'all') {
-    const body = await res.text();
-    if (!/tooWide/.test(body)) throw new Error('unexpected 422 body');
-    const m = { status: 422, tooWide: true, bytes: body.length, sha256: sha256(Buffer.from(body)), retrievedAt: new Date().toISOString(), bbox: q.bbox, url: q.url };
-    fs.writeFileSync(file, JSON.stringify({ type: 'FeatureCollection', features: [], provinceId: province, tooWide: true })); fs.writeFileSync(mfile, JSON.stringify({ ...m, sha256: sha256(fs.readFileSync(file)) }));
-    meta[q.key] = JSON.parse(fs.readFileSync(mfile, 'utf8')); log({ key: q.key, status: 422, tooWide: true }); await sleep(SPACING_MS); continue;
-  }
-  if (res.status !== 200) { log({ key: q.key, status: res.status }); throw new Error(`HTTP ${res.status} for ${province}/${q.key}; stopping`); }
   const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length > MAX_BYTES) throw new Error(`response over ${MAX_BYTES} bytes for ${province}/${q.key}`);
-  const m = { status: 200, bytes: buf.length, sha256: sha256(buf), contentType: res.headers.get('content-type'), etag: res.headers.get('etag'), lastModified: res.headers.get('last-modified'), retrievedAt: new Date().toISOString(), bbox: q.bbox, url: q.url };
-  fs.writeFileSync(file, buf); fs.writeFileSync(mfile, JSON.stringify(m));
-  meta[q.key] = m; log({ key: q.key, status: 200, bytes: buf.length });
   await sleep(SPACING_MS);
+  if (buf.length > MAX_BYTES) throw new Error(`response over ${MAX_BYTES} bytes for ${province}/${q.key}`);
+  const text = buf.toString('utf8');
+  const refuse = (reason) => { const r = { key: q.key, bbox: q.bbox, url, status: res.status, reason, bytes: buf.length, sha256: sha256(buf), body: text.slice(0, 300), retrievedAt: new Date().toISOString() }; fs.writeFileSync(rfile, JSON.stringify(r)); log({ key: q.key, refused: reason, status: res.status }); return { refused: r }; };
+  if (res.status === 422 && /tooWide/.test(text)) return refuse('tooWide');
+  if (res.status !== 200) { log({ key: q.key, status: res.status }); throw new Error(`HTTP ${res.status} for ${province}/${q.key}; stopping`); }
+  let c; try { c = JSON.parse(text); } catch { if (/Allowed memory size|Fatal error/.test(text)) return refuse('server-fatal'); throw new Error('non-JSON body for ' + q.key); }
+  const m = { status: 200, bytes: buf.length, sha256: sha256(buf), contentType: res.headers.get('content-type'), etag: res.headers.get('etag'), lastModified: res.headers.get('last-modified'), retrievedAt: new Date().toISOString(), bbox: q.bbox, url };
+  fs.writeFileSync(file, buf); fs.writeFileSync(mfile, JSON.stringify(m)); log({ key: q.key, status: 200, bytes: buf.length });
+  return { meta: m };
 }
+async function acquire(q) {
+  const r = await fetchWindow(q);
+  if (r.meta) { meta[q.key] = r.meta; requests.push({ key: q.key, bbox: q.bbox }); return; }
+  refusals.push(r.refused);
+  if (q.optional) return;
+  if (q.depth >= MAX_DEPTH) throw new Error(`window ${q.key} still refused at maximum depth (${r.refused.reason})`);
+  const [w, s, e, n] = q.bbox, mx = (w + e) / 2, my = (s + n) / 2, dx = (e - w) * .05, dy = (n - s) * .05;
+  const quads = [[w, s, mx + dx, my + dy], [mx - dx, s, e, my + dy], [w, my - dy, mx + dx, n], [mx - dx, my - dy, e, n]];
+  for (const [i, b] of quads.entries()) await acquire({ key: q.key + '.' + i, depth: q.depth + 1, bbox: b.map(round) });
+}
+for (const q of initial) await acquire(q);
 
 // parse, validate envelope contract
 const captures = requests.map((q) => {
@@ -75,7 +84,7 @@ const captures = requests.map((q) => {
   for (const k of ['truncated', 'hasMore', 'next', 'nextPage']) if (c[k]) throw new Error(`pagination marker ${k} in ${q.key}`);
   return { key: q.key, c };
 });
-const real = captures.filter((x) => !x.c.tooWide);
+const real = captures;
 const first = real[0].c;
 const snapshots = new Set(real.map((x) => x.c.snapshotFetchedAt));
 const byId = new Map(), perCapture = {}, conflicts = [], missingIds = [];
@@ -93,10 +102,11 @@ for (const { key, c } of captures) {
 }
 const unionIds = new Set(byId.keys());
 const gridUnion = new Set(); for (const { key } of captures) if (key !== 'all') for (const id of perCapture[key]) gridUnion.add(id);
-const allRefused = !!meta.all.tooWide;
+const allRefused = !perCapture.all;
+perCapture.all ??= new Set();
 const allOnly = [...perCapture.all].filter((id) => !gridUnion.has(id)), gridOnly = allRefused ? [] : [...gridUnion].filter((id) => !perCapture.all.has(id));
 const report = { province, provinceName: first.province, publishDate: first.publishDate, snapshots: [...snapshots], envelope: env, grid, requests: requests.length, occurrences, uniquePolygons: unionIds.size,
-  conflicts, missingIds: missingIds.length, fullEnvelopeRefusedTooWide: allRefused, fullEnvelopeCount: perCapture.all.size, gridUnionCount: gridUnion.size, fullVsGridOnlyFull: allOnly, fullVsGridOnlyGrid: gridOnly,
+  conflicts, missingIds: missingIds.length, fullEnvelopeRefused: allRefused, refusals: refusals.map(({ key, status, reason, sha256: h }) => ({ key, status, reason, sha256: h })), fullEnvelopeCount: perCapture.all.size, gridUnionCount: gridUnion.size, fullVsGridOnlyFull: allOnly, fullVsGridOnlyGrid: gridOnly,
   captures: requests.map((q) => ({ key: q.key, bbox: q.bbox, features: perCapture[q.key].size, ...meta[q.key] })) };
 fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
 if (conflicts.length || missingIds.length || snapshots.size !== 1) throw new Error(`blocking acquisition findings: ${JSON.stringify({ conflicts: conflicts.length, missing: missingIds.length, snapshots: snapshots.size })}`);
