@@ -16,6 +16,8 @@ Terms: **current** = in `styles.css` today; **planned (Pn)** = decided, to be ad
 7. No new runtime cost: do not add `backdrop-filter`, CSS filters or extra shadow layers; animate transform and opacity only; no web fonts.
 8. Do not change behaviour or the tuned phone sheet / dashboard logic (`.sidepanel.tall`, `.dash.tall`, swipe handling) when restyling.
 
+**Motor diagnostics workspace (2026-11-17).** `/motor-diagnostics/`, the engineering lab and the read-only lab import `src/styles.css` and render the shared parts in `src/preflight/ui-parts.js` (`.btn`, `.badge`, `.dash-card`, `.status`, `.check-row`, `.eyebrow`, `.section-title`, tokens only). `src/benchtest/ui-parts.css` only arranges them (`.dg-*`, no colour, size or radius of its own). Added in `ui-parts.css`: `.badge.no` and `.badge.info` (status pairs). Rules for these screens: every state has an icon and a word; confirmation rows are at least 44 px; the Stop & zero bar is fixed at the bottom on every width; a redraw keeps keyboard focus.
+
 ## 2. Tokens (current, `:root` and `:root[data-theme="dark"]`)
 | Group | Tokens | Notes |
 |---|---|---|

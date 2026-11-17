@@ -31,6 +31,14 @@
 - No UI, report, export or document may claim "safe to fly", airworthiness, certification, guaranteed fault detection or a definitive component diagnosis. The most positive label is **No anomaly detected**.
 - **An aircraft that fails the compatibility gates is a normal, supported inventory outcome.** It is recorded with the exact detected and required values and the manual steps, and is not treated as an error.
 
+## 0.1 Owner decisions 2026-11-17: automatic ESC identification and the workspace redesign [DEC]
+- **4-way identification is a default powered step** (after the powered-zero check, before any nonzero output): read-only, through Betaflight's 4-way interface, original implementation in `src/fourway/`. Design, protocol evidence, prohibited commands, supported families, restoration proof and hazards: `docs/MOTOR_DIAGNOSTICS_FOURWAY_IDENTIFICATION.md`.
+- **Failure policy:** identification unavailable with ordinary MSP proven restored = prominent warning plus explicit acknowledgement, the test may continue if every other gate passes, and the result records it. 4-way exit or MSP restoration not proven = blocking safety fault ("Disconnect the flight battery now.", marker kept, fresh connection required).
+- **Manual ESC family selector and model/version input are removed** (UI, state, validation, stored records). The allowlist matches the flight controller identity and protocol only; the old ESC text survives as informational `referenceEscFamily` and `referenceEscNote`. A reported firmware target or layout is not necessarily the retail model.
+- **Workflow is nine steps:** connect, readiness, safety checklist, battery and zero check, ESC identification, restore and re-check, motor tests, stop check, result.
+- **UI:** the workspace and the engineering lab mount the same components, built from the main app's own stylesheet and tokens (`src/styles.css`, `src/preflight/ui-parts.js`); no diagnostics theme.
+- **Status:** implemented and synthetic-tested, **not enabled for real hardware**: by source reading Betaflight 2025.12.5 leaves the motor outputs off after 4-way exit, so the restoration proof would fail closed. Build switch `VITE_BENCH_FOURWAY` (default off; `synthetic` enables it for the simulated flight controller only). Owner to run one supervised check before it is enabled (identification doc, section 2). Blackbox stays deferred.
+
 ## 0. Scope decision 2026-11-17: live MSP/DShot analysis, Blackbox deferred [DEC]
 
 **Decision (owner, 2026-11-17).** Automated Betaflight Blackbox binary decoding and follow-up flight-log analysis are **Deferred — not proportionate to pursue at present**. This is a scope decision, not a finding that it is impossible.

@@ -120,7 +120,7 @@ See the backlog section 0 for the decision record. In code: `evaluateReadiness` 
 | Piece | Where |
 | --- | --- |
 | Dashboard card (title, Experimental badge, description, **Open diagnostics**, requirement note; latest saved date and headline with **View history** when local history exists) | `src/motor-diag-entry.js`, one line in `src/dashboard.js` |
-| Workspace (user-facing, `/motor-diagnostics/`) | `motor-diagnostics/index.html`, `user.js`; presentation mode `user: true` of `src/benchtest/bench-ui.js`; shared styles `src/benchtest/bench.css` |
+| Workspace (user-facing, `/motor-diagnostics/`) | `motor-diagnostics/index.html`, `user.js`; presentation mode `user: true` of `src/benchtest/bench-ui.js`; shared styles `src/preflight/ui-parts.css (arrangement only; imports the app stylesheet)` |
 | Saved results, grouped by FC/ESC identity | `src/benchtest/history-ui.js` (`#history`) |
 | Page lifecycle and navigation limits | `src/benchtest/lifecycle.js` (shared with the lab) |
 | Developer harness (synthetic FC, fault injection, trace, stop-validation procedures) | `/tools/motor-bench-lab/` |
