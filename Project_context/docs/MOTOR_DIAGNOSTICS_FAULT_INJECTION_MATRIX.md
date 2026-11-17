@@ -2,7 +2,7 @@
 
 **Status:** 2026-11-17. Maps every hazard in [MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md](MOTOR_DIAGNOSTICS_HAZARD_ANALYSIS.md) and every abort trigger of the Phase 3 task to the automated test that exercises it and to the hardware-only check that is still missing.
 **Scope:** *mock* means the synthetic flight controller (`src/benchtest/mock-bench-fc.js`) on a mocked transport with a deterministic clock. Nothing here was run against real hardware. *HW* items are unverified and are the owner's supervised checks (handoff section 8).
-**Review corrections 2026-11-17:** the "Review findings" section below maps the four confirmed findings to `tests/bench-findings-unit.mjs` (F). The corrected build is not deployed.
+**Review corrections 2026-11-17:** the "Review findings" section below maps the four confirmed findings to `tests/bench-findings-unit.mjs` (F). The corrected build is deployed to the isolated lab (gh-pages `d6567c4`); synthetic checks only.
 **Test files:** `tests/bench-findings-unit.mjs` (F), `tests/bench-machine-unit.mjs` (M), `tests/bench-boundary-unit.mjs` (B), `tests/bench-controller-unit.mjs` (C), `tests/bench-safety-unit.mjs` (S), `tests/bench-lab.mjs` (browser, L), `tests/preflight-status-unit.mjs` (N). Injection flags live in `fc.inject` of the synthetic FC.
 
 ## Hazard rows

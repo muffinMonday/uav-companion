@@ -1,7 +1,7 @@
 # Motor Diagnostics: Hazard Analysis
 
 **Status:** Draft, 2026-11-16; mock verification added 2026-11-17 (see the sign-off table). **Mandatory Phase 3 entry gate** of the [consolidated backlog](backlogs/in-progress/UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md) (section 24). Documentation only; it authorizes nothing. Phase 3 must not start until the owner reviews it and every row has a passing verification plan.
-**Review corrections 2026-11-17:** rows H5, H6 and H7 and the sign-off table were updated for four confirmed findings (powered stop validation through the full safety flow, verified marker deletion, DShot statistics fail-closed policy, evidence-bound allowlist). The corrected build is **not deployed**; the live Phase 3 route is the earlier build and is unsuitable for real hardware. See the Phase 3 handoff section 12.
+**Review corrections 2026-11-17:** rows H5, H6 and H7 and the sign-off table were updated for four confirmed findings (powered stop validation through the full safety flow, verified marker deletion, DShot statistics fail-closed policy, evidence-bound allowlist). The corrected build is deployed to the isolated lab (gh-pages `d6567c4`); it is not a release and is not authorized for real hardware. See the Phase 3 handoff section 12.
 **Conventions:** "Stop" means external value 1000 plus the four-part stop proof (repeated 1000, FC read-back of 1000 for every enabled motor, valid RPM zero for the observation period, user confirmation that no motor is rotating). All timings are provisional. Tests marked *mock* run on a mocked transport; tests marked *HW* need supervised hardware and are unverified today.
 
 | ID | Hazard | Initiating failure | Mitigation | Detection | Recovery | Verification test |
@@ -27,6 +27,6 @@ Physical hazards that software cannot remove: the battery plug is the only guara
 | --- | --- |
 | Hazard rows reviewed by the owner | Pending |
 | Every row has an executed *mock* test | Done 2026-11-17 for the Phase 3 prototype: see [MOTOR_DIAGNOSTICS_FAULT_INJECTION_MATRIX.md](MOTOR_DIAGNOSTICS_FAULT_INJECTION_MATRIX.md). Mock results are not hardware evidence. |
-| Corrections for the four review findings (2026-11-17) | Implemented and mock-tested; **not deployed**; the live route is the earlier build and is unsuitable for real hardware; no real-hardware test is authorized until the corrected build is reviewed and separately deployed. |
+| Corrections for the four review findings (2026-11-17) | Implemented, mock-tested and deployed to the isolated lab (gh-pages `d6567c4`); no real-hardware test is authorized until the owner reviews the corrected build. |
 | Every *HW* test defined with a supervised procedure | Proposed in the [Phase 3 handoff](handoffs/active/MOTOR_DIAGNOSTICS_PHASE3_HANDOFF.md) section 8; not executed, not owner-approved |
 | Owner authorization for Phase 3 | Given 2026-11-17 for a **developer-only bench prototype validated with synthetic and mocked transports only**, including an isolated live lab route with its own flag. **Not given:** any real motor command, so the *HW* rows stay unverified |
