@@ -3,12 +3,17 @@
 export const REGION_LABELS = {
   'cn-chongqing': 'Chongqing',
   'cn-guangdong': 'Guangdong',
+  'cn-hebei': 'Hebei',
   'cn-hubei': 'Hubei',
   'cn-hunan': 'Hunan',
   'cn-jilin': 'Jilin',
+  'cn-liaoning': 'Liaoning',
   'cn-ningxia': 'Ningxia',
+  'cn-shanghai': 'Shanghai',
+  'cn-shanxi': 'Shanxi',
   'cn-sichuan': 'Sichuan',
-  'sg-nofly': 'Singapore',
+  'cn-tianjin': 'Tianjin',
+  'sg-nofly': 'Singapore no-fly zones',
 };
 
 /** The display label of a region (a manifest entry): its mapped name, else its manifest name. */
