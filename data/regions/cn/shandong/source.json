@@ -1,0 +1,38 @@
+{
+  "id": "cn-shandong",
+  "country": "cn",
+  "name": "Shandong",
+  "nameZh": "山东",
+  "format": "geojson",
+  "crs": "wgs84",
+  "crsVerified": false,
+  "semantics": "allow",
+  "maxHeightM": null,
+  "coverageMode": "positive-only",
+  "sourceConfidence": {
+    "mode": "selected-source",
+    "type": "third-party-uom-snapshot",
+    "alignment": "declared-only",
+    "completeness": "unverified",
+    "currency": "unverified",
+    "temporaryRestrictions": "not-included",
+    "flightPermission": "unverified",
+    "rightsBasis": "owner-attested-project-authorization"
+  },
+  "source": {
+    "authority": "KDji third-party UOM reference mirror",
+    "url": "https://kdji.cn/support/nfz-map.html",
+    "effective": null,
+    "publishedMonth": "2026-05",
+    "snapshotAt": "2026-09-22T05:49:12.427Z",
+    "contentSha256": "a61362e529b9d8198c2f9c9e4bf14886bf4fd2415a95a2ca9237b09288fce65b",
+    "acquiredOn": "2026-11-17"
+  },
+  "license": "LicenseRef-OwnerAttested-KDji-Project",
+  "officialMap": {
+    "label": "Verify with UOM",
+    "url": "https://uom.caac.gov.cn/"
+  },
+  "file": "zones.geojson",
+  "publish": true
+}

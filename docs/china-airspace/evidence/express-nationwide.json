@@ -1,0 +1,2267 @@
+{
+ "anhui": {
+  "name": "安徽",
+  "snapshots": [
+   "2026-09-22T05:48:51.705Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   114.8,
+   29.3,
+   119.7,
+   34.7
+  ],
+  "windows": 10,
+  "occurrences": 381,
+  "uniquePolygons": 172,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "d87d14ed320c29dabce263e7e794c2d7fc58b17a09aed72203f7515f25668675"
+   ],
+   [
+    "0-0",
+    "ec2ac2b7292b2cac14377a852c15439137b385076545862b10133dca028cf9ce"
+   ],
+   [
+    "0-1",
+    "698f8c7c48ec5bd2b79582aafaccd6ae8aa8ccc2f1617b88ef240dae8324d9aa"
+   ],
+   [
+    "0-2",
+    "4007fb3dc229bf31f44fe0f19a8cee1ab078b71755025671629c34addeef05a0"
+   ],
+   [
+    "1-0",
+    "1a6c297525c8e59c7cfea1179df7de0d47994e5e8c52ed0c29f9d4e6d6acc5a6"
+   ],
+   [
+    "1-1",
+    "3f4f45423aad726644b5157556a7ea66b0493168db576ff1010ab5783159f5ea"
+   ],
+   [
+    "1-2",
+    "7db489ead046c4c58d3d603b9f75db3759258fc6d8a5254b25b2343bd1b453dd"
+   ],
+   [
+    "2-0",
+    "111e4f655fccb2dc14ef16592936a9c8c8178154e9d3f8e7fbfd4ca415956185"
+   ],
+   [
+    "2-1",
+    "6ea9ec2f56adfd6c9df3db69318b0338c4b08d51079879164c64080d2ef711b3"
+   ],
+   [
+    "2-2",
+    "d1197bd59cda1a7aa2ccc8b1f8821d1d83910dffd659ce8468730ef61e84498c"
+   ]
+  ]
+ },
+ "fujian": {
+  "name": "福建",
+  "snapshots": [
+   "2026-09-22T05:48:53.928Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   115.7,
+   23.4,
+   120.8,
+   28.4
+  ],
+  "windows": 10,
+  "occurrences": 1326,
+  "uniquePolygons": 601,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "3cd51ea76e19b89ae11e993dd008d31a4708975954584ba76fdc3851d39da3af"
+   ],
+   [
+    "0-0",
+    "44bd617ac7885cc4465686275d8f581c15e497ee0781319b5b1bbb538e8d8ea6"
+   ],
+   [
+    "0-1",
+    "4a929af3cd9644e1264d9a549cda9417291e970bc8ec1b8b7feb12f04d9b8dee"
+   ],
+   [
+    "0-2",
+    "6755a6ebf103a38edcf867552aa7955b0039c8b2718732aef0755e5afda865fa"
+   ],
+   [
+    "1-0",
+    "0e4234a17aeaf6d022a7d53f13f0fc3ea0c5d48f157b7a72f8633ea475d5e9e2"
+   ],
+   [
+    "1-1",
+    "7bb82b895e368ebf3778ad1cee3edf9860faf870dd7abcb5ed28a506d395108f"
+   ],
+   [
+    "1-2",
+    "c11c626abbf93759ab67f7f26afb24d1d80f23ae37bfc297ddbc0949dcd57fbb"
+   ],
+   [
+    "2-0",
+    "9838e988bf09bffcfe4b5ae023fdd20f9e04faf18167cf6d260e8bb720ea0e3d"
+   ],
+   [
+    "2-1",
+    "133114045bb307c637608f8f28e717da6dd82fe0968df37e51a8f3f7ceaf4b1c"
+   ],
+   [
+    "2-2",
+    "a4561d14b67f50637c0c21ecc5bb7f8336d0ff5cb29bbfb229b720f0990dc72a"
+   ]
+  ]
+ },
+ "gansu": {
+  "name": "甘肃",
+  "snapshots": [
+   "2026-09-22T05:48:55.033Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   92.9,
+   32.5,
+   108.8,
+   42.9
+  ],
+  "windows": 26,
+  "occurrences": 199,
+  "uniquePolygons": 159,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "a9b319f69e896ea65c227660a00dc14740db189be978a66e3286619fa3c6b1bd"
+   ],
+   [
+    "0-0",
+    "5addcea3cf889496837f3f08acd43b59ca747ec74be9412c0c6ba5b50568ec44"
+   ],
+   [
+    "0-1",
+    "06f42633e02856364bfac37897089d76ed6fe783eec5e80c95da69c3e829eac6"
+   ],
+   [
+    "0-2",
+    "87ad12263e4f3b14974090e9ca97916b8afc65f59b8d04cf71f7524148d1931a"
+   ],
+   [
+    "0-3",
+    "03bbf0f8257cc63865889095f6daad236a8f410560986b510edd05e430a80831"
+   ],
+   [
+    "0-4",
+    "9f0ce2ccd087508c319a34f067232788fb47e357d616bee157fc25f340e12b0f"
+   ],
+   [
+    "1-0",
+    "de05849104b39670c0089bda82597aec35b5b5da835661ce8d3b59551895a081"
+   ],
+   [
+    "1-1",
+    "ba298d4d670b3df54fd7e7b56ea49287a548a42f87f8ac6628645674ed8f8d7a"
+   ],
+   [
+    "1-2",
+    "be09641a6b5e11fe155ec9ea2263789c244c78802261e2b43f8c90405a0aaf18"
+   ],
+   [
+    "1-3",
+    "4bc9de1614fb024b73567ae57abba719570f7208fbe0ebcc6add5ef439c88b31"
+   ],
+   [
+    "1-4",
+    "75623782345544ba2b1e672121dd9447140ea91909e4a4ad1dd79916a0e94a40"
+   ],
+   [
+    "2-0",
+    "27a4c1f5fda23c3962f00ed059a8309510078c179cac3d8bdca3c8b47942b79a"
+   ],
+   [
+    "2-1",
+    "cf88449af59407e555cf1ed55d9fdfb220eca59f89968711823cfa0e933c34d1"
+   ],
+   [
+    "2-2",
+    "e78586be6d3bff3a9b549a99445eca78c43b25079f1ee5bc718d4305bb236321"
+   ],
+   [
+    "2-3",
+    "1edad7186de0811b7e74b850642f75f01b6ab28c502be5cd9576a9b047b5fc0b"
+   ],
+   [
+    "2-4",
+    "84aa32c8591cf693a5aa53fba5ce6332ec469c2828c8d7d6337c527613cdf692"
+   ],
+   [
+    "3-0",
+    "192bc0d2d49e4c2bf957f7c5729f24db151fa55aa1ddf47f0d961eeea41eb7e1"
+   ],
+   [
+    "3-1",
+    "221e6ed062e0aaaeb064a5166aac2604bcdd37c95d7d011edaa8242bc214efd6"
+   ],
+   [
+    "3-2",
+    "1980253dc10786938a94e61571ced9305d2070a7c3fe48ca45004afd33522322"
+   ],
+   [
+    "3-3",
+    "17f1c0a1e45f033b037c951d8c70b381c7a2b5f059e1c7895f3f7a16d883b786"
+   ],
+   [
+    "3-4",
+    "eed2a224a2686ada6b0c806b88592eb1bb6cb689e643f83be6b17931c27ae0e9"
+   ],
+   [
+    "4-0",
+    "7ea1f4979adfcdace611eea4f52c4db00e390130bd267d77ce430ac9c6186ae4"
+   ],
+   [
+    "4-1",
+    "8253220c35b103935fbdc9347dc9dc60067d5a766a34fb065413e82c05be3f18"
+   ],
+   [
+    "4-2",
+    "77ece0709cb981629362a24315efcd636a834cda5c9fae5705e1beedffe2c9e9"
+   ],
+   [
+    "4-3",
+    "d24df608156e6db2a1e9cc3ca8e8f812c7694f25a7d082a910c5dd24cdb2ad4c"
+   ],
+   [
+    "4-4",
+    "a20493b603b5a2ead5b4b6858162abc0bb605022e5186ffa2b96440f1773d128"
+   ]
+  ]
+ },
+ "guangxi": {
+  "name": "广西",
+  "snapshots": [
+   "2026-09-22T05:48:56.843Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   104.4,
+   20.8,
+   112.1,
+   26.5
+  ],
+  "windows": 10,
+  "occurrences": 1392,
+  "uniquePolygons": 590,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "47e6781b6cc58777d0ab53c266c00e3c6a48557450fbb51860aa2359b2f90fd9"
+   ],
+   [
+    "0-0",
+    "740a540d1321515d7dc42ca3654e3330ce81453dc649f4b826fc1efb2336d9d9"
+   ],
+   [
+    "0-1",
+    "382680ec764c069f3047f053a247f64c9d8190a6f5c713017bdadf03530f1c61"
+   ],
+   [
+    "0-2",
+    "d1bb2e563c458db00a784afab38c6ded148804cd5c88d596870f525d0966d16b"
+   ],
+   [
+    "1-0",
+    "69ff7970b9a124df00dfb0297a6d5f0e486e77a6a5662057cd2180c69176bc6a"
+   ],
+   [
+    "1-1",
+    "e60ab985c6fbee3c291a63b9e568e314e39823c3d1ef37ac940198abfabc1162"
+   ],
+   [
+    "1-2",
+    "9e8f8f99a49ee054355dcdbb681767cc7c4e7dd80be6160e37e83fee8c7eb704"
+   ],
+   [
+    "2-0",
+    "0c297c8c11aec79fe13cd092ff4f93e848e1f19fd35d5e42b50de0e5bb2e5b07"
+   ],
+   [
+    "2-1",
+    "a4c9efb00ea57fc87e0f37f405c22366d72bc8c994bb4d02afb7fb55028fd895"
+   ],
+   [
+    "2-2",
+    "f3d475bb13e022dca36a2e1b5638814d74059602f4ccb3b681f7c5b8b935f989"
+   ]
+  ]
+ },
+ "guizhou": {
+  "name": "贵州",
+  "snapshots": [
+   "2026-09-22T05:48:58.191Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   103.5,
+   24.5,
+   109.7,
+   29.3
+  ],
+  "windows": 10,
+  "occurrences": 926,
+  "uniquePolygons": 425,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "2d879b26607c96be387423e3c8be9ef5a0d34ffb509b35db9701c65fd3609bfd"
+   ],
+   [
+    "0-0",
+    "f7b8e8b00c3376c5e2dcd17966af2b4a1a5b48f327281a9246dfc1b8c5aeb31f"
+   ],
+   [
+    "0-1",
+    "715b90dc34e7738047e4b90080606dba55478dc51432962a37a903742678c328"
+   ],
+   [
+    "0-2",
+    "9785cd8bed243c1b4e5077845987760af933cf266154b2f0f2fd76a004efb8fb"
+   ],
+   [
+    "1-0",
+    "258307fe9daf07277dad42747ea8b98e55909b02cf061f62eed4503c30cf912c"
+   ],
+   [
+    "1-1",
+    "e69ee09316eaa0f17004ecfbe3faf0d981625f1e64aa6e279d0e7cd5133974a9"
+   ],
+   [
+    "1-2",
+    "b845fbe6109ecc6e375af9ea24c2ec54f56bfde4cb8eab0720deaadc81c550f9"
+   ],
+   [
+    "2-0",
+    "528ada1122f9414d7fdfe14d6286b3e7027fd01b14bc57d27d536883d54270c1"
+   ],
+   [
+    "2-1",
+    "6227b80e838d5335bf18fb22506dc1ce23e448fabd40b25ad19ec2fdbe5495cb"
+   ],
+   [
+    "2-2",
+    "df310da42afb737c7602f11822f4a2cc56b8c741f1121ba23279ad339b0f49ca"
+   ]
+  ]
+ },
+ "hainan": {
+  "name": "海南",
+  "snapshots": [
+   "2026-09-22T05:48:58.914Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   108.5,
+   18,
+   111.2,
+   20.3
+  ],
+  "windows": 10,
+  "occurrences": 130,
+  "uniquePolygons": 49,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "4ce907ca41985134e53b07ee2c50fa80cc927b05c574c75d113ffce0db51a148"
+   ],
+   [
+    "0-0",
+    "e9ed351f1ad29fa6fcdff690eb12febe5dc5546585b5daf79c92110706faa3a2"
+   ],
+   [
+    "0-1",
+    "467648a8e9014ef5d00384eccef6a9cb7c23428817ae3f94a6d878d9ab819f05"
+   ],
+   [
+    "0-2",
+    "69292fe09db3400b53ce247e5cd677cbfac0005cf8ac097d8d175d726046e859"
+   ],
+   [
+    "1-0",
+    "bb3d4cf8720b8180f4d8dcc75b07245957bc44820647d80e682ebd4fe395f2bb"
+   ],
+   [
+    "1-1",
+    "a2f4680d7c380eefe1c828b4c96678158a674b985dae6f4a69898a257be832b2"
+   ],
+   [
+    "1-2",
+    "00f1578027644a629ecae504446d310c7628c34ffa83b6c696187032cd168d5c"
+   ],
+   [
+    "2-0",
+    "85a2189b2767f5b56b967118467d12549e599dc6c60d2007a4cc6d016b2f1c6e"
+   ],
+   [
+    "2-1",
+    "5e37e1b24d6c0109c6a9c76a3b60a8d2f5232ee28b4604cb09b3be4c37893205"
+   ],
+   [
+    "2-2",
+    "df5a382bf482ca76b9768a941806fd63c58b3322521931602741b54c46a9340b"
+   ]
+  ]
+ },
+ "hebei": {
+  "name": "河北",
+  "snapshots": [
+   "2026-09-22T05:48:59.704Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   113.3,
+   36,
+   120,
+   42.7
+  ],
+  "windows": 10,
+  "occurrences": 3070,
+  "uniquePolygons": 1380,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "746de857950f7a0f898a63563a5de1b0256290db13094a28eac3090976062349"
+   ],
+   [
+    "0-0",
+    "b313e26857f6d4c1d60b00a6c508d92f8390c7ee39d46410731305535ffd5595"
+   ],
+   [
+    "0-1",
+    "e73de93d274ec7e299008137560e923a81f617bca48dc0fc2135ba66a7903ad2"
+   ],
+   [
+    "0-2",
+    "7b750637952dfdfb86132a394e4a6526c761f1b5d2f13a9c847d60dfa17b0622"
+   ],
+   [
+    "1-0",
+    "f796c232e961b1fdbbc55b9ec3655c1099a56e22f69ad657bddcf50d7d080566"
+   ],
+   [
+    "1-1",
+    "711ca5141799a198e0fa9c8abf276130f94c5d6323582b629e0400af2962c69b"
+   ],
+   [
+    "1-2",
+    "098533a5218e4a41ae793a9032cae01012917a797e23bb5c99963cbc9417f73d"
+   ],
+   [
+    "2-0",
+    "e226c650f02fff1a1da241010a18b4e7e871d3e22ae24ed38e3a6af082dd7ea0"
+   ],
+   [
+    "2-1",
+    "9ea486a84baf1265c69d15006b08616fe93ba4786a482150882f9a4ad12a3abc"
+   ],
+   [
+    "2-2",
+    "946479eae0c663727551fff74fd8dfb504371dd4107117b9b6d86d4b7b158efa"
+   ]
+  ]
+ },
+ "heilongjiang": {
+  "name": "黑龙江",
+  "snapshots": [
+   "2026-09-22T05:49:00.730Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   121.1,
+   43.3,
+   135.2,
+   53.6
+  ],
+  "windows": 26,
+  "occurrences": 177,
+  "uniquePolygons": 125,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "76c7a133735cb85bf5345d3955d0a13f3bb17a3f4fa05780973bfa2ee8efd3cc"
+   ],
+   [
+    "0-0",
+    "436d94473c3bddc0b6f49f093b4b116d235726ffe5d2b7413373f14dcf58e971"
+   ],
+   [
+    "0-1",
+    "382951137355b6a1ed3ef44b90e5020ef74cc6adf5a32d491835e67b038cc724"
+   ],
+   [
+    "0-2",
+    "914d85a93babbbdc90267f80acab98746848ddd95e110e6e6ffb918218c24dc3"
+   ],
+   [
+    "0-3",
+    "d42bb59d4968af281934968e4296a8335677e2f1352020c700dfa1823dfcf59a"
+   ],
+   [
+    "0-4",
+    "399d5e63f0a0f1896e7c2fe389b3b6ff80ec305dcf92a0325de52e2e80bef40f"
+   ],
+   [
+    "1-0",
+    "81e7f5e4860e69631a6ee175c4daee257ff3c9a15b8ba80fc5fbde98b3a9f899"
+   ],
+   [
+    "1-1",
+    "3b161337b5c2c7280ad1b75e5c6b92ecb32362bbd7ad7f501ad3c9519a1805e1"
+   ],
+   [
+    "1-2",
+    "b47cc52a06492fb4df8506bf1f4a379534b7935614f85072aeb64edea6045eee"
+   ],
+   [
+    "1-3",
+    "7230b9dfecb20a03791b48d9fd7bf17cd152e4d4bc2898dcf06cad751e0d5034"
+   ],
+   [
+    "1-4",
+    "2c47e8135a7cdf2b71f6669b271aa1dfc7cdbfcc40b13e838ed2b9ae82c0f593"
+   ],
+   [
+    "2-0",
+    "ffd176fea7585928175513f64bf1f01c5de5b01b59d14411075135d46ce2f4d5"
+   ],
+   [
+    "2-1",
+    "d649643d05b55a9f5cd816a0656aa4f147d371fd7a38f79b3ed9a2a1b8167946"
+   ],
+   [
+    "2-2",
+    "dd3d9ac8c827d7ddf31bccf5b79e55526e003d06b70a34ccadd65af66856db90"
+   ],
+   [
+    "2-3",
+    "4a5bea4b6aa4aabab808fbcef8e631a0be8713160538853e6eb25c640bc65d02"
+   ],
+   [
+    "2-4",
+    "f2366b96a6304b65f7a127b00f0fe2bb291a0d03bce3ec57e1c8559cd49b1e9e"
+   ],
+   [
+    "3-0",
+    "d8e13d80e27dba9148eac3208bbe10e038554f1b8d5619c292ed198233ba42dd"
+   ],
+   [
+    "3-1",
+    "d7d7c761beb37c41d33843fac040942542048b3c62fe764775f03421ef6c1ea2"
+   ],
+   [
+    "3-2",
+    "fa9a6ced77c80ae5f7068cf0cd984ad257d3143f679f8170fbe2e107473f938c"
+   ],
+   [
+    "3-3",
+    "bb7b4b043564769d990364efff5fcdb192d1a1117d21a914928d02c3ac35101a"
+   ],
+   [
+    "3-4",
+    "1a80bbb88a5bbb175b8f1c28b4ee8972c1e2bbd91f0eec37d81a8d4ea821b304"
+   ],
+   [
+    "4-0",
+    "d022211b9d7a1db459988fbfe1d3b0f22a7f2aeb9043aff4e2989c4683784b28"
+   ],
+   [
+    "4-1",
+    "0a673e15a3a4ec1b1ddbca08a56afe9b70f2b52cc79c3e3bae385df88ddfbf6f"
+   ],
+   [
+    "4-2",
+    "1a287d483dad52a0cc3ee9c6e03366548f814611e2c78d65af2345112d203fd5"
+   ],
+   [
+    "4-3",
+    "c2aff4679211cd79d55fe2c8b825e69687fc4dafbc0cb869d5238fd562c30110"
+   ],
+   [
+    "4-4",
+    "fb4ec19d03f7bed2d858c346a415a04e8e48676c77de2a26d677e4937982523e"
+   ]
+  ]
+ },
+ "henan": {
+  "name": "河南",
+  "snapshots": [
+   "2026-09-22T05:49:01.582Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   110.3,
+   31.3,
+   116.7,
+   36.4
+  ],
+  "windows": 10,
+  "occurrences": 1725,
+  "uniquePolygons": 720,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "538e6f1ea47ef76b5505b142fc1b0d63a945e3cbb0ee1e70dc9b912472e31f23"
+   ],
+   [
+    "0-0",
+    "3db66369e83cea965f7141820bedab69bfbae6fefc87044d5b02feca9fb78627"
+   ],
+   [
+    "0-1",
+    "d50235753a0b2c70d02503dfa39df4f9c42b8b19dd04f98dd499e6bff7973300"
+   ],
+   [
+    "0-2",
+    "9456f30276c46e130075d74eb46f8b24c12d25e81ae732d50fafe923ce4d7972"
+   ],
+   [
+    "1-0",
+    "1ea460309caa2ae6ff1edaa136ad1b930e04665a540280fba49f8810075b065e"
+   ],
+   [
+    "1-1",
+    "6d974cb9c3f740767fdc193bc603546ae14a1ca7a0cb591080ecc98373a0ae89"
+   ],
+   [
+    "1-2",
+    "74daf56d5e3c457e0daffb66f3cf709cbf193cb658b4388b72c65bd702f049d3"
+   ],
+   [
+    "2-0",
+    "fb8cc329341d642dd7509541a53e3ecadaf97f14a6fdcb9839789ede69ee761e"
+   ],
+   [
+    "2-1",
+    "799992800d5dac3c0dec1377d9c33f5f38a6dd914da2a87da430d52ab6b735c5"
+   ],
+   [
+    "2-2",
+    "f394fb4f613948e20a5a8049b93595ce3468909c1a0de68d619d43890ba7dc07"
+   ]
+  ]
+ },
+ "jiangsu": {
+  "name": "江苏",
+  "snapshots": [
+   "2026-09-22T05:49:04.721Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   116.3,
+   30.7,
+   122,
+   35.2
+  ],
+  "windows": 10,
+  "occurrences": 2116,
+  "uniquePolygons": 918,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "80ac25bc22be9de7ca19b2cadf7742f62ed63ea26b85759711c21c08f255b868"
+   ],
+   [
+    "0-0",
+    "6ac06a3640405aceae9006b69cd76e41b0fca37181f9b408b7e28ea347442220"
+   ],
+   [
+    "0-1",
+    "ac60bdbeb880e7418ce63622803cbc0170a5aa6777cae022206c3ffa609ac83d"
+   ],
+   [
+    "0-2",
+    "14aba565a7150074b6d11acab6cad7f49f816d88ed67214e8e292b1bed38ec52"
+   ],
+   [
+    "1-0",
+    "fd1f4012ceee117849e19ec5c07b8750af6bb626c471d3ef5fbcb626882ef2e6"
+   ],
+   [
+    "1-1",
+    "842988e5d7a443d3bf22d2e201b8e423b35cd0f274ceb37708cd9bbaa416d8ee"
+   ],
+   [
+    "1-2",
+    "a02952646758a3acc7ff1eecea18b99d6fcbda0b9438975f2c6a514348131ae5"
+   ],
+   [
+    "2-0",
+    "ead04f21ff20c52b314e928f212c47f72344446b25d1cc95d95caf81e53e280f"
+   ],
+   [
+    "2-1",
+    "750d3149eaefbf82ffb2854397be0da04b267965009dfff4d1de325ab9eb6375"
+   ],
+   [
+    "2-2",
+    "3f5fe59474bf2fbaa444b8fa47d0b6700012fb8302b7c15f77a6f0096cec3fca"
+   ]
+  ]
+ },
+ "jiangxi": {
+  "name": "江西",
+  "snapshots": [
+   "2026-09-22T05:49:25.243Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   113.5,
+   24.4,
+   118.6,
+   30.1
+  ],
+  "windows": 10,
+  "occurrences": 1462,
+  "uniquePolygons": 674,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "a965971ca91ecb9fd99e92ca44b73ed41b2ad779ee19e572ca43f019abbbf429"
+   ],
+   [
+    "0-0",
+    "d643d2f90b5114190a52b8947a0f43204553ecec6f77d604c9a392e428d7d1be"
+   ],
+   [
+    "0-1",
+    "f724c6bf627fcc91439db5cfca3d4b9d66d769a6d9209a25c17722624f72f9ba"
+   ],
+   [
+    "0-2",
+    "0bd4884735d1c5066512ae58c3314cc850465df42f77d05b348f9380816dc74b"
+   ],
+   [
+    "1-0",
+    "cb958003153906dc4301cf9492be39b58ba974f279d481bce9258a6c0a9f15ff"
+   ],
+   [
+    "1-1",
+    "b5f2270b9b8fec6326c6a729beba77af31e8acd92b9d6e93508cbb5cd8807677"
+   ],
+   [
+    "1-2",
+    "71229c84fb7e50fadfd78846b36b91c5b9581577a192c29d0471fae69db33196"
+   ],
+   [
+    "2-0",
+    "894e61b8c7caf7fbba055abba7ef0b5646f54925ecac0e691d64e22e8f323fb1"
+   ],
+   [
+    "2-1",
+    "307def56adcae45373bc1025e57e3ff17fc2ec84f1295d86a6b6b40b575f2380"
+   ],
+   [
+    "2-2",
+    "e3417d063d56325b9bf7feba17353f2179193f0bd3d03bcf1f26556e29718b9c"
+   ]
+  ]
+ },
+ "liaoning": {
+  "name": "辽宁",
+  "snapshots": [
+   "2026-09-22T05:49:06.578Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   118.8,
+   38.7,
+   125.8,
+   43.5
+  ],
+  "windows": 10,
+  "occurrences": 1116,
+  "uniquePolygons": 501,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "ce94fbf8d949354b0e08c11a3453984553ba68a4dda2b1f01f18aee3a0c58cb0"
+   ],
+   [
+    "0-0",
+    "70eb9ba8b8c5d6d36f04e894b5191abb655dece90d65e87383746bba0f51a803"
+   ],
+   [
+    "0-1",
+    "1e636c9d2693e9e7ceaa44243f199c5d64bf7ca4690aa5fac5e0450bf0c68138"
+   ],
+   [
+    "0-2",
+    "e161f2b3369b91fdfa5c7412506ca238b866d06bc6460a2384e0f637ed2f2d8c"
+   ],
+   [
+    "1-0",
+    "4a8d6444db99a41cbc288b58a7f0a79d45761d2313f41fab3259fb8c6d3059b8"
+   ],
+   [
+    "1-1",
+    "a5262f85a8e15d938463f41682cfc16ce4733a51fe63ae04b800d075bc066695"
+   ],
+   [
+    "1-2",
+    "549bc84f5fdd0cb158c24144e9d982b6bb82644516900986ffd3580fc37ac1f1"
+   ],
+   [
+    "2-0",
+    "cc9ea871dd824ddd47ecbb0a120642b46421b318836092f55f7e5cc4b3ce7c77"
+   ],
+   [
+    "2-1",
+    "2bbef22565e77f6c727e86b64c0cdecb3f5793fb7307d505a3acb18935f9a55c"
+   ],
+   [
+    "2-2",
+    "dc818d0b8fddbd99bb89d9c71e3eb292403bb54b030bbe85df7cb69f789b6c38"
+   ]
+  ]
+ },
+ "neimenggu": {
+  "name": "内蒙古",
+  "snapshots": [
+   "2026-09-22T05:49:07.747Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   97.1,
+   37.4,
+   126.2,
+   53.4
+  ],
+  "windows": 100,
+  "occurrences": 622,
+  "uniquePolygons": 437,
+  "conflicts": 0,
+  "refusals": [
+   {
+    "key": "all",
+    "status": 422,
+    "reason": "tooWide",
+    "sha256": "b383286ba1be96b6c6c03c0bcc01c22409b3a4fe0cff8a50af99fcfc3016ffb1"
+   }
+  ],
+  "captureSha256": [
+   [
+    "0-0",
+    "5491bfabba3feacc19f4dc145148b5215275db99bbfa4953feb97af5f466de47"
+   ],
+   [
+    "0-1",
+    "7412f349fcf3d61d08766c7bc278869fb79cdcb7c1c35acf8936bf82e46915f4"
+   ],
+   [
+    "0-2",
+    "643192a8d8b72aa6167269fdc8451d2efc96a9125da187d104d06fbde19d1d75"
+   ],
+   [
+    "0-3",
+    "3f4a912ad682586b9aafc08c0141458920c6b606785524045d2880a12f410380"
+   ],
+   [
+    "0-4",
+    "a0d89881b9602288d93a935ce1eb2124cbcaeec9ae2bac5114199b3e8194e1f0"
+   ],
+   [
+    "0-5",
+    "dcd7e13c66717703306bab052fd5503845beacfcd4a99a412c43e94e259bd399"
+   ],
+   [
+    "0-6",
+    "9633fb9148846254e3430bf00b482a2d0650a8f1248e2ca14c8e22219f09c1e6"
+   ],
+   [
+    "0-7",
+    "085e1a9ea554a17097e801dd78dcc7ba78feabfdd6ab576983355bca9dda7c92"
+   ],
+   [
+    "0-8",
+    "b4faa2e2746930111c03fd9eaff20ed8c61516173483cefaebde8000f0bcb8b5"
+   ],
+   [
+    "0-9",
+    "883751aaa0541ffbba8c3bd29eacf420c994a95e1a16015fd23199bf2daab40d"
+   ],
+   [
+    "1-0",
+    "4fa349c8f0deb45d8dfbfacbe8deb13f19f39a4a125021f1c53d3f8e0bf34667"
+   ],
+   [
+    "1-1",
+    "21dacbd654b5b03da0acf8d87d530bd308773322b466f666bebbdfd6dff0477e"
+   ],
+   [
+    "1-2",
+    "fc58aec4c2869146b49446e058e887914c92df1b000d456a61a0569030bc40af"
+   ],
+   [
+    "1-3",
+    "686425101e06969a818252840ff01280a9ca43fc2981a3b08fa103cf42c23911"
+   ],
+   [
+    "1-4",
+    "8f0da3548c14e1a289d24b776d3d9e5a0902cfd86da392f10cf21c9b53c5912d"
+   ],
+   [
+    "1-5",
+    "a3afc23fc64646806917071d54d1b61c32b3024d4a21368e95cc9d973d943e75"
+   ],
+   [
+    "1-6",
+    "ff5d96c862e35cfb8b214ea201c2d7d253e951c17002c7ca51a0523300373374"
+   ],
+   [
+    "1-7",
+    "9f24885ec17cf544ad5542d0ba4b38d0c5a1e89f5421859ca67999a5ed46a26a"
+   ],
+   [
+    "1-8",
+    "2cffbc24db5c63d37edb290291b6d892da09010dbd0a77a0060c5a98ba8a1fca"
+   ],
+   [
+    "1-9",
+    "88a2c443b51004fa9904895d28519d222c83bd366a36d008fdf693275ac541bb"
+   ],
+   [
+    "2-0",
+    "fcb764eff716cf790dd04b35903ccbe0408ed827d77ded86c85ca19fe5f04f44"
+   ],
+   [
+    "2-1",
+    "e2442c8a715d0bfc677e1790921c3999e78a431a277ef65c10fbcbe2852bf49a"
+   ],
+   [
+    "2-2",
+    "933b0bf3bed334c1dfa4229a80e59631c16fd2824d03a4ab1934fe9433ba7ec0"
+   ],
+   [
+    "2-3",
+    "e88c0719beafd2bf5aa0898f39d4c1bc0fb444906f9df024d0d255abda9e6c60"
+   ],
+   [
+    "2-4",
+    "c43c2ddb4d4d7290383e8060fce61e2f9baab99297fd518388d71aed1da87361"
+   ],
+   [
+    "2-5",
+    "e66d12f3ede3b1d0c87b3ec818b60c13ebf10366950c6972c678ffffaf7106f9"
+   ],
+   [
+    "2-6",
+    "392bafffb9041157579df7b280bab0fa07a0540ebbcb47ba09242008d1f8ba8e"
+   ],
+   [
+    "2-7",
+    "056411c738314cb80e62169b82a0b55e47ae55599efb45d54d8e89f468d16577"
+   ],
+   [
+    "2-8",
+    "974a1b1c1c201c9f6082f6e1264a155f5d05797ae0a8bdd8ebd40ddce8dd3e81"
+   ],
+   [
+    "2-9",
+    "d041e2a6957fbf3d8235d91fcb5340a47406c9d726e06adb82171066a9d408c8"
+   ],
+   [
+    "3-0",
+    "e85465c0bd6778b170b7c5ca4bd64fa8020ab63d68bdfd25c9193c5d1a508270"
+   ],
+   [
+    "3-1",
+    "08ea1b722628e57f1eeac649723985944134f179d2fa2af97ba4b18cb8e041da"
+   ],
+   [
+    "3-2",
+    "486205ebdb3f9f70ee14b47325238e7ca277293adbf9f99898d23d99181c69ca"
+   ],
+   [
+    "3-3",
+    "69cf479f9ff7006aef811dbee6fff93fac9bcb03ba94ded984faa5a763d625e4"
+   ],
+   [
+    "3-4",
+    "c823935ac846b089b7c841d0c5ae452f9b301a4e94c96bd8f82e1cf5580f81be"
+   ],
+   [
+    "3-5",
+    "c8204d88cdce5f96a544bff4e451a966e45805f8b8272a19a889192168f7e6f0"
+   ],
+   [
+    "3-6",
+    "48ee0173ebc5a96508f1a2afaa9758ff8f71debb1a6ce20c754e9fa12cecc2a8"
+   ],
+   [
+    "3-7",
+    "2ec4f35031e79489da6fb4b4f484b63a6aebd17823229bb8785349fc4eb15a5a"
+   ],
+   [
+    "3-8",
+    "8ef8a9b310e07bcbe2d5ba192f75ae3b4e2f3d5495d2c36cb47521ec1a067798"
+   ],
+   [
+    "3-9",
+    "f09bf99560c80814f53cef2163c6baa1baf9e809da4039540b8161a410ada83e"
+   ],
+   [
+    "4-0",
+    "3fe90da6ac3477f1396fce4792d068c28d7353f0267d9ad6d99ce0cb25ee8a4a"
+   ],
+   [
+    "4-1",
+    "69e489594f0e8fb61be842774b13af3c80596a08d211a8199440325007af6271"
+   ],
+   [
+    "4-2",
+    "ea607147a7ca80a401ebb7517f0096ed593e9441f60fa856cf6df56528becada"
+   ],
+   [
+    "4-3",
+    "a4b002f9c1fb0d91db1b52e5f3b2d856580e9211d346e440f3aae596b6bf1c65"
+   ],
+   [
+    "4-4",
+    "993b67a4c69decab0d14c8be87e69336f1baa81b20b8ad9729aabc22d58dd410"
+   ],
+   [
+    "4-5",
+    "26457f5a6bcb2a70d5cb252260cfae4ac04a4fd35f1d37d9854361c2793e749e"
+   ],
+   [
+    "4-6",
+    "4588e6c7f432ce4aee7c97e4c8a896e368b4e74e7c81e7f3dcc58b39a09622eb"
+   ],
+   [
+    "4-7",
+    "083da6b99bf4a57a9cd27a8233aba83ea826a13480abf08d8cd1622a6e905fd3"
+   ],
+   [
+    "4-8",
+    "2aab9cd22a3c94e2132fd22b57990466568cb4559a4288e9773595c26c882910"
+   ],
+   [
+    "4-9",
+    "51ad37bd09c7976836e9d143f07245bd46089b5b8cc2efdd4be96a27780d1280"
+   ],
+   [
+    "5-0",
+    "2065c1a094b906abdfc62fa2132754b6aa2efff57deeb4cd1355f62510e5e7ef"
+   ],
+   [
+    "5-1",
+    "5b6a9d76b32a6e36553103b21413b59cd92bec0fc542ec28689e6e63a8250b83"
+   ],
+   [
+    "5-2",
+    "d7cf02582324f2ad9cbef9a32b991f033dfb808e65cc7a49a645b7b296089cf9"
+   ],
+   [
+    "5-3",
+    "6282c5ac4040781d9c8b829fa63b830242b9a7a4526aac000565322c50ef970a"
+   ],
+   [
+    "5-4",
+    "c68cc5020a182080f70e842b104be4ef74eec5a297540d3c07b394eab22d862b"
+   ],
+   [
+    "5-5",
+    "d81711ebd91f3de94abdc13add8c06ae4456049f373050b3b457884643ad1ced"
+   ],
+   [
+    "5-6",
+    "313858e4b2de6d081f219f97a14ea562c2a5e8555df1870bb6cf787598e9cbb3"
+   ],
+   [
+    "5-7",
+    "0291df189a9bda4f0889465a66d980012cff9988fcb6ffcdb496fd61044cad56"
+   ],
+   [
+    "5-8",
+    "e6f179e72c907cf8bfbf0b7c60eb49b3aa57b6c797cd1b196fd041117ab79c62"
+   ],
+   [
+    "5-9",
+    "72482e5ef4cec9251a6b89caf6c03b06312045396c2052b199274a5c0b1334a0"
+   ],
+   [
+    "6-0",
+    "37e4c3a329c959e1b7f60e156b0b3d82f2af1ef623b6a56f1e2310152085c8ef"
+   ],
+   [
+    "6-1",
+    "950a29b208cd701e6dba7a439860213b6502657feb498953e7d9a8b5416cd1d7"
+   ],
+   [
+    "6-2",
+    "d40a6e8fd9b87c6d45381ee231f5ce9069d0f9ee6c56fa39cefd4357a814ed0d"
+   ],
+   [
+    "6-3",
+    "a082ebe4ffe961837aa92e300c0e670093f700d1e533bfd399b824735a3c3983"
+   ],
+   [
+    "6-4",
+    "b77948506523645842609bd895e1826aad6b3169c826d9b1df2a39a968ae92f5"
+   ],
+   [
+    "6-5",
+    "a55bc09caf2fdcd6a98f5b6a74bd277ce740e03369a71c446668df0b5c1ce7fc"
+   ],
+   [
+    "6-6",
+    "47917700bd7459a0d56c63f396e12581c83fc43990773b8885d2bf1b3ee8379d"
+   ],
+   [
+    "6-7",
+    "975b38ecf3c9e91ec84c483e153ff6290cc96e0de13e4fd646a73f56217c78c7"
+   ],
+   [
+    "6-8",
+    "b74a7d51e8979ec23eca63c7597871cd7121e0c8f0a95f759c62d0c587e4c650"
+   ],
+   [
+    "6-9",
+    "fdd17149759dd1227b668d993800bb001dcf2649563bbd11c8d746e860a72571"
+   ],
+   [
+    "7-0",
+    "2f88f3caa6282b5882bf5f4913ac367129cfd581a0bc3de8767c946d2c33d121"
+   ],
+   [
+    "7-1",
+    "3ad0e86b8a99892a160529dea31e72aae53027bc9b1e1704efdc0614da038995"
+   ],
+   [
+    "7-2",
+    "e407284b434a993ebb5eda123d03b251f0c6840c58ac57a17348ee7e7ae4ac6c"
+   ],
+   [
+    "7-3",
+    "151aeda6da38ff128aaf287ced79cadc28302c7137d8cfc174ff82e2cba0d24b"
+   ],
+   [
+    "7-4",
+    "024da9a3c43b620e79112bb40535d0e26f122ec2534fa8d8294e447b4cbfbf30"
+   ],
+   [
+    "7-5",
+    "560dcc53bbacc79d674ca8eaa0fea82399d999b2d643176e8787d01b418ae73d"
+   ],
+   [
+    "7-6",
+    "72e2556dfe0781fd83ee073cb44b719975e8ca0231420a7dd885abe6fa48107b"
+   ],
+   [
+    "7-7",
+    "a0103988634d511ff4db59a16afbd74c22f01d24bc11be682c80830692cbe872"
+   ],
+   [
+    "7-8",
+    "6c66914fb277f61c14c5b6afd4255a730253ea556e4f2345c74b8e56e42145c1"
+   ],
+   [
+    "7-9",
+    "d8cf89f57226668f2a16aab109166a5f2048a0e950370adfeca298d99051c833"
+   ],
+   [
+    "8-0",
+    "03f0edf8d630c10862fb0ab176026da160decd26084d6682ca0e85017fddc53c"
+   ],
+   [
+    "8-1",
+    "27882fdcf23573acda363da023cd78ca258fa5dda047a229938705f0e5f47240"
+   ],
+   [
+    "8-2",
+    "2becc01c4c4c6c08ccdf0aafdef9b860d4e7d87506f6dbba6058506733f90200"
+   ],
+   [
+    "8-3",
+    "974dee4473ba0483831e506f24f9c563a90e49364f50734ae10b9284539f11c9"
+   ],
+   [
+    "8-4",
+    "21a9c23bc3f4d1ea34e1c966293b34d18f7863cc01716e28a4b4edb0de345ef7"
+   ],
+   [
+    "8-5",
+    "48ac191991fa3c595f833f49d45c679f1eca5af6ab0170e5121e9aa1c6abc853"
+   ],
+   [
+    "8-6",
+    "0792467a96f5ec61c245de88f47f77ac44ce8e57c5c2bbd535af3c9855c1500a"
+   ],
+   [
+    "8-7",
+    "2c0edcc390d2b8796b39e999da1e994e1d49666e4fb49b6e0a8de52a19b99354"
+   ],
+   [
+    "8-8",
+    "76a54126711e97edf33df8792e963ae260901259a1430933e1de89ec14ac9942"
+   ],
+   [
+    "8-9",
+    "b7f4fe0040bb6cceb288c7fb1b35eaa365ca9921543d6ff8b4e7595acb34cbe2"
+   ],
+   [
+    "9-0",
+    "64914d86449bc84b287cc3c9785bfa8f96291652c7a5b7811cd86be7a5f68c72"
+   ],
+   [
+    "9-1",
+    "3efeff055b480c849c436d24237f05df127604fa38529f83d1a8570880090493"
+   ],
+   [
+    "9-2",
+    "656c469038e5d50e443e4691bd23280398aa99e0161bcb3179ac55759140e8f5"
+   ],
+   [
+    "9-3",
+    "92fbf941a5182e8c0b66f40d20c981d1b14a7fa2bda0a7e0262b1d0fcb548860"
+   ],
+   [
+    "9-4",
+    "d2d37b4d8023745c1cdccea47df8261b72ced35e0fb36d1c9a55b7e6c6a5b936"
+   ],
+   [
+    "9-5",
+    "a9bd99596c134f5904b3f0c96e25c0611e31fbf8ff91772987bb536f5d1d137f"
+   ],
+   [
+    "9-6",
+    "04a62427548ac74c0836fde0b1d6a755dd0e7a774f3c40d5b671023a3462186f"
+   ],
+   [
+    "9-7",
+    "af480a8b8085079743a8c8e656a5202a37d2333827141c6fe685537142caac3a"
+   ],
+   [
+    "9-8",
+    "60ee6aee3b02813df280990f144dd301f8a9da8145ae1d0f35b0fff3102d7f7a"
+   ],
+   [
+    "9-9",
+    "d392e9fcb6a4a0d9aad1befff9478188889bc597e36c0a257e4b2fc0d6aa04c5"
+   ]
+  ]
+ },
+ "qinghai": {
+  "name": "青海",
+  "snapshots": [
+   "2026-09-22T05:49:09.446Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   89.3,
+   31.5,
+   103.1,
+   39.3
+  ],
+  "windows": 26,
+  "occurrences": 895,
+  "uniquePolygons": 701,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "3cc7eeac97773c3fb73c6b8b23ebf8b9e9c143e6ccfef0d7c050d27cf42fa6fc"
+   ],
+   [
+    "0-0",
+    "6a4905c935fe66de0d58711c2454d584152561bc622cd011f6aa521d2330318a"
+   ],
+   [
+    "0-1",
+    "34bae9f0b45253afb26e39f5cab14057092f065a62284ded4593b1ed7ed5568e"
+   ],
+   [
+    "0-2",
+    "1eb49aa5817fcf867e107f3a273d839d4dc2ca897509eb49155308d9dc02abaf"
+   ],
+   [
+    "0-3",
+    "9860f9e5a6358b67edac13d4a5991617caaf95d086f8f7b66fa4a6b2bee97432"
+   ],
+   [
+    "0-4",
+    "7080e53c68271426574abb4275e14ce5a177d05fdafab03a88137ac67b8c50bf"
+   ],
+   [
+    "1-0",
+    "b132c5dbfb6340c5d8dab95d275085807bbdff38e7246e05e646738886a13119"
+   ],
+   [
+    "1-1",
+    "33a79f2d6bc0b800df49e07eecf935693ce9e58953601ac2fa8651486e50a3dd"
+   ],
+   [
+    "1-2",
+    "1980b33af84ec8361560296cbd0da39993dbc4ac3957dd0aaed695c78872d8c1"
+   ],
+   [
+    "1-3",
+    "59f576524651df97b264c01a3e12040c548304dc4a1e3e820fd0334ce5a4e0c8"
+   ],
+   [
+    "1-4",
+    "62a6fcbf4885f3095e67cb8ada81f979d42561e9bb41177af52f032bd8db8eee"
+   ],
+   [
+    "2-0",
+    "47170f28c17d2f1aa17600c9ee07be1d4b05f8897cf96604b8191dacbbcaa5e6"
+   ],
+   [
+    "2-1",
+    "3b9efb9426b80820f82792a13cc0a60b23d08032f8887f6e3084b138478939e8"
+   ],
+   [
+    "2-2",
+    "07973e1561c44cbcd0b05452d4ddb8d035c5886d82e7c01df2813a812856657a"
+   ],
+   [
+    "2-3",
+    "b59808a41a5f475283e9d1293afd2a99ccafceb0a55ec1eb3d15ca754e6e12e5"
+   ],
+   [
+    "2-4",
+    "4f24eab2de404d2a02942ad879eeb6654c88e4818ba35a9760247b735b940ec5"
+   ],
+   [
+    "3-0",
+    "236fc278e8daee292ef6eccd584d38c4adb3c75177faf02cf711b7dc48e0c100"
+   ],
+   [
+    "3-1",
+    "e5d47aeccec5866b32cccc2e89a4ff65796cc69396442853f85efdfd1a5d4449"
+   ],
+   [
+    "3-2",
+    "52c9ee6a616c8b225adcd670b9edee0eda7ae7e4f09a274f1e79c1a8a19fd4f6"
+   ],
+   [
+    "3-3",
+    "5175c9356c4bde6f9fc78e1257083d5b44e6949b8576df963b8eebb2271cec96"
+   ],
+   [
+    "3-4",
+    "12787b004d5875a30c8e7fb862ebd15d7421de1bbb941fa6a68d927c19c16b4e"
+   ],
+   [
+    "4-0",
+    "af2f46751fc952fde5a276bd4eba418c07eea86bf84877b03d512518e6659879"
+   ],
+   [
+    "4-1",
+    "e873432615bf630b2679c68a3c159ffb9a000cbe0aee2704e02814a28b27df73"
+   ],
+   [
+    "4-2",
+    "8bed4aa28a30b08f61daee8fe035e265721873f0119020e13998790652ee34a2"
+   ],
+   [
+    "4-3",
+    "20c260a9169390f5b51b89142c88c80b6d54060493554bdd3fc2574609e746ce"
+   ],
+   [
+    "4-4",
+    "75aeddc83d1088c8ebd1ad72970602990f8fd943cbe6cfa281e6a2875bd15721"
+   ]
+  ]
+ },
+ "shaanxi": {
+  "name": "陕西",
+  "snapshots": [
+   "2026-09-22T05:49:10.842Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   105.4,
+   31.6,
+   111.3,
+   39.7
+  ],
+  "windows": 10,
+  "occurrences": 1519,
+  "uniquePolygons": 1169,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "51742015c6aa50275db2e35e9dc36c682d1632dbafc79e7fdac6fa813a4b332e"
+   ],
+   [
+    "0-0",
+    "f7bc926aa16b380896cf7d8b1463bac3ae485cf9748d3c2f7da0173bcba56e3a"
+   ],
+   [
+    "0-1",
+    "fb989d8e1fbdd5becb6e848ca8e66227fb599c54a66f3ebd134137762d0f2f29"
+   ],
+   [
+    "0-2",
+    "e1b77797afe432625d3e58b2a6611b34b295fb28676c6e7e0a23578315b8b867"
+   ],
+   [
+    "1-0",
+    "58db151f269e5682be6b755714a686ea65838294d72572e1285c915019500db6"
+   ],
+   [
+    "1-1",
+    "c45f7f92ae9b78b7ad94983206202d1ecdeeee68ada64d441d4ad3df4269598a"
+   ],
+   [
+    "1-2",
+    "771c00525f992bcdd1d7bb9eddb75be2698a738440b8b86c0abd6d659ce3faaa"
+   ],
+   [
+    "2-0",
+    "51e469ee1778e05b8b5ee436be9be1ea620a95ec3dd1334ed574c1d748408e71"
+   ],
+   [
+    "2-1",
+    "0096fe169ebc881a0c2ca0c81274066ec61e92aff88e61f9aabc5d652ba7a06a"
+   ],
+   [
+    "2-2",
+    "79ed6423077f945c22b6fcaee61b6506e9b46e9fd566a098dfcf03b261e27e74"
+   ]
+  ]
+ },
+ "shandong": {
+  "name": "山东",
+  "snapshots": [
+   "2026-09-22T05:49:12.427Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   114.7,
+   34.3,
+   122.8,
+   38.5
+  ],
+  "windows": 10,
+  "occurrences": 2310,
+  "uniquePolygons": 1034,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "3a51ec07f076fae5a1373d60ec6f7c6457242f00a558d56ae05a92f5b20779ba"
+   ],
+   [
+    "0-0",
+    "2cc032dc69dc18fc8981d25f19ae25ef019ae560e03ee1a2f1d996d57ee23281"
+   ],
+   [
+    "0-1",
+    "31466fa8a78066b9a9e9841a5be42c3d035a8bd4131d91289b0476bf33f550be"
+   ],
+   [
+    "0-2",
+    "96add164ddd18840dae69d2e995fcb6eb9ae896792de7981ce148876548be782"
+   ],
+   [
+    "1-0",
+    "3271fbd958237a63457bb91f5eaff6d997e6bd50a7363795772c813d9e4188a8"
+   ],
+   [
+    "1-1",
+    "c9c6be2d764a288a51f5eba575d8e19ed6f09cfa711f2b4d9c8037e5c3add3ba"
+   ],
+   [
+    "1-2",
+    "dac00532a47b1d2ad08c30bbc74c2127e62c9d350314f3066a23de1c2c20cc0c"
+   ],
+   [
+    "2-0",
+    "aba089caafc3ad8af8ee7c0f4ad69e70f753810e64e3a47f8738403e03eac71e"
+   ],
+   [
+    "2-1",
+    "ec4d181f88ef39f6738facf59c3226d143b8d3aefdbbcb2293d441de8d3c3c48"
+   ],
+   [
+    "2-2",
+    "75be48946f447b654dca6ea5257ce2fe1e334d03d48bcd7beef8ae3095465755"
+   ]
+  ]
+ },
+ "shanghai": {
+  "name": "上海",
+  "snapshots": [
+   "2026-09-22T05:49:13.404Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   120.8,
+   30.6,
+   122,
+   31.9
+  ],
+  "windows": 10,
+  "occurrences": 566,
+  "uniquePolygons": 233,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "533fd056b7f5cb271b2f926028f9723b9c2237eff925eb4a2d7efb5025fa0f45"
+   ],
+   [
+    "0-0",
+    "093a033fd28a0777f0d754159ee48ac2823b56eef57ebaacd56d0e5f1c51a5b0"
+   ],
+   [
+    "0-1",
+    "1b3ddccc0360e93ca5980e14a5c1313fc3c2efbb8d803683d3c423f9e84a22b8"
+   ],
+   [
+    "0-2",
+    "354dba74d77919af81ce3c26f255fad45b47a71774ea174cfd897bfa2055ca88"
+   ],
+   [
+    "1-0",
+    "5ba35e4ba74e5eba227745165525e02b2c79202ae1521009144e63c11dde566e"
+   ],
+   [
+    "1-1",
+    "8c5598be73edfa8726dfe73832ef1188140ad22d4592f5037007b9a30339c244"
+   ],
+   [
+    "1-2",
+    "c412a59a8858b9160a24c759bb3d04d838932d3e0ee6a0f3a34caf538a98612e"
+   ],
+   [
+    "2-0",
+    "453a91cb0d93341cb8de838a35aaba9f66a06ef3f95c137aae3417bcefe32ea7"
+   ],
+   [
+    "2-1",
+    "90df2f143f90dbd6512b9b4cdd8c5d35183e6c74d1ee85fb055e39e087b99171"
+   ],
+   [
+    "2-2",
+    "2637c6c46da84aff44cc52d3e13f91b32bff6cd286025ad46df8cb8a83e59655"
+   ]
+  ]
+ },
+ "shanxi": {
+  "name": "山西",
+  "snapshots": [
+   "2026-09-22T05:49:14.064Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   110.1,
+   34.5,
+   114.6,
+   40.8
+  ],
+  "windows": 10,
+  "occurrences": 662,
+  "uniquePolygons": 305,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "9347bde2da4b2851cc11e5988183ffd6cb91d978ec612243e66d9170b1cf2c04"
+   ],
+   [
+    "0-0",
+    "cdba190ec0bb0a51bd8aca1fcb9e52ed23658bd8642e433a301d9360b3947bfd"
+   ],
+   [
+    "0-1",
+    "eb6695569833defa926d40280a4d41ea3ba8b9b4dfee2bcc9a8a92e3fb9eff98"
+   ],
+   [
+    "0-2",
+    "cf4f09d96b69fa324a6e1f1231de28b08bbe1cdbb58ff328cc79e17fb4d3c472"
+   ],
+   [
+    "1-0",
+    "b7a25fa11f557917b2834ba385443562e63749959eacc184a0cbd168863a67fd"
+   ],
+   [
+    "1-1",
+    "03c72d9640aed3ce27a2bbfc882c2cd069b11321025a103b7ad19b8cbcc5f149"
+   ],
+   [
+    "1-2",
+    "7e02ad0d6d4efa0f5ef00fb0cd2cbc12b292838e380e8c1e5a1a9dc856233d6c"
+   ],
+   [
+    "2-0",
+    "28cb9ef7eb23cb4d509742786ebd479b312b5d64141750ccf5be4695a1a7823f"
+   ],
+   [
+    "2-1",
+    "065d45facd97b84add84529f3eaf6c84b7f8f160f88ca2f71c417ff4880bff8c"
+   ],
+   [
+    "2-2",
+    "1151965ff248b16a41bc5e483478b4d39f5356a0fcff5f1b7e0dd04551d7d038"
+   ]
+  ]
+ },
+ "tianjin": {
+  "name": "天津",
+  "snapshots": [
+   "2026-09-22T05:49:16.028Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   116.7,
+   38.5,
+   118.2,
+   40.3
+  ],
+  "windows": 10,
+  "occurrences": 800,
+  "uniquePolygons": 356,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "a59dd236f4f23ffb4454ffe811f809e8cb913cb3e641d0f18ef9f560ec743f3e"
+   ],
+   [
+    "0-0",
+    "988482cb8132ceed97d7cdf5ed7e6bf783d072dcf7577499665d65c6d6e443a7"
+   ],
+   [
+    "0-1",
+    "1b290d6d7dbcb92e73b9aa61504b9ba189d5ca3eff7b03b72210d72b9c08679f"
+   ],
+   [
+    "0-2",
+    "04bac76f885a23b1ac42abc3aaff1975ace40afbbb3818fa284d4f25a2f1d04b"
+   ],
+   [
+    "1-0",
+    "1d2ad5b71f39546ec132e4cf69485c640b63016108997f70b6ec8d1de9f21812"
+   ],
+   [
+    "1-1",
+    "99e0c5f88e61afb2a3d07844fb42cd1f81dfd1bda597f84f069aa70e03ead2bd"
+   ],
+   [
+    "1-2",
+    "0ca2e7cf1e03bb4e31d48f12c70c006315c60121dce0e5b930016f3ec4f2e73a"
+   ],
+   [
+    "2-0",
+    "9181efcabbdbdd53f170c0a5d0c77b633b674eb2574a8a4de97e3c39822cc3d4"
+   ],
+   [
+    "2-1",
+    "8ee8b89f62852c8f9f4f9d665a410679593a7fe51192b5d32a3268f4b7ae512d"
+   ],
+   [
+    "2-2",
+    "ae1d4883ee56e9783848451f20d6c6440a69494fb545f021df7e60764c3bd1ab"
+   ]
+  ]
+ },
+ "xinjiang": {
+  "name": "新疆",
+  "snapshots": [
+   "2026-09-22T05:49:17.249Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   73.4,
+   34.2,
+   96.5,
+   49.3
+  ],
+  "windows": 64,
+  "occurrences": 1163,
+  "uniquePolygons": 802,
+  "conflicts": 0,
+  "refusals": [
+   {
+    "key": "all",
+    "status": 422,
+    "reason": "tooWide",
+    "sha256": "b383286ba1be96b6c6c03c0bcc01c22409b3a4fe0cff8a50af99fcfc3016ffb1"
+   }
+  ],
+  "captureSha256": [
+   [
+    "0-0",
+    "39df7103f5fc67fdabb30ce245d5d7354ee53f48ca0fe19df92b27f8506ad43d"
+   ],
+   [
+    "0-1",
+    "4ca775f26775066a8ea580e20fda7037bd886d08c4f838f20d1b2d0cd956ec62"
+   ],
+   [
+    "0-2",
+    "8291cc93fe4daef236cb7068086ef61459ab12b56fd64653b53854f0ced6edc0"
+   ],
+   [
+    "0-3",
+    "be2b4385a4cd930e1c7a8399a9af5c37b6ff8edbd1fd4e9fba73da2eddf82b2a"
+   ],
+   [
+    "0-4",
+    "75576b47ac61c7f991123610da9373328842e2376c347d494ebbad8ce5837c47"
+   ],
+   [
+    "0-5",
+    "a2f3a0f1ed567f8f5d833db882de92f368f54fcc2999ab926ad63a6d870a8f5c"
+   ],
+   [
+    "0-6",
+    "747fd12763c42ed8a3d96aaade12a596dcf1bdb57d842aa7ad0c07ff901d70ce"
+   ],
+   [
+    "0-7",
+    "31477ec8f5f8e2407e950626cd7dec78f2d46cbd445de447f15d35ae21b410d9"
+   ],
+   [
+    "1-0",
+    "1f403f75671ff23abb4498af388fcb2759a1ff4006f05569233906e048a23742"
+   ],
+   [
+    "1-1",
+    "4f5cc8ad9ad6af45e3b53c45e4d733f67af857cf9716ae4535b247258e013703"
+   ],
+   [
+    "1-2",
+    "b97c1ca593d52311d5c88dfcdc7c1946f95b93f0bc113e26c6fc049a3a2735db"
+   ],
+   [
+    "1-3",
+    "55c5d5b327bd234bc22f94e1e9a3eb2cc432edadd121dd8bdcfbab8044fbcb22"
+   ],
+   [
+    "1-4",
+    "a0519d1ccfaa4f7fb35ccd6b9027c53d6efcdbfe582f75ce8b8947e37b1e9936"
+   ],
+   [
+    "1-5",
+    "d94088ef64aa2290d137cd0384c76f8a795cd058208d47e236b2a80899a53406"
+   ],
+   [
+    "1-6",
+    "8da21f286ea72cf3ff76a9d8646881fd1b2188510203700ff2ef4dc5c4c36adb"
+   ],
+   [
+    "1-7",
+    "fa93c0922e218baeb86541e526872a0561b748948eee7dca7fa95d92946bf0d0"
+   ],
+   [
+    "2-0",
+    "89be260b1dadc5ef87e3fcd44e42fba5acffa886c4dd1fa67000fd15b2597f7b"
+   ],
+   [
+    "2-1",
+    "239ae8f3a3056752c4e01add17bd5702e1f93bfc6d5c321920c6212fa767fed1"
+   ],
+   [
+    "2-2",
+    "afcdf4c88c19544bd2846fda0030a140deecfb195ab5435e6cd8c348352bfbeb"
+   ],
+   [
+    "2-3",
+    "03c24b4b6fbfc456d90011688173e5da1dd84253a201477e152c211d3f826678"
+   ],
+   [
+    "2-4",
+    "cc6990dc71969dc4e94e8ca03548b36b1fb327aef8512a40d5635b3a7968070f"
+   ],
+   [
+    "2-5",
+    "aa7da1ad2f41ffe2a3c1e783461378ebef686a140e019ebafb14d0baeba08a96"
+   ],
+   [
+    "2-6",
+    "b40cdfde533376e242ba24a2e6b5c17695bb843462b1f2820a51fd337d3098b6"
+   ],
+   [
+    "2-7",
+    "4017a85ccb7e38d04c2c96c8c7a3f5ba47115747a0d75ff27d131be542243d4b"
+   ],
+   [
+    "3-0",
+    "10a772ac0f57a1b41c8be750687d8c289d8b4fbd27a5bf1b0a00072e102bef70"
+   ],
+   [
+    "3-1",
+    "ec4ccfb434f3fdd5ca65b9ae57161b310026162c15b91a021264d84485edc89d"
+   ],
+   [
+    "3-2",
+    "6f1f7513cf952e969261531d5aa91436121116a36e90cef86a92b5325a960ecb"
+   ],
+   [
+    "3-3",
+    "34d47fe9d0c97e527d34af43cfed4b8bcac39783c1f9f63966ca65332cd8a9f5"
+   ],
+   [
+    "3-4",
+    "008d72cac5e8f9237c3eda3f92bec978cf52ea0167282f34baad31659ff651d5"
+   ],
+   [
+    "3-5",
+    "e7ecab687fc4f4bb86eb9c5a5a8b8275e0b8782cd29aff1da7bc7457898bfac3"
+   ],
+   [
+    "3-6",
+    "a3b3b44a8a8d9e7dbcaf087c2a675d658f922e4dce0a5537e0402e675ec0cd28"
+   ],
+   [
+    "3-7",
+    "d103af628dc9155b4f26ca7af7b06d0025f18e5f54c485724b85c9155645b53e"
+   ],
+   [
+    "4-0",
+    "bf77ed4c96f5145bb8864e7dd48976c2a9fe4a297b298ac33aa5b644bff1c9b8"
+   ],
+   [
+    "4-1",
+    "fd2601898d068005a3f90431de52fc5134fc8f935dc8cce3b82868c5cd807e30"
+   ],
+   [
+    "4-2",
+    "7ebd87f3936c870ca2eed72f1facaf9cae7fd4e0f095a5eccf75ac3206a682fb"
+   ],
+   [
+    "4-3",
+    "abbd9e5a3318d83398abac78f48ff94a99b8bbfa33c6aa001319cecc1327251e"
+   ],
+   [
+    "4-4",
+    "d2db9a72e2bd23bd2f5d512c15365070916ae02458a0c25a46417fcb86cd2d06"
+   ],
+   [
+    "4-5",
+    "e526c8eca2d45a9294f18ce1883fe27eb099aefa8751bcef180602626730054b"
+   ],
+   [
+    "4-6",
+    "5a8fb6e8fa284bd25a97f8e354a4888400626a861597c536bbfa6832eb1b40c9"
+   ],
+   [
+    "4-7",
+    "bfccd05492976cc3774b6fe373e6bd64cdfc330e7d0b956877817ddf28f088ee"
+   ],
+   [
+    "5-0",
+    "0d4903c047d9e18d1eaf90a3116adf2d8f1062f2450f0c3e956466bf5c276a10"
+   ],
+   [
+    "5-1",
+    "b7097bdb9b265d4e36fad1b03ee337430a2883390d5fe9fb5d5fcd8eb9d17c88"
+   ],
+   [
+    "5-2",
+    "3cab8d3a62cbfb63ced4bd7762ecf2152edbd949947bc7e7f426d41f9ef56171"
+   ],
+   [
+    "5-3",
+    "ff7a796f0ce5697934dc8a7e952b0623de92595d7376fe4eeedcd99e4d7637ec"
+   ],
+   [
+    "5-4",
+    "6dc9bf033ba47f34e0c8a8fe65eca1f42913edc43c2dc3a4d62942a34d19c918"
+   ],
+   [
+    "5-5",
+    "8949fa1e2d93242c0ae44e2c800c1c1dd0462043918572c08c5926214c6c8bd5"
+   ],
+   [
+    "5-6",
+    "75d6457723b0aa7a53772ff7281e4579c5088e1820348a066dcdd6b2816c03a2"
+   ],
+   [
+    "5-7",
+    "1cd2c1a0bd5b169c312924fff6074d70694f8308f79ef1ac4a60ff6b46786df4"
+   ],
+   [
+    "6-0",
+    "76f2c58856abb1a61ac46cea380e4f4316d999c73a3a62e26b8012c38adf7c17"
+   ],
+   [
+    "6-1",
+    "f07dc092e254e25403d34352cde318759a1b21f57ed8b685507875e0b0fbaead"
+   ],
+   [
+    "6-2",
+    "82d48f5bfdd493895f423206b4a8cbc23c470d4075c62ebbb23b2248290c9d44"
+   ],
+   [
+    "6-3",
+    "5f3a69b3cf02f0d332bcd5f71e107a988f58683e9a70880c257efdb606a90899"
+   ],
+   [
+    "6-4",
+    "ab0297c2e10584705c76c215962d01b57a88b560da8282fe7e2f6b353e25218b"
+   ],
+   [
+    "6-5",
+    "57c20d23c3db4034a5279f4490d5b6b8f2851140847cd075b762f03f6eb08612"
+   ],
+   [
+    "6-6",
+    "81dbf625356044f8ca777a8bb6f6e7b89e854e8e6aa913332d51f9b4cfe52064"
+   ],
+   [
+    "6-7",
+    "6caf205a2627340f1a7b8fcf99b138f73cac8be37dc4800a96050816f259001a"
+   ],
+   [
+    "7-0",
+    "beed2b7cae5687266100aa78f252726afa6fd9c1a425e6cd350bbd9c24f5b551"
+   ],
+   [
+    "7-1",
+    "b8e6a14f3ccf12c1c996dd16373be3d9dadef13ccd5f7ecb65862c7764b31820"
+   ],
+   [
+    "7-2",
+    "9102fb294543d72a04b31fd9c7e885aa3ed9e04aff49b3e297a9da7f516b759c"
+   ],
+   [
+    "7-3",
+    "224698b764aa3c661d9396f49a45deb4fa65a6cf80158af4f5cb10cb8333473b"
+   ],
+   [
+    "7-4",
+    "013a0acf3b03c9fa8870cf6d605a6c43b7d8f287d3e098bec519a0f567d78616"
+   ],
+   [
+    "7-5",
+    "c0bc7d2c4f005415156d8580ab42f21c17a72d9bf57f37057776033fc5168d41"
+   ],
+   [
+    "7-6",
+    "f79c4107bdbf906aded201074747151f9a838aaa70da8f32f06e4dc125de193d"
+   ],
+   [
+    "7-7",
+    "04e5157e8dd67d61882372bcb69351a0e16277685b197f54c9301cbba4396857"
+   ]
+  ]
+ },
+ "xizang": {
+  "name": "西藏",
+  "snapshots": [
+   "2026-09-22T05:49:18.919Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   78.3,
+   26.8,
+   99.2,
+   36.6
+  ],
+  "windows": 49,
+  "occurrences": 336,
+  "uniquePolygons": 241,
+  "conflicts": 0,
+  "refusals": [
+   {
+    "key": "all",
+    "status": 422,
+    "reason": "tooWide",
+    "sha256": "b383286ba1be96b6c6c03c0bcc01c22409b3a4fe0cff8a50af99fcfc3016ffb1"
+   }
+  ],
+  "captureSha256": [
+   [
+    "0-0",
+    "7bdc0d90b6919466fee88a258f2b2fbee65c5995b2a938eb4cae42eda2766fe7"
+   ],
+   [
+    "0-1",
+    "73c6134e6120239428495baa1258837182112e69a2f021c0f6a4cf5456d11ae5"
+   ],
+   [
+    "0-2",
+    "7cc8dcc851f7687ab88bb313da3f6c8e32b409df46f62212355f0754d31f98d9"
+   ],
+   [
+    "0-3",
+    "1b06d9ce764bc407d11494d60ee585f24ae08b64b6ad3455676acf44315b73a9"
+   ],
+   [
+    "0-4",
+    "472f63387bec85e2f9664278cd763bfab6951274e9cbfb02551e4b6b4bc72f11"
+   ],
+   [
+    "0-5",
+    "935726a5096c7cd67ba8ad4845bd66ad624676416c3bde03a67f465974acfd45"
+   ],
+   [
+    "0-6",
+    "1e5c3bc410337b66b5d08a75f5b608395a4e934574608dfe35477883b266bee2"
+   ],
+   [
+    "1-0",
+    "de97e46134a79bee91433797c0126a60d42f2d77955604481cabd53216aeba53"
+   ],
+   [
+    "1-1",
+    "dd76faaea54a32b6c190105e5670cf4d4048158a17c6648e25b3d409a3b1dafe"
+   ],
+   [
+    "1-2",
+    "e8b5e636295a361410c6fe5c865bbb26f982d249b3b2f1633d6f0e511930174b"
+   ],
+   [
+    "1-3",
+    "13d6c0fa0035d95ea597321ed5614512e634da68b08a806c2a116bd3c8ad6505"
+   ],
+   [
+    "1-4",
+    "eb0f8185b39fddd0073bf20ce4717c8139f5e8b5ddad2ab8b4d5e8a3415885d8"
+   ],
+   [
+    "1-5",
+    "5eb29e166a6215d482d75cb03e28c8fffc87156882a732d6d261edc1a03484a6"
+   ],
+   [
+    "1-6",
+    "f8410d38248ae082265ed8836c588c542609290ccbd438fda163d1754654f1b9"
+   ],
+   [
+    "2-0",
+    "062d1ea387a7f7a87b37b8123e74b8d19157f800dc6d960bd5cdace61fff91ac"
+   ],
+   [
+    "2-1",
+    "5a33827db17191fb86b7d554d8ab523ac14ee6325e0f0d3e12ef0c855e268882"
+   ],
+   [
+    "2-2",
+    "d2088814ca970a62eb0e0278d762df273359d02ea4c8d6a3afad3b6a3cfb4b7b"
+   ],
+   [
+    "2-3",
+    "79db6f58b5e9165e879f2f866ed6687bd21fa18fd9c5957c34f9dbc6d741f8db"
+   ],
+   [
+    "2-4",
+    "b1d4b6e1a8d30a765c469f18b17f11a81e77f5fa358fda69036b2f588c94a020"
+   ],
+   [
+    "2-5",
+    "b789fdabec16ecc0492231cf2c15aca4686facba072f47d62e4e13a322dab6b6"
+   ],
+   [
+    "2-6",
+    "36632beacb9ff1a0b0184da4d3de2d7a812eb96d5b9f6308df1aa86beeaf619a"
+   ],
+   [
+    "3-0",
+    "e6ae90d89574db0ec20a7361cff44172d0f2a6422e10ccad74ac84582c43964c"
+   ],
+   [
+    "3-1",
+    "9c985630247b4d7539658279737c329059b49b32f20b47d35a1c8f9f7364c7f4"
+   ],
+   [
+    "3-2",
+    "6a7337efa391e11ab652ec9ae938fc041370df79b4427064b93e8b3b470e382d"
+   ],
+   [
+    "3-3",
+    "04704118f69e3651c2f141a1ef7fcfa8414b9dca69cb2285d740fdabd187f5f7"
+   ],
+   [
+    "3-4",
+    "7465fb2b3eef331dd58c8194c0e3be0f5c0e0b3dd020ae13da35fbe00abd1245"
+   ],
+   [
+    "3-5",
+    "3569409ecbd372a71e3847d5ed827f764195e0fe88151a627e15b2ffd90acaac"
+   ],
+   [
+    "3-6",
+    "0b8869ab63de31f239b4fc7300880034c3e4358dea9294816ad4d29c5ad3404d"
+   ],
+   [
+    "4-0",
+    "234d105901cf207f9babea1608abb2d40c494de7e5777418609b0d31a3eeb814"
+   ],
+   [
+    "4-1",
+    "1e8c03b2ef540830439f26a66eb40cff7b24fdfe2219520ef496e6f59555ab8a"
+   ],
+   [
+    "4-2",
+    "363e18390d3f3625ee9aa945d6e6c4f9944399a4c59ca51987911e76816e724c"
+   ],
+   [
+    "4-3",
+    "661fda58fef656198f9910025fd0d204bc28377dd915d39ed10b11a190a6a315"
+   ],
+   [
+    "4-4",
+    "a365c5d6781a989b959dfef91020ef4229c3ebdf29456126eea23fe75c241643"
+   ],
+   [
+    "4-5",
+    "75ddeadb80f744e7d55c4ea84453cd27ba771637b650ff55a14e1669beff2e50"
+   ],
+   [
+    "4-6",
+    "05d5f6269597f984269d4257f9b8bd75d2f97975589139eab76654ecd8c8c1f0"
+   ],
+   [
+    "5-0",
+    "86582f5a66ff2e1f0323d10cc5ed4434448a8322a2d206c6aa65e7e15b6d4c45"
+   ],
+   [
+    "5-1",
+    "475de642471064b4e8c1ca9182eccc958d33d45e8df70c08690e4e97fc69dd47"
+   ],
+   [
+    "5-2",
+    "16ea00ad39639e90017550a8456f1433f31d6bb1df719ca69e375bc51debe787"
+   ],
+   [
+    "5-3",
+    "54c7e7f88260594d3b9ed9f39b08b39f3fa667f4a2f872a1dffb814b42b739a2"
+   ],
+   [
+    "5-4",
+    "38c08e6daa7a9c77a5126f70bcad4b5ebb614c5df2157cc5046c74903a0c9cfd"
+   ],
+   [
+    "5-5",
+    "0a404539b9aeff4772ef6a7ac04329714218f0670704cba94e15ffdb7f35e8f4"
+   ],
+   [
+    "5-6",
+    "eaf810fab8335b551a23f6f98b898a34bd1f7b602d1d0d04273a9c2e1eb6b0ac"
+   ],
+   [
+    "6-0",
+    "1c3c0c7e5e3f5821dc238a889ca942e7b9b2a850606d8980986ff9c6e6dc354c"
+   ],
+   [
+    "6-1",
+    "4174a5b64012a69d6e1daafb879d3e23fdfdb8176ecc66cab45a33c09a07c0f1"
+   ],
+   [
+    "6-2",
+    "b1783dc2381727e32b2ab81ef8626be3a84dee78b313822d79a2d61b112677ba"
+   ],
+   [
+    "6-3",
+    "b942b04d13a701446a7def458a31d844b252d6bcc9640819947f8d65d354bbe5"
+   ],
+   [
+    "6-4",
+    "f51e7722e3d71d1cc5a1c8cc249890eb6680bf52ef7cc003576a19fa630c434d"
+   ],
+   [
+    "6-5",
+    "531723c8ec0c83e90fc7f1610619c7bbec7a1a39a950e7233e2f8f87cf2c77c2"
+   ],
+   [
+    "6-6",
+    "f37a854058f9c2d6d457f2247a1b8ba14ea0284cdff11c3bf1fa7d09abec3db2"
+   ]
+  ]
+ },
+ "zhejiang": {
+  "name": "浙江",
+  "snapshots": [
+   "2026-09-22T05:49:23.221Z"
+  ],
+  "publishDate": "2026年5月",
+  "envelope": [
+   118,
+   27,
+   123,
+   31.3
+  ],
+  "windows": 10,
+  "occurrences": 3050,
+  "uniquePolygons": 1343,
+  "conflicts": 0,
+  "refusals": [],
+  "captureSha256": [
+   [
+    "all",
+    "28bdd83281f72d74f051a13fc5b1af733f1b6b4764996f8347583b253f9bab99"
+   ],
+   [
+    "0-0",
+    "b983ea54eb7a3f133f5839392e7f2a897aa8f32f7acbf61be796369348559724"
+   ],
+   [
+    "0-1",
+    "39f19f0963877556f6e5e75ef858b66e1db69764238455aa8f25127bf382cffe"
+   ],
+   [
+    "0-2",
+    "4a7798c77cca8b3a3c625ab58f3c6322d7e95be74db342ac632c8f8d7cfeedf6"
+   ],
+   [
+    "1-0",
+    "91458bacb24a0032cf613134f48dd4ee3541adbd746d1d19fb864e66863cf781"
+   ],
+   [
+    "1-1",
+    "00e39262ab8e38a9996c9e0efb76786db206adbdd6bcb3c6708fc51cc733c39a"
+   ],
+   [
+    "1-2",
+    "1743ca4b768a32dd5926a11af95d59f21da89babdfcbaf93e415efb6a72c013d"
+   ],
+   [
+    "2-0",
+    "0fde0f5357851e5da3b20c6f47acb11ddcfa4340d611188a7b86cc6920fb3a7e"
+   ],
+   [
+    "2-1",
+    "6b9fa07653a438f11ebd8d54cc035764f465b18675992f44c84b42566fc1c4be"
+   ],
+   [
+    "2-2",
+    "ba5969ea59f93e366854b45a5f97c59756644c0312905ad68de110ce489bcd7b"
+   ]
+  ]
+ }
+}

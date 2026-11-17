@@ -1,0 +1,38 @@
+{
+  "id": "cn-neimenggu",
+  "country": "cn",
+  "name": "Inner Mongolia",
+  "nameZh": "内蒙古",
+  "format": "geojson",
+  "crs": "wgs84",
+  "crsVerified": false,
+  "semantics": "allow",
+  "maxHeightM": null,
+  "coverageMode": "positive-only",
+  "sourceConfidence": {
+    "mode": "selected-source",
+    "type": "third-party-uom-snapshot",
+    "alignment": "declared-only",
+    "completeness": "unverified",
+    "currency": "unverified",
+    "temporaryRestrictions": "not-included",
+    "flightPermission": "unverified",
+    "rightsBasis": "owner-attested-project-authorization"
+  },
+  "source": {
+    "authority": "KDji third-party UOM reference mirror",
+    "url": "https://kdji.cn/support/nfz-map.html",
+    "effective": null,
+    "publishedMonth": "2026-05",
+    "snapshotAt": "2026-09-22T05:49:07.747Z",
+    "contentSha256": "6e9ca82f05a469c1df42a57798e6061b63efe6d60cf86a3e02cdd783d2cc011b",
+    "acquiredOn": "2026-11-17"
+  },
+  "license": "LicenseRef-OwnerAttested-KDji-Project",
+  "officialMap": {
+    "label": "Verify with UOM",
+    "url": "https://uom.caac.gov.cn/"
+  },
+  "file": "zones.geojson",
+  "publish": true
+}

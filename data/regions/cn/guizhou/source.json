@@ -1,0 +1,38 @@
+{
+  "id": "cn-guizhou",
+  "country": "cn",
+  "name": "Guizhou",
+  "nameZh": "贵州",
+  "format": "geojson",
+  "crs": "wgs84",
+  "crsVerified": false,
+  "semantics": "allow",
+  "maxHeightM": null,
+  "coverageMode": "positive-only",
+  "sourceConfidence": {
+    "mode": "selected-source",
+    "type": "third-party-uom-snapshot",
+    "alignment": "declared-only",
+    "completeness": "unverified",
+    "currency": "unverified",
+    "temporaryRestrictions": "not-included",
+    "flightPermission": "unverified",
+    "rightsBasis": "owner-attested-project-authorization"
+  },
+  "source": {
+    "authority": "KDji third-party UOM reference mirror",
+    "url": "https://kdji.cn/support/nfz-map.html",
+    "effective": null,
+    "publishedMonth": "2026-05",
+    "snapshotAt": "2026-09-22T05:48:58.191Z",
+    "contentSha256": "992899219e984073dc711bf13a6985cfa8d266c9efa11a8d59a3e768ef250329",
+    "acquiredOn": "2026-11-17"
+  },
+  "license": "LicenseRef-OwnerAttested-KDji-Project",
+  "officialMap": {
+    "label": "Verify with UOM",
+    "url": "https://uom.caac.gov.cn/"
+  },
+  "file": "zones.geojson",
+  "publish": true
+}

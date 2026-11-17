@@ -8,7 +8,7 @@ const { REGION_LABELS, regionLabel } = await import(pathToFileURL(path.join(ROOT
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 
 // The expectation: adding or removing a region archive changes this list on purpose, in the same change (ARCHITECTURE.md, "Fly In regions").
-const EXPECTED = ['Anhui', 'Chongqing', 'Fujian', 'Gansu', 'Guangdong', 'Hebei', 'Hubei', 'Hunan', 'Jiangsu', 'Jiangxi', 'Jilin', 'Liaoning', 'Ningxia', 'Qinghai', 'Shaanxi', 'Shanghai', 'Shanxi', 'Sichuan', 'Singapore no-fly zones', 'Tianjin', 'Zhejiang'];
+const EXPECTED = ['Anhui', 'Chongqing', 'Fujian', 'Gansu', 'Guangdong', 'Guangxi', 'Guizhou', 'Hainan', 'Hebei', 'Heilongjiang', 'Henan', 'Hubei', 'Hunan', 'Inner Mongolia', 'Jiangsu', 'Jiangxi', 'Jilin', 'Liaoning', 'Ningxia', 'Qinghai', 'Shaanxi', 'Shandong', 'Shanghai', 'Shanxi', 'Sichuan', 'Singapore no-fly zones', 'Tianjin', 'Tibet', 'Xinjiang', 'Zhejiang'];
 
 const data = path.join(ROOT, 'public/data');
 const index = JSON.parse(fs.readFileSync(path.join(data, 'index.json'), 'utf8'));

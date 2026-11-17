@@ -1,0 +1,38 @@
+{
+  "id": "cn-hainan",
+  "country": "cn",
+  "name": "Hainan",
+  "nameZh": "海南",
+  "format": "geojson",
+  "crs": "wgs84",
+  "crsVerified": false,
+  "semantics": "allow",
+  "maxHeightM": null,
+  "coverageMode": "positive-only",
+  "sourceConfidence": {
+    "mode": "selected-source",
+    "type": "third-party-uom-snapshot",
+    "alignment": "declared-only",
+    "completeness": "unverified",
+    "currency": "unverified",
+    "temporaryRestrictions": "not-included",
+    "flightPermission": "unverified",
+    "rightsBasis": "owner-attested-project-authorization"
+  },
+  "source": {
+    "authority": "KDji third-party UOM reference mirror",
+    "url": "https://kdji.cn/support/nfz-map.html",
+    "effective": null,
+    "publishedMonth": "2026-05",
+    "snapshotAt": "2026-09-22T05:48:58.914Z",
+    "contentSha256": "7e61ae8b95aa0e62299982614d6bc913ded636c18e353c5026295605bbd9fc03",
+    "acquiredOn": "2026-11-17"
+  },
+  "license": "LicenseRef-OwnerAttested-KDji-Project",
+  "officialMap": {
+    "label": "Verify with UOM",
+    "url": "https://uom.caac.gov.cn/"
+  },
+  "file": "zones.geojson",
+  "publish": true
+}
