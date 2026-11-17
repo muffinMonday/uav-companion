@@ -74,12 +74,14 @@ export function renderReadiness(root, ctx) {
   };
   att.append(mkCheck('armSwitchOff', 'The transmitter arm switch is off and throttle is at minimum.'));
   att.append(mkCheck('batteryDisconnected', 'The flight battery is disconnected.'));
+  if (r.gates.some((g) => g.id === 'bb-mode')) { // deferred: only when a caller asked for the Blackbox gates
   const lm = el('label'); lm.append(document.createTextNode('Blackbox mode (set in the Betaflight App): '));
   const sel = el('select'); sel.dataset.attest = 'blackboxMode';
   for (const v of ['', ...BLACKBOX_MODE_TOKENS]) { const o = el('option', '', v || 'not confirmed'); o.value = v; sel.append(o); }
   sel.value = ctx.attestations.blackboxMode || '';
   sel.addEventListener('change', () => ctx.onAttest({ blackboxMode: sel.value || undefined }));
   lm.append(sel); att.append(lm);
+  }
   wrap.append(att);
 
   const ul = el('ul', 'pf-gates');

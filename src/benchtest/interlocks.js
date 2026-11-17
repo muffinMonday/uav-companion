@@ -2,6 +2,10 @@
 // the UI only displays the results. Nothing here sends anything.
 import { BENCH_TIMINGS, CHECKLIST_ITEMS, DSHOT_STATS, MOTOR } from './constants.js';
 
+// Blackbox readiness gates are DEFERRED (owner decision 2026-11-17): they never block the bench test, even if a caller
+// asked the readiness module to include them. Blackbox analysis is outside the current product scope.
+const DEFERRED_GATES = new Set(['blackbox', 'bb-mode', 'bb-fields', 'bb-rate', 'storage']);
+
 // DShot error statistics (invalidPct per motor, hundredths of a percent) as 'usable' | 'excessive' | 'unavailable'.
 // The sentinel 10000 is what a build without DShot statistics reports: "unavailable", never a 100 % failure and never a
 // motor-health verdict. Anything missing or malformed is also unavailable (fail closed). Unavailable wins over excessive.
@@ -31,11 +35,12 @@ export function phase3Policy({ report, combo, mode, unlocked, transportKind }) {
   if (!report || !Array.isArray(report.gates)) blockers.push({ id: 'readiness', reason: 'No readiness report.' });
   else {
     for (const g of report.gates) {
+      if (DEFERRED_GATES.has(g.id)) continue;
       if (g.status === 'fail') blockers.push({ id: g.id, reason: `${g.title}: ${g.detected} (needs ${g.required})` });
       else if (g.status === 'unknown') blockers.push({ id: g.id, reason: `${g.title}: not established` });
     }
     const by = Object.fromEntries(report.gates.map((g) => [g.id, g]));
-    for (const id of ['motor-count', 'protocol', 'bidir', '3d', 'arming', 'blackbox', 'bb-mode', 'bb-fields', 'telemetry', 'firmware']) {
+    for (const id of ['motor-count', 'protocol', 'bidir', '3d', 'arming', 'telemetry', 'firmware']) {
       if (!by[id]) blockers.push({ id, reason: `Gate ${id} is missing from the report.` });
     }
     if (by.transport) {
@@ -83,7 +88,7 @@ export function startInterlocks(ctx, facts, now) {
   add('target-confirmed', ctx.selectedMotor !== null && ctx.targetConfirmed === ctx.selectedMotor, 'The physical motor to be tested is not confirmed.');
   add('telemetry-fresh', rpm !== null && rpm.length === MOTOR.enabledMotors && Number.isFinite(f.telemetryAt) && now - f.telemetryAt <= stale, 'RPM telemetry is not fresh and valid.');
   add('all-rpm-zero', rpm !== null && rpm.every((r) => r === 0), 'A motor reports nonzero RPM.');
-  add('sweep-gap', ctx.lastStopProofAt === null || now - ctx.lastStopProofAt >= BENCH_TIMINGS.minSweepGapMs, 'Wait for the Blackbox shutdown period after the previous sweep.');
+  add('sweep-gap', ctx.lastStopProofAt === null || now - ctx.lastStopProofAt >= BENCH_TIMINGS.minSweepGapMs, 'Wait for the settle period after the previous sweep.');
   add('transport', ctx.transportAvailable === true, 'The connection is not available.');
   add('no-fault', ctx.fault === null, 'The session is locked.');
   return c;

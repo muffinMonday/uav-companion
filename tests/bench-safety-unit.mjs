@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OWNER_APPROVED, SYNTHETIC_ALLOWLIST } from '../src/benchtest/allowlist.js';
 import { BENCH_TIMINGS, MOTOR } from '../src/benchtest/constants.js';
+import { DISCLAIMER } from '../src/benchtest/result.js';
 import { benchEnabled, overrideBenchFlagForTests } from '../src/benchtest/flag.js';
 import { STOP_EXTERNAL_VALUE, TIMINGS } from '../src/preflight/constants.js';
 
@@ -124,7 +125,7 @@ const VERDICT = /\b(healthy|unhealthy|faulty motor|motor (passed|failed)|diagnos
 for (const f of [...BENCH, ...pageFiles]) {
   const text = f.endsWith('.js') ? code(f) : fs.readFileSync(f, 'utf8').replace(/<!--[\s\S]*?-->/g, '');
   const strings = [...text.matchAll(/(['"`])((?:\\.|(?!\1).)*)\1/g)].map((m) => m[2]).filter((s) => s.length > 3);
-  for (const s of strings) { assert.ok(!CLAIM.test(s), `${rel(f)} has claim wording: ${s.slice(0, 80)}`); assert.ok(!VERDICT.test(s), `${rel(f)} has a verdict: ${s.slice(0, 80)}`); }
+  for (const s of strings) { if (s === DISCLAIMER && rel(f) === 'src/benchtest/result.js') continue; /* the one string that states what the result does NOT mean */ assert.ok(!CLAIM.test(s), `${rel(f)} has claim wording: ${s.slice(0, 80)}`); assert.ok(!VERDICT.test(s), `${rel(f)} has a verdict: ${s.slice(0, 80)}`); }
 }
 pass('no string in the bench code claims safe to fly, airworthiness, certification, fault-free or a guarantee, or gives a health verdict');
 

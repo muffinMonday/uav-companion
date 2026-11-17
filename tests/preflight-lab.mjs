@@ -36,9 +36,10 @@ try {
   ok((await p.locator('.pf-ready[data-state="DISCONNECTED"]').count()) === 1, 'before a connection the readiness view is DISCONNECTED');
   await p.click('#btn-mock');
   await p.waitForSelector('.pf-ready[data-state="READINESS_INCOMPLETE"]', { timeout: 10000 });
-  ok(true, 'a synthetic aircraft reads and the view is INCOMPLETE (switch, battery and Blackbox mode are not confirmed yet)');
+  ok(true, 'a synthetic aircraft reads and the view is INCOMPLETE (switch and battery are not confirmed yet)');
   const rows = await p.locator('.pf-gate').count();
-  ok(rows === 15, `15 gate rows are shown (${rows})`);
+  ok(rows === 10, `10 gate rows are shown (the Blackbox gates are deferred and absent) (${rows})`);
+  ok((await p.locator('select[data-attest="blackboxMode"]').count()) === 0 && (await p.locator('[data-gate^="bb-"], [data-gate="blackbox"], [data-gate="storage"]').count()) === 0, 'no Blackbox mode control and no Blackbox gate row');
   ok((await p.locator('.pf-gate .pf-badge').allTextContents()).every((t) => ['Passed', 'Check', 'Blocked', 'Not confirmed'].includes(t)), 'every row carries a text status, not only a colour');
   ok((await p.locator('.pf-gate .pf-icon').allTextContents()).every((t) => t.length === 1), 'every row also carries an icon glyph');
   ok((await p.locator('.pf-gate[data-gate="firmware"] .pf-hw').count()) === 1, 'the candidate firmware row is labelled hardware-unverified');
@@ -46,19 +47,10 @@ try {
 
   await p.check('[data-attest="armSwitchOff"]');
   await p.check('[data-attest="batteryDisconnected"]');
-  await p.selectOption('select[data-attest="blackboxMode"]', 'MOTOR_TEST');
   await p.waitForSelector('.pf-ready[data-state="READINESS_CONDITIONAL"]');
-  ok(/Conditional/.test(await p.locator('.pf-overall').innerText()), 'with the three confirmations the view is CONDITIONAL, not "ready"');
+  ok(/Conditional/.test(await p.locator('.pf-overall').innerText()), 'with the two confirmations the view is CONDITIONAL, not "ready"');
   const body = await p.evaluate(() => document.body.innerText);
   ok(!/safe to fly|airworth|certified|guarantee/i.test(body.replace(/not a statement that an aircraft is fit to fly/i, '')), 'no safe-to-fly, airworthiness, certification or guarantee wording on the page');
-  ok((await p.locator('[data-gate="bb-mode"] .pf-badge').innerText()) === 'Check', 'an attested Blackbox mode is "Check", never "Passed"');
-  await p.selectOption('select[data-attest="blackboxMode"]', 'NORMAL');
-  await p.waitForSelector('.pf-ready[data-state="READINESS_BLOCKED"]');
-  ok(true, 'the NORMAL mode blocks the view (READINESS_BLOCKED)');
-  const opts = await p.locator('select[data-attest="blackboxMode"] option').allTextContents();
-  ok(JSON.stringify(opts) === JSON.stringify(['not confirmed', 'NORMAL', 'MOTOR_TEST', 'ALWAYS']), 'the mode choices are exactly NORMAL, MOTOR_TEST, ALWAYS (no ALWAYS_ON)');
-  await p.selectOption('select[data-attest="blackboxMode"]', 'ALWAYS');
-  await p.waitForSelector('.pf-ready[data-state="READINESS_CONDITIONAL"]');
 
   // manual ESC family and export
   await p.selectOption('select[data-manual="escFirmwareFamily"]', 'Bluejay');

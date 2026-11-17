@@ -1,6 +1,7 @@
 // The privacy-settings sub-panel: three switches that decide what may be sent to Open-Meteo. See privacy.js.
 import { getPrivacy, setPrivacy } from './privacy.js';
 import { diagnostics } from './log.js';
+import { approxSize as aircraftDiagSize, deleteAll as deleteAircraftDiag } from './aircraft-diag-data.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -35,6 +36,7 @@ export function initPrivacyUI({ mw, elev, toast = () => {} }) {
 
   const attendance = initSessionAttendance(toast);
   initDiagnostics(toast);
+  initAircraftDiagnostics(toast);
   return attendance;
 }
 
@@ -87,5 +89,28 @@ function initDiagnostics(toast) {
   });
   clr.addEventListener('click', async () => { await diagnostics.clear(); await refresh(); toast('Diagnostics cleared.'); });
   $('privacy-btn')?.addEventListener('click', refresh); // each time the panel is opened
+  refresh();
+}
+
+/** Aircraft diagnostic data (motor-diagnostic records kept by aircraft-diag-data.js): its own card, shown only while something is stored.
+ *  Separate from the Diagnostics log above, never part of a trip export, sharing or sync; Delete removes the records and any kept live samples. */
+function initAircraftDiagnostics(toast) {
+  const anchor = $('diag-card');
+  if (!anchor) return;
+  const card = document.createElement('div'); card.className = 'card'; card.id = 'aircraft-diag-card'; card.hidden = true;
+  const h = document.createElement('h2'); h.textContent = 'Aircraft diagnostic data';
+  const hint = document.createElement('p'); hint.className = 'hint';
+  hint.textContent = 'Results of motor checks you chose to save are kept in this browser only: derived measurements and, only if you chose it, the live samples behind them. They are separate from the Diagnostics log, are not part of a trip export, sharing or sync, and are never sent anywhere.';
+  const stat = document.createElement('p'); stat.className = 'hint'; stat.id = 'aircraft-diag-stats'; stat.setAttribute('aria-live', 'polite');
+  const row = document.createElement('div'); row.className = 'btn-row';
+  const del = document.createElement('button'); del.type = 'button'; del.className = 'btn small'; del.id = 'aircraft-diag-delete'; del.textContent = 'Delete aircraft diagnostic data';
+  row.append(del); card.append(h, hint, stat, row); anchor.after(card);
+  function refresh() {
+    const s = aircraftDiagSize();
+    card.hidden = !(s.available && s.totalBytes > 0);
+    stat.textContent = s.totalBytes > 0 ? s.records + (s.records === 1 ? ' saved result, about ' : ' saved results, about ') + fmtSize(s.totalBytes) + (s.sampleBytes ? ' (' + fmtSize(s.sampleBytes) + ' of live samples).' : ', no live samples kept.') : '';
+  }
+  del.addEventListener('click', () => { const ok = deleteAircraftDiag(); refresh(); toast(ok ? 'Aircraft diagnostic data deleted.' : 'Could not delete the aircraft diagnostic data.'); });
+  $('privacy-btn')?.addEventListener('click', refresh);
   refresh();
 }

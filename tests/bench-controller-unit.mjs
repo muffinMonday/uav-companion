@@ -63,11 +63,11 @@ const reach = {
   const h8 = await makeHarness({ fc: { armed: true } }); h8.fc.inject.armed = true; await h8.toReadiness();
   assert.equal(h8.c.proceed().ok, false, 'armed');
   const h9 = await makeHarness({ fc: { blackbox: { supported: true, device: 0, rateDenom: 1, pRatio: 1, sampleRate: 0, mask: 0, maskPresent: true } } }); await h9.toReadiness();
-  assert.equal(h9.c.proceed().ok, false, 'no Blackbox device');
+  assert.equal(h9.c.machine.ctx.policy.nonzeroOk, true, 'Blackbox configuration is deferred and never a readiness blocker (no device, no mode attestation)');
   const h10 = await makeHarness(); await h10.c.connect(h10.t); // no attestations: arming, mode and battery are unknown
   assert.equal(h10.c.proceed().ok, false, 'attestations missing');
-  for (const x of [h, h2, h3, h4, h5, h6, h7, h8, h9, h10]) assert.equal(x.fc.received.length, 0, 'not one motor frame, not even a stop, before the readiness policy is met');
-  pass('unapproved or unready hardware (no allowlist entry, other firmware, unsupported firmware, 3 motors, 3D, no bidirectional DShot, PWM, armed, no Blackbox, missing attestations) never reaches a motor command');
+  for (const x of [h, h2, h3, h4, h5, h6, h7, h8, h10]) assert.equal(x.fc.received.length, 0, 'not one motor frame, not even a stop, before the readiness policy is met');
+  pass('unapproved or unready hardware (no allowlist entry, other firmware, unsupported firmware, 3 motors, 3D, no bidirectional DShot, PWM, armed, missing attestations; a missing Blackbox device is no longer a blocker) never reaches a motor command');
 }
 
 // ---------- stop-validation-only mode on a "real" transport kind without an allowlist
@@ -506,7 +506,7 @@ const reach = {
   // transport loss: reconnecting starts from nothing
   h = await full(); h.t.disconnect();
   assert.equal(h.state(), STATE.DISCONNECTED);
-  await h.c.connect(benchFcTransport()); h.c.setAttestation({ armSwitchOff: true, batteryDisconnected: true, blackboxMode: 'MOTOR_TEST' }); h.c.setManual({ escFamily: 'Bluejay', escModel: 'synthetic' });
+  await h.c.connect(benchFcTransport()); h.c.setAttestation({ armSwitchOff: true, batteryDisconnected: true }); h.c.setManual({ escFamily: 'Bluejay', escModel: 'synthetic' });
   h.c.proceed(); await h.adv(1500);
   assert.equal(h.state(), STATE.SAFETY_CHECKLIST);
   assert.equal(h.caps().canFinalHold, false, 'no item survived the reconnect');

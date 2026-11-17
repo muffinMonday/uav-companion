@@ -1,7 +1,7 @@
 // Motor bench test (Phase 3): the developer UI. It owns NO safety rule. Every control's availability comes from
 // controller.view().caps (derived by the state machine); every click calls one controller method.
 // DOM is built with el() and textContent only. Wording rule: never "safe to fly", airworthy, certified, fault free, or a
-// guaranteed result, and never a motor-health verdict (Phase 4 owns analysis).
+// guaranteed result, and never a motor-health verdict. The result screen (result-ui.js) states observations only.
 import { el } from '../cards.js';
 import { renderReadiness, viewState } from '../preflight/readiness-ui.js';
 import { ESC_FIRMWARE_FAMILIES } from '../preflight/versions.js';
@@ -20,6 +20,7 @@ const DSHOT_TEXT = Object.freeze({
   excessive: 'at or above the provisional error limit',
 });
 import { STATE } from './state-machine.js';
+import { drawResult } from './result-ui.js';
 
 const REASON_TEXT = Object.freeze({
   'user-stop': 'You pressed Stop & zero.',
@@ -91,7 +92,7 @@ function holdControl({ label, ms, onComplete, id, disabled }) {
 }
 
 export function mountBench(root, { controller, onConnectMock, onConnectReal, realAvailable, inject }) {
-  const form = { phrase: '', ack: false };
+  const form = { phrase: '', ack: false, retain: false };
   const refs = {};
   let lastSig = '';
   let overlay = null;
@@ -174,7 +175,9 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     return d;
   }
 
-  function section(title, id) { const s = el('section', 'bt-section'); s.id = id; s.append(el('h2', '', title)); return s; }
+  // kind: what the section is. The workspace keeps three things visibly apart: safety and readiness checks, the active sweep, and the observational result.
+  const KICKERS = { safety: 'Safety and readiness check', sweep: 'Active sweep', result: 'Observational result' };
+  function section(title, id, kind = 'safety') { const s = el('section', 'bt-section'); s.id = id; s.dataset.kind = kind; s.append(el('p', 'bt-kicker', KICKERS[kind]), el('h2', '', title)); return s; }
 
   function drawBody(v) {
     const c = v.caps;
@@ -195,6 +198,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
       s.append(el('p', '', 'The synthetic mode is the default. Real hardware is read-only until it is unlocked in this session and every readiness gate and the owner allowlist pass.'));
       s.append(connectButtons());
       body.append(s);
+      drawResult(body, { controller, form }); // the last session's observations stay readable until the next connection
     } else if (st === STATE.READ_ONLY_READINESS) drawReadiness(v);
     else if (st === STATE.STOP_VALIDATION_ONLY) {
       const s = section('USB-only stop validation (flight battery disconnected)', 'bt-sec-stopval');
@@ -252,7 +256,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
       body.append(s);
     } else if (st === STATE.BENCH_COMPLETE) {
       const s = section('Bench session finished', 'bt-sec-complete');
-      s.append(el('p', '', c.poweredStopValidated ? 'The powered stop validation is complete. Disconnect the flight battery and confirm. Download the trace below for review; nothing here is a result about the aircraft.' : 'The stop proof is complete. Disconnect the flight battery and confirm. No result or health judgement is produced here.'));
+      s.append(el('p', '', c.poweredStopValidated ? 'The powered stop validation is complete. Disconnect the flight battery and confirm. Download the trace below for review; nothing here is a result about the aircraft.' : 'The stop proof is complete. Disconnect the flight battery and confirm. The observational result is shown below.'));
       if (!c.batteryRemoved) s.append(btn('The flight battery is disconnected', () => controller.confirmBatteryRemoved(), { id: 'btn-battery-removed', disabled: !c.canConfirmBatteryRemoved }));
       else {
         if (c.markerClearFailed) {
@@ -262,6 +266,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
         s.append(btn('Start over', () => controller.reset(), { id: 'btn-reset', disabled: !c.canReset }));
       }
       body.append(s);
+      drawResult(body, { controller, form });
     }
     if (v.transportKind === 'mock' && inject && st !== STATE.DISCONNECTED) body.append(injectPanel());
   }
@@ -306,7 +311,8 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     if (c.mode === 'real' && c.unlocked) body.append(el('p', 'bt-unlocked', 'Real-hardware controls are unlocked for this session only.'));
 
     const act = el('div', 'bt-actions');
-    act.append(btn('Continue to safe-state initialization', () => controller.proceed(), { id: 'btn-proceed', cls: 'bt-primary', disabled: !c.canProceed }));
+    act.append(btn('Begin active motor test', () => controller.proceed(), { id: 'btn-proceed', cls: 'bt-primary', disabled: !c.canProceed }));
+    act.append(el('p', 'bt-small', 'Safe-state initialization happens first: the app sends external 1000 to all motors and reads it back, with USB power only. No motor can start until the safety checklist, the battery step and the powered-zero check are done.'));
     act.append(btn('USB-only stop validation (battery disconnected, external 1000 only)', () => controller.startStopValidation(), { id: 'btn-stopval', disabled: !c.canStopValidation }));
     act.append(btn('Powered stop validation (full safety checklist, battery connected, external 1000 only)', () => controller.startPoweredStopValidation(), { id: 'btn-powered-stopval', disabled: !c.canPoweredStopValidation }));
     if (!c.usbStopValidated) act.append(el('p', 'bt-small', 'The powered stop validation needs the USB-only stop validation to be recorded first in this connection.'));
@@ -345,7 +351,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
 
   function drawMotorReady(v) {
     const c = v.caps;
-    const s = section('Motor ready (outputs stay at 1000 until you start a sweep)', 'bt-sec-ready');
+    const s = section('Motor ready (outputs stay at 1000 until you start a sweep)', 'bt-sec-ready', 'sweep');
     s.append(el('p', '', `Completed motors: ${c.completedMotors.length ? c.completedMotors.map((m) => m + 1).join(', ') : 'none'}. The order shown is the default quad-X order; the mixer is not read from the flight controller.`));
     s.append(quad(c.selectedMotor, (m) => controller.selectMotor(m)));
     if (c.selectedMotor !== null) {
@@ -359,11 +365,14 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     }
     s.append(btn('Finish the bench session', () => controller.finishBench(), { id: 'btn-finish', disabled: !c.canFinish }));
     body.append(s);
+    drawResult(body, { controller, form });
   }
 
   function drawRunning(v) {
     const c = v.caps;
-    const s = section(`Motor ${c.selectedMotor + 1} running (${EXPECTED_POSITIONS[c.selectedMotor]})`, 'bt-sec-run');
+    const s = section(`Motor ${c.selectedMotor + 1} running (${EXPECTED_POSITIONS[c.selectedMotor]})`, 'bt-sec-run', 'sweep');
+    const big = el('p', 'bt-bigread'); big.id = 'rd-big'; big.setAttribute('role', 'status'); big.setAttribute('aria-live', 'off'); refs.live['rd-big'] = big; s.append(big);
+    const prog = el('progress'); prog.id = 'rd-progress'; prog.max = MOTOR.cap - MOTOR.stopValue; prog.value = 0; prog.setAttribute('aria-label', 'Output command between stop and the cap'); refs.live['rd-progress'] = prog; s.append(prog);
     s.append(quad(c.selectedMotor, null));
     const dl = el('dl', 'bt-readout');
     for (const [k, id] of [['Phase', 'rd-phase'], ['Output command', 'rd-output'], ['RPM (this motor)', 'rd-rpm'], ['Telemetry age', 'rd-age'], ['Elapsed', 'rd-elapsed']]) {
@@ -414,6 +423,8 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
       const tel = v.telemetry && v.telemetry.motors[m];
       L['rd-phase'].textContent = v.sweep.phase === 'ramp' ? 'searching' : v.sweep.phase === 'validate' ? 'confirming rotation' : v.sweep.phase;
       L['rd-output'].textContent = String(v.sweep.output);
+      if (L['rd-big']) L['rd-big'].textContent = `Motor ${m + 1}: command ${v.sweep.output}, ${tel ? tel.rpm + ' RPM' : 'RPM unavailable'}`;
+      if (L['rd-progress']) L['rd-progress'].value = Math.max(0, v.sweep.output - MOTOR.stopValue);
       L['rd-rpm'].textContent = tel ? String(tel.rpm) : 'unavailable';
       L['rd-age'].textContent = v.telemetryAgeMs === null ? 'none' : `${v.telemetryAgeMs} ms`;
       L['rd-elapsed'].textContent = `${(v.sweep.elapsedMs / 1000).toFixed(1)} s`;
@@ -426,7 +437,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
   function signature(v) {
     const c = v.caps;
     return JSON.stringify([c.state, c.mode, c.unlocked, c.selectedMotor, c.targetConfirmed, c.canStart, c.interlocks.map((i) => i.ok), controller.machine.ctx.checklist, c.proof.partsDone, c.proof.complete, c.proof.userNoRotation, c.proof.readbackOk, c.proof.zeroOk,
-      c.proof.attempts >= BENCH_TIMINGS.stopMinAttempts, c.batteryDeclared, c.batteryRemoved, c.transportAvailable, c.fault && c.fault.reason, v.notes.markerError, v.notes.proofFailed, v.notes.error, v.notes.message, c.completedMotors,
+      c.proof.attempts >= BENCH_TIMINGS.stopMinAttempts, c.batteryDeclared, c.batteryRemoved, c.transportAvailable, c.fault && c.fault.reason, v.notes.markerError, v.notes.proofFailed, v.notes.error, v.notes.message, c.completedMotors, v.analysis && [v.analysis.sweeps, v.analysis.collecting],
       c.policy && [c.policy.nonzeroOk, c.policy.stopValidationOk, c.policy.blockers.length], v.readiness && v.readiness.counts, v.attestations, v.manual, c.canConfirmNoRotation, c.needsPosition, c.canReset, c.canCompleteRecovery, c.markerAvailable, !!v.snapshot,
       c.flow, c.batteryState, c.dshot.status, c.usbStopValidated, c.poweredStopValidated, c.canPoweredStopValidation, c.canFinishPoweredStopValidation, c.markerClearFailed, c.markerClearPending, c.canRetryMarkerClear]);
   }

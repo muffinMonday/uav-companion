@@ -44,6 +44,18 @@
   .bt-fault-title { font-size: 2.2rem; line-height: 1.15; margin: .5rem 0 1rem; }
   .bt-overlay .bt-warn { color: #ffd479; }
   .bt-overlay .bt-done { color: #8df0a0; }
+  .bt-kicker { margin: 0; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .bt-bigread { font-size: 1.6rem; font-weight: 700; margin: .25rem 0; font-variant-numeric: tabular-nums; }
+  progress { width: 100%; height: 14px; }
+  .bt-resquad { margin: .5rem 0; }
+  .bt-rescell { display: flex; flex-direction: column; justify-content: center; min-height: 64px; padding: .4rem .6rem; border: 3px solid var(--line); border-radius: 8px; }
+  .bt-st-completed { border-color: var(--ok); } .bt-st-difference { border-color: var(--warn); border-style: dashed; } .bt-st-inspect { border-color: var(--bad); border-width: 4px; } .bt-st-incomplete, .bt-st-not-run { border-color: var(--muted); border-style: dotted; }
+  details.bt-card { border-left: 5px solid var(--line); border-radius: 6px; margin: .4rem 0; padding: .3rem .6rem; background: var(--panel); }
+  details.bt-card.bt-st-completed { border-left-color: var(--ok); } details.bt-card.bt-st-difference { border-left-color: var(--warn); } details.bt-card.bt-st-inspect { border-left-color: var(--bad); }
+  .bt-result summary, .bt-adv summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+  .bt-evidence { font-size: .95rem; }
+  .bt-result { border-width: 2px; }
+  @media (max-width: 480px) { .bt-readout { grid-template-columns: 1fr; } .bt-bigread { font-size: 1.3rem; } }
   .disabled-note { border: 2px solid var(--bad); padding: .75rem; }
 </style>
 </head>

@@ -9,7 +9,11 @@ import { ReadOnlySession } from '../preflight/session.js';
 import { evaluateReadiness } from '../preflight/readiness.js';
 import { PROTOCOL_NAMES } from '../preflight/versions.js';
 import { armedFromStatus } from '../preflight/msp-codec.js';
-import { BENCH_TIMINGS, MOTOR } from './constants.js';
+import { BENCH_TIMINGS, EXPECTED_POSITIONS, MOTOR } from './constants.js';
+import { createLiveCollector } from './live-collector.js';
+import { buildBenchResult } from './result.js';
+import { buildEvidenceExport, buildHistoryRecord, approxBytes } from './history.js';
+import { deleteAll as deleteStoredDiagnostics, listRecords as listStoredDiagnostics, saveRecord as saveStoredDiagnostic, approxSize as storedDiagnosticsSize } from '../aircraft-diag-data.js';
 import { OWNER_APPROVED, SYNTHETIC_ALLOWLIST, matchAllowlist } from './allowlist.js';
 import { MotorBoundary } from './motor-control.js';
 import { createMarkerStore } from './recovery-marker.js';
@@ -17,7 +21,7 @@ import { STATE, createMachine } from './state-machine.js';
 
 const MARKER_CLEAR_FAILED_TEXT = 'The recovery marker could not be deleted. Keep the flight battery disconnected: ordinary testing cannot resume until the marker is confirmed removed. Retry the deletion; if it keeps failing, clear this site\'s browser data by hand and reload.';
 
-const realClock = { now: () => Date.now(), setTimeout: (f, ms) => setTimeout(f, ms), clearTimeout: (h) => clearTimeout(h) };
+const realClock = { now: () => Date.now(), mono: () => (typeof performance !== 'undefined' ? performance.now() : Date.now()), setTimeout: (f, ms) => setTimeout(f, ms), clearTimeout: (h) => clearTimeout(h) };
 const n = BENCH_TIMINGS;
 
 export function createBenchController(opts = {}) {
@@ -31,7 +35,11 @@ export function createBenchController(opts = {}) {
   let attestations = {}, manual = { escFamily: '', escModel: '' };
   let polling = false, loopTimer = null, graceTimer = null, escTimer = null, disposed = false, tickCount = 0;
   let proofRun = 0;
-  const obs = { telemetry: null, telemetryAt: null, armed: null, armedAt: null, voltage_cV: null, readback: null, lastSendAt: -1 };
+  const obs = { telemetry: null, telemetryAt: null, armed: null, armedAt: null, voltage_cV: null, voltageAt: null, readback: null, lastSendAt: -1, lastAck: null };
+  // Passive analysis layer: it only records what the loop already observed. It never feeds back into the machine or the boundary.
+  const collector = createLiveCollector({ clockNow: () => clock.now(), mono: typeof clock.mono === 'function' ? () => clock.mono() : undefined });
+  const diagStorage = opts.diagStorage; // undefined: the browser's local storage; tests pass an in-memory one
+  let resultCache = { version: -1, value: null };
   const inflight = { tel: false, status: false, motor: false, analog: false };
   const last = { statusAt: -Infinity, analogAt: -Infinity };
   let sweep = null;
@@ -47,8 +55,32 @@ export function createBenchController(opts = {}) {
     const r = machine.dispatch(event, { ...payload, now: now() });
     for (const fx of r.effects || []) runEffect(fx);
     syncTimers();
+    analysisAfterDispatch(event, payload, r); // after every effect: the stop path never waits for analysis
     if (!['OBSERVE', 'STOP_SENT', 'STOP_ACKED', 'READBACK', 'ACK_RESULT'].includes(event) || r.effects.length) emit();
     return r;
+  }
+
+  // Analysis hooks. Every one is wrapped: a failure here can only lose analysis data.
+  function analysisAfterDispatch(event, payload, r) {
+    try {
+      if (!collector.isActive()) return;
+      if (event === 'POSITION_REPORTED') collector.setReportedPosition(payload && payload.physical);
+      if (event === 'POSITION_REPORTED' && r.ok) { collector.end('completed', { stopProofComplete: true, reportedPosition: payload.physical }); return; }
+      const st = machine.state;
+      if (st !== STATE.RUNNING && st !== STATE.VERIFYING_STOP) {
+        const reason = st === STATE.LOCKED_FAULT && machine.ctx.fault ? machine.ctx.fault.reason : String(event).toLowerCase();
+        collector.end('incomplete', { reason, reportedPosition: collector.pendingPosition() });
+      }
+    } catch { /* analysis never touches the safety path */ }
+  }
+  function collectSample() {
+    try {
+      if (!collector.isActive()) return;
+      const phase = sweep ? sweep.phase : (machine.state === STATE.VERIFYING_STOP ? 'stop' : null);
+      if (!phase) return;
+      collector.sample({ phase, commands: boundary ? boundary.commandedValues() : null, readback: obs.readback ? { values: obs.readback.values, at: obs.readback.at, current: obs.readback.requestedAt > obs.lastSendAt } : null,
+        telemetry: obs.telemetry, telemetryAt: obs.telemetryAt, armed: obs.armed, armedAt: obs.armedAt, voltage_cV: obs.voltage_cV, voltageAt: obs.voltageAt, ack: obs.lastAck });
+    } catch { /* analysis never touches the safety path */ }
   }
 
   function runEffect(fx) {
@@ -130,6 +162,7 @@ export function createBenchController(opts = {}) {
 
   // ---- sweep: ramp, candidate validation, plateau. Driven by the poll loop; every output goes through the boundary.
   function beginSweep() {
+    try { collector.begin({ motor: machine.ctx.selectedMotor, voltageBefore_cV: obs.voltage_cV, voltageBeforeAgeMs: obs.voltageAt === null ? null : now() - obs.voltageAt, expectedPosition: EXPECTED_POSITIONS[machine.ctx.selectedMotor] }); } catch { /* analysis only */ }
     sweep = { motor: machine.ctx.selectedMotor, phase: 'ramp', value: null, lastChange: now(), windowStart: null, threshold: null, plateauAt: null, startedAt: now(), output: MOTOR.stopValue };
   }
   function out(value) {
@@ -158,6 +191,7 @@ export function createBenchController(opts = {}) {
       if (!spinning) { stepUp(); return; }
       if (t - sweep.windowStart >= MOTOR.candidateValidationMs) {
         sweep.threshold = sweep.value;
+        try { collector.setControllerThreshold(sweep.threshold); } catch { /* analysis only */ }
         const target = Math.min(MOTOR.cap, sweep.threshold + MOTOR.plateauOffset);
         sweep.phase = 'plateau'; sweep.plateauAt = t; sweep.value = target; out(target);
       }
@@ -193,7 +227,7 @@ export function createBenchController(opts = {}) {
     }
     if (t - last.analogAt >= n.analogPollMs && !inflight.analog) {
       last.analogAt = t; inflight.analog = true;
-      session.request('MSP_ANALOG').then((v) => { obs.voltage_cV = v.voltage_cV; }).catch(() => {}).finally(() => { inflight.analog = false; });
+      session.request('MSP_ANALOG').then((v) => { obs.voltage_cV = v.voltage_cV; obs.voltageAt = now(); }).catch(() => {}).finally(() => { inflight.analog = false; });
     }
   }
 
@@ -214,6 +248,7 @@ export function createBenchController(opts = {}) {
     try {
       pollOnce();
       if (machine.state !== STATE.DISCONNECTED && machine.state !== STATE.READ_ONLY_READINESS) observe();
+      collectSample(); // records the observation as the machine just saw it, before this tick changes the output
       advanceSweep();
       if (++tickCount % 5 === 0) emit();
     } catch (e) {
@@ -252,11 +287,12 @@ export function createBenchController(opts = {}) {
       transport: t, clock,
       authorize: (req) => machine.motorCommandPermission(req),
       onAck: (a) => {
+        obs.lastAck = { ok: a.ok === true, kind: a.kind };
         if (a.kind === 'stop' && a.ok) dispatch('STOP_ACKED');
         dispatch('ACK_RESULT', { ok: a.ok, consecutiveFailures: a.consecutiveFailures });
       },
     });
-    obs.telemetry = null; obs.telemetryAt = null; obs.armed = null; obs.armedAt = null; obs.voltage_cV = null; obs.readback = null; obs.lastSendAt = -1;
+    obs.telemetry = null; obs.telemetryAt = null; obs.armed = null; obs.armedAt = null; obs.voltage_cV = null; obs.voltageAt = null; obs.readback = null; obs.lastSendAt = -1; obs.lastAck = null;
     t.onClose((reason) => onTransportClosed(t, reason));
   }
 
@@ -273,6 +309,7 @@ export function createBenchController(opts = {}) {
     try {
       if (st === STATE.DISCONNECTED || st === STATE.UNCLEAN_EXIT_RECOVERY) {
         await t.open();
+        if (st === STATE.DISCONNECTED) { try { collector.clear(); } catch { /* analysis only */ } } // a new session starts with no analysis data
         attach(t);
         const r = dispatch('CONNECT', { transportKind: t.kind });
         if (!r.ok) { notes.error = r.reason; return r; }
@@ -343,7 +380,7 @@ export function createBenchController(opts = {}) {
     startMotor(holdMs) { return dispatch('START_HOLD_COMPLETE', { holdMs }); },
     stopAndZero() { return dispatch('USER_STOP', { reason: 'user-stop' }); },
     confirmNoRotation() { return dispatch('USER_CONFIRMS_NO_ROTATION'); },
-    reportPosition(physical) { return dispatch('POSITION_REPORTED', { physical }); },
+    reportPosition(physical) { try { collector.setReportedPosition(physical); } catch { /* analysis only */ } return dispatch('POSITION_REPORTED', { physical }); }, // noted first: a mismatch faults inside this dispatch and ends the sweep record
     finishBench() { return dispatch('FINISH_BENCH'); },
     completeFinish() { return dispatch('FINISH_STOP_DONE'); },
     beginBatteryRemoval() { return dispatch('BEGIN_BATTERY_REMOVAL'); },
@@ -363,11 +400,39 @@ export function createBenchController(opts = {}) {
         telemetry: obs.telemetry, telemetryAgeMs: obs.telemetryAt === null ? null : t - obs.telemetryAt, armed: obs.armed, voltage_cV: obs.voltage_cV,
         readiness: machine.ctx.readinessReport, markerStatus: marker.status(),
         sweep: sweep ? { motor: sweep.motor, phase: sweep.phase, output: sweep.output, elapsedMs: t - sweep.startedAt, threshold: sweep.threshold } : null,
-        commanded: boundary ? boundary.commandedValues() : null, transportKind: transport ? transport.kind : null,
+        analysis: api.analysisSummary(), commanded: boundary ? boundary.commandedValues() : null, transportKind: transport ? transport.kind : null,
       };
     },
     dispose() { disposed = true; stopPolling(); proofRun++; if (graceTimer !== null) clock.clearTimeout(graceTimer); if (escTimer !== null) clock.clearTimeout(escTimer); },
+    // ---- live MSP/DShot analysis (passive; none of these touch the machine or the boundary)
+    analysisResult() {
+      try {
+        const sw = collector.sweeps();
+        const key = sw.map((x) => x.id + x.status[0]).join(',');
+        if (!sw.some((x) => x.status !== 'collecting')) return null;
+        if (resultCache.key !== key) resultCache = { key, value: buildBenchResult(sw, { sessionNotes: [] }) };
+        return resultCache.value;
+      } catch { return null; }
+    },
+    analysisSummary() { const sw = collector.sweeps(); return { sweeps: sw.length, collecting: collector.isActive(), samples: sw.reduce((n, x) => n + x.samples.length, 0), truncated: sw.some((x) => x.truncated) }; },
+    // The derived record is stored only when the user asks. Live samples are kept only with retainSamples:true (default off).
+    saveAnalysis({ retainSamples = false } = {}) {
+      try {
+        const result = api.analysisResult();
+        if (!result) return { ok: false, reason: 'no-result' };
+        const record = buildHistoryRecord({ result, identity: identity(), now: Date.now(), samplesRetained: retainSamples === true });
+        const set = retainSamples === true ? buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), now: Date.now() }) : null;
+        const r = saveStoredDiagnostic(record, set, diagStorage);
+        return { ...r, id: record.id, recordBytes: approxBytes(record), sampleBytes: set ? approxBytes(set) : 0 };
+      } catch { return { ok: false, reason: 'error' }; }
+    },
+    // Approximate size of the live samples, shown before the user chooses to keep them.
+    approxSampleBytes() { try { const result = api.analysisResult(); return result ? approxBytes(buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity() })) : 0; } catch { return 0; } },
+    exportEvidence() { try { const result = api.analysisResult(); return result ? buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity() }) : null; } catch { return null; } },
+    savedDiagnostics() { return { ...listStoredDiagnostics(diagStorage), size: storedDiagnosticsSize(diagStorage) }; },
+    deleteSavedDiagnostics() { return deleteStoredDiagnostics(diagStorage); },
     // test access
+    _collector: collector,
     _obs: obs,
     _sweepForTests: () => sweep,
   };

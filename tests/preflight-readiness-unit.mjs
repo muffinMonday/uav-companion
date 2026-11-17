@@ -10,7 +10,8 @@ import { BLACKBOX_MODE_TOKENS, lookupVersion, parseBlackboxModeToken } from '../
 const pass = (t) => console.log('PASS  ' + t);
 const OK_ATT = { armSwitchOff: true, blackboxMode: 'MOTOR_TEST', batteryDisconnected: true };
 const snap = (fc, o = { timeoutMs: 15, retries: 0 }) => new ReadOnlySession(mockFcTransport(fc), o).collectSnapshot();
-const run = async (fc, att = OK_ATT, kind = 'web-serial') => evaluateReadiness({ snapshot: await snap(fc), attestations: att, transportKind: kind });
+const run = async (fc, att = OK_ATT, kind = 'web-serial') => evaluateReadiness({ snapshot: await snap(fc), attestations: att, transportKind: kind, includeBlackbox: true });
+// The Blackbox gates are DEFERRED (owner decision 2026-11-17): the default report has none; these suites exercise them with includeBlackbox: true.
 const g = (r, id) => r.gates.find((x) => x.id === id);
 const bbWith = (mask, extra = {}) => ({ ...defaultFc().blackbox, mask, ...extra });
 
@@ -176,6 +177,17 @@ const bbWith = (mask, extra = {}) => ({ ...defaultFc().blackbox, mask, ...extra 
   assert.ok(!/safe to fly|airworth|certif|guarantee|ready/i.test(words.replace(/active testing does not exist/g, '')));
   assert.ok(!/\bPassed\b.*all/i.test(OVERALL_TEXT.conditional));
   pass('status wording has no "safe to fly", airworthiness, certification, guarantee or "ready" claim');
+}
+
+// ---- the default report has no Blackbox gate (deferred); the gates exist only on request
+{
+  const snapshot = await snap({});
+  const dflt = evaluateReadiness({ snapshot, attestations: { armSwitchOff: true, batteryDisconnected: true }, transportKind: 'web-serial' });
+  for (const id of ['blackbox', 'bb-mode', 'bb-fields', 'bb-rate', 'storage']) assert.equal(dflt.gates.some((x) => x.id === id), false, id);
+  assert.equal(dflt.overall, 'conditional', 'with no Blackbox attestation nothing is unknown');
+  const requested = evaluateReadiness({ snapshot, attestations: { armSwitchOff: true, batteryDisconnected: true }, transportKind: 'web-serial', includeBlackbox: true });
+  assert.equal(requested.gates.find((x) => x.id === 'bb-mode').status, 'unknown');
+  pass('the default readiness report has no Blackbox gates (deferred); they are produced only with includeBlackbox: true');
 }
 
 console.log('ALL OK');
