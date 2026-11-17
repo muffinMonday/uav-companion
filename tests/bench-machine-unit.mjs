@@ -170,7 +170,7 @@ const collect = () => { for (const h of harnesses) for (const e of h.m.trace) if
     'telemetry stale': (h) => { h.m.ctx.facts = { ...h.m.ctx.facts, telemetryAt: h.clock.now() - 1000 }; },
     'telemetry missing': (h) => { h.m.ctx.facts = { ...h.m.ctx.facts, rpm: null }; },
     'a motor already turning': (h) => { h.m.ctx.facts = { ...h.m.ctx.facts, rpm: [0, 5, 0, 0] }; },
-    'blackbox shutdown period': (h) => { h.m.ctx.lastStopProofAt = h.clock.now() - 1000; },
+    'inter-sweep settle interval': (h) => { h.m.ctx.lastStopProofAt = h.clock.now() - 1000; },
     'transport unavailable': (h) => { h.m.ctx.transportAvailable = false; },
     'locked': (h) => { h.m.ctx.fault = { reason: 'x' }; },
     'DShot statistics unavailable': (h) => { h.m.ctx.dshot = { status: 'unavailable', since: null, lastAt: h.clock.now() }; },

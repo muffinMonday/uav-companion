@@ -333,7 +333,7 @@ const IDENT = { variant: 'BTFL', firmware: '2025.12.5', api: '1.47', targetName:
   const walk = (d) => fsx.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(pathx.join(d, e.name)) : [pathx.join(d, e.name)]));
   const files = walk('src').filter((f) => f.endsWith('.js')).map((f) => [f.split('\\').join('/'), fsx.readFileSync(f, 'utf8')]);
   assert.deepEqual(files.filter(([, t]) => /aircraftdiag/.test(t)).map(([f]) => f), ['src/aircraft-diag-data.js'], 'only the store module knows the keys');
-  assert.deepEqual(files.filter(([, t]) => /from '[^']*aircraft-diag-data/.test(t)).map(([f]) => f).sort(), ['src/benchtest/controller.js', 'src/privacy-ui.js'], 'only the bench controller and the Privacy panel import the store');
+  assert.deepEqual(files.filter(([, t]) => /from '[^']*aircraft-diag-data/.test(t)).map(([f]) => f).sort(), ['src/benchtest/controller.js', 'src/benchtest/history-ui.js', 'src/motor-diag-entry.js', 'src/privacy-ui.js'], 'only the bench controller, the history view, the dashboard entry and the Privacy panel import the store');
   assert.ok(!/^import /m.test(files.find(([f]) => f === 'src/aircraft-diag-data.js')[1]), 'the store imports nothing, so no motor code reaches the main bundle through it');
   pass('isolation: the aircraft diagnostic store is reachable only from the bench controller and the Privacy panel; no export, sharing or sync file references it');
 }

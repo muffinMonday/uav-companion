@@ -45,6 +45,12 @@ export function listRecords(storage) {
   return { available: true, records: raw.filter(validRecord), corrupt: false };
 }
 
+// The newest saved record, or null (used by the dashboard card).
+export function latestSaved(storage) {
+  const { records } = listRecords(storage);
+  return records.length ? records[records.length - 1] : null;
+}
+
 export function loadSampleSet(id, storage) {
   const st = pick(storage);
   if (!st) return null;

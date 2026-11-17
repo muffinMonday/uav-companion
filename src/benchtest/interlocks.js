@@ -88,7 +88,7 @@ export function startInterlocks(ctx, facts, now) {
   add('target-confirmed', ctx.selectedMotor !== null && ctx.targetConfirmed === ctx.selectedMotor, 'The physical motor to be tested is not confirmed.');
   add('telemetry-fresh', rpm !== null && rpm.length === MOTOR.enabledMotors && Number.isFinite(f.telemetryAt) && now - f.telemetryAt <= stale, 'RPM telemetry is not fresh and valid.');
   add('all-rpm-zero', rpm !== null && rpm.every((r) => r === 0), 'A motor reports nonzero RPM.');
-  add('sweep-gap', ctx.lastStopProofAt === null || now - ctx.lastStopProofAt >= BENCH_TIMINGS.minSweepGapMs, 'Wait for the settle period after the previous sweep.');
+  add('inter-sweep-settle', ctx.lastStopProofAt === null || now - ctx.lastStopProofAt >= BENCH_TIMINGS.interSweepSettleMs, 'Wait for the zero-output settle interval after the previous motor (about 5 seconds, provisional).');
   add('transport', ctx.transportAvailable === true, 'The connection is not available.');
   add('no-fault', ctx.fault === null, 'The session is locked.');
   return c;

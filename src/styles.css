@@ -1519,3 +1519,9 @@ button.ses-attendee{cursor:pointer}
 .country-menu{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2)}
 .country-menu[hidden]{display:none}
 .country-buttons{min-width:0}
+
+/* Dashboard card of the experimental aircraft check (built only with the beta switch) */
+.dash-diag .badge{margin-left:6px;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
+.dash-diag .diag-latest{margin:4px 0}
+.dash-diag .btn-row{margin:8px 0 4px}
+.dash-diag a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}

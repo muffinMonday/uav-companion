@@ -19,7 +19,7 @@ const code = (f) => fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').
 
 const BENCH = walk(path.join(ROOT, 'src/benchtest')).filter((f) => f.endsWith('.js'));
 const BOUNDARY = 'src/benchtest/motor-control.js';
-const SOURCES = [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'tools')), ...walk(path.join(ROOT, 'scripts')), path.join(ROOT, 'index.html'), path.join(ROOT, 'vite.config.js')]
+const SOURCES = [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'tools')), ...walk(path.join(ROOT, 'motor-diagnostics')), ...walk(path.join(ROOT, 'scripts')), path.join(ROOT, 'index.html'), path.join(ROOT, 'vite.config.js')]
   .filter((f) => /\.(js|mjs|html|css)$/.test(f));
 assert.ok(BENCH.length >= 9, 'found the bench modules');
 assert.ok(BENCH.map(rel).includes(BOUNDARY));
@@ -57,7 +57,7 @@ assert.deepEqual(importers, ['src/benchtest/controller.js', 'src/benchtest/mock-
 pass('only the controller sends through the boundary; only the controller and the synthetic FC import it');
 
 // 4. no other write, CLI, 4-way, erase, reflash, storage (except the marker), network or repeating timer in the bench code or its page
-const pageFiles = walk(path.join(ROOT, 'tools/motor-bench-lab')).filter((f) => /\.(js|html)$/.test(f));
+const pageFiles = [...walk(path.join(ROOT, 'tools/motor-bench-lab')), ...walk(path.join(ROOT, 'motor-diagnostics'))].filter((f) => /\.(js|html)$/.test(f));
 const FORBIDDEN = [
   [/4WAY|4way|fourWay|passthrough/i, '4-way / passthrough'],
   [/DATAFLASH_ERASE|DATAFLASH_READ|\berase\w*\(/i, 'log erase / read'],
@@ -96,7 +96,12 @@ for (const f of [...walk(path.join(ROOT, 'src')).filter((x) => !rel(x).startsWit
   if (!/\.(js|mjs|html|css|json|webmanifest)$/.test(f)) continue;
   if (/benchtest|motor-bench|bench-lab|VITE_BENCH_PHASE3/i.test(fs.readFileSync(f, 'utf8'))) refs.push(rel(f));
 }
-assert.deepEqual(refs, [], 'no app file, component, script or public file references the bench');
+// The one allowed reference is the dashboard entry of the user-facing beta (owner decision 2026-11-17). It must stay build-flag gated, import only the local result store, and hold no motor, transport or bench code.
+assert.deepEqual(refs, ['src/motor-diag-entry.js'], 'only the flag-gated dashboard entry references the bench flag');
+const entry = fs.readFileSync(path.join(ROOT, 'src/motor-diag-entry.js'), 'utf8');
+assert.ok(/export const motorDiagCard = import\.meta\.env\.VITE_BENCH_PHASE3 === '1' \? buildCard : \(\) => null;/.test(entry), 'the entry is a constant-false no-op without the flag');
+assert.deepEqual([...entry.matchAll(/^import .* from '(.*)';/gm)].map((m) => m[1]), ['./aircraft-diag-data.js'], 'the entry imports only the local result store');
+assert.ok(!/benchtest|MotorBoundary|transport|serial/i.test(entry.split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n')), 'the entry holds no bench, transport or serial code');
 const vite = fs.readFileSync(path.join(ROOT, 'vite.config.js'), 'utf8');
 assert.ok(/process\.env\.VITE_BENCH_PHASE3 === '1' \? \{ motorBenchLab/.test(vite), 'the page is a build input only when the flag is set');
 assert.ok(!/src\/benchtest/.test(vite), 'vite.config.js does not import the bench modules');

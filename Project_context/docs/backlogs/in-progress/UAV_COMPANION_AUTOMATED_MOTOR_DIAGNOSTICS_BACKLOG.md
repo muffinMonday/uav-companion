@@ -60,7 +60,7 @@
 | 2 | Read-only readiness (Blackbox gates removed from the current requirements) | Done |
 | 3 | Bench prototype and first supervised hardware run | Done; first run reviewed 2026-11-17 |
 | **4** | **Live MSP/DShot bench analysis** (collector, metrics, observational result, derived local history, result screen) | **Implemented 2026-11-17 with synthetic and mocked tests, behind the flag; needs another supervised hardware validation** |
-| 5 | Release review (hardware matrix including Android, residual-risk acceptance, wording review, privacy, authorization) | Not started; no dashboard entry until then |
+| 5 | Release review (hardware matrix including Android, residual-risk acceptance, wording review, privacy, authorization) | Not started. The flagged user-facing beta (dashboard card and `/motor-diagnostics/`) is authorized separately, see below |
 | D1 | Blackbox decoding and bench analysis from logs (old Phase 4) | **Deferred — not proportionate to pursue at present** |
 | D2 | Flight-log capture and analysis (old Phase 5) | **Deferred — not proportionate to pursue at present** |
 
@@ -78,6 +78,10 @@
 - (k) Implementation, commit, push and deployment receive separate owner authorization.
 
 The Blackbox-era criteria of section 15 are kept below as deferred history.
+
+**User-facing beta (owner decision, 2026-11-17).** The diagnostic workspace is visible from the dashboard in the live flag-on build as an experimental beta, not an unrestricted release. The existing build flag `VITE_BENCH_PHASE3` is the single kill switch: with it off there is no dashboard card, no `/motor-diagnostics/` page and no active route in the production build (checked on the built output). Preserved unchanged: the exact allowlist, the session unlock, every readiness and physical-safety gate, the durable recovery marker, the 1100 cap, one-motor-only output, persistent one-tap Stop & zero, the four-part stop proof. Never shown: a safe-to-fly, airworthy or mechanical-health verdict. The stop-validation procedures (which exist to approve allowlist entries) are not offered in the user workspace. The developer lab (`/tools/motor-bench-lab/`, synthetic mode and fault injection) stays as a harness. Build, routes, entry and tests: [MOTOR_DIAGNOSTICS_LIVE_ANALYSIS.md](../../MOTOR_DIAGNOSTICS_LIVE_ANALYSIS.md) section 9. Hardware validation of the beta by the owner is still required before any wider promotion.
+
+**Inter-sweep interval (owner decision, 2026-11-17).** `minSweepGapMs` is renamed `interSweepSettleMs`, kept at 5 s and treated as **provisional**: a clear zero-output interval between motors that lets RPM stay at zero and voltage and telemetry settle, spares back-to-back motor and ESC loading, and keeps adjacent sweeps' samples apart. It is not a validated cooling period and has no Blackbox meaning. It starts after the previous motor's complete stop proof and position confirmation, never delays the first motor, and applies only to starting a sweep: it cannot delay or bypass any stop (tested).
 
 **Reconsidering Blackbox analysis** needs a new owner decision and a compatibility plan (supported firmware versions, who maintains the decoder, a fixture set per Betaflight format change).
 

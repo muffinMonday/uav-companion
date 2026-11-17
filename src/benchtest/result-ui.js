@@ -58,17 +58,13 @@ function motorCard(mo) {
   return d;
 }
 
-// ctx: { controller, form: { retain: boolean }, onChange }
-export function drawResult(parent, ctx) {
-  const { controller, form } = ctx;
-  const result = controller.analysisResult();
-  if (!result) return false;
-  if (form.statusFor !== result) { form.status = ''; form.statusFor = result; } // a new result starts without the old save message
-  const s = el('section', `bt-section bt-result bt-res-${result.category}`); s.id = 'bt-sec-result'; s.dataset.category = result.category; s.dataset.kind = 'result';
+/** The result view for one result object (a live result or one rebuilt from a saved record). `live` gives the elements their fixed ids; the history view uses none. */
+export function renderResult(result, live = true) {
+  const s = el('section', `bt-section bt-result bt-res-${result.category}`); if (live) s.id = 'bt-sec-result'; s.dataset.category = result.category; s.dataset.kind = 'result';
   s.append(el('p', 'bt-kicker', 'Observational result'));
-  const h = el('h2', 'bt-res-headline', result.headline); h.id = 'bt-result-headline'; s.append(h);
+  const h = el('h2', 'bt-res-headline', result.headline); if (live) h.id = 'bt-result-headline'; s.append(h);
   s.append(el('p', '', result.summary));
-  if (result.reasons.length) { const ul = el('ul', 'bt-res-reasons'); ul.id = 'bt-result-reasons'; for (const r of result.reasons) ul.append(el('li', '', r.text)); s.append(ul); }
+  if (result.reasons.length) { const ul = el('ul', 'bt-res-reasons'); if (live) ul.id = 'bt-result-reasons'; for (const r of result.reasons) ul.append(el('li', '', r.text)); s.append(ul); }
   for (const n of result.notes) s.append(el('p', 'bt-small', n));
   s.append(quadDiagram(result));
   const cards = el('div', 'bt-cards'); for (const mo of result.motors) cards.append(motorCard(mo)); s.append(cards);
@@ -80,6 +76,16 @@ export function drawResult(parent, ctx) {
   s.append(cmp);
   s.append(el('p', 'bt-small', result.reminder));
   s.append(el('p', 'bt-small', result.disclaimer));
+  return s;
+}
+
+// ctx: { controller, form: { retain: boolean }, onChange }
+export function drawResult(parent, ctx) {
+  const { controller, form } = ctx;
+  const result = controller.analysisResult();
+  if (!result) return false;
+  if (form.statusFor !== result) { form.status = ''; form.statusFor = result; } // a new result starts without the old save message
+  const s = renderResult(result, true);
 
   // keep or export: nothing is stored unless the user presses Save
   const keep = el('div', 'bt-keep');

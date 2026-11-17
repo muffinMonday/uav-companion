@@ -56,6 +56,7 @@ const refs = [];
 // src/benchtest is the separate Phase 3 module and imports ../preflight by design; tests/bench-safety-unit.mjs applies the stricter rules to it and checks that nothing else references it.
 for (const f of [...walk(path.join(ROOT, 'src')).filter((x) => !x.includes(path.join('src', 'preflight')) && !x.includes(path.join('src', 'benchtest'))), path.join(ROOT, 'index.html'), ...walk(path.join(ROOT, 'src/components'))]) {
   if (!/\.(js|html|css)$/.test(f)) continue;
+  if (path.relative(ROOT, f).split('\\').join('/') === 'src/motor-diag-entry.js') continue; // the flag-gated dashboard entry of the beta; tests/bench-safety-unit.mjs pins what it may contain
   if (/preflight|motor-diagnostics|Check aircraft/i.test(fs.readFileSync(f, 'utf8'))) refs.push(path.relative(ROOT, f));
 }
 assert.deepEqual(refs, [], 'no app file references the motor diagnostics modules');

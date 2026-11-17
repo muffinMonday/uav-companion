@@ -205,6 +205,33 @@ async function fullSession(fc, diagStorage) {
   pass('four completed motors with one late starter: "Difference observed", provisional, never an inspection result');
 }
 
+// ---------- the inter-sweep settle interval: not before the first motor, counted from the complete stop proof, no effect on stopping
+{
+  const { BENCH_TIMINGS } = await import('../src/benchtest/constants.js');
+  assert.equal(BENCH_TIMINGS.interSweepSettleMs, 5000); assert.equal(BENCH_TIMINGS.minSweepGapMs, undefined, 'the old name is gone');
+  const h = await makeHarness(); await h.toMotorReady();
+  assert.equal(h.m.ctx.lastStopProofAt, null, 'nothing has been proven yet');
+  h.c.selectMotor(0); h.c.confirmTarget(0);
+  assert.ok(!h.c.view().caps.interlocks.some((i) => i.id === 'inter-sweep-settle' && !i.ok), 'the first motor is not delayed');
+  assert.equal(h.c.startMotor(1000).ok, true);
+  await h.adv(9000); await h.adv(3500); h.c.confirmNoRotation();
+  const at = h.clock.now(); assert.equal(h.c.reportPosition(EXPECTED_POSITIONS[0]).ok, true);
+  assert.equal(h.m.ctx.lastStopProofAt, at, 'the interval starts when the previous stop proof is complete and its position confirmed');
+  h.c.selectMotor(1); h.c.confirmTarget(1);
+  await h.adv(4000);
+  const wait = h.c.view().caps.interlocks.find((i) => i.id === 'inter-sweep-settle');
+  assert.equal(wait.ok, false); assert.equal(h.c.startMotor(1000).ok, false, 'the next motor cannot start inside the interval');
+  assert.equal(h.state(), STATE.MOTOR_READY, 'a refused start is not a fault');
+  await h.adv(1100);
+  assert.equal(h.c.view().caps.interlocks.find((i) => i.id === 'inter-sweep-settle').ok, true);
+  // stopping is never subject to it: Stop & zero inside the interval still sends 1000 at once
+  const h2 = await makeHarness(); await h2.toMotorReady(); h2.c.selectMotor(0); h2.c.confirmTarget(0); h2.c.startMotor(1000); await h2.adv(9000); await h2.adv(3500); h2.c.confirmNoRotation(); h2.c.reportPosition(EXPECTED_POSITIONS[0]);
+  const n = h2.fc.received.length; h2.c.stopAndZero();
+  assert.ok(h2.fc.received.length > n && h2.fc.received[n].every((v) => v === 1000), 'Stop & zero sends 1000 inside the settle interval');
+  assert.equal(h2.state(), STATE.LOCKED_FAULT);
+  pass('inter-sweep settle: 5 s (provisional), not before the first motor, counted from the previous complete stop proof, and never delays or bypasses stopping');
+}
+
 // ---------- Blackbox is gone from the live workflow
 {
   const h = await makeHarness({ fc: { blackbox: { supported: true, device: 0, rateDenom: 1, pRatio: 1, sampleRate: 0, mask: 0, maskPresent: true } } });

@@ -35,7 +35,7 @@ export const BENCH_TIMINGS = deepFreeze({
   stopProofZeroRpmMs: 1000, // continuous valid zero RPM after stop
   stopProofTimeoutMs: 10000, // proof not complete by then: fail closed, battery instruction
   runTimeoutMs: 60000, // a whole sweep (ramp, validation, plateau) may not run longer
-  minSweepGapMs: 5000, // settle period between sweeps (originally the Blackbox MOTOR_TEST shutdown period; kept unchanged as an extra safety interval)
+  interSweepSettleMs: 5000, // PROVISIONAL zero-output interval between motors, counted from the previous motor's complete stop proof: lets RPM stay at zero, voltage and telemetry settle, spares back-to-back loading of the motor and ESC, and keeps adjacent sweeps' samples apart. Not a validated cooling period.
   statusPollMs: 250, // arming state and FC-side read-back
   statusStaleMs: 750, // arming state older than this in a powered state is a fault
   analogPollMs: 500,

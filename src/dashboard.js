@@ -14,6 +14,7 @@ import { checkinCell } from './checkin-ui.js';
 import { whenText } from './sessions.js';
 import { mascotEl } from './mascot-ui.js';
 import { countryPicker } from './app/country-menu.js';
+import { motorDiagCard } from './motor-diag-entry.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
@@ -395,7 +396,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     if (view === 'help') body.append(helpView());
     else {
       body.append(welcomeLine(), taskShortcuts());
-      for (const card of [routeCard(), tripCard(), friendsCard(), sessionsCard(), storageCard(), backupCard(), whatsNewCard(), regionsCard(), dataSection()]) if (card) body.append(card);
+      for (const card of [routeCard(), tripCard(), friendsCard(), sessionsCard(), motorDiagCard(), storageCard(), backupCard(), whatsNewCard(), regionsCard(), dataSection()]) if (card) body.append(card);
     }
     body.scrollTop = scrollOf[view];
     syncHelp();

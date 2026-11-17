@@ -42,7 +42,7 @@ export function buildHistoryRecord({ result, identity, now = Date.now(), id, sam
     association: associationOf(identity),
     result: { category: result.category, headline: result.headline, summary: result.summary, reasons: result.reasons.map((r) => ({ motor: r.motor, text: r.text })), notes: result.notes.slice() },
     motors: result.motors.map((m) => ({ motor: m.motor, position: m.position, status: m.status, hard: m.hard.slice(), gaps: m.gaps.slice(), differences: (m.differences || []).slice(), metrics: m.metrics ? stripMetrics(m.metrics) : null })),
-    comparison: { classified: result.comparison.classified, sharedCommand: result.comparison.sharedCommand, differences: result.comparison.differences.map((d) => ({ motor: d.motor, kind: d.kind, text: d.text })) },
+    comparison: { classified: result.comparison.classified, reason: result.comparison.reason || '', sharedNote: result.comparison.sharedNote || '', sharedCommand: result.comparison.sharedCommand, differences: result.comparison.differences.map((d) => ({ motor: d.motor, kind: d.kind, text: d.text })) },
     range: result.range,
     constants: constantsSnapshot(),
     samplesRetained: samplesRetained === true,

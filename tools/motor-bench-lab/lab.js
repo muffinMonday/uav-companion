@@ -1,7 +1,9 @@
 // Motor bench test (Phase 3) lab page. Developer-only, unlinked, behind the build-time flag VITE_BENCH_PHASE3 (default off).
 // Default mode is the synthetic flight controller. Real hardware stays locked until the session unlock and the state machine's gates.
 // Run locally:  VITE_BENCH_PHASE3=1 npm run dev   then open /tools/motor-bench-lab/   (PowerShell: $env:VITE_BENCH_PHASE3='1'; npm run dev)
+import '../../src/benchtest/bench.css';
 import { benchEnabled } from '../../src/benchtest/flag.js';
+import { installLifecycle } from '../../src/benchtest/lifecycle.js';
 
 const root = document.getElementById('bench');
 const status = document.getElementById('bench-status');
@@ -45,16 +47,5 @@ if (!benchEnabled()) {
 
   mountBench(root, { controller, onConnectMock: connectMock, onConnectReal: connectReal, realAvailable: hasWebSerial(), inject });
 
-  // Page lifecycle. A hidden page may still attempt a stop, but this is never relied on: a frozen or terminated page runs no code.
-  const lose = (kind) => controller.notifyVisibilityLoss(kind);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') lose('hidden'); });
-  window.addEventListener('pagehide', () => lose('pagehide'));
-  window.addEventListener('blur', () => lose('blur'));
-  document.addEventListener('freeze', () => lose('freeze'));
-  // A page restored from the back/forward cache would keep its in-memory unlock: start fresh instead.
-  window.addEventListener('pageshow', (e) => { if (e.persisted) location.reload(); });
-  window.addEventListener('beforeunload', (e) => {
-    const s = controller.view().caps;
-    if (s.stopButton && s.state !== STATE.DISCONNECTED && s.state !== STATE.READ_ONLY_READINESS) { controller.stopAndZero(); e.preventDefault(); e.returnValue = ''; }
-  });
+  installLifecycle(controller);
 }

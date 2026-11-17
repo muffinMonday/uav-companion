@@ -21,6 +21,23 @@ const DSHOT_TEXT = Object.freeze({
 });
 import { STATE } from './state-machine.js';
 import { drawResult } from './result-ui.js';
+import { drawHistory } from './history-ui.js';
+import { canLeaveNow } from './lifecycle.js';
+import { DISCLAIMER } from './result.js';
+
+// The user-facing workspace shows these instead of the raw state names (which stay in the DOM, hidden, for the tests).
+const STEP_TEXT = Object.freeze({
+  DISCONNECTED: 'Step 1 of 8: connect the flight controller',
+  READ_ONLY_READINESS: 'Step 2 of 8: readiness checks',
+  STOP_VALIDATION_ONLY: 'Stop validation', POWERED_STOP_VALIDATION: 'Stop validation',
+  SAFE_STATE_INIT: 'Step 3 of 8: zero-output initialization (USB power only)',
+  SAFETY_CHECKLIST: 'Step 4 of 8: physical safety checklist',
+  READY_TO_CONNECT_POWER: 'Step 5 of 8: connect the battery', POWER_CONNECT_RECONNECT: 'Step 5 of 8: reconnecting after power',
+  POWERED_ZERO_VERIFICATION: 'Step 6 of 8: checking that every motor is at zero',
+  MOTOR_READY: 'Step 7 of 8: test one motor at a time', RUNNING: 'Step 7 of 8: motor test running', VERIFYING_STOP: 'Step 7 of 8: confirming the motor stopped',
+  BENCH_COMPLETE: 'Step 8 of 8: finish and review the result',
+  LOCKED_FAULT: 'Stopped: recovery', BATTERY_REMOVAL_RECOVERY: 'Stopped: recovery', UNCLEAN_EXIT_RECOVERY: 'Recovery after an interrupted session',
+});
 
 const REASON_TEXT = Object.freeze({
   'user-stop': 'You pressed Stop & zero.',
@@ -91,7 +108,9 @@ function holdControl({ label, ms, onComplete, id, disabled }) {
   return wrap;
 }
 
-export function mountBench(root, { controller, onConnectMock, onConnectReal, realAvailable, inject }) {
+// user: the user-facing workspace (no synthetic connection, fault injection, raw state names, traces or stop-validation procedures).
+// The developer lab omits it. Nothing here changes a rule: the machine still decides every capability.
+export function mountBench(root, { controller, onConnectMock, onConnectReal, realAvailable, inject, user = false, backHref = null, notice = () => '' }) {
   const form = { phrase: '', ack: false, retain: false };
   const refs = {};
   let lastSig = '';
@@ -107,6 +126,16 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
 
   function drawBanner(v) {
     banner.replaceChildren();
+    if (user) {
+      const h = el('h1', '', 'Motor diagnostics '); h.append(el('span', 'badge', 'Experimental')); banner.append(h);
+      const mode = el('p', `bt-mode ${v.caps.mode === 'real' ? 'bt-real' : 'bt-mock'}`); mode.id = 'bt-mode'; mode.dataset.mode = v.caps.mode || 'none';
+      mode.textContent = v.caps.mode === 'real' ? 'Real aircraft connected: motor outputs become possible once every check passes. Propellers must be removed.' : v.caps.mode === 'mock' ? 'Practice mode with a simulated flight controller. Nothing real is connected.' : 'No flight controller connected.';
+      banner.append(mode);
+      if (canLeaveNow(v.caps) && backHref) { const a = el('a', 'btn small bt-back', 'Back to the dashboard'); a.href = backHref; a.id = 'bt-back'; banner.append(a); }
+      else if (!canLeaveNow(v.caps)) banner.append(el('p', 'bt-small', 'Leaving is blocked while anything may be powered. Use Stop & zero, confirm the motors are still, then disconnect the battery.'));
+      const n = notice(); if (n) { const p = el('p', 'bt-note', n); p.setAttribute('role', 'status'); banner.append(p); }
+      return;
+    }
     banner.append(el('h1', '', 'Motor bench test (Phase 3 developer prototype)'));
     const mode = el('p', `bt-mode ${v.caps.mode === 'real' ? 'bt-real' : 'bt-mock'}`);
     mode.id = 'bt-mode'; mode.dataset.mode = v.caps.mode || 'none';
@@ -153,8 +182,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
       if (v.notes.markerError) overlay.append(el('p', 'bt-warn', v.notes.markerError));
       if (c.canRetryMarkerClear) overlay.append(btn('Retry deleting the recovery marker', () => controller.retryMarkerClear(), { id: 'btn-retry-marker' }));
     }
-    const td = el('details', 'bt-trace-fault'); td.append(el('summary', '', 'State and transition trace'));
-    const tp = el('pre'); tp.id = 'bt-trace-fault'; tp.textContent = traceText(v); td.append(tp); overlay.append(td);
+    if (!user) { const td = el('details', 'bt-trace-fault'); td.append(el('summary', '', 'State and transition trace')); const tp = el('pre'); tp.id = 'bt-trace-fault'; tp.textContent = traceText(v); td.append(tp); overlay.append(td); }
   }
 
   function proofList(p) {
@@ -169,9 +197,9 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
 
   function connectButtons(recovery = false) {
     const d = el('div', 'bt-connect');
-    d.append(btn(recovery ? 'Reconnect the synthetic flight controller' : 'Start synthetic bench (simulated flight controller)', onConnectMock, { id: 'btn-connect-mock', cls: 'bt-primary' }));
-    d.append(btn(recovery ? 'Reconnect a real flight controller (USB)' : 'Connect a real flight controller (USB, read-only first)', onConnectReal, { id: 'btn-connect-real', disabled: !realAvailable }));
-    if (!realAvailable) d.append(el('p', 'bt-small', 'Web Serial is not available in this browser, so only the synthetic mode can be used.'));
+    if (onConnectMock) d.append(btn(recovery ? 'Reconnect the synthetic flight controller' : 'Start synthetic bench (simulated flight controller)', onConnectMock, { id: 'btn-connect-mock', cls: 'bt-primary' }));
+    d.append(btn(recovery ? 'Reconnect the flight controller (USB)' : user ? 'Connect the flight controller (USB)' : 'Connect a real flight controller (USB, read-only first)', onConnectReal, { id: 'btn-connect-real', cls: user ? 'bt-primary' : '', disabled: !realAvailable }));
+    if (!realAvailable) d.append(el('p', 'bt-small', user ? 'This browser cannot talk to a USB flight controller (Web Serial is needed: Chrome or Edge on desktop, or a recent Chrome on Android).' : 'Web Serial is not available in this browser, so only the synthetic mode can be used.'));
     return d;
   }
 
@@ -187,18 +215,25 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     const st = c.state;
     body.dataset.state = st;
     const stateLine = el('p', 'bt-stateline'); stateLine.id = 'bt-state'; stateLine.textContent = st; stateLine.dataset.state = st;
-    body.append(stateLine);
+    if (user) { stateLine.hidden = true; const step = el('p', 'bt-step', STEP_TEXT[st] || ''); step.id = 'bt-step'; body.append(stateLine, step); } else body.append(stateLine);
     const bs = el('p', 'bt-small'); bs.id = 'bt-battery-state'; bs.dataset.battery = c.batteryState; bs.textContent = `Battery state: ${BATTERY_STATE_TEXT[c.batteryState] || c.batteryState}.`;
-    body.append(bs);
+    if (!(user && st === STATE.DISCONNECTED)) body.append(bs); // before any connection a battery line would only mislead
     if (c.flow === 'powered-stopval') body.append(el('p', 'bt-note', 'Powered stop validation: this workflow sends external 1000 and nothing else. No motor can be started.'));
     if (v.notes.error || v.notes.message) { const m = el('p', 'bt-note', v.notes.error || v.notes.message); m.setAttribute('role', 'status'); body.append(m); }
 
     if (st === STATE.DISCONNECTED) {
       const s = section('Connect', 'bt-sec-connect');
-      s.append(el('p', '', 'The synthetic mode is the default. Real hardware is read-only until it is unlocked in this session and every readiness gate and the owner allowlist pass.'));
+      if (user) {
+        s.append(el('p', '', 'This check spins each motor briefly at a low output, one at a time, with the propellers removed, and records what the flight controller reports (RPM, DShot errors, voltage, temperature). It then shows what was observed.'));
+        s.append(el('p', 'bt-small', DISCLAIMER));
+        const ul = el('ul', 'bt-small');
+        for (const t of ['A compatible Betaflight flight controller, four motors, DShot with bidirectional DShot (RPM telemetry).', 'A supported USB browser: Chrome or Edge on desktop, or a recent Chrome on Android.', 'The propellers removed, the aircraft clamped on a bench, a smoke stopper on the battery lead, and the battery plug within reach.', 'Nothing here changes any flight-controller or ESC setting.']) ul.append(el('li', '', t));
+        s.append(ul);
+      } else s.append(el('p', '', 'The synthetic mode is the default. Real hardware is read-only until it is unlocked in this session and every readiness gate and the owner allowlist pass.'));
       s.append(connectButtons());
       body.append(s);
       drawResult(body, { controller, form }); // the last session's observations stay readable until the next connection
+      if (user) drawHistory(body);
     } else if (st === STATE.READ_ONLY_READINESS) drawReadiness(v);
     else if (st === STATE.STOP_VALIDATION_ONLY) {
       const s = section('USB-only stop validation (flight battery disconnected)', 'bt-sec-stopval');
@@ -268,7 +303,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
       body.append(s);
       drawResult(body, { controller, form });
     }
-    if (v.transportKind === 'mock' && inject && st !== STATE.DISCONNECTED) body.append(injectPanel());
+    if (!user && v.transportKind === 'mock' && inject && st !== STATE.DISCONNECTED) body.append(injectPanel());
   }
 
   function drawReadiness(v) {
@@ -280,6 +315,13 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
       state: viewState({ connected: !!v.snapshot, reading: false, error: null, report }), report, attestations: v.attestations, message: '',
       onAttest: (p) => controller.setAttestation(p),
     });
+    if (user) {
+      const i = v.identity || {};
+      const box = el('div', 'bt-note'); box.id = 'bt-identity';
+      box.append(el('strong', '', 'Aircraft detected: '), document.createTextNode([i.variant, i.firmware, i.targetName && `${i.targetName}${i.boardId ? ' / ' + i.boardId : ''}`, i.motorProtocol].filter(Boolean).join(' · ') || 'not read'));
+      box.append(el('br'), el('small', '', 'Check this is the aircraft in front of you, then enter its ESC below. Saved results are kept per aircraft and ESC.'));
+      body.append(box);
+    }
     const esc = el('fieldset', 'bt-esc');
     esc.append(el('legend', '', 'ESC identity (entered by you; not readable from the flight controller)'));
     const fam = el('select'); fam.id = 'bt-esc-family'; for (const f of ['', ...ESC_FIRMWARE_FAMILIES]) { const o = el('option', '', f || 'not entered'); o.value = f; fam.append(o); }
@@ -289,7 +331,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     const l1 = el('label'); l1.append('ESC firmware family: ', fam); const l2 = el('label'); l2.append('ESC model / version: ', model);
     esc.append(l1, l2); body.append(esc);
 
-    const pol = section('Phase 3 policy', 'bt-sec-policy');
+    const pol = section(user ? 'What must be true before the motors can run' : 'Phase 3 policy', 'bt-sec-policy');
     pol.append(el('p', '', 'Nonzero output needs: every readiness gate free of "Blocked" and "Not confirmed", an exact match on the owner-approved test allowlist (whose entry carries reviewed powered stop-validation evidence), usable DShot error statistics with the ESCs powered, and for real hardware the session unlock.'));
     const pl = el('ul', 'bt-blockers'); pl.id = 'bt-blockers';
     const pol3 = c.policy;
@@ -313,10 +355,12 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     const act = el('div', 'bt-actions');
     act.append(btn('Begin active motor test', () => controller.proceed(), { id: 'btn-proceed', cls: 'bt-primary', disabled: !c.canProceed }));
     act.append(el('p', 'bt-small', 'Safe-state initialization happens first: the app sends external 1000 to all motors and reads it back, with USB power only. No motor can start until the safety checklist, the battery step and the powered-zero check are done.'));
-    act.append(btn('USB-only stop validation (battery disconnected, external 1000 only)', () => controller.startStopValidation(), { id: 'btn-stopval', disabled: !c.canStopValidation }));
-    act.append(btn('Powered stop validation (full safety checklist, battery connected, external 1000 only)', () => controller.startPoweredStopValidation(), { id: 'btn-powered-stopval', disabled: !c.canPoweredStopValidation }));
-    if (!c.usbStopValidated) act.append(el('p', 'bt-small', 'The powered stop validation needs the USB-only stop validation to be recorded first in this connection.'));
-    else act.append(el('p', 'bt-small', 'USB-only stop validation recorded for this connection.'));
+    if (!user) {
+      act.append(btn('USB-only stop validation (battery disconnected, external 1000 only)', () => controller.startStopValidation(), { id: 'btn-stopval', disabled: !c.canStopValidation }));
+      act.append(btn('Powered stop validation (full safety checklist, battery connected, external 1000 only)', () => controller.startPoweredStopValidation(), { id: 'btn-powered-stopval', disabled: !c.canPoweredStopValidation }));
+      if (!c.usbStopValidated) act.append(el('p', 'bt-small', 'The powered stop validation needs the USB-only stop validation to be recorded first in this connection.'));
+      else act.append(el('p', 'bt-small', 'USB-only stop validation recorded for this connection.'));
+    }
     act.append(btn('Read again', () => controller.reread(), { id: 'btn-reread' }));
     act.append(btn('Disconnect', () => controller.disconnect(), { id: 'btn-disconnect' }));
     body.append(act);
@@ -397,11 +441,9 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
   function drawTrace(v) {
     const wasOpen = traceBox.open;
     traceBox.replaceChildren();
-    traceBox.append(el('summary', '', 'State and transition trace'));
-    const pre = el('pre'); pre.id = 'bt-trace';
-    pre.textContent = traceText(v);
-    traceBox.append(pre);
-    traceBox.append(btn('Download trace (JSON)', () => {
+    traceBox.append(el('summary', '', user ? 'Session record' : 'State and transition trace'));
+    if (!user) { const pre = el('pre'); pre.id = 'bt-trace'; pre.textContent = traceText(v); traceBox.append(pre); } else traceBox.append(el('p', 'bt-small', 'A technical record of this session\u2019s steps, for support or review.'));
+    traceBox.append(btn(user ? 'Download the session record (JSON)' : 'Download trace (JSON)', () => {
       const a = el('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ provisional: BENCH_PROVISIONAL, mode: v.caps.mode, externalStopValue: MOTOR.stopValue, usbStopValidated: v.caps.usbStopValidated, poweredStopValidated: v.caps.poweredStopValidated, dshotStatistics: v.caps.dshot.status, trace: v.trace }, null, 2)], { type: 'application/json' })); a.download = 'bench-trace.json'; document.body.append(a); a.click(); a.remove();
     }, { id: 'btn-trace-download' }));
     traceBox.open = wasOpen;
@@ -432,6 +474,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     }
     if (L.grace && c.graceStartedAt !== null) L.grace.textContent = `Waiting for reconnection. Grace period ${BENCH_TIMINGS.reconnectGraceMs / 1000} s.`;
     for (const id of ['bt-trace', 'bt-trace-fault']) { const tr = document.getElementById(id); if (tr) tr.textContent = traceText(v); }
+    const stepEl = document.getElementById('bt-step'); if (stepEl) stepEl.textContent = STEP_TEXT[c.state] || '';
   }
 
   function signature(v) {
@@ -439,7 +482,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     return JSON.stringify([c.state, c.mode, c.unlocked, c.selectedMotor, c.targetConfirmed, c.canStart, c.interlocks.map((i) => i.ok), controller.machine.ctx.checklist, c.proof.partsDone, c.proof.complete, c.proof.userNoRotation, c.proof.readbackOk, c.proof.zeroOk,
       c.proof.attempts >= BENCH_TIMINGS.stopMinAttempts, c.batteryDeclared, c.batteryRemoved, c.transportAvailable, c.fault && c.fault.reason, v.notes.markerError, v.notes.proofFailed, v.notes.error, v.notes.message, c.completedMotors, v.analysis && [v.analysis.sweeps, v.analysis.collecting],
       c.policy && [c.policy.nonzeroOk, c.policy.stopValidationOk, c.policy.blockers.length], v.readiness && v.readiness.counts, v.attestations, v.manual, c.canConfirmNoRotation, c.needsPosition, c.canReset, c.canCompleteRecovery, c.markerAvailable, !!v.snapshot,
-      c.flow, c.batteryState, c.dshot.status, c.usbStopValidated, c.poweredStopValidated, c.canPoweredStopValidation, c.canFinishPoweredStopValidation, c.markerClearFailed, c.markerClearPending, c.canRetryMarkerClear]);
+      c.flow, canLeaveNow(c), notice(), c.batteryState, c.dshot.status, c.usbStopValidated, c.poweredStopValidated, c.canPoweredStopValidation, c.canFinishPoweredStopValidation, c.markerClearFailed, c.markerClearPending, c.canRetryMarkerClear]);
   }
 
   function render() {

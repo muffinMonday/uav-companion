@@ -107,8 +107,26 @@ Keys (also in [DATABASE.md](DATABASE.md)): `uavzones.aircraftdiag.v1` (derived r
 
 ## 7. What changed for the Blackbox decision
 
-See the backlog section 0 for the decision record. In code: `evaluateReadiness` no longer produces the gates `blackbox`, `bb-mode`, `bb-fields`, `bb-rate` and `storage` unless called with `includeBlackbox: true` (kept for a future owner decision, covered by the unchanged readiness tests); the bench policy ignores them even then; the lab has no Blackbox mode control; the bench test never enters CLI and never changes configuration. `minSweepGapMs` (5000) is kept as a settle interval between sweeps; it was originally the Blackbox shutdown period, and removing it would weaken an interlock without owner approval.
+See the backlog section 0 for the decision record. In code: `evaluateReadiness` no longer produces the gates `blackbox`, `bb-mode`, `bb-fields`, `bb-rate` and `storage` unless called with `includeBlackbox: true` (kept for a future owner decision, covered by the unchanged readiness tests); the bench policy ignores them even then; the lab has no Blackbox mode control; the bench test never enters CLI and never changes configuration. `interSweepSettleMs` (5000, formerly `minSweepGapMs`) is a provisional zero-output interval between motors, counted from the previous motor's complete stop proof; it never delays the first motor and applies only to starting a sweep, never to stopping. It is not a validated cooling period.
 
 ## 8. Tests
 
 `tests/bench-analysis-unit.mjs` (collector, metrics, result, history, store), `tests/bench-analysis-controller-unit.mjs` (collection through the controller, passivity, cancellation, faults, four-motor sessions, Blackbox removal), plus the updated `tests/bench-safety-unit.mjs`, `tests/preflight-readiness-unit.mjs`, browser `tests/bench-lab.mjs` and `tests/preflight-lab.mjs`. None needs hardware.
+
+## 9. User-facing beta (2026-11-17)
+
+**Kill switch.** `VITE_BENCH_PHASE3=1` at build time. Off: no dashboard card (`src/motor-diag-entry.js` is a constant-false no-op that tree-shakes away together with what it imports), no `/motor-diagnostics/` page (a Vite input only when the flag is set), no bench chunk in the main bundle. On: the card and the page exist. Checked on the built output (flag off: no entry strings in any JS, no page directory).
+
+| Piece | Where |
+| --- | --- |
+| Dashboard card (title, Experimental badge, description, **Open diagnostics**, requirement note; latest saved date and headline with **View history** when local history exists) | `src/motor-diag-entry.js`, one line in `src/dashboard.js` |
+| Workspace (user-facing, `/motor-diagnostics/`) | `motor-diagnostics/index.html`, `user.js`; presentation mode `user: true` of `src/benchtest/bench-ui.js`; shared styles `src/benchtest/bench.css` |
+| Saved results, grouped by FC/ESC identity | `src/benchtest/history-ui.js` (`#history`) |
+| Page lifecycle and navigation limits | `src/benchtest/lifecycle.js` (shared with the lab) |
+| Developer harness (synthetic FC, fault injection, trace, stop-validation procedures) | `/tools/motor-bench-lab/` |
+
+**Navigation.** The way back to the dashboard exists only while unpowered (before the flow starts, and after the battery is confirmed disconnected). While anything may be powered it is removed, the Back button is absorbed with an explanation, and leaving or closing asks for confirmation and sends the stop first where the browser runs the handler. A forced close, a crash or a frozen page cannot be controlled and recovers through the durable marker.
+
+**User view.** No synthetic connection, fault injection, raw state names (kept in the DOM, hidden, for tests), traces, build notes or phase wording. The simulated flight controller is reachable only with `?synthetic=1` on a non-production build (tests and local development); a production build ignores it. Readiness shows the detected aircraft to confirm and the ESC entry; the stop-validation procedures (used to approve allowlist entries) are not offered.
+
+**Tests.** `tests/motor-diagnostics-ui.mjs` (dashboard card on and off, navigation in and out, developer controls absent, the complete synthetic journey from the workspace to a saved result and back at 412 px with 360 px and desktop checks, Back and close while powered, recovery through the user route, history, deletion through Privacy), `tests/bench-safety-unit.mjs` (the entry is the only app file that mentions the flag and may import only the result store).

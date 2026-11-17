@@ -170,7 +170,7 @@ try {
   ok(await p.evaluate(() => [...document.querySelectorAll('#bt-sec-result button, #bt-sec-result summary')].every((e) => e.getBoundingClientRect().height >= 40)), 'result controls keep a touch-sized target at 360 px');
   await p.setViewportSize({ width: 1000, height: 900 });
   ok(/Saved/.test(await text(p, '#bt-save-status')), 'the result is saved only when asked');
-  await p.waitForTimeout(6000); // the sweep-gap interlock changes after 5 s and redraws the screen
+  await p.waitForTimeout(6000); // the inter-sweep settle interlock changes after 5 s and redraws the screen
   ok(/Saved/.test(await text(p, '#bt-save-status')), 'the save message survives a redraw of the screen');
   ok(await p.evaluate(() => localStorage.getItem('uavzones.aircraftdiag.v1') !== null && localStorage.getItem('uavzones.aircraftdiag.samples.v1') === null), 'the derived record is stored locally and no live samples are kept');
   const ev = await Promise.all([p.waitForEvent('download'), p.click('#btn-download-evidence')]);
