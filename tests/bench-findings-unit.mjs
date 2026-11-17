@@ -422,7 +422,7 @@ const unavailable = [10000, 10000, 10000, 10000];
 // ======================================================================================================
 {
   const id = { variant: 'BTFL', firmware: '2025.12.5', api: '1.47', targetName: 'SYNTH', boardId: 'SYN1', escFamily: 'Bluejay', escModel: 'synthetic', motorProtocol: 'DSHOT600' };
-  assert.equal(OWNER_APPROVED.length, 0, 'OWNER_APPROVED stays empty');
+  assert.equal(OWNER_APPROVED.length, 1, 'OWNER_APPROVED holds the one reviewed entry');
   assert.deepEqual([...EVIDENCE_FIELDS], ['stopValidatedOn', 'stopValidatedBy', 'stopValidationTraceSha256', 'externalStopValue', 'poweredStopValidated']);
   assert.ok(![...REQUIRED_FIELDS, ...EVIDENCE_FIELDS].some((f) => /uid/i.test(f)), 'no raw flight-controller UID field');
   assert.equal(validateEntry(REAL_ENTRY), null, 'the fully formed fixture is valid');

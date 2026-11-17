@@ -35,7 +35,27 @@ export const EVIDENCE_FIELDS = Object.freeze([
   'poweredStopValidated', // boolean true: the validation included the powered ESC state (battery connected)
 ]);
 
-export const OWNER_APPROVED = Object.freeze([]); // intentionally empty
+// Owner-approved real combinations. Each entry is frozen and reviewed; the owner approved this one on 2026-11-17 after the
+// powered stop validation (trace SHA-256 below; the raw trace stays in the owner's records, not in the repository).
+export const OWNER_APPROVED = Object.freeze([
+  Object.freeze({
+    variant: 'BTFL',
+    firmware: '2025.12.5',
+    api: '1.47',
+    targetName: 'STM32F7X2',
+    boardId: 'F722',
+    escFamily: 'BLHeli_32',
+    escModel: 'Flycolor Raptor 5 — BLHeli_32 Rev31.x prototype sample (Proto 31.10.1)',
+    motorProtocol: 'DSHOT600',
+    approvedBy: 'muffinMonday',
+    approvedOn: '2026-11-17',
+    stopValidatedBy: 'muffinMonday',
+    stopValidatedOn: '2026-11-17',
+    stopValidationTraceSha256: '902e5935046d02a5a010db1ba224bd49923a0258d52a73d5a9940675eba29225',
+    externalStopValue: 1000,
+    poweredStopValidated: true,
+  }),
+]);
 
 // For the mock transport only (synthetic aircraft of src/preflight/mock-fc.js and src/benchtest/mock-bench-fc.js).
 export const SYNTHETIC_ALLOWLIST = Object.freeze([

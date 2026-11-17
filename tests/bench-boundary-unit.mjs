@@ -129,12 +129,13 @@ const mkBoundary = (authorize = permissive, tOpts = {}) => {
 
 // ---------- allowlist
 {
-  assert.equal(OWNER_APPROVED.length, 0, 'no real FC/ESC combination is approved by default');
+  assert.equal(OWNER_APPROVED.length, 1, 'exactly the one owner-approved real combination (2026-11-17)');
+  assert.equal(validateEntry(OWNER_APPROVED[0]), null, 'the approved entry is valid');
   assert.ok(Object.isFrozen(OWNER_APPROVED) && Object.isFrozen(SYNTHETIC_ALLOWLIST));
   const id = { variant: 'BTFL', firmware: '2025.12.5', api: '1.47', targetName: 'SYNTH', boardId: 'SYN1', escFamily: 'Bluejay', escModel: 'synthetic', motorProtocol: 'DSHOT600' };
   assert.ok(matchAllowlist(id, 'mock', SYNTHETIC_ALLOWLIST).entry, 'the synthetic entry matches the mock');
   assert.equal(matchAllowlist(id, 'web-serial', SYNTHETIC_ALLOWLIST).entry, null, 'a synthetic entry never authorizes a real transport');
-  assert.equal(matchAllowlist(id, 'web-serial').entry, null, 'the empty owner list approves nothing');
+  assert.equal(matchAllowlist(id, 'web-serial').entry, null, 'the owner list does not approve a different combination');
   assert.equal(matchAllowlist(id, 'mock').entry, null);
   for (const f of ['variant', 'firmware', 'api', 'targetName', 'boardId', 'escFamily', 'escModel', 'motorProtocol']) {
     assert.equal(matchAllowlist({ ...id, [f]: f === 'firmware' ? '2026.6.2' : 'other' }, 'mock', SYNTHETIC_ALLOWLIST).entry, null, `a different ${f} does not match`);

@@ -113,10 +113,10 @@ overrideBenchFlagForTests(false); assert.equal(benchEnabled(), false); overrideB
 assert.ok(!/localStorage|sessionStorage|cookie|location\.|URLSearchParams/.test(code(path.join(ROOT, 'src/benchtest/flag.js'))));
 pass('the Phase 3 flag defaults off; the override is an explicit in-memory call; nothing is stored or read from the URL');
 
-// 8. the allowlist: nothing real is approved by default
-assert.equal(OWNER_APPROVED.length, 0);
+// 8. the allowlist: exactly one owner-approved real combination; the synthetic fixture stays mock-only
+assert.equal(OWNER_APPROVED.length, 1);
 assert.ok(SYNTHETIC_ALLOWLIST.every((e) => e.synthetic === true && e.targetName === 'SYNTH'));
-pass('no real FC/ESC combination is approved by default; the only entry is the synthetic fixture');
+pass('exactly one real FC/ESC combination is owner-approved; the synthetic fixture stays mock-only');
 
 // 9. wording: no safety claim, no health verdict, in strings of the bench code or page
 const CLAIM = /safe to fly|airworth|certified|fault[- ]free|guarantee/i;
