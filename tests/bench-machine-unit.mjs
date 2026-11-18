@@ -67,6 +67,10 @@ const collect = () => { for (const h of harnesses) for (const e of h.m.trace) if
   const spin = async (hh, n) => { for (let i = 0; i < n; i++) { await hh.adv(250); await new Promise((r) => setTimeout(r, 8)); } };
   const Y = await mk({ fourway: { channels: [{ kind: 'bluejay' }, { kind: 'silent' }, { kind: 'bluejay' }, { kind: 'bluejay' }] } }); await Y.toZeroVerification(); await spin(Y, 220); Y.c.acknowledgeEscWarning(); await spin(Y, 60);
   const Z = await mk({ fourway: { exit: 'never' } }); await Z.toZeroVerification(); await spin(Z, 200);
+  // combined four-motor confirmation: all four individual sweeps, then the combined run and its stop proof
+  const KC = await mk(); await KC.toMotorReady();
+  for (let m = 0; m < 4; m++) { await KC.adv(5100); await KC.startMotor(m); await KC.adv(9000); await KC.finishStopProof(EXPECTED_POSITIONS[m]); }
+  await KC.adv(5100); KC.c.startCombined(1000); await KC.adv(16000); await KC.adv(3500); KC.c.confirmNoRotation(); KC.c.completeCombined();
   collect();
   const table = createMachine()._tableForTests;
   const missing = [];

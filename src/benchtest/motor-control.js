@@ -105,6 +105,15 @@ export class MotorBoundary {
     return this._send({ kind: 'output', motor, value }, values);
   }
 
+  // The combined confirmation: the SAME value on all four enabled motors, slots 5 to 8 stay at 1000. Same cap, same permission check.
+  sendOutputAll(value) {
+    if (!Number.isInteger(value)) throw new MotorCommandRefused('value is not an integer');
+    if (value !== MOTOR.stopValue && (value < MOTOR.startValue || value > MOTOR.cap)) throw new MotorCommandRefused(`value ${value} is outside the permitted range`);
+    const values = Array(MOTOR.slots).fill(MOTOR.stopValue);
+    for (let i = 0; i < this.motorCount; i++) values[i] = value;
+    return this._send({ kind: 'output-all', value }, values);
+  }
+
   _send(req, values) {
     const perm = this.authorize(req);
     if (!perm || perm.ok !== true) throw new MotorCommandRefused(perm && perm.reason ? perm.reason : 'not authorized');
@@ -112,7 +121,7 @@ export class MotorBoundary {
     if (top > MOTOR.cap) throw new MotorCommandRefused('above the absolute cap');
     if (top > perm.maxValue) throw new MotorCommandRefused('above the ceiling of the current permission');
     const raised = values.map((v, i) => (v !== MOTOR.stopValue ? i : -1)).filter((i) => i >= 0);
-    if (raised.length > 1) throw new MotorCommandRefused('more than one motor');
+    if (raised.length > 1 && !(req.kind === 'output-all' && raised.length === this.motorCount && raised.every((i) => i < this.motorCount) && values.slice(0, this.motorCount).every((v) => v === values[0]))) throw new MotorCommandRefused('more than one motor');
     if (this.pending.length >= 64) throw new MotorCommandRefused('too many unacknowledged commands');
     const frame = buildMotorFrame(values);
     this.commanded = values.slice();

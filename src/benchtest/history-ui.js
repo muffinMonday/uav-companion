@@ -6,6 +6,8 @@ import { deleteAll, listRecords } from '../aircraft-diag-data.js';
 import { renderResult } from './result-ui.js';
 import { DISCLAIMER, REMINDER } from './result.js';
 import { sanitizeEscObservation } from '../fourway/scan-result.js';
+import { sanitizeElectronics } from './electronics.js';
+import { sanitizeCombined } from './combined.js';
 import { button, el } from '../preflight/ui-parts.js';
 
 const text = (v, n = 80) => (typeof v === 'string' ? v.slice(0, n) : '');
@@ -53,7 +55,7 @@ export function drawHistory(parent, { storage } = {}) {
         let drawn = false;
         d.addEventListener('toggle', () => {
           if (!d.open || drawn) return; drawn = true;
-          try { d.append(renderResult(resultFromRecord(r), false, sanitizeEscObservation(r.escObservation))); } catch { d.append(el('p', 'form-error', 'This saved result could not be displayed.')); }
+          try { d.append(renderResult(resultFromRecord(r), false, sanitizeEscObservation(r.escObservation), { electronics: sanitizeElectronics(r.aircraftElectronics), combined: sanitizeCombined(r.combinedConfirmation) })); } catch { d.append(el('p', 'form-error', 'This saved result could not be displayed.')); }
         });
         li.append(d); tl.append(li);
       }

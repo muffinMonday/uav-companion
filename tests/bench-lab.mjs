@@ -245,9 +245,9 @@ try {
   await kb.click('#btn-motor-4'); await kb.click('#btn-confirm-target');
   await kb.waitForFunction(() => !document.querySelector('#hold-start').disabled, null, { timeout: 15000 });
   await kb.click('#hold-start-timed');
-  ok(/Confirming in 1 s/.test(await text(kb, '.dg-holdstatus')), 'the timed confirm announces its countdown');
+  ok(/Confirming in 1 s/.test(await text(kb, '.dg-hold:has(#hold-start) .dg-holdstatus')), 'the timed confirm announces its countdown');
   await kb.click('#hold-start-timed');
-  ok(/Cancelled/.test(await text(kb, '.dg-holdstatus')), 'activating it again cancels');
+  ok(/Cancelled/.test(await text(kb, '.dg-hold:has(#hold-start) .dg-holdstatus')), 'activating it again cancels');
   await kb.waitForTimeout(1300);
   ok((await state(kb)) === 'MOTOR_READY', 'a cancelled timed confirm starts nothing');
   await kb.click('#hold-start-timed');

@@ -13,6 +13,8 @@ import { BENCH_TIMINGS, EXPECTED_POSITIONS, MOTOR } from './constants.js';
 import { createLiveCollector } from './live-collector.js';
 import { buildBenchResult } from './result.js';
 import { buildEvidenceExport, buildHistoryRecord, approxBytes } from './history.js';
+import { combinedEligibility, createCombinedRecorder, summarizeCombined } from './combined.js';
+import { buildAircraftElectronics } from './electronics.js';
 import { deleteAll as deleteStoredDiagnostics, listRecords as listStoredDiagnostics, saveRecord as saveStoredDiagnostic, approxSize as storedDiagnosticsSize } from '../aircraft-diag-data.js';
 import { OWNER_APPROVED, SYNTHETIC_ALLOWLIST, matchAllowlist } from './allowlist.js';
 import { MotorBoundary } from './motor-control.js';
@@ -48,7 +50,10 @@ export function createBenchController(opts = {}) {
   let resultCache = { version: -1, value: null };
   const inflight = { tel: false, status: false, motor: false, analog: false };
   const last = { statusAt: -Infinity, analogAt: -Infinity };
-  let sweep = null;
+  let sweep = null, combinedTarget = null;
+  // the combined four-motor confirmation: samples while it runs, and its finished result (set once, at its stop proof or its abort)
+  const combinedRec = createCombinedRecorder();
+  let combinedRun = null;
   const notes = { message: '', error: '', markerError: '', proofFailed: false };
   const listeners = new Set();
 
@@ -67,7 +72,17 @@ export function createBenchController(opts = {}) {
   }
 
   // Analysis hooks. Every one is wrapped: a failure here can only lose analysis data.
+  function finalizeCombined(end, stopProofComplete, target) {
+    try {
+      if (combinedRun || !combinedRec.active()) return;
+      combinedRun = { result: summarizeCombined({ rec: combinedRec.snapshot(), end, stopProofComplete, targetCommand: target }) };
+      combinedRec.clear();
+    } catch { /* analysis only */ }
+  }
   function analysisAfterDispatch(event, payload, r) {
+    try {
+      if (machine.state === STATE.LOCKED_FAULT && machine.ctx.fault && machine.ctx.fault.combined === true && combinedRec.active()) finalizeCombined({ completed: false, reason: machine.ctx.fault.reason }, false, combinedTarget);
+    } catch { /* analysis only */ }
     try {
       if (!collector.isActive()) return;
       if (event === 'POSITION_REPORTED') collector.setReportedPosition(payload && payload.physical);
@@ -210,7 +225,12 @@ export function createBenchController(opts = {}) {
       if (ent.ok && !scanAbort && id === scanRun) {
         raw = await fb.identifyAll({
           count: ent.escCount, shouldAbort: () => scanAbort || id !== scanRun,
-          onProgress: ({ phase, channel }) => { const c = fwView.channels[channel]; if (c && phase === 'init') { c.state = 'connecting'; emit(); } },
+          onProgress: ({ phase, channel, result: r }) => {
+            const c = fwView.channels[channel];
+            if (!c) return;
+            if (phase === 'init') { c.state = 'connecting'; emit(); } // shown as Reading
+            else if (phase === 'channel' && r) { const d = scan.buildScanResult({ channels: [r], entered: true }).channels[channel]; Object.assign(c, { state: d.state === 'identified' ? 'identified' : 'unavailable', family: d.family, version: d.version, target: d.target }); emit(); }
+          },
         });
         if (raw.some((r) => r && r.init)) await fb.resetChannels(raw.filter((r) => r && r.init).map((r) => r.channel));
       }
@@ -260,20 +280,31 @@ export function createBenchController(opts = {}) {
   }
 
   // ---- sweep: ramp, candidate validation, plateau. Driven by the poll loop; every output goes through the boundary.
+  function beginCombined() {
+    // the common target: the highest plateau command any motor used in its own sweep, never above the cap
+    const res = api.analysisResult();
+    const plateaus = res ? res.motors.map((m) => m.metrics && m.metrics.plateauCommand).filter((v) => Number.isInteger(v)) : [];
+    const target = plateaus.length === MOTOR.enabledMotors ? Math.min(MOTOR.cap, Math.max(...plateaus)) : null;
+    combinedRun = null; combinedTarget = target;
+    try { combinedRec.begin({ at: now(), voltageBefore_cV: obs.voltage_cV }); } catch { /* analysis only */ }
+    sweep = { combined: true, motor: null, phase: 'ramp', value: null, lastChange: now(), settleAt: null, plateauAt: null, startedAt: now(), output: MOTOR.stopValue, target };
+  }
   function beginSweep() {
+    if (machine.ctx.combined === true) { beginCombined(); return; }
     try { collector.begin({ motor: machine.ctx.selectedMotor, voltageBefore_cV: obs.voltage_cV, voltageBeforeAgeMs: obs.voltageAt === null ? null : now() - obs.voltageAt, expectedPosition: EXPECTED_POSITIONS[machine.ctx.selectedMotor] }); } catch { /* analysis only */ }
     sweep = { motor: machine.ctx.selectedMotor, phase: 'ramp', value: null, lastChange: now(), windowStart: null, threshold: null, plateauAt: null, startedAt: now(), output: MOTOR.stopValue };
   }
   function out(value) {
     obs.lastSendAt = now();
     sweep.output = value; sweep.lastChange = now();
-    boundary.sendOutput(sweep.motor, value).catch(() => {});
+    (sweep.combined ? boundary.sendOutputAll(value) : boundary.sendOutput(sweep.motor, value)).catch(() => {});
   }
   function advanceSweep() {
     if (!sweep) return;
     if (machine.state !== STATE.RUNNING) { sweep = null; return; }
     const t = now();
     if (t - sweep.startedAt > n.runTimeoutMs) { dispatch('TIMEOUT', { reason: 'run-timeout' }); return; }
+    if (sweep.combined) { advanceCombined(t); return; }
     const rpm = obs.telemetry && obs.telemetryAt !== null && t - obs.telemetryAt <= n.staleTelemetryFaultMs ? obs.telemetry.motors[sweep.motor] : null;
     const spinning = !!rpm && rpm.rpm > 0;
     const stepUp = () => {
@@ -302,6 +333,37 @@ export function createBenchController(opts = {}) {
         sweep = null;
       }
     }
+  }
+
+  // Combined confirmation: all four motors get the same command, stepped by the same cadence up to the common target, held for the
+  // plateau time, then external 1000. Every output goes through boundary.sendOutputAll (machine permission, cap 1100).
+  function advanceCombined(t) {
+    const target = sweep.target;
+    if (!Number.isInteger(target) || target < MOTOR.startValue) { dispatch('RUN_ABORTED', { reason: 'combined-no-target' }); sweep = null; return; }
+    const fresh = obs.telemetry && obs.telemetryAt !== null && t - obs.telemetryAt <= n.staleTelemetryFaultMs;
+    const allTurning = !!fresh && obs.telemetry.motors.length === MOTOR.enabledMotors && obs.telemetry.motors.every((m) => m.rpm > 0);
+    if (sweep.phase === 'ramp') {
+      if (sweep.value === null) { sweep.value = MOTOR.startValue; out(sweep.value); return; }
+      if (t - sweep.lastChange >= MOTOR.dwellMs) {
+        if (sweep.value >= target) { sweep.phase = 'settle'; sweep.settleAt = t; }
+        else { sweep.value = Math.min(target, sweep.value + MOTOR.step); out(sweep.value); }
+      }
+    } else if (sweep.phase === 'settle') {
+      if (t - sweep.settleAt >= MOTOR.candidateValidationMs) {
+        if (!allTurning) { try { boundary.sendStop().catch(() => {}); } catch { /* machine decides */ } dispatch('RUN_ABORTED', { reason: 'combined-not-rotating' }); sweep = null; return; }
+        sweep.phase = 'plateau'; sweep.plateauAt = t;
+      }
+    } else if (sweep.phase === 'plateau') {
+      if (t - sweep.plateauAt >= Math.min(MOTOR.plateauMs, MOTOR.plateauMaxMs)) {
+        try { boundary.sendStop().catch(() => {}); } catch { /* machine decides */ }
+        sweep.output = MOTOR.stopValue; sweep.phase = 'done';
+        dispatch('RUN_COMPLETE', { result: 'completed' });
+        sweep = null;
+      }
+    }
+  }
+  function collectCombinedSample() {
+    try { if (sweep && sweep.combined && combinedRec.active()) combinedRec.sample({ at: now(), phase: sweep.phase, cmd: sweep.output, telemetry: obs.telemetry, telemetryAt: obs.telemetryAt, voltage_cV: obs.voltage_cV }); } catch { /* analysis only */ }
   }
 
   // ---- polling and watchdog
@@ -347,6 +409,7 @@ export function createBenchController(opts = {}) {
     try {
       if (!fwBusy) pollOnce(); // never MSP while the FC speaks 4-way
       if (machine.state !== STATE.DISCONNECTED && machine.state !== STATE.READ_ONLY_READINESS) observe();
+      collectCombinedSample();
       collectSample(); // records the observation as the machine just saw it, before this tick changes the output
       advanceSweep();
       if (++tickCount % 5 === 0) emit();
@@ -422,7 +485,7 @@ export function createBenchController(opts = {}) {
     try {
       if (st === STATE.DISCONNECTED || st === STATE.UNCLEAN_EXIT_RECOVERY) {
         await t.open();
-        if (st === STATE.DISCONNECTED) { try { collector.clear(); } catch { /* analysis only */ } } // a new session starts with no analysis data
+        if (st === STATE.DISCONNECTED) { try { collector.clear(); combinedRec.clear(); combinedRun = null; combinedTarget = null; } catch { /* analysis only */ } } // a new session starts with no analysis data
         attach(t);
         const r = dispatch('CONNECT', { transportKind: t.kind });
         if (!r.ok) { notes.error = r.reason; return r; }
@@ -513,18 +576,31 @@ export function createBenchController(opts = {}) {
         caps: machine.capabilities(t), trace: machine.trace, attestations, escScan: { busy: fwBusy, phase: fwView.phase, channels: fwView.channels.map((c) => ({ ...c })) }, notes: { ...notes }, snapshot: redactedSnapshot(), identity: identity(),
         telemetry: obs.telemetry, telemetryAgeMs: obs.telemetryAt === null ? null : t - obs.telemetryAt, armed: obs.armed, voltage_cV: obs.voltage_cV,
         readiness: machine.ctx.readinessReport, markerStatus: marker.status(),
-        sweep: sweep ? { motor: sweep.motor, phase: sweep.phase, output: sweep.output, elapsedMs: t - sweep.startedAt, threshold: sweep.threshold } : null,
+        combined: { eligibility: api.combinedEligibility(), result: combinedRun ? combinedRun.result : null, running: !!(sweep && sweep.combined), target: combinedTarget },
+        sweep: sweep ? { combined: sweep.combined === true, motor: sweep.motor, phase: sweep.phase, output: sweep.output, elapsedMs: t - sweep.startedAt, threshold: sweep.threshold } : null,
         analysis: api.analysisSummary(), commanded: boundary ? boundary.commandedValues() : null, transportKind: transport ? transport.kind : null,
       };
     },
     dispose() { disposed = true; stopPolling(); proofRun++; if (graceTimer !== null) clock.clearTimeout(graceTimer); if (escTimer !== null) clock.clearTimeout(escTimer); },
+    // ---- combined four-motor confirmation: the machine decides every start; the controller only supplies eligibility and runs the ramp
+    combinedEligibility() { try { return combinedEligibility({ result: api.analysisResult(), completedMotors: machine.ctx.completedMotors, alreadyRan: machine.ctx.combinedDone }); } catch { return { ok: false, reasons: ['The individual results could not be read.'] }; } },
+    startCombined(holdMs) { return dispatch('START_COMBINED_HOLD_COMPLETE', { holdMs, eligible: api.combinedEligibility().ok }); },
+    completeCombined() {
+      const r = dispatch('COMBINED_STOP_DONE');
+      if (r.ok) finalizeCombined({ completed: true, reason: null }, true, combinedTarget);
+      emit();
+      return r;
+    },
+    combinedResult() { return combinedRun ? combinedRun.result : null; },
+    // the aircraft electronics profile (flight controller + ESCs): derived from reads already made; carries no UID or serial number
+    electronics() { try { return buildAircraftElectronics({ snapshot, scan: machine.ctx.esc.scanned ? machine.ctx.esc.result : null }); } catch { return null; } },
     // ---- live MSP/DShot analysis (passive; none of these touch the machine or the boundary)
     analysisResult() {
       try {
         const sw = collector.sweeps();
-        const key = sw.map((x) => x.id + x.status[0]).join(',');
+        const key = sw.filter((x) => x.status !== 'collecting').map((x) => x.id + ':' + x.status).join(',') + '|' + (combinedRun ? combinedRun.result.status : '');
         if (!sw.some((x) => x.status !== 'collecting')) return null;
-        if (resultCache.key !== key) resultCache = { key, value: buildBenchResult(sw, { sessionNotes: [] }) };
+        if (resultCache.key !== key) resultCache = { key, value: buildBenchResult(sw, { sessionNotes: [], combined: combinedRun ? combinedRun.result : null }) };
         return resultCache.value;
       } catch { return null; }
     },
@@ -534,15 +610,15 @@ export function createBenchController(opts = {}) {
       try {
         const result = api.analysisResult();
         if (!result) return { ok: false, reason: 'no-result' };
-        const record = buildHistoryRecord({ result, identity: identity(), now: Date.now(), samplesRetained: retainSamples === true, esc: machine.ctx.esc.result });
-        const set = retainSamples === true ? buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), now: Date.now(), esc: machine.ctx.esc.result }) : null;
+        const record = buildHistoryRecord({ result, identity: identity(), now: Date.now(), samplesRetained: retainSamples === true, esc: machine.ctx.esc.result, electronics: api.electronics(), combined: api.combinedResult() });
+        const set = retainSamples === true ? buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), now: Date.now(), esc: machine.ctx.esc.result, electronics: api.electronics(), combined: api.combinedResult() }) : null;
         const r = saveStoredDiagnostic(record, set, diagStorage);
         return { ...r, id: record.id, recordBytes: approxBytes(record), sampleBytes: set ? approxBytes(set) : 0 };
       } catch { return { ok: false, reason: 'error' }; }
     },
     // Approximate size of the live samples, shown before the user chooses to keep them.
-    approxSampleBytes() { try { const result = api.analysisResult(); return result ? approxBytes(buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), esc: machine.ctx.esc.result })) : 0; } catch { return 0; } },
-    exportEvidence() { try { const result = api.analysisResult(); return result ? buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), esc: machine.ctx.esc.result }) : null; } catch { return null; } },
+    approxSampleBytes() { try { const result = api.analysisResult(); return result ? approxBytes(buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), esc: machine.ctx.esc.result, electronics: api.electronics(), combined: api.combinedResult() })) : 0; } catch { return 0; } },
+    exportEvidence() { try { const result = api.analysisResult(); return result ? buildEvidenceExport({ sweeps: collector.sweeps(), result, identity: identity(), esc: machine.ctx.esc.result, electronics: api.electronics(), combined: api.combinedResult() }) : null; } catch { return null; } },
     savedDiagnostics() { return { ...listStoredDiagnostics(diagStorage), size: storedDiagnosticsSize(diagStorage) }; },
     deleteSavedDiagnostics() { return deleteStoredDiagnostics(diagStorage); },
     // test access

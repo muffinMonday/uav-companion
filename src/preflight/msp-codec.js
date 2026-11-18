@@ -8,7 +8,7 @@
 // docs/MOTOR_DIAGNOSTICS_MSP_COMPARISON.md. No GPL source is copied.
 
 export const ALLOWED_REQUESTS = Object.freeze({
-  MSP_API_VERSION: 1, MSP_FC_VARIANT: 2, MSP_FC_VERSION: 3, MSP_BOARD_INFO: 4, MSP_UID: 160, MSP_FEATURE_CONFIG: 36,
+  MSP_API_VERSION: 1, MSP_FC_VARIANT: 2, MSP_FC_VERSION: 3, MSP_BOARD_INFO: 4, MSP_BUILD_INFO: 5, MSP_RX_CONFIG: 44, MSP_UID: 160, MSP_FEATURE_CONFIG: 36,
   MSP_MOTOR_CONFIG: 131, MSP_ADVANCED_CONFIG: 90, MSP_ANALOG: 110, MSP_BLACKBOX_CONFIG: 80,
   MSP_MOTOR_TELEMETRY: 139, MSP_MOTOR: 104, MSP_STATUS_EX: 150, MSP_MOTOR_3D_CONFIG: 124,
   MSP_DATAFLASH_SUMMARY: 70, MSP_SDCARD_SUMMARY: 79, MSP_BOXIDS: 119,
@@ -136,6 +136,18 @@ export const DECODERS = Object.freeze({
     if (o < p.length) { [manufacturer, o] = str(o); }
     if (o + 33 <= p.length) mcuTypeId = p[o + 32];
     return { boardId: String.fromCharCode(...p.slice(0, 4)), hardwareRevision: u16(p, 4), boardType: p[6], targetName: target, boardName, manufacturer, mcuTypeId };
+  },
+  // date(11) time(8) short git revision(7), fixed-width ASCII. Nothing after these 26 bytes is interpreted (the build-option layout is not verified).
+  MSP_BUILD_INFO(p) {
+    need(p, 26, 'BUILD_INFO');
+    const ascii = (a, b) => String.fromCharCode(...p.slice(a, b)).replace(/[^\x20-\x7e]/g, '').trim();
+    return { buildDate: ascii(0, 11), buildTime: ascii(11, 19), gitRevision: ascii(19, 26), extraBytes: p.length - 26 };
+  },
+  // Receiver configuration, read only. Only the serial provider (byte 0) and the SPI protocol (byte 16) are taken; the SPI id at byte 17
+  // is a transmitter-binding identifier and is deliberately never read.
+  MSP_RX_CONFIG(p) {
+    need(p, 1, 'RX_CONFIG');
+    return { serialProvider: p[0], spiProtocol: p.length >= 17 ? p[16] : null };
   },
   MSP_UID(p) { need(p, 12, 'UID'); return { words: [u32(p, 0), u32(p, 4), u32(p, 8)], hex: [0, 4, 8].map((o) => u32(p, o).toString(16).padStart(8, '0')).join('') }; },
   MSP_FEATURE_CONFIG(p) { need(p, 4, 'FEATURE_CONFIG'); const raw = u32(p, 0); return { raw, threeD: ((raw >>> 12) & 1) === 1, escSensor: ((raw >>> 27) & 1) === 1 }; },

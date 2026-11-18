@@ -3,9 +3,12 @@
 // from result.js and calls the controller's passive analysis methods (save, export). Wording: observations only, never a health
 // verdict, never a safety claim; the single sentence that spells out the limits is DISCLAIMER in result.js.
 import { PEER_COMPARISON, METRIC_RULES } from './analysis-constants.js';
+import { sanitizeElectronics } from './electronics.js';
 import { CATEGORY } from './result.js';
 import { button, confirmRow, el, quad, statusEl } from '../preflight/ui-parts.js';
 import { escSummary } from './esc-ui.js';
+import { electronicsSection } from './electronics-ui.js';
+import { combinedResultBlock } from './combined-ui.js';
 
 const STATUS_TEXT = Object.freeze({
   completed: 'Completed — no issue observed',
@@ -59,17 +62,21 @@ function motorCard(mo) {
 }
 
 /** The result view for one result object (a live result or one rebuilt from a saved record). `live` gives the elements their fixed ids; the history view uses none. */
-export function renderResult(result, live = true, esc = null) {
+// extras: { electronics (sanitized profile or null), combined (sanitized combined result, 'skipped' or null) }
+export function renderResult(result, live = true, esc = null, extras = {}) {
   const s = el('section', `dash-card dg-section dg-result bt-res-${result.category}`); if (live) s.id = 'bt-sec-result'; s.dataset.category = result.category; s.dataset.kind = 'result';
   s.append(el('p', 'eyebrow', 'Observed result'));
-  const banner = statusEl({ cls: BANNER[result.motors.some((m) => m.status === 'inspect') ? 'inspect' : result.motors.some((m) => m.status === 'difference') ? 'difference' : result.motors.every((m) => m.status === 'completed') ? 'completed' : 'incomplete'], title: result.headline, detail: result.summary });
+  const banner = statusEl({ cls: BANNER[result.category === CATEGORY.INSPECT || result.motors.some((m) => m.status === 'inspect') ? 'inspect' : result.motors.some((m) => m.status === 'difference') ? 'difference' : result.motors.every((m) => m.status === 'completed') ? 'completed' : 'incomplete'], title: result.headline, detail: result.summary });
   const h = banner.querySelector('strong'); if (live) h.id = 'bt-result-headline';
   s.append(banner);
   if (result.reasons.length) { const ul = el('ul', 'dg-reasons'); if (live) ul.id = 'bt-result-reasons'; for (const r of result.reasons) ul.append(el('li', '', r.text)); s.append(ul); }
   for (const n of result.notes) s.append(el('p', 'hint', n));
   s.append(quadDiagram(result));
   const cards = el('div', 'dg-cards'); for (const mo of result.motors) cards.append(motorCard(mo)); s.append(cards);
-  if (esc) { const e = el('div', 'dg-esc-block'); e.append(el('h3', 'section-title', 'ESC identification'), escSummary(esc)); s.append(e); }
+  const cb = combinedResultBlock(extras.combined || null, { live }); if (cb) s.append(cb);
+  const ex = extras.electronics || null;
+  s.append(electronicsSection(ex, { live }));
+  if (esc && !(ex && ex.escs && ex.escs.scanStatus !== 'not-run')) { const e = el('div', 'dg-esc-block'); e.append(el('h3', 'section-title', 'ESC identification (earlier record)'), escSummary(esc)); s.append(e); }
 
   s.append(el('p', 'hint', `Output range used: external ${result.range.startCommand} to ${result.range.capCommand} (the cap), steps of ${result.range.step}. ${result.range.note}`));
   const cmp = el('details', 'dg-details'); cmp.append(el('summary', '', 'Peer comparison and provisional thresholds'));
@@ -87,8 +94,11 @@ export function drawResult(parent, ctx) {
   const result = controller.analysisResult();
   if (!result) return false;
   if (form.statusFor !== result) { form.status = ''; form.statusFor = result; } // a new result starts without the old save message
-  const esc = controller.view().caps.esc;
-  const s = renderResult(result, true, esc && esc.scanned ? esc.result : null);
+  const caps = controller.view().caps;
+  const esc = caps.esc;
+  let combined = controller.combinedResult();
+  if (!combined && caps.state === 'BENCH_COMPLETE' && [0, 1, 2, 3].every((m) => caps.completedMotors.includes(m))) combined = 'skipped';
+  const s = renderResult(result, true, esc && esc.scanned ? esc.result : null, { electronics: sanitizeElectronics(controller.electronics()), combined });
 
   // keep or export: nothing is stored unless the user presses Save
   const keep = el('div', 'dg-keep'); keep.id = 'bt-keep';

@@ -67,7 +67,9 @@ export function checklistComplete(checklist) {
 
 // Every condition that must hold before a nonzero output can be authorized. Returns [{ id, ok, why }].
 // `facts` is the latest observation; `ctx` is the machine's context. A missing fact is a failed check (fail closed).
-export function startInterlocks(ctx, facts, now) {
+// opts.combined: the combined four-motor confirmation. Every check stays except the single-motor ones, which are replaced by
+// "all four individual checks done", "every command and read-back proven at 1000" and "no fresh over-temperature reading".
+export function startInterlocks(ctx, facts, now, opts = {}) {
   const f = facts || {};
   const stale = BENCH_TIMINGS.staleTelemetryFaultMs;
   const rpm = Array.isArray(f.rpm) ? f.rpm : null;
@@ -87,8 +89,17 @@ export function startInterlocks(ctx, facts, now) {
   const dshotOk = d.status === 'usable' && Number.isFinite(d.since) && Number.isFinite(d.lastAt) && d.lastAt - d.since >= DSHOT_STATS.usableForMs && now - d.lastAt <= stale;
   add('dshot-stats', dshotOk, DSHOT_WHY[d.status === 'usable' ? 'short' : d.status] || DSHOT_WHY.unknown);
   add('disarmed', f.armed === false, 'The aircraft is not confirmed disarmed.');
-  add('one-motor', Number.isInteger(ctx.selectedMotor) && ctx.selectedMotor >= 0 && ctx.selectedMotor < MOTOR.enabledMotors, 'Exactly one motor must be selected.');
-  add('target-confirmed', ctx.selectedMotor !== null && ctx.targetConfirmed === ctx.selectedMotor, 'The physical motor to be tested is not confirmed.');
+  if (opts.combined) {
+    const done = new Set(ctx.completedMotors || []);
+    add('four-individual-complete', [0, 1, 2, 3].every((m) => done.has(m)) && ctx.combinedDone !== true, 'All four individual motor checks must be complete, and the combined confirmation not yet run.');
+    const cmd = Array.isArray(f.commanded) ? f.commanded : null;
+    const rb = f.readback;
+    add('all-stopped-proven', cmd !== null && cmd.length === MOTOR.enabledMotors && cmd.every((v) => v === MOTOR.stopValue) && !!rb && rb.current === true && Number.isFinite(rb.at) && now - rb.at <= BENCH_TIMINGS.readbackStaleMs && Array.isArray(rb.values) && rb.values.slice(0, MOTOR.enabledMotors).every((v) => v === MOTOR.stopValue), 'All four motors are not proven at external 1000 (command and fresh read-back).');
+    add('no-over-temperature', !(Array.isArray(f.tempsC) && f.tempsC.some((t) => Number.isFinite(t) && t >= BENCH_TIMINGS.escTempFaultC)), 'A fresh ESC temperature reading is at or above the fault limit.');
+  } else {
+    add('one-motor', Number.isInteger(ctx.selectedMotor) && ctx.selectedMotor >= 0 && ctx.selectedMotor < MOTOR.enabledMotors, 'Exactly one motor must be selected.');
+    add('target-confirmed', ctx.selectedMotor !== null && ctx.targetConfirmed === ctx.selectedMotor, 'The physical motor to be tested is not confirmed.');
+  }
   add('telemetry-fresh', rpm !== null && rpm.length === MOTOR.enabledMotors && Number.isFinite(f.telemetryAt) && now - f.telemetryAt <= stale, 'RPM telemetry is not fresh and valid.');
   add('all-rpm-zero', rpm !== null && rpm.every((r) => r === 0), 'A motor reports nonzero RPM.');
   add('inter-sweep-settle', ctx.lastStopProofAt === null || now - ctx.lastStopProofAt >= BENCH_TIMINGS.interSweepSettleMs, 'Wait for the zero-output settle interval after the previous motor (about 5 seconds, provisional).');

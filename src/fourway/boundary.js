@@ -151,7 +151,9 @@ export class FourWayBoundary {
 
     for (let ch = 0; ch < n; ch++) {
       progress({ phase: 'init', channel: ch, total: n });
-      out.push(await this._identifyChannel(ch, deadline, shouldAbort));
+      const one = await this._identifyChannel(ch, deadline, shouldAbort);
+      out.push(one);
+      progress({ phase: 'channel', channel: ch, total: n, result: one });
     }
     progress({ phase: 'done', channel: null, total: n });
     return out;

@@ -5,6 +5,8 @@
 import { ANALYSIS_PROVISIONAL, ANALYSIS_SCHEMA_VERSION, EVIDENCE_FORMAT, METRIC_RULES, PEER_COMPARISON, SAMPLE_LIMITS } from './analysis-constants.js';
 import { BENCH_TIMINGS, DSHOT_STATS, MOTOR } from './constants.js';
 import { sanitizeEscObservation } from '../fourway/scan-result.js';
+import { sanitizeElectronics } from './electronics.js';
+import { sanitizeCombined } from './combined.js';
 
 // The identity used by the allowlist, and nothing else. The aircraft-profile integration is not mature, so this FC/ESC
 // identity is the temporary association (a clean adapter point: replace `association` here, nothing else changes).
@@ -35,7 +37,7 @@ export function constantsSnapshot() {
 const recordId = (now) => 'r' + Math.round(now).toString(36) + Math.floor(Math.random() * 1679616).toString(36);
 
 // result: buildBenchResult(...). Derived data only: metrics and categories, never samples.
-export function buildHistoryRecord({ result, identity, now = Date.now(), id, samplesRetained = false, esc = null }) {
+export function buildHistoryRecord({ result, identity, now = Date.now(), id, samplesRetained = false, esc = null, electronics = null, combined = null }) {
   return {
     id: id || recordId(now),
     schemaVersion: 1,
@@ -45,6 +47,8 @@ export function buildHistoryRecord({ result, identity, now = Date.now(), id, sam
     firmware: identityForRecord(identity),
     association: associationOf(identity),
     escObservation: sanitizeEscObservation(esc),
+    aircraftElectronics: sanitizeElectronics(electronics), // null in records saved before the electronics profile existed
+    combinedConfirmation: sanitizeCombined(combined),
     result: { category: result.category, headline: result.headline, summary: result.summary, reasons: result.reasons.map((r) => ({ motor: r.motor, text: r.text })), notes: result.notes.slice() },
     motors: result.motors.map((m) => ({ motor: m.motor, position: m.position, status: m.status, hard: m.hard.slice(), gaps: m.gaps.slice(), differences: (m.differences || []).slice(), metrics: m.metrics ? stripMetrics(m.metrics) : null })),
     comparison: { classified: result.comparison.classified, reason: result.comparison.reason || '', sharedNote: result.comparison.sharedNote || '', sharedCommand: result.comparison.sharedCommand, differences: result.comparison.differences.map((d) => ({ motor: d.motor, kind: d.kind, text: d.text })) },
@@ -56,7 +60,7 @@ export function buildHistoryRecord({ result, identity, now = Date.now(), id, sam
 function stripMetrics(m) { const { unavailable, ...rest } = m; return { ...rest, unavailable: unavailable.slice() }; }
 
 // Explicit export of the live samples. `sweeps` come from the collector. Never includes a UID.
-export function buildEvidenceExport({ sweeps, result, identity, now = Date.now(), esc = null }) {
+export function buildEvidenceExport({ sweeps, result, identity, now = Date.now(), esc = null, electronics = null, combined = null }) {
   return {
     format: EVIDENCE_FORMAT,
     schemaVersion: ANALYSIS_SCHEMA_VERSION,
@@ -67,6 +71,8 @@ export function buildEvidenceExport({ sweeps, result, identity, now = Date.now()
     identity: identityForRecord(identity),
     association: associationOf(identity),
     escObservation: sanitizeEscObservation(esc),
+    aircraftElectronics: sanitizeElectronics(electronics),
+    combinedConfirmation: sanitizeCombined(combined),
     constants: constantsSnapshot(),
     result: { category: result.category, headline: result.headline },
     sweeps: sweeps.map((s) => ({

@@ -167,3 +167,14 @@ html{scroll-padding-bottom:9.5rem} /* scrolled-to controls stay clear of the fix
 }
 @media (prefers-reduced-motion:reduce){.dg-holdbar{transition:none!important}}
 .dg-section .btn,.dg-keep .btn{min-height:44px}
+
+/* combined motor confirmation: a separate full-width card under the 2x2 motor grid, and the electronics section */
+.dg-combined{display:block;width:100%;margin:var(--sp-3) 0;border-left-color:var(--muted)}
+.dg-combined.dg-st-eligible{border-left-color:var(--ok)}
+.dg-combined.dg-st-running{border-left-color:var(--unk)}
+.dg-combined.dg-st-inspect{border-left-color:var(--no)}
+.dg-combined h3{margin:var(--sp-2) 0}
+.dg-electronics .dg-fc,.dg-electronics .dg-escprofile{margin:var(--sp-2) 0}
+.dg-receiver p{margin:var(--sp-1) 0}
+.dg-sub-title{margin:var(--sp-2) 0 var(--sp-1);font-size:var(--fs-body);font-weight:var(--fw-bold)}
+.dg-electronics .dash-card,.dg-result .dg-combined-result,.dg-result .dg-electronics{margin:var(--sp-3) 0}

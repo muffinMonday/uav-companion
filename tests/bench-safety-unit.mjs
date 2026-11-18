@@ -73,7 +73,7 @@ const FORBIDDEN = [
 const FOURWAY_AWARE = new Set(['src/benchtest/controller.js', 'src/benchtest/state-machine.js', 'src/benchtest/flag.js', 'src/benchtest/bench-ui.js', 'src/benchtest/esc-ui.js', 'src/benchtest/history.js', 'src/benchtest/history-ui.js', 'src/benchtest/interlocks.js', 'src/preflight/ui-parts.js', 'tools/motor-bench-lab/lab.js', 'motor-diagnostics/user.js']);
 for (const f of [...BENCH, ...pageFiles]) {
   const c = code(f).replace(/^import .*$/gm, '').replace(/MSP_DATAFLASH_SUMMARY/g, '');
-  for (const [re, name] of FORBIDDEN) { if (name === '4-way / passthrough' && FOURWAY_AWARE.has(rel(f))) continue; if (name === 'reflash' && rel(f) === 'src/benchtest/esc-ui.js') continue; assert.ok(!re.test(c), `${rel(f)} matches ${name}`); }
+  for (const [re, name] of FORBIDDEN) { if (name === '4-way / passthrough' && FOURWAY_AWARE.has(rel(f))) continue; if (name === 'reflash' && (rel(f) === 'src/benchtest/esc-ui.js' || rel(f) === 'src/benchtest/electronics.js' || rel(f) === 'src/benchtest/electronics-ui.js')) continue;  assert.ok(!re.test(c), `${rel(f)} matches ${name}`); }
 }
 // The two pages carry the same pre-paint theme line as index.html: one READ of the app's own preferences key, nothing written.
 const THEME_READ = /<script>\/\* theme before first paint[^\n]*localStorage\.getItem\('uavzones\.v1\.prefs'\)[^\n]*<\/script>/;

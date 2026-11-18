@@ -10,6 +10,7 @@ import { HARD_FAULT_REASONS, PEER_COMPARISON, ANALYSIS_SCHEMA_VERSION } from './
 import { DSHOT_STATS, EXPECTED_POSITIONS, MOTOR } from './constants.js';
 import { METRIC_RULES } from './analysis-constants.js';
 import { computeSweepMetrics } from './metrics.js';
+import { COMBINED_ANOMALY_TEXT } from './combined.js';
 
 export const CATEGORY = Object.freeze({
   COMPLETED: 'completed-no-issue',
@@ -139,7 +140,12 @@ export function buildBenchResult(sweepsIn, opts = {}) {
   else if (incompleteAll.length) { category = CATEGORY.INCOMPLETE; reasons = incompleteAll; }
   else if (comparison.differences.length) { category = CATEGORY.DIFFERENCE; reasons = comparison.differences.map((d) => ({ motor: d.motor, text: d.text })); }
   else { category = CATEGORY.COMPLETED; reasons = []; }
+  // the combined four-motor confirmation: an anomaly there is direct evidence too, but never names a motor, ESC or battery
+  const cmb = opts.combined && typeof opts.combined === 'object' ? opts.combined : null;
+  if (cmb && cmb.status === 'inspection-recommended' && (category === CATEGORY.COMPLETED || category === CATEGORY.DIFFERENCE)) { category = CATEGORY.INSPECT; reasons = [...reasons, { motor: null, text: `Combined motor confirmation: ${COMBINED_ANOMALY_TEXT}` }]; }
+  else if (cmb && cmb.status === 'inspection-recommended') reasons = [...reasons, { motor: null, text: `Combined motor confirmation: ${COMBINED_ANOMALY_TEXT}` }];
   const notes = [];
+  if (cmb && cmb.status === 'incomplete') notes.push('The combined motor confirmation did not finish, so it adds no evidence.');
   if (hardAll.length && incompleteAll.length) notes.push('Some motors were also not fully measured: ' + incompleteAll.map((x) => x.text).join(' '));
   if (!comparison.classified && complete.length) notes.push(comparison.reason);
   if (comparison.sharedNote) notes.push(comparison.sharedNote);

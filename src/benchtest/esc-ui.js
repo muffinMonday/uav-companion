@@ -6,7 +6,7 @@ import { el, icon, quad, statusEl } from '../preflight/ui-parts.js';
 
 export const RETAIL_NOTE = 'Retail model cannot be independently verified: the firmware target is what the ESC reports about its own firmware.';
 
-const CELL_TEXT = Object.freeze({ waiting: 'Waiting', connecting: 'Connecting', identified: 'Identified', unavailable: 'Unavailable', mismatch: 'Mismatch' });
+const CELL_TEXT = Object.freeze({ waiting: 'Waiting', connecting: 'Reading', identified: 'Identified', unavailable: 'Unavailable', mismatch: 'Mismatch' });
 const clip = (v, n = 24) => (typeof v === 'string' ? v.slice(0, n) : '');
 
 // channels: [{ channel, state, family, version, target }]; position per motor is the default quad-X order the app expects.

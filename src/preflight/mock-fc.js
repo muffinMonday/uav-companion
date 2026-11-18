@@ -33,9 +33,18 @@ export function payloadFor(name, fc) {
       if (amaj === 1 && amin >= 47) { const s = [...fc.firmware].map((c) => c.charCodeAt(0)); return [maj - 2000, min, pat, s.length, ...s]; }
       return [maj, min, pat];
     }
-    case 'MSP_BOARD_INFO': { const t = [...(fc.target || 'SYNTH')].map((c) => c.charCodeAt(0)); return [...[...'SYN1'].map((c) => c.charCodeAt(0)), 0, 0, 0, 1, t.length, ...t]; }
+    case 'MSP_BOARD_INFO': {
+      const a = (x) => [...x].map((c) => c.charCodeAt(0));
+      const t = a(fc.target || 'SYNTH');
+      const base = [...a('SYN1'), 0, 0, 0, 1, t.length, ...t];
+      if (fc.mcuTypeId === undefined && !fc.manufacturer && !fc.boardName) return base;
+      const bn = a(fc.boardName || ''), mf = a(fc.manufacturer || '');
+      return [...base, bn.length, ...bn, mf.length, ...mf, ...Array(32).fill(0), fc.mcuTypeId ?? 0];
+    }
     case 'MSP_UID': return fc.uid.flatMap(le32);
-    case 'MSP_FEATURE_CONFIG': return le32((fc.threeD ? 1 << 12 : 0) >>> 0);
+    case 'MSP_FEATURE_CONFIG': return le32(((fc.threeD ? 1 << 12 : 0) | (fc.rxFeatureBits ?? (1 << 3))) >>> 0);
+    case 'MSP_BUILD_INFO': return [...(fc.buildDate || 'Nov 18 2025'), ...(fc.buildTime || '12:00:00'), ...(fc.gitRevision || 'abc1234')].map((c) => c.charCodeAt(0));
+    case 'MSP_RX_CONFIG': { const o = Array(24).fill(0); o[0] = fc.rxProvider ?? 9; o[16] = fc.rxSpiProtocol ?? 0; return o; }
     case 'MSP_MOTOR_CONFIG': return [...le16(1070), ...le16(2000), ...le16(1000), fc.motorCount, fc.poleCount, fc.dshotTelemetry ? 1 : 0, 0];
     case 'MSP_ADVANCED_CONFIG': return [1, 1, 0, fc.protocol, ...le16(0), ...le16(0), 0, 0, 0, 0, 0, ...le16(0), ...le16(0), 0, fc.debugMode, 100].slice(0, 20);
     case 'MSP_MOTOR_3D_CONFIG': return [...le16(1406), ...le16(1514), ...le16(1460)];

@@ -11,6 +11,7 @@ import { drawResult } from './result-ui.js';
 import { drawHistory } from './history-ui.js';
 import { canLeaveNow } from './lifecycle.js';
 import { DISCLAIMER } from './result.js';
+import { COMBINED_LOCKED_TEXT, COMBINED_TITLE } from './combined.js';
 import { escQuad, escSummary, RETAIL_NOTE } from './esc-ui.js';
 import { button, confirmRow, el, icon, plural, quadPicker, section, statusEl, stopBar, workspaceHeader } from '../preflight/ui-parts.js';
 
@@ -279,7 +280,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     } else if (st === STATE.MOTOR_READY) drawMotorReady(v);
     else if (st === STATE.RUNNING) drawRunning(v);
     else if (st === STATE.VERIFYING_STOP) {
-      const s = section('Confirming the motor stopped', 'bt-sec-verify', 'sweep');
+      const s = section(c.purpose === 'combined' ? 'Confirming all four motors stopped' : 'Confirming the motor stopped', 'bt-sec-verify', 'sweep');
       s.append(proofList(c.proof));
       const a = el('div', 'dg-actions');
       if (c.canConfirmNoRotation) a.append(button('No motor is rotating (I am looking at the motors)', () => controller.confirmNoRotation(), { id: 'btn-no-rotation', primary: true }));
@@ -290,6 +291,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
         for (const p of [...EXPECTED_POSITIONS, POSITION_NONE]) row.append(button(p === POSITION_NONE ? 'None / unsure' : p, () => controller.reportPosition(p), { id: 'btn-pos-' + p.replace(' ', '-') }));
         s.append(row);
       }
+      if (c.combined.canFinishStop) { const a3 = el('div', 'dg-actions'); a3.append(button('Finish the combined confirmation', () => controller.completeCombined(), { id: 'btn-finish-combined', primary: true })); s.append(a3); }
       if (c.canFinishStop) { const a2 = el('div', 'dg-actions'); a2.append(button('Finish the stop check', () => controller.completeFinish(), { id: 'btn-finish-stop', primary: true })); s.append(a2); }
       body.append(s);
     } else if (st === STATE.BENCH_COMPLETE) {
@@ -414,6 +416,32 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     body.append(s);
   }
 
+  // The fifth test: a separate full-width card directly under the 2x2 grid (the grid stays the physical quad positions).
+  function combinedCard(v) {
+    const c = v.caps, cb = v.combined;
+    const card = el('div', 'dg-card dg-combined'); card.id = 'bt-combined-card';
+    const done = c.combined.done || !!cb.result;
+    const eligible = cb.eligibility.ok && !done;
+    card.dataset.combined = done ? 'done' : eligible ? 'eligible' : 'locked';
+    card.classList.add(done ? (cb.result && cb.result.status === 'inspection-recommended' ? 'dg-st-inspect' : 'dg-st-completed') : eligible ? 'dg-st-eligible' : 'dg-st-not-run');
+    card.append(el('h3', '', COMBINED_TITLE));
+    if (done) {
+      card.append(el('p', '', cb.result ? cb.result.headline : 'The combined confirmation was run. Its result is shown below.'));
+      if (cb.result) card.append(el('p', 'hint', cb.result.summary));
+      return card;
+    }
+    if (!eligible) {
+      const p = el('p', '', COMBINED_LOCKED_TEXT); p.id = 'bt-combined-locked'; card.append(p);
+      if (c.completedMotors.length >= 4 && cb.eligibility.reasons.length) { const ul = el('ul', 'hint'); for (const r of cb.eligibility.reasons) ul.append(el('li', '', r)); card.append(ul); }
+    } else {
+      card.append(statusEl({ cls: 'unk', title: 'All four motors will spin together', detail: `Propellers must be removed. All four motors get the same command, at most external ${MOTOR.cap}, for a few seconds. Stop & zero stays available throughout.` }));
+      const bad = c.combined.interlocks.filter((i) => !i.ok);
+      if (bad.length) { const ul = el('ul'); ul.id = 'bt-combined-interlocks'; for (const i of bad) ul.append(el('li', '', i.why)); card.append(el('p', '', 'The combined run is locked because:'), ul); }
+    }
+    card.append(holdControl({ label: 'Hold to run all four motors', ms: BENCH_TIMINGS.holdStartMs, id: 'hold-combined', disabled: !(eligible && c.combined.interlocksOk), onComplete: (ms) => controller.startCombined(ms) }));
+    return card;
+  }
+
   function motorCells(c) {
     return [0, 1, 2, 3].map((m) => ({ motor: m, position: EXPECTED_POSITIONS[m], state: c.completedMotors.includes(m) ? 'passed' : 'waiting', text: c.completedMotors.includes(m) ? 'Tested' : 'Not tested' }));
   }
@@ -423,6 +451,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     const s = section('Choose a motor to test', 'bt-sec-ready', 'sweep');
     s.append(el('p', '', `Tested motors: ${c.completedMotors.length ? c.completedMotors.map((m) => m + 1).join(', ') : 'none yet'}. Outputs stay at 1000 until you start a sweep. The positions shown are the default quad-X order; the mixer is not read from the flight controller, so confirm the motor by eye.`));
     s.append(quadPicker({ cells: motorCells(c), selected: c.selectedMotor, onPick: (m) => controller.selectMotor(m) }));
+    s.append(combinedCard(v));
     if (c.selectedMotor !== null) {
       s.append(el('p', '', `You are about to test motor ${c.selectedMotor + 1} (${EXPECTED_POSITIONS[c.selectedMotor]}).`));
       const a = el('div', 'dg-actions');
@@ -443,12 +472,13 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
 
   function drawRunning(v) {
     const c = v.caps;
-    const s = section(`Motor ${c.selectedMotor + 1} running (${EXPECTED_POSITIONS[c.selectedMotor]})`, 'bt-sec-run', 'sweep');
+    const all = c.combined.active;
+    const s = section(all ? 'All four motors running (combined confirmation)' : `Motor ${c.selectedMotor + 1} running (${EXPECTED_POSITIONS[c.selectedMotor]})`, 'bt-sec-run', 'sweep');
     const big = el('p', 'dg-bigread'); big.id = 'rd-big'; big.setAttribute('role', 'status'); big.setAttribute('aria-live', 'off'); refs.live['rd-big'] = big; s.append(big);
     const prog = el('progress', 'dg-live-bar'); prog.id = 'rd-progress'; prog.max = MOTOR.cap - MOTOR.stopValue; prog.value = 0; prog.setAttribute('aria-label', 'Output command between stop and the cap'); refs.live['rd-progress'] = prog; s.append(prog);
-    s.append(quadPicker({ cells: motorCells(c).map((x, m) => (m === c.selectedMotor ? { ...x, state: 'checking', text: 'Running' } : x)), selected: c.selectedMotor, onPick: null }));
+    s.append(quadPicker({ cells: motorCells(c).map((x, m) => (all || m === c.selectedMotor ? { ...x, state: 'checking', text: 'Running' } : x)), selected: all ? null : c.selectedMotor, onPick: null }));
     const dl = el('dl', 'dg-readout');
-    for (const [k, id] of [['Phase', 'rd-phase'], ['Output command', 'rd-output'], ['RPM (this motor)', 'rd-rpm'], ['Telemetry age', 'rd-age'], ['Elapsed', 'rd-elapsed']]) {
+    for (const [k, id] of [['Phase', 'rd-phase'], ['Output command', 'rd-output'], [all ? 'RPM (all four)' : 'RPM (this motor)', 'rd-rpm'], ['Telemetry age', 'rd-age'], ['Elapsed', 'rd-elapsed']]) {
       const dt = el('dt', '', k); const dd = el('dd', '', '-'); dd.id = id; refs.live[id] = dd; dl.append(dt, dd);
     }
     s.append(dl);
@@ -494,12 +524,14 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
     const c = v.caps;
     if (L['rd-phase'] && v.sweep) {
       const m = v.sweep.motor;
-      const tel = v.telemetry && v.telemetry.motors[m];
+      const all = v.sweep.combined === true;
+      const tel = !all && v.telemetry && v.telemetry.motors[m];
+      const allRpm = all && v.telemetry ? v.telemetry.motors.map((x) => x.rpm).join(' / ') : null;
       L['rd-phase'].textContent = v.sweep.phase === 'ramp' ? 'searching' : v.sweep.phase === 'validate' ? 'confirming rotation' : v.sweep.phase;
       L['rd-output'].textContent = String(v.sweep.output);
-      if (L['rd-big']) L['rd-big'].textContent = `Motor ${m + 1}: command ${v.sweep.output}, ${tel ? tel.rpm + ' RPM' : 'RPM unavailable'}`;
+      if (L['rd-big']) L['rd-big'].textContent = all ? `All four motors: command ${v.sweep.output}, ${allRpm ? allRpm + ' RPM' : 'RPM unavailable'}` : `Motor ${m + 1}: command ${v.sweep.output}, ${tel ? tel.rpm + ' RPM' : 'RPM unavailable'}`;
       if (L['rd-progress']) L['rd-progress'].value = Math.max(0, v.sweep.output - MOTOR.stopValue);
-      L['rd-rpm'].textContent = tel ? String(tel.rpm) : 'unavailable';
+      L['rd-rpm'].textContent = all ? (allRpm || 'unavailable') : tel ? String(tel.rpm) : 'unavailable';
       L['rd-age'].textContent = v.telemetryAgeMs === null ? 'none' : `${v.telemetryAgeMs} ms`;
       L['rd-elapsed'].textContent = `${(v.sweep.elapsedMs / 1000).toFixed(1)} s`;
       L['rd-adv'].textContent = JSON.stringify({ rpmAll: v.telemetry ? v.telemetry.motors.map((x) => x.rpm) : null, dshotInvalidPct_centi: v.telemetry ? v.telemetry.motors.map((x) => x.invalidPct_centi) : null, tempsC: v.telemetry ? v.telemetry.motors.map((x) => x.temperatureC) : null, voltage_cV: v.voltage_cV, armed: v.armed, commanded: v.commanded, startThreshold: v.sweep.threshold }, null, 1);
@@ -514,6 +546,7 @@ export function mountBench(root, { controller, onConnectMock, onConnectReal, rea
       c.proof.attempts >= BENCH_TIMINGS.stopMinAttempts, c.batteryDeclared, c.batteryRemoved, c.transportAvailable, c.fault && c.fault.reason, v.notes.markerError, v.notes.proofFailed, v.notes.error, v.notes.message, c.completedMotors, v.analysis && [v.analysis.sweeps, v.analysis.collecting],
       c.policy && [c.policy.nonzeroOk, c.policy.stopValidationOk, c.policy.blockers.length], v.readiness && v.readiness.counts, v.attestations, c.canConfirmNoRotation, c.needsPosition, c.canReset, c.canCompleteRecovery, c.markerAvailable, !!v.snapshot,
       c.flow, canLeaveNow(c), notice(), c.batteryState, c.dshot.status, c.usbStopValidated, c.poweredStopValidated, c.canPoweredStopValidation, c.canFinishPoweredStopValidation, c.markerClearFailed, c.markerClearPending, c.canRetryMarkerClear,
+      c.combined && [c.combined.active, c.combined.done, c.combined.interlocksOk, c.purpose], v.combined && [v.combined.eligibility.ok, v.combined.result && v.combined.result.status],
       c.esc && [c.esc.phase, c.esc.scanned, c.esc.acknowledged, c.esc.identityOk, c.esc.canAcknowledge], v.escScan && [v.escScan.phase, v.escScan.channels.map((x) => x.state)]]);
   }
 

@@ -12,7 +12,7 @@ for (const [name, id] of Object.entries(ALLOWED_REQUESTS)) assert.deepEqual([...
 pass(`all ${Object.keys(ALLOWED_REQUESTS).length} allowlisted requests encode as payload-free MSP v1 reads`);
 const forbidden = { MSP_SET_MOTOR: 214, MSP_SET_4WAY_IF_or_4WAY: 245, MSP_DATAFLASH_ERASE: 72, MSP_DATAFLASH_READ: 71, MSP_SET_RAW_RC: 200, MSP_EEPROM_WRITE: 250, MSP_SET_PASSTHROUGH: 245, MSP_REBOOT: 68, MSP_SET_BLACKBOX_CONFIG: 81, MSP_SET_ADVANCED_CONFIG: 91 };
 for (const [n, id] of Object.entries(forbidden)) { throwsCode(() => encodeRequest(id), 'not-allowlisted'); throwsCode(() => encodeRequest(n), 'not-allowlisted'); }
-for (const id of [0, 5, 100, 255, -1, 1.5, NaN, '1']) throwsCode(() => encodeRequest(id), 'not-allowlisted');
+for (const id of [0, 6, 45, 100, 255, -1, 1.5, NaN, '1']) throwsCode(() => encodeRequest(id), 'not-allowlisted');
 pass('MSP_SET_MOTOR (214), 4-way (245), dataflash erase/read, reboot, EEPROM write and every other id are not encodable');
 assert.ok(!Object.keys(ALLOWED_REQUESTS).some((k) => /SET|ERASE|WRITE|REBOOT|4WAY|PASSTHROUGH/.test(k)));
 assert.ok(!Object.values(ALLOWED_REQUESTS).includes(214) && !Object.values(ALLOWED_REQUESTS).includes(245) && !Object.values(ALLOWED_REQUESTS).includes(72));

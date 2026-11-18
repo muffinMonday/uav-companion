@@ -62,6 +62,7 @@ function freshCtx(extra = {}) {
     flow: null, // 'usb-stopval' | 'powered-stopval' | 'bench': which workflow this connection is in; only 'bench' can ever reach MOTOR_READY
     usbStopValidated: false, poweredStopValidated: false,
     dshot: freshDshot(), markerClear: freshMarkerClear(), esc: freshEsc(),
+    combined: false, combinedSeen: [false, false, false, false], combinedDone: false, // the combined four-motor confirmation (identical commands to all four, same cap)
     ...extra,
   };
 }
@@ -86,7 +87,8 @@ export function createMachine(opts = {}) {
   // ---- fault: the only way into LOCKED_FAULT. Expires everything that must not survive a fault.
   function enterFault(reason, transportAvailable, at) {
     const fromPowered = isPowered(state, ctx) || state === S.RUNNING;
-    ctx.fault = { reason, at, transportAvailable: !!transportAvailable, fromState: state, fromPowered };
+    ctx.fault = { reason, at, transportAvailable: !!transportAvailable, fromState: state, fromPowered, combined: ctx.combined === true };
+    ctx.combined = false; ctx.combinedSeen = [false, false, false, false];
     ctx.unlocked = false;
     ctx.checklist = { items: {}, finalHold: false };
     ctx.runAuthorized = false;
@@ -109,12 +111,18 @@ export function createMachine(opts = {}) {
   function motorCommandPermission(req) {
     const deny = (reason) => ({ ok: false, maxValue: 0, reason });
     try {
-      if (!req || (req.kind !== 'stop' && req.kind !== 'output')) return deny('unknown request');
+      if (!req || (req.kind !== 'stop' && req.kind !== 'output' && req.kind !== 'output-all')) return deny('unknown request');
       if (!STOP_CAPABLE.has(state)) return deny(`no motor output in ${state}`);
       if (req.kind === 'stop' || req.value === MOTOR.stopValue) return { ok: true, maxValue: MOTOR.stopValue, reason: '' };
-      // nonzero: only RUNNING, only the selected motor, only under an authorized run
+      // nonzero: only RUNNING, only the selected motor (or, in the combined confirmation, all four with one identical value), only under an authorized run
       if (state !== S.RUNNING || ctx.flow !== 'bench') return deny(`nonzero output is not permitted in ${state}`);
       if (ctx.runAuthorized !== true || ctx.fault !== null || ctx.transportAvailable !== true) return deny('the run is not authorized');
+      if (req.kind === 'output-all') {
+        if (ctx.combined !== true) return deny('the combined confirmation is not active');
+        if (!Number.isInteger(req.value) || req.value < MOTOR.startValue || req.value > MOTOR.cap) return deny('value outside the permitted range');
+        return { ok: true, maxValue: MOTOR.cap, reason: '' };
+      }
+      if (ctx.combined === true) return deny('only the combined command may be sent during the combined confirmation');
       if (!Number.isInteger(req.motor) || req.motor !== ctx.selectedMotor) return deny('only the selected motor may be commanded');
       if (!Number.isInteger(req.value) || req.value < MOTOR.startValue || req.value > MOTOR.cap) return deny('value outside the permitted range');
       return { ok: true, maxValue: MOTOR.cap, reason: '' };
@@ -155,10 +163,18 @@ export function createMachine(opts = {}) {
     if (p.armed === true) return fail('arming-state-changed');
     if (p.armed !== false || !Number.isFinite(p.armedAt) || now - p.armedAt > n.statusStaleMs) return fail('arming-state-unavailable');
     if (state === S.RUNNING) {
-      for (let i = 0; i < rpm.length; i++) {
-        if (i !== ctx.selectedMotor && rpm[i] !== 0) return fail('peer-motor-rpm');
+      if (ctx.combined === true) { // all four are commanded together: no peer rule; a motor that was turning must keep turning; every motor stays under the ceiling
+        for (let i = 0; i < rpm.length; i++) {
+          if (rpm[i] > 0) ctx.combinedSeen[i] = true;
+          else if (ctx.combinedSeen[i]) return fail('combined-motor-stopped');
+          if (rpm[i] > n.rpmCeiling) return fail('rpm-above-plausibility-ceiling');
+        }
+      } else {
+        for (let i = 0; i < rpm.length; i++) {
+          if (i !== ctx.selectedMotor && rpm[i] !== 0) return fail('peer-motor-rpm');
+        }
+        if (rpm[ctx.selectedMotor] > n.rpmCeiling) return fail('rpm-above-plausibility-ceiling');
       }
-      if (rpm[ctx.selectedMotor] > n.rpmCeiling) return fail('rpm-above-plausibility-ceiling');
       // statistics lost or excessive during a real run: abort to the stop and recovery path (never a motor-health verdict)
       if (ctx.dshot.status === 'unavailable') return fail('dshot-statistics-unavailable');
       if (ctx.dshot.status === 'excessive') return fail('dshot-errors-excessive');
@@ -297,16 +313,26 @@ export function createMachine(opts = {}) {
         const bad = startInterlocks(ctx, ctx.facts, p.now).filter((c) => !c.ok);
         return bad.length ? `interlock: ${bad.map((b) => b.id).join(', ')}` : true;
       }, (p) => { ctx.runAuthorized = true; ctx.runResult = null; ctx.purpose = 'run'; ctx.runStartedAt = p.now; return [{ type: 'start-sweep' }]; }),
+      // The combined confirmation: only after all four individual sweeps, a fresh hold, and every start interlock (the offer's eligibility is the controller's input; the interlocks are the machine's).
+      START_COMBINED_HOLD_COMPLETE: T(S.RUNNING, (p) => {
+        if (!(p.holdMs >= n.holdStartMs)) return 'the start hold was too short';
+        if (ctx.flow !== 'bench' || ctx.combinedDone === true) return 'the combined confirmation is not available';
+        if (p.eligible !== true) return 'the individual results do not make the combined confirmation eligible';
+        const bad = startInterlocks(ctx, ctx.facts, p.now, { combined: true }).filter((c) => !c.ok);
+        return bad.length ? `interlock: ${bad.map((b) => b.id).join(', ')}` : true;
+      }, (p) => { ctx.combined = true; ctx.combinedSeen = [false, false, false, false]; ctx.selectedMotor = null; ctx.targetConfirmed = null; ctx.runAuthorized = true; ctx.runResult = null; ctx.purpose = 'combined'; ctx.runStartedAt = p.now; return [{ type: 'start-sweep' }]; }),
       FINISH_BENCH: T(S.VERIFYING_STOP, null, () => { ctx.purpose = 'finish'; ctx.stop = freshStop(); ctx.selectedMotor = null; ctx.targetConfirmed = null; return [{ type: 'start-stop-proof' }]; }),
     },
     [S.RUNNING]: {
-      RUN_COMPLETE: T(S.VERIFYING_STOP, (p) => (p.result === 'completed' ? true : 'only a completed run proceeds to stop verification'), (p) => { ctx.runAuthorized = false; ctx.runResult = p.result; ctx.stop = freshStop(); ctx.positionOk = false; ctx.purpose = 'run'; return [{ type: 'start-stop-proof' }]; }),
+      RUN_COMPLETE: T(S.VERIFYING_STOP, (p) => (p.result === 'completed' ? true : 'only a completed run proceeds to stop verification'), (p) => { ctx.runAuthorized = false; ctx.runResult = p.result; ctx.stop = freshStop(); ctx.positionOk = false; ctx.purpose = ctx.combined === true ? 'combined' : 'run'; return [{ type: 'start-stop-proof' }]; }),
       RUN_ABORTED: T(S.LOCKED_FAULT, null, (p) => enterFault(p.reason || 'run-aborted', true, p.now)),
     },
     [S.VERIFYING_STOP]: {
       USER_CONFIRMS_NO_ROTATION: T(SELF, () => (proofParts(ctx) ? true : 'stop proof parts 1 to 3 are not complete'), () => { ctx.stop.userNoRotation = true; return []; }),
       POSITION_REPORTED: T(S.MOTOR_READY, (p) => (ctx.purpose === 'run' && proofComplete(ctx) && typeof p.physical === 'string' && p.physical === EXPECTED_POSITIONS[ctx.selectedMotor] ? true : 'position unconfirmed or mismatched'),
         (p) => { ctx.completedMotors = [...ctx.completedMotors, ctx.selectedMotor]; ctx.lastStopProofAt = p.now; ctx.selectedMotor = null; ctx.targetConfirmed = null; ctx.stop = freshStop(); return []; }),
+      COMBINED_STOP_DONE: T(S.MOTOR_READY, () => (ctx.purpose === 'combined' && proofComplete(ctx) ? true : 'the combined stop proof is not complete'),
+        (p) => { ctx.combinedDone = true; ctx.combined = false; ctx.combinedSeen = [false, false, false, false]; ctx.lastStopProofAt = p.now; ctx.stop = freshStop(); ctx.purpose = null; return []; }),
       FINISH_STOP_DONE: T(S.BENCH_COMPLETE, () => (ctx.purpose === 'finish' && proofComplete(ctx) ? true : 'the final stop proof is not complete'), (p) => { ctx.lastStopProofAt = p.now; ctx.batteryRemoved = false; return []; }),
     },
     [S.LOCKED_FAULT]: {
@@ -452,7 +478,7 @@ export function createMachine(opts = {}) {
     if (g !== true) {
       let fx = [];
       // a refused start is not a fault; a refused powered-state step that the controller should never have attempted is
-      if (FAULT_ON_INVALID.has(state) && !['START_HOLD_COMPLETE', 'CONFIRM_TARGET', 'SELECT_MOTOR', 'CHECKLIST_ITEM', 'FINAL_HOLD_DONE', 'CHECKLIST_COMPLETE', 'USER_CONFIRMS_NO_ROTATION', 'POSITION_REPORTED', 'SAFE_STATE_DONE', 'STOP_VALIDATION_DONE', 'ZERO_VERIFIED', 'ESC_READY', 'FINISH_STOP_DONE', 'RECONNECTED', 'RUN_COMPLETE', 'ZERO_VERIFIED_STOPVAL', 'POWERED_STOP_VALIDATION_DONE', 'RESTORE_COMPLETE', 'ESC_ACK', 'FOURWAY_FINISHED'].includes(event)) {
+      if (FAULT_ON_INVALID.has(state) && !['START_HOLD_COMPLETE', 'CONFIRM_TARGET', 'SELECT_MOTOR', 'CHECKLIST_ITEM', 'FINAL_HOLD_DONE', 'CHECKLIST_COMPLETE', 'USER_CONFIRMS_NO_ROTATION', 'POSITION_REPORTED', 'SAFE_STATE_DONE', 'STOP_VALIDATION_DONE', 'ZERO_VERIFIED', 'ESC_READY', 'FINISH_STOP_DONE', 'RECONNECTED', 'RUN_COMPLETE', 'START_COMBINED_HOLD_COMPLETE', 'COMBINED_STOP_DONE', 'ZERO_VERIFIED_STOPVAL', 'POWERED_STOP_VALIDATION_DONE', 'RESTORE_COMPLETE', 'ESC_ACK', 'FOURWAY_FINISHED'].includes(event)) {
         fx = enterFault(`guard:${event}`, ctx.transportAvailable, at);
       } else if (event === 'POSITION_REPORTED' && state === S.VERIFYING_STOP && proofComplete(ctx) && ctx.purpose === 'run') {
         fx = enterFault('motor-position-mismatch', ctx.transportAvailable, at); // the wrong motor moved or the answer was none: lock
@@ -480,6 +506,7 @@ export function createMachine(opts = {}) {
     const batteryState = !known || st === S.UNCLEAN_EXIT_RECOVERY || st === S.LOCKED_FAULT || ((st === S.BATTERY_REMOVAL_RECOVERY || st === S.BENCH_COMPLETE) && !ctx.batteryRemoved) ? 'unknown'
       : ctx.batteryRemoved ? 'removed-confirmed' : poweredNow || st === S.RUNNING ? 'declared-connected' : 'attested-disconnected';
     const interlocks = st === S.MOTOR_READY ? startInterlocks(ctx, ctx.facts, now) : [];
+    const combinedInterlocks = st === S.MOTOR_READY ? startInterlocks(ctx, ctx.facts, now, { combined: true }) : [];
     const needBatteryNow = st === S.UNCLEAN_EXIT_RECOVERY || st === S.LOCKED_FAULT || st === S.BATTERY_REMOVAL_RECOVERY || !known;
     return {
       state: st, mode: ctx.mode, unlocked: ctx.unlocked, locked,
@@ -516,9 +543,11 @@ export function createMachine(opts = {}) {
       interlocks, canStart: st === S.MOTOR_READY && interlocks.length > 0 && interlocks.every((c) => c.ok),
       canFinish: st === S.MOTOR_READY,
       completedMotors: ctx.completedMotors.slice(),
+      combined: { active: ctx.combined === true, done: ctx.combinedDone === true, interlocks: combinedInterlocks, interlocksOk: combinedInterlocks.length > 0 && combinedInterlocks.every((c) => c.ok), canFinishStop: st === S.VERIFYING_STOP && ctx.purpose === 'combined' && proofComplete(ctx) },
       proof: { ...ctx.stop, partsDone: proofParts(ctx), complete: proofComplete(ctx) },
       canConfirmNoRotation: (st === S.VERIFYING_STOP || st === S.STOP_VALIDATION_ONLY || st === S.POWERED_STOP_VALIDATION || (ctx.transportAvailable && (st === S.LOCKED_FAULT || st === S.BATTERY_REMOVAL_RECOVERY))) && proofParts(ctx) && !ctx.stop.userNoRotation,
       needsPosition: st === S.VERIFYING_STOP && ctx.purpose === 'run' && proofComplete(ctx),
+      purpose: ctx.purpose,
       canFinishStop: st === S.VERIFYING_STOP && ctx.purpose === 'finish' && proofComplete(ctx),
       canBeginBatteryRemoval: st === S.LOCKED_FAULT,
       canConfirmBatteryRemoved: (st === S.BATTERY_REMOVAL_RECOVERY || st === S.UNCLEAN_EXIT_RECOVERY || (st === S.BENCH_COMPLETE && proofComplete(ctx))) && !ctx.batteryRemoved,
