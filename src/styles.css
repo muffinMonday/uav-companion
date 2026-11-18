@@ -170,12 +170,14 @@ textarea{resize:vertical;min-height:60px}
 .is-placing,.is-placing .leaflet-interactive{cursor:crosshair!important}
 .is-editing .leaflet-grab{cursor:default}
 
-/* popups: the marker window and the point check share one card style, in the current theme */
-.leaflet-popup-content-wrapper{background:var(--surface);color:var(--fg);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);padding:0}
+/* popups: the marker window and the point check share one card style, in the current theme.
+   Selectors carry the .leaflet-container prefix on purpose: in the production build Leaflet's own stylesheet is linked AFTER this one and
+   its single-class rules (white background, #333 text, grey close button) would win at equal specificity, leaving a light window in dark mode. */
+.leaflet-container .leaflet-popup-content-wrapper{background:var(--surface);color:var(--fg);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);padding:0}
 .leaflet-popup-content{margin:0!important}
-.leaflet-popup-tip{background:var(--surface);box-shadow:none}
-.leaflet-container a.leaflet-popup-close-button{top:10px;right:10px;width:28px;height:28px;border-radius:50%;font:20px/26px var(--font);color:var(--muted);text-align:center}
-@media (hover:hover){.leaflet-container a.leaflet-popup-close-button:hover{background:var(--surface-2);color:var(--fg)}}
+.leaflet-container .leaflet-popup-tip{background:var(--surface);box-shadow:none}
+.leaflet-container .leaflet-popup a.leaflet-popup-close-button{top:10px;right:10px;width:28px;height:28px;border-radius:50%;font:20px/26px var(--font);color:var(--muted);text-align:center}
+@media (hover:hover){.leaflet-container .leaflet-popup a.leaflet-popup-close-button:hover{background:var(--surface-2);color:var(--fg)}}
 .pop{padding:16px 16px 14px;font-size:var(--fs-small);line-height:1.4}
 .pop-head{display:flex;gap:12px;align-items:flex-start;padding-right:26px}
 .pop-badge{flex:none;line-height:0;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}
@@ -467,8 +469,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 /* ---------- marker windows as frosted glass: --pop-alpha (0.5 to 1) is set from the slider in Map Configs ---------- */
 :root{--pop-alpha:.8}
-.leaflet-popup-content-wrapper{background:color-mix(in srgb,var(--surface) calc(var(--pop-alpha) * 100%),transparent);-webkit-backdrop-filter:blur(14px) saturate(1.25);backdrop-filter:blur(14px) saturate(1.25)}
-.leaflet-popup-tip{background:color-mix(in srgb,var(--surface) calc(var(--pop-alpha) * 100%),transparent)}
+.leaflet-container .leaflet-popup-content-wrapper{background:color-mix(in srgb,var(--surface) calc(var(--pop-alpha) * 100%),transparent);-webkit-backdrop-filter:blur(14px) saturate(1.25);backdrop-filter:blur(14px) saturate(1.25)}
+.leaflet-container .leaflet-popup-tip{background:color-mix(in srgb,var(--surface) calc(var(--pop-alpha) * 100%),transparent)}
 .pop .status,.pop .stat,.pop .note,.pop .dist-row,.pop .dist-empty{background-color:color-mix(in srgb,var(--surface-2) calc(var(--pop-alpha) * 100%),transparent)}
 .pop .status.ok{background-color:color-mix(in srgb,var(--ok-bg) calc(var(--pop-alpha) * 100%),transparent)}
 .pop .status.no,.pop .dist-row.over{background-color:color-mix(in srgb,var(--no-bg) calc(var(--pop-alpha) * 100%),transparent)}
