@@ -102,3 +102,7 @@ Synthetic and mocked only. Test files: `tests/bench-analysis-unit.mjs` (A), `tes
 | H15 | Any byte written while 4-way is active; Stop & zero pressed during the scan | Nothing written (`mspWhileFourWay` empty); Stop abandons the scan, leaves 4-way, then proves the stop; no delivery claimed | `bench-fourway-unit`, `fourway-static-unit` | Real link timing |
 | H16 | Erase, write, configuration or unknown 4-way command | `buildRequest` throws for every non-allowlisted byte; static scan | `fourway-codec-unit`, `fourway-static-unit` | none |
 | H17 | A different flight controller answers after the scan | `different-flight-controller-after-scan` fault | `bench-fourway-unit` | Real swap |
+
+
+## Addendum 2026-11-19: combined four-motor confirmation (H15)
+| H15 | USB loss, visibility loss, arming, stale or missing telemetry, read-back mismatch, a motor stopping, DShot excessive, over-temperature, voltage, Stop & zero, internal error during the combined run | Each reaches `LOCKED_FAULT` with external 1000 requested and no further output permission | `tests/bench-combined-unit.mjs` (fault cases), `tests/bench-machine-unit.mjs` (transition coverage) |

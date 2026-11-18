@@ -53,3 +53,10 @@ Patterns learned from corrections. One line each: what went wrong, the rule that
 - Collect analysis samples before the tick's own output decision, and expect a first sample at command 1000 (before any output was sent); assertions on commanded values must allow it.
 - The static wording test also rejects "faulty motor" (and "diagnosis") in any bench string; the one sentence that states what a result does NOT mean is exempt by exact match in `tests/bench-safety-unit.mjs`.
 - When a machine ends a sweep at the same instant telemetry goes stale, the collector never sees the gap: record the stale stretch from the last frame when the sweep ends.
+
+## 2026-11-19 (aircraft electronics profile, combined confirmation)
+- Editing `src/` or its CSS while a browser suite runs against a Vite dev server hot-reloads the page under test and shows up as a state timeout (`fourway-ui` waited 60 s for `POST_SCAN_RESTORE`). Do not edit source while a suite runs; rerun the suite alone when it happened.
+- A multi-line node patch script pasted into a shell heredoc failed to parse (unmatched quote) twice: write the script with the Write tool and run it with node. Scripted `replace` of a string that appears nowhere throws only because the helper checks; keep that check.
+- A nested section inside the result card must not reuse the `.eyebrow` class: browser suites select `#bt-sec-result .eyebrow` and hit a strict-mode violation. Nested blocks use an `h3.dg-block-title`.
+- A "difference observed" peer result can be only a start-threshold difference (the synthetic aircraft has four different start values): eligibility for the combined run blocks on RPM or DShot differences, not on that.
+- The static wording test rejects "guarantee" and "diagnosed" in any bench string and "reflash" (the word "bootloader") outside `esc-ui.js`, `electronics.js` and `electronics-ui.js`.

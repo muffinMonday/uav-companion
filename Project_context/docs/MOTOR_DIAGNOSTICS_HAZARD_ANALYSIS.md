@@ -36,3 +36,7 @@ Physical hazards that software cannot remove: the battery plug is the only guara
 | Corrections for the four review findings (2026-11-17) | Implemented, mock-tested and deployed to the isolated lab (gh-pages `d6567c4`); no real-hardware test is authorized until the owner reviews the corrected build. |
 | Every *HW* test defined with a supervised procedure | Proposed in the [Phase 3 handoff](handoffs/active/MOTOR_DIAGNOSTICS_PHASE3_HANDOFF.md) section 8; not executed, not owner-approved |
 | Owner authorization for Phase 3 | Given 2026-11-17 for a **developer-only bench prototype validated with synthetic and mocked transports only**, including an isolated live lab route with its own flag. **Not given:** any real motor command, so the *HW* rows stay unverified |
+
+
+## Addendum 2026-11-19: combined four-motor confirmation
+| H15 | Four motors turn together (more load on the bench, one command to all) | Peer difference, a motor stopping, a DShot or voltage or temperature limit, telemetry loss, USB loss, visibility loss, arming change | Same cap (external 1100), identical value only (machine permission `output-all`, boundary `sendOutputAll`, frame builder), all start interlocks plus four-individual-complete and all-stopped-proven, fresh press-and-hold, abort through the existing fail-closed path, full stop proof | `tests/bench-combined-unit.mjs`, `tests/bench-machine-unit.mjs`, browser `combined-ui` | Provisional thresholds; one supervised real-hardware check still owed |

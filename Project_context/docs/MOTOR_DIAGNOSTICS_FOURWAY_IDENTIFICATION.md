@@ -45,3 +45,7 @@ H13 (4-way mode traps the FC): FC never leaves 4-way (exit no reply, bad CRC, ne
 
 ## 7. Open items (owner)
 Supervised hardware check of section 2; whether to ship a reboot-based design; BLHeli_32 identification (needs a reliable signal); owner decision before `VITE_BENCH_FOURWAY=1` is ever used for a real build.
+
+
+## 8. Update 2026-11-19: aircraft electronics profile
+The scan result now feeds the `aircraftElectronics.escs` block of a result (see LIVE_ANALYSIS section 10). Per-channel live states are Waiting, Reading, Identified, Unavailable (a per-channel progress callback in `identifyAll`; no new byte is written). **BLHeli_32 remains unidentified:** an ARM bootloader that is not AM32 gets no settings read, so family and version are reported as Unsupported with the MCU and bootloader mode that the init reply gives. Unblocking it needs a verified description of the BLHeli_32 settings area and a supervised bench check; the allowlist and read plan would then grow by exactly one DeviceRead per channel, inside the same boundary. Unchanged: the 8-command allowlist, runtime and static refusal of every mutating command, no serial number retention, `VITE_BENCH_FOURWAY` default off for USB aircraft.
