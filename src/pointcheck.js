@@ -1,20 +1,17 @@
 // F4: what does the data say about this point? Reads the same PMTiles the map draws, at the highest zoom.
 import { zonesInArchive } from './zones.js';
 import { regionUrl } from './config.js';
-import { sharedArchive } from './pmtiles-source.js';
+import { withArchive } from './pmtiles-source.js';
 import { el, statusEl, disclaimer } from './cards.js';
 import { zoneExplanation } from './legends.js';
 
-const archives = new Map();
 const boundaries = new Map();
 let regions = [];
 
 export function initPointCheck(list) { regions = list; }
 
-const archive = (r) => {
-  if (!archives.has(r.id)) archives.set(r.id, sharedArchive(regionUrl(r, r.file)));
-  return archives.get(r.id);
-};
+// The archive is held for the duration of the read, so it cannot leave memory underneath it; an off-screen one is releasable afterwards.
+const zonesAt = (r, lat, lon) => withArchive(regionUrl(r, r.file), (arc) => zonesInArchive(arc, r.maxZoom, lat, lon));
 
 /** Metres from a point to the nearest edge of a set of polygons ([[ring, ...], ...] of [lon, lat]); good enough for a margin of a few km. */
 function metresToPolygons(polys, lat, lon) {
@@ -74,7 +71,7 @@ export async function checkPoint(lat, lon) {
   for (const group of [near.filter(r => !selected(r)), near.filter(selected)]) {
     for (const r of group) {
       try {
-        const zones = await zonesInArchive(archive(r), r.maxZoom, lat, lon);
+        const zones = await zonesAt(r, lat, lon);
         if (zones.length) return { status: 'inside', region: r, zones };
       } catch (e) {
         if (!selected(r)) throw e;

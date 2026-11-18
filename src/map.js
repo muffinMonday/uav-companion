@@ -1,7 +1,7 @@
 import L from 'leaflet';
 import { leafletLayer, PolygonSymbolizer } from 'protomaps-leaflet';
 import { regionUrl, MAX_VIEW_BOUNDS } from './config.js';
-import { sharedArchive } from './pmtiles-source.js';
+import { retainArchive, releaseArchive } from './pmtiles-source.js';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -68,14 +68,15 @@ export function createMap(initial = {}) {
   return { map, switchBase, setScaleUnits };
 }
 
-/** Loads each region's PMTiles layer when it enters the viewport. */
+/** A region's rendering layer exists only while the region meets the viewport. Its archive is held in memory meanwhile and released
+ *  (evicted after a grace period; the Cache API copy stays) once the region has left the view. */
 export function createZones(map, regions) {
   const layers = new Map();
   let visible = true;
   let opacity = 0.45;
 
   const make = (r) => leafletLayer({
-    url: sharedArchive(regionUrl(r, r.file)),
+    url: retainArchive(regionUrl(r, r.file)),
     maxZoom: 19,
     maxDataZoom: r.maxZoom, // tiles stop here; deeper map zooms overzoom them (library default is 15)
     // Opaque fill; transparency is applied to the whole layer so adjacent cells do not darken at shared edges.
@@ -87,11 +88,20 @@ export function createZones(map, regions) {
     attribution: `Zones: ${r.source.authority}`,
   });
 
+  const detach = (r) => {
+    const layer = layers.get(r.id);
+    if (!layer) return;
+    map.removeLayer(layer);
+    layers.delete(r.id);
+    releaseArchive(regionUrl(r, r.file));
+  };
+
   function sync() {
     if (!visible) return;
     const view = map.getBounds();
     for (const r of regions) {
-      if (layers.has(r.id) || !view.intersects(toLatLngBounds(r.bounds))) continue;
+      if (!view.intersects(toLatLngBounds(r.bounds))) { detach(r); continue; } // any overlap counts as visible
+      if (layers.has(r.id)) continue;
       const layer = make(r);
       layer.setOpacity(opacity);
       layer.addTo(map);
@@ -111,8 +121,8 @@ export function createZones(map, regions) {
     },
     setVisible(v) {
       visible = v;
-      if (v) { for (const l of layers.values()) l.addTo(map); sync(); }
-      else for (const l of layers.values()) map.removeLayer(l);
+      if (v) sync(); // only the regions meeting the current view
+      else for (const r of regions) detach(r);
     },
     setOpacity(v) {
       opacity = v;

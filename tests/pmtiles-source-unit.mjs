@@ -5,7 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { ROOT } from './lib.mjs';
-const { wholeFileArchive, sharedArchive } = await import(pathToFileURL(path.join(ROOT, 'src/pmtiles-source.js')).href);
+const { wholeFileArchive, sharedArchive, createArchiveRegistry } = await import(pathToFileURL(path.join(ROOT, 'src/pmtiles-source.js')).href);
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 
 const sha8 = (buf) => crypto.createHash('sha256').update(buf).digest('hex').slice(0, 8);
@@ -189,4 +189,85 @@ if (fs.existsSync(local)) {
   ok(h.tileType === 1 && h.minZoom === 3 && h.maxZoom === 14, 'header of the local Singapore archive reads through the source (MVT, zoom 3 to 14)');
 } else {
   console.log('SKIP  header check: no local Singapore archive in public/data/tiles');
+}
+
+// 12. memory lifecycle: a held archive stays, a released one leaves memory after the grace period, the Cache API copy stays,
+//     and coming back is served from the Cache API without the network
+{
+  const timers = []; // a manual clock: nothing fires until the test says so
+  const setTimer = (fn) => { const t = { fn, live: true }; timers.push(t); return t; };
+  const clearTimer = (t) => { t.live = false; };
+  const fire = () => { for (const t of timers.splice(0)) if (t.live) { t.live = false; t.fn(); } };
+  const caches = makeCaches();
+  const net = fakeFetch({ [urlA]: A, [urlB]: B });
+  const reg = createArchiveRegistry(deps({ fetch: net.f, caches }), { policy: { graceMs: 1 }, setTimer, clearTimer });
+  const read = (r) => r.source.getBytes(0, 10);
+
+  const ra = reg.retain(urlA);
+  await read(ra); await settle();
+  ok(reg.resident(urlA) && net.calls.length === 1 && caches.archive().has(urlA), 'A enters: held, resident, downloaded once, stored in the Cache API');
+  reg.release(urlA); fire();
+  ok(!reg.resident(urlA), 'A released and past the grace period: gone from the in-memory registry');
+  ok(caches.archive().has(urlA) && caches.index().size === 1, 'A: the Cache API copy and its index entry remain');
+  const ra2 = reg.retain(urlA);
+  const back = await read(ra2);
+  ok(net.calls.length === 1 && back.data.byteLength === 10 && Buffer.from(back.data).equals(Buffer.from(A.slice(0, 10))), 'A returns: restored from the Cache API, no second download, bytes correct');
+  ok(ra2 !== ra, 'A returns with a fresh reader (the old buffer is not kept)');
+
+  // rapid leave and re-enter cancels the pending eviction
+  reg.release(urlA);
+  const again = reg.retain(urlA);
+  fire();
+  ok(reg.resident(urlA) && again === ra2, 'leave then re-enter before the grace period: still resident, same reader');
+
+  // overlapping A and B; A leaves, only A is released
+  const rb = reg.retain(urlB); await read(rb);
+  ok(reg.residentCount() === 2, 'A and B both held and resident');
+  reg.release(urlA); reg.release(urlA); // the re-enter above took a second hold: both given back
+  fire();
+  ok(!reg.resident(urlA) && reg.resident(urlB), 'A leaves while B stays: only A is released');
+  reg.release(urlB); reg.release(urlB); fire();
+  ok(reg.residentCount() === 0, 'B released too: registry empty');
+  reg.release(urlB); // releasing what is not held changes nothing
+  ok(reg.residentCount() === 0, 'a stray release is harmless');
+}
+
+// 13. a point check holds its archive: no eviction underneath it, releasable afterwards
+{
+  const timers = [];
+  const setTimer = (fn) => { const t = { fn, live: true }; timers.push(t); return t; };
+  const clearTimer = (t) => { t.live = false; };
+  const fire = () => { for (const t of timers.splice(0)) if (t.live) { t.live = false; t.fn(); } };
+  const net = fakeFetch({ [urlA]: A });
+  const reg = createArchiveRegistry(deps({ fetch: net.f, caches: makeCaches() }), { policy: { graceMs: 1 }, setTimer, clearTimer });
+  // the map once held A and left; its eviction is pending when an off-screen point check arrives
+  reg.retain(urlA); reg.release(urlA);
+  let step;
+  const check = reg.with(urlA, async (r) => {
+    const first = await r.source.getBytes(0, 4);
+    step = 'mid';
+    fire(); // the pending timer fires while the check is still running
+    ok(reg.resident(urlA), 'off-screen point check: the archive cannot be evicted while it runs');
+    await new Promise((r2) => setTimeout(r2, 20));
+    const second = await r.source.getBytes(4, 4);
+    return first.data.byteLength + second.data.byteLength;
+  });
+  ok(await check === 8 && step === 'mid', 'off-screen point check acquired A and read it twice');
+  ok(reg.resident(urlA), 'after the check A is still in memory until the grace period passes');
+  fire();
+  ok(!reg.resident(urlA), 'after the check A is releasable and goes');
+  // a failing check still gives its hold back
+  await reg.with(urlA, async () => { throw new Error('boom'); }).catch(() => {});
+  fire();
+  ok(!reg.resident(urlA), 'a failed check releases its hold');
+  // an in-flight read defers eviction
+  const slow = fakeFetch({ [urlB]: B });
+  let gate; const held = new Promise((r) => { gate = r; });
+  const reg2 = createArchiveRegistry(deps({ fetch: async (u) => { await held; return slow.f(u); }, caches: null }), { policy: { graceMs: 1 }, setTimer, clearTimer });
+  const rb = reg2.retain(urlB);
+  const pending = rb.source.getBytes(0, 3); // download under way
+  reg2.release(urlB); fire();
+  ok(reg2.resident(urlB), 'in-flight read: eviction deferred');
+  gate(); await pending; fire();
+  ok(!reg2.resident(urlB), 'read finished: evicted on the next pass');
 }

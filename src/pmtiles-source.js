@@ -139,7 +139,7 @@ function makeLayer(deps) {
 }
 
 /** Reads one archive: memory, then the Cache API, then the network. Returns a PMTiles reader for `url`. */
-export function wholeFileArchive(url, deps = REAL) {
+export function wholeFileArchive(url, deps = REAL, hooks = {}) {
   const expected = HASHED.exec(new URL(url).pathname)?.[1] ?? null; // no hash in the name: never persisted
   const layer = layerFor(deps);
   let loading = null;
@@ -158,27 +158,87 @@ export function wholeFileArchive(url, deps = REAL) {
   const load = () => (loading ??= (async () => (await layer.read(url, expected)) ?? download())()
     .catch((e) => { loading = null; throw e; })); // a failed download is retried on the next read
 
-  return new PMTiles({
+  const reader = new PMTiles({
     getKey: () => url,
     async getBytes(offset, length) {
-      const bytes = await load();
-      return { data: bytes.slice(offset, offset + length) };
+      hooks.begin?.();
+      try {
+        const bytes = await load();
+        return { data: bytes.slice(offset, offset + length) };
+      } finally { hooks.end?.(); }
     },
   });
+  reader.drop = () => { loading = null; }; // forget the whole-file buffer; the next read comes back from the Cache API
+  return reader;
 }
 
-// One reader per archive URL for the whole page, so the map and the point check share one copy in memory.
-const shared = new Map();
-/** The page's reader for `url` (memoised). */
-export function sharedArchive(url) {
-  if (!shared.has(url)) shared.set(url, wholeFileArchive(url));
-  return shared.get(url);
+// Archives resident in memory, one reader per URL for the whole page (the map and the point check share one copy).
+// An entry leaves memory (the whole-file buffer is dropped; the Cache API copy is untouched) once nothing holds it and no
+// read is in flight, after a short grace period so panning back and forth over a border does not reload it.
+// A hold is a lease: the map keeps one per rendered region, a point check one for its duration.
+/** The grace period; mutable so tests can shorten it. */
+export const evictPolicy = { graceMs: 20000 };
+
+export function createArchiveRegistry(deps = REAL, { policy = evictPolicy, setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
+  const entries = new Map(); // url -> { reader, holds, busy, timer }
+  const entryFor = (url) => {
+    let e = entries.get(url);
+    if (!e) {
+      e = { holds: 0, busy: 0, timer: null };
+      e.reader = wholeFileArchive(url, deps, { begin: () => { e.busy++; }, end: () => { e.busy--; } });
+      entries.set(url, e);
+    }
+    return e;
+  };
+  const cancel = (e) => { if (e.timer !== null) { clearTimer(e.timer); e.timer = null; } };
+  const evictIfIdle = (url, e) => {
+    e.timer = null;
+    if (entries.get(url) !== e || e.holds > 0) return;
+    if (e.busy > 0) { e.timer = setTimer(() => evictIfIdle(url, e), policy.graceMs); return; } // a read is under way: try again later
+    entries.delete(url);
+    e.reader.drop();
+  };
+  const schedule = (url, e) => { cancel(e); e.timer = setTimer(() => evictIfIdle(url, e), policy.graceMs); };
+
+  return {
+    /** The reader for `url`, created on first use. Takes no hold. */
+    shared: (url) => entryFor(url).reader,
+    /** The reader for `url` with a hold on it; cancels a pending eviction. Pair with `release`. */
+    retain(url) { const e = entryFor(url); e.holds++; cancel(e); return e.reader; },
+    /** Gives one hold back. With none left the archive becomes eligible for eviction after the grace period. */
+    release(url) {
+      const e = entries.get(url);
+      if (!e || e.holds === 0) return;
+      if (--e.holds === 0) schedule(url, e);
+    },
+    /** Runs `fn(reader)` with a hold, so the archive cannot be evicted underneath it. */
+    async with(url, fn) {
+      const reader = this.retain(url);
+      try { return await fn(reader); } finally { this.release(url); }
+    },
+    resident: (url) => entries.has(url),
+    residentCount: () => entries.size,
+  };
 }
+
+const registry = createArchiveRegistry();
+/** The page's reader for `url` (memoised, no hold). */
+export const sharedArchive = (url) => registry.shared(url);
+/** The page's reader for `url`, held until `releaseArchive(url)`. */
+export const retainArchive = (url) => registry.retain(url);
+/** Gives back one hold taken with `retainArchive`; the archive leaves memory after the grace period if nothing else holds it. */
+export const releaseArchive = (url) => registry.release(url);
+/** Runs `fn(reader)` while holding the archive (a point check, for example). */
+export const withArchive = (url, fn) => registry.with(url, fn);
+/** Is the archive for `url` in memory? */
+export const archiveResident = (url) => registry.resident(url);
+/** Archives currently in memory. */
+export const residentArchives = () => registry.residentCount();
 
 /** Current cache use for the console and tests: archives kept, MB recorded, browser usage and quota. */
 export async function archiveCacheStatus() {
   const layer = layerFor(REAL);
   const idx = await (async () => { try { const r = await (await caches.open(INDEX_CACHE)).match(INDEX_KEY); return r ? await r.json() : {}; } catch { return {}; } })();
   const est = await REAL.estimate().catch(() => null);
-  return { archives: Object.keys(idx).length, bytes: Object.values(idx).reduce((s, e) => s + (e.bytes || 0), 0), usage: est?.usage ?? null, quota: est?.quota ?? null, persistent: !layer.isOff() };
+  return { archives: Object.keys(idx).length, bytes: Object.values(idx).reduce((s, e) => s + (e.bytes || 0), 0), usage: est?.usage ?? null, quota: est?.quota ?? null, persistent: !layer.isOff(), resident: registry.residentCount() };
 }
