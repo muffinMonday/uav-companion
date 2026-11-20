@@ -12,6 +12,7 @@ data/regions/*/*/*
 !data/regions/*/*/source.json
 !data/regions/*/*/boundary.geojson
 !data/regions/*/*/README.md
+!data/regions/cn/yunnan/zones.geojson
 
 # Test output (screenshots, downloads)
 tests/out/

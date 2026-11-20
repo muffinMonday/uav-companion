@@ -5,7 +5,7 @@ import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const RETURNING = { showOnStart: true, welcomed: true, seen: LATEST_SEEN };
-const CHINA_REGIONS = ['Chongqing', 'Guangdong', 'Hubei', 'Hunan', 'Jilin', 'Ningxia', 'Sichuan'];
+const CHINA_REGIONS = ['Chongqing', 'Guangdong', 'Hubei', 'Hunan', 'Jilin', 'Ningxia', 'Sichuan', 'Yunnan'];
 
 const b = await chromium.launch({ channel: CHANNEL });
 async function open(width, height, mobile = false) {
@@ -41,13 +41,13 @@ const DASH_MENU = '.dash-fly .country-menu';
   await p.focus(DASH_CHINA);
   await p.keyboard.press('Enter'); await p.waitForTimeout(200);
   const menuItems = await p.$$eval(`${DASH_MENU} .btn`, (xs) => xs.map((x) => x.textContent));
-  ok(JSON.stringify(menuItems) === JSON.stringify(CHINA_REGIONS), 'Enter on China opens its menu of seven regions: ' + menuItems.join(', '));
+  ok(JSON.stringify(menuItems) === JSON.stringify(CHINA_REGIONS), 'Enter on China opens its menu of eight regions: ' + menuItems.join(', '));
   ok(await p.getAttribute(DASH_CHINA, 'aria-expanded') === 'true' && await p.isVisible(DASH_MENU), 'the menu is open and China says so');
   ok(await focusedAttr(p, 'data-region') === 'cn-chongqing', 'focus moves into the menu (first region)');
   await p.keyboard.press('ArrowDown'); await p.keyboard.press('ArrowDown');
   ok(await focusedAttr(p, 'data-region') === 'cn-hubei', 'ArrowDown moves to the next region (Hubei)');
   await p.keyboard.press('ArrowUp'); await p.keyboard.press('ArrowUp'); await p.keyboard.press('ArrowUp');
-  ok(await focusedAttr(p, 'data-region') === 'cn-sichuan', 'ArrowUp from Hubei three times wraps past the first region to the last (Sichuan)');
+  ok(await focusedAttr(p, 'data-region') === 'cn-yunnan', 'ArrowUp from Hubei three times wraps past the first region to the last (Yunnan)');
   await p.keyboard.press('Escape'); await p.waitForTimeout(150);
   ok(await p.locator(DASH_MENU).isHidden() && await focusedAttr(p, 'data-country') === 'cn', 'Escape closes the menu and returns focus to China');
 

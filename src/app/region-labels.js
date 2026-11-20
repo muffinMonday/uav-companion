@@ -8,6 +8,7 @@ export const REGION_LABELS = {
   'cn-jilin': 'Jilin',
   'cn-ningxia': 'Ningxia',
   'cn-sichuan': 'Sichuan',
+  'cn-yunnan': 'Yunnan',
   'sg-nofly': 'Singapore',
 };
 

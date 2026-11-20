@@ -3,7 +3,7 @@ import { zonesInArchive } from './zones.js';
 import { regionUrl } from './config.js';
 import { withArchive } from './pmtiles-source.js';
 import { el, statusEl, disclaimer } from './cards.js';
-import { zoneExplanation } from './legends.js';
+import { zoneExplanation, regionNotice } from './legends.js';
 
 const boundaries = new Map();
 let regions = [];
@@ -99,7 +99,7 @@ function wording(res) {
   }
   if (r.sourceConfidence?.mode === 'selected-source') {
     return res.status === 'inside'
-      ? ['ok', 'Suitable-flight zone (selected source)', `${r.name}: mapped by ${r.source.authority}; snapshot ${r.source.snapshotAt?.slice(0, 10) || 'unknown'}, effective date ${r.source.effective || 'unknown'}. Current flight permission, completeness and independent alignment are unverified. Check UOM before flying.`]
+      ? ['ok', 'Suitable-flight zone (selected source)', `${r.name}: mapped by ${r.source.authority}; snapshot ${r.source.snapshotAt?.slice(0, 10) || 'unknown'}, effective date ${r.source.effective || 'unknown'}. Current flight permission, completeness and independent alignment are unverified. Check UOM before flying.${regionNotice(r) ? " " + regionNotice(r) : ""}`]
       : ['unk', 'Unknown airspace coverage', 'No suitable-flight polygon is mapped here in the selected source. This does not establish controlled airspace or permission to fly.'];
   }
   const source = `${r.name} data (${r.source.authority}, effective ${r.source.effective})`;

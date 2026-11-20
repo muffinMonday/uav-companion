@@ -5,7 +5,7 @@ import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const info = (m) => console.log('INFO  ' + m);
 const errs = [];
-const CHINA = ['cn-chongqing', 'cn-guangdong', 'cn-hubei', 'cn-hunan', 'cn-jilin', 'cn-ningxia', 'cn-sichuan'];
+const CHINA = ['cn-chongqing', 'cn-guangdong', 'cn-hubei', 'cn-hunan', 'cn-jilin', 'cn-ningxia', 'cn-sichuan', 'cn-yunnan'];
 const RETURNING = { showOnStart: true, welcomed: true, seen: LATEST_SEEN };
 /** Chooses a region the way a person does: a China button opens its menu, then the region; Singapore has no menu. */
 async function choose(p, id) {

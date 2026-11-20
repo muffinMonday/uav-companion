@@ -54,7 +54,7 @@ ok(Math.abs(c1.lon - 103.85) < 0.6 && Math.abs(c1.lat - 1.3) < 0.4, `the Singapo
 
 // ---- China opens its own menu; choosing a region focuses it and closes the menu
 await p.evaluate((s) => document.querySelector(s).click(), '#pane-config .country-btn[data-country="cn"]'); await p.waitForTimeout(300);
-ok((await p.locator('#pane-config .country-menu .btn').allTextContents()).join(',') === 'Chongqing,Guangdong,Hubei,Hunan,Jilin,Ningxia,Sichuan', 'the China button opens a menu of its seven regions');
+ok((await p.locator('#pane-config .country-menu .btn').allTextContents()).join(',') === 'Chongqing,Guangdong,Hubei,Hunan,Jilin,Ningxia,Sichuan,Yunnan', 'the China button opens a menu of its eight regions');
 await p.evaluate((s) => document.querySelector(s).click(), '#pane-config .country-menu [data-region="cn-hubei"]'); await p.waitForTimeout(1500);
 ok((await p.locator('#pane-config .country-menu').isHidden()) && Math.abs((await view(p)).view.lat - 30.6) < 2, 'choosing Hubei closes the menu and focuses the map on Hubei');
 

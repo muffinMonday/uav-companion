@@ -13,6 +13,8 @@ export const SELECTED_SOURCE_MEANING = 'Teal: suitable-flight polygons in the se
 
 const day = (iso) => iso?.slice(0, 10) || null;
 const isThirdParty = (r) => r.sourceConfidence?.type === 'third-party-uom-snapshot';
+/** A region's source-confidence notice (e.g. Yunnan's image-derived approximation), or ''. Shown beside its verdicts and in the coverage and map-key notes. */
+export const regionNotice = (r) => r.sourceConfidence?.notice || '';
 /** Selected-source regions grouped by provider, for the map legend and coverage note: [{ authority, names, snapshots (sorted dates), thirdParty }]. */
 export function selectedProviders(regions) {
   const groups = new Map();

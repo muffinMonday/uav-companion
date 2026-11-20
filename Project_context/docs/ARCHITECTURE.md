@@ -52,6 +52,7 @@ Region menu items, in the order shown (capitalised labels):
 - Ningxia
 - Sichuan
 - Singapore
+- Yunnan
 
 The label of each region ID is in `src/app/region-labels.js` (`REGION_LABELS`); a region with no entry would show its manifest name instead:
 
@@ -64,6 +65,7 @@ The label of each region ID is in `src/app/region-labels.js` (`REGION_LABELS`); 
 | `cn-jilin` | Jilin |
 | `cn-ningxia` | Ningxia |
 | `cn-sichuan` | Sichuan |
+| `cn-yunnan` | Yunnan |
 | `sg-nofly` | Singapore |
 
 **Keep in sync:** whenever a region's shape archive is added or removed, check the Fly in options, `REGION_LABELS` and this list in the same change. `tests/region-labels-unit.mjs` fails when a region in `public/data` has no label, a label has no region, or the choices differ from its expected list (update that list with the change). `tests/fly-in.mjs` checks the buttons and the downloads in the browser; `tests/country-buttons.mjs` checks the menu by keyboard, outside presses, one menu at a time and narrow screens.
