@@ -26,6 +26,7 @@ import { onPopupSwipe } from './swipe.js';
 import { mascotEl } from './mascot-ui.js';
 import { selectionLegs } from './route/legs.js';
 import { createRouter } from './route/router.js';
+import { createSpider } from './spider.js';
 import { createRouteRenderer } from './route/render.js';
 
 const $ = (id) => document.getElementById(id);
@@ -956,16 +957,29 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const l = pinLabel(it);
     e.setAttribute('aria-label', l); // the tooltip (title) stays the marker's own name
   }
+  // Pins that sit on one screen point are fanned out by a click on the stack (spider.js); the records and their coordinates are never touched.
+  const say = el('span', 'sr-only'); say.setAttribute('role', 'status'); say.setAttribute('aria-live', 'polite'); document.body.append(say);
+  const spider = createSpider({
+    L, map, markers,
+    visible: (id) => { const it = store.get(id), m = markers.get(id); return !!it && !!m && layer.hasLayer(m) && shownOnMap(it) && !sideHidden(it); },
+    home: (id) => { const it = store.get(id); return [it.lat, it.lon]; },
+    enabled: () => mode !== 'edit', // pins must not move while the map is locked for editing
+    fanWhen: (ids) => new Set(ids.map((k) => store.get(k)?.tripId ?? null)).size > 1, // only stacks that mix trips: the visits of one place within a trip keep the top pin and the visit chips of their window
+    announce: (t) => { say.textContent = ''; setTimeout(() => { say.textContent = t; }, 30); },
+  });
   function addMarker(item) {
     const m = L.marker([item.lat, item.lon], { icon: iconOf(item), title: item.name, alt: item.name, keyboard: true, riseOnHover: true });
     m.on('add', () => labelPin(m, item.id));
     m._sig = sigOf(item);
-    m.on('click', () => {
+    const activate = () => {
       if (suppressClick) return;
+      if (spider.handle(item.id)) return; // a stack: fan it out first; a pin of an open fan closes it and goes on
       if (selecting) { pickOnMap(item.id); return; }
       if (detailsOn) openPopup(item.id); else selectMarker(item.id);
       revealCard(item.id); // the open panel scrolls to this marker's card
-    });
+    };
+    m.on('click', activate);
+    m.on('keypress', (e) => { if (e.originalEvent?.keyCode === 13) activate(); }); // Enter on a focused pin does what a click does (Leaflet only does this for bound popups)
     markers.set(item.id, m);
     if (shownOnMap(item)) layer.addLayer(m);
     paintPins();
@@ -989,6 +1003,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
   /** Draws or removes every pin to match the rules above and closes a window whose marker went (no redraw of routes and links). */
   function syncPins() {
+    spider.collapse(); // pins are about to be drawn or removed: put any fanned-out ones back first
     for (const [id, m] of markers) {
       const on = shownOnMap(store.get(id));
       if (!on && layer.hasLayer(m)) layer.removeLayer(m);
@@ -1488,6 +1503,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     banner.hidden = !mode && !selecting;
   }
   function setMode(next) {
+    spider.collapse();
     if (mode === next) return;
     if (next && selecting) setSelecting(false); // placing or editing ends selecting
     if (mode === 'edit') { map.dragging.enable(); container.classList.remove('is-editing'); }

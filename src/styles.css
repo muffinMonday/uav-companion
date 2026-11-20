@@ -1537,3 +1537,7 @@ button.ses-attendee{cursor:pointer}
 .route-label.bold{box-shadow:0 0 0 1px var(--surface),0 1px 4px rgba(0,0,0,.25)}
 .route-label.fallback{border-style:dashed;font-weight:var(--fw-regular,400)}
 .route-label.overnight::before{content:"\263E\00a0"} /* a crescent: the leg between two days */
+
+/* ---- coincident markers fanned out by a click (src/spider.js): the stems and the hub are map layers; a fanned pin is only raised ---- */
+.spider-stem,.spider-hub{pointer-events:none}
+.leaflet-marker-icon.spidered{filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
