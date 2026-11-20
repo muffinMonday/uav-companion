@@ -24,6 +24,7 @@ import { el, statusEl, tile, statsGrid, rainBlock, disclaimer, toolBar } from '.
 import { zoneExplanation } from './legends.js';
 import { onPopupSwipe } from './swipe.js';
 import { mascotEl } from './mascot-ui.js';
+import { selectionLegs } from './route/legs.js';
 
 const $ = (id) => document.getElementById(id);
 const HOLD_MS = 380; // press and hold this long before a pin can be moved
@@ -699,11 +700,6 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const dayLayer = L.layerGroup().addTo(map);            // a day shown from the trip screen, all thin
   const tagLayer = L.layerGroup().addTo(map);            // the name tag of a selected marker
   const tripColour = (tripId) => store.getTrip(tripId)?.color ?? '#1a73e8';
-  /** The stops of one trip on one date, joined in stop order. Hotels and the Home marker are not part of the chain. */
-  function chainOf(tripId, date) {
-    return store.items().filter((i) => i.tripId === tripId && i.date === date && isMain(i) && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence')
-      .sort((a, b) => a.order - b.order || String(a.created).localeCompare(String(b.created)));
-  }
   /** One arrow from stop a to stop b: bold ones say how far; an overnight link (to the next or from the previous day) is bold and dashed. */
   function drawSeg(layer, a, b, color, bold, overnight = false) {
     const { units } = getDistanceSettings();
@@ -723,45 +719,13 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     }
   }
   /** Arrows between consecutive stops; those into and out of the selected stop are bold and say how far. */
-  function drawChain(layer, chain, selId, color) {
-    for (let i = 1; i < chain.length; i++) drawSeg(layer, chain[i - 1], chain[i], color, !!selId && (chain[i - 1].id === selId || chain[i].id === selId));
-  }
-  /** The days of a trip that have stops, in order. */
-  const stopDates = (tripId) => [...new Set(store.items().filter((i) => i.tripId === tripId && i.date && isMain(i) && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence').map((i) => i.date))].sort();
+  function drawLegs(layer, legs, color) { for (const l of legs) drawSeg(layer, l.from, l.to, color, l.bold, l.overnight); }
   function redrawRoutes() {
     routes.clearLayers(); dayLayer.clearLayers();
-    if (shownDay && tripDrawn(shownDay.tripId)) { const chain = chainOf(shownDay.tripId, shownDay.date); if (chain.length >= 2) drawChain(dayLayer, chain, null, tripColour(shownDay.tripId)); }
     const it = viewId && store.get(viewId);
-    if (!it?.tripId || !it.date || !tripDrawn(it.tripId)) return; // nor outlive a hidden trip
-    const color = tripColour(it.tripId), chain = chainOf(it.tripId, it.date);
-    if (chain.length >= 2) drawChain(routes, chain, it.id, color);
-    const dates = stopDates(it.tripId);
-    // a hotel is where the day ends: an arrow in from the last stop of its first day, and one out to the first stop of the day after it checks out
-    if (it.type === 'hotel') {
-      const day = [...dates].reverse().find((d) => d <= it.date);
-      if (day) { const c = chainOf(it.tripId, day); if (c.length) drawSeg(routes, c[c.length - 1], it, color, true, true); }
-      const morning = it.endDate && it.endDate > it.date ? it.endDate : addDays(it.date, 1);
-      const next = dates.find((d) => d >= morning);
-      if (next) { const c = chainOf(it.tripId, next); if (c.length) drawSeg(routes, it, c[0], color, true, true); }
-      return;
-    }
-    // the first stop of a day follows the hotel of the night before (or, with none, the last stop of the day before); the last stop leads to
-    // its night's hotel (or, with none, the first stop of the next day)
-    const at = chain.findIndex((x) => x.id === it.id);
-    if (at < 0) return;
-    const di = dates.indexOf(it.date);
-    const hotels = store.items().filter((h) => h.tripId === it.tripId && h.type === 'hotel' && h.date);
-    const hotelFor = (night) => hotels.find((h) => h.date <= night && night <= (h.endDate && h.endDate > h.date ? addDays(h.endDate, -1) : h.date));
-    if (at === 0 && di >= 0) {
-      const hotel = hotelFor(addDays(it.date, -1));
-      if (hotel) drawSeg(routes, hotel, it, color, true, true);
-      else if (di > 0) { const before = chainOf(it.tripId, dates[di - 1]); if (before.length) drawSeg(routes, before[before.length - 1], it, color, true, true); }
-    }
-    if (at === chain.length - 1 && di >= 0) {
-      const hotel = hotelFor(it.date);
-      if (hotel) drawSeg(routes, it, hotel, color, true, true);
-      else if (di < dates.length - 1) { const after = chainOf(it.tripId, dates[di + 1]); if (after.length) drawSeg(routes, it, after[0], color, true, true); }
-    }
+    const { day, selected } = selectionLegs({ items: store.items(), it, shownDay, tripDrawn }); // the sequencing lives in route/legs.js
+    if (shownDay && day.length) drawLegs(dayLayer, day, tripColour(shownDay.tripId));
+    if (it?.tripId && selected.length) drawLegs(routes, selected, tripColour(it.tripId));
   }
   /** The selected marker's pin stands out. */
   function paintFocus() { for (const [id, m] of markers) m.getElement()?.classList.toggle('focused', id === viewId); }
