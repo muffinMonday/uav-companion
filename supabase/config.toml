@@ -34,3 +34,7 @@ verify_jwt = true
 # The daily run, called by a scheduler with the x-cron-secret header.
 [functions.steam-sync-all]
 verify_jwt = false
+
+# One driving route between two itinerary stops (cache first, then HeiGIT with a server-side key): a signed-in session is required.
+[functions.route-leg]
+verify_jwt = true
