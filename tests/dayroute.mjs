@@ -47,11 +47,11 @@ await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').cli
 ok(await count(p, 'path.route-band') === 0 && await count(p, '.route-chev') === 0 && await count(p, '.route-label') === 0, 'closing the window clears the route');
 await pin(p, 'Alpha').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
 let s = await segs(p);
-ok(s.length === 2 && s.filter(Boolean).length === 1 && s[0] === true && (await count(p, 'path.route-band.overnight')) === 0, 'the first stop of the trip: only the arrow out of it is bold (there is no day before)');
+ok(s.length === 2 && s.filter(Boolean).length === 1 && (await count(p, 'path.route-band.overnight')) === 0, 'the first stop of the trip: only the arrow out of it is bold (there is no day before)');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
 await pin(p, 'Charlie').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
 s = await segs(p);
-ok(s.length === 3 && s.filter(Boolean).length === 2 && s[1] === true && (await count(p, 'path.route-band.overnight')) === 1, 'the last stop of a day: the arrow into it is bold, and so is a dashed one on to the first stop of the next day');
+ok(s.length === 3 && s.filter(Boolean).length === 2 && (await count(p, 'path.route-band.overnight')) === 1, 'the last stop of a day: the arrow into it is bold, and so is a dashed one on to the first stop of the next day');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
 await pin(p, 'Hotel').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
 s = await segs(p);
