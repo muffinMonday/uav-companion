@@ -25,6 +25,8 @@ import { zoneExplanation } from './legends.js';
 import { onPopupSwipe } from './swipe.js';
 import { mascotEl } from './mascot-ui.js';
 import { selectionLegs } from './route/legs.js';
+import { createRouter } from './route/router.js';
+import { createRouteRenderer } from './route/render.js';
 
 const $ = (id) => document.getElementById(id);
 const HOLD_MS = 380; // press and hold this long before a pin can be moved
@@ -700,32 +702,23 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const dayLayer = L.layerGroup().addTo(map);            // a day shown from the trip screen, all thin
   const tagLayer = L.layerGroup().addTo(map);            // the name tag of a selected marker
   const tripColour = (tripId) => store.getTrip(tripId)?.color ?? '#1a73e8';
-  /** One arrow from stop a to stop b: bold ones say how far; an overnight link (to the next or from the previous day) is bold and dashed. */
-  function drawSeg(layer, a, b, color, bold, overnight = false) {
-    const { units } = getDistanceSettings();
-    L.polyline([[a.lat, a.lon], [b.lat, b.lon]], { color, weight: bold ? 6 : 2.5, opacity: bold ? 0.95 : 0.4, className: bold ? (overnight ? 'route-seg bold overnight' : 'route-seg bold') : 'route-seg', dashArray: overnight ? '12 9' : undefined, interactive: false, lineCap: 'round' }).addTo(layer);
-    const pa = map.latLngToLayerPoint([a.lat, a.lon]), pb = map.latLngToLayerPoint([b.lat, b.lon]);
-    const deg = (Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180) / Math.PI;
-    const px = Math.hypot(pb.x - pa.x, pb.y - pa.y); // how long it is on screen: short ones get no arrow or label (they would sit on the pins)
-    const at = (f) => [a.lat + (b.lat - a.lat) * f, a.lon + (b.lon - a.lon) * f];
-    const arrow = el('span', bold ? 'route-arrow bold' : 'route-arrow');
-    arrow.style.setProperty('--rot', deg.toFixed(1) + 'deg'); arrow.style.color = color;
-    arrow.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 1l10 5-10 5 3-5z"/></svg>'; // built from constants only
-    if (px >= 36) L.marker(at(0.62), { icon: L.divIcon({ className: 'route-arrow-box', html: arrow, iconSize: [0, 0] }), interactive: false, keyboard: false }).addTo(layer);
-    if (bold && px >= 80) {
-      const lab = el('span', 'dist-label-text seg-label', fmtDistance(haversineM(a.lat, a.lon, b.lat, b.lon), units));
-      lab.style.borderColor = color;
-      L.marker(at(0.36), { icon: L.divIcon({ className: 'dist-label', html: lab, iconSize: null }), interactive: false, keyboard: false }).addTo(layer);
-    }
-  }
-  /** Arrows between consecutive stops; those into and out of the selected stop are bold and say how far. */
-  function drawLegs(layer, legs, color) { for (const l of legs) drawSeg(layer, l.from, l.to, color, l.bold, l.overnight); }
+  // The legs on show are drawn by route/render.js: a broad band, chevrons, a label; road geometry from route/router.js (device cache, shared-trip cache, the route-leg
+  // function) and a dashed straight line while there is none. Redrawn on zoom and pan; routes are asked for only when a leg first comes on show.
+  const router = createRouter({ onChange: () => redrawRoutes(), isShared: (id) => !!store.getTrip(id)?.shared, log: (a, c) => log.warn(a, c) });
+  const renderer = createRouteRenderer({ L, map, el, fmt: (m) => fmtDistance(m, getDistanceSettings().units), pins: () => [...markers].filter(([id]) => shownOnMap(store.get(id))).map(([, m]) => m.getLatLng()) });
+  const legEntries = (layer, legs, color) => legs.map((l) => { const r = router.resolve(l); return { layer, leg: l, result: r.result, pending: r.pending, color, bold: l.bold, overnight: l.overnight }; });
+  let rotHooked = false;
   function redrawRoutes() {
     routes.clearLayers(); dayLayer.clearLayers();
+    if (!rotHooked && map._rot?.onChange) { rotHooked = true; let t = 0; map._rot.onChange(() => { clearTimeout(t); t = setTimeout(() => { if (viewId || shownDay) redrawRoutes(); }, 250); }); }
     const it = viewId && store.get(viewId);
     const { day, selected } = selectionLegs({ items: store.items(), it, shownDay, tripDrawn }); // the sequencing lives in route/legs.js
-    if (shownDay && day.length) drawLegs(dayLayer, day, tripColour(shownDay.tripId));
-    if (it?.tripId && selected.length) drawLegs(routes, selected, tripColour(it.tripId));
+    const entries = [];
+    if (shownDay && day.length) entries.push(...legEntries(dayLayer, day, tripColour(shownDay.tripId)));
+    if (it?.tripId && selected.length) entries.push(...legEntries(routes, selected, tripColour(it.tripId)));
+    if (!entries.length) return;
+    router.ensure(entries.map((e) => e.leg));
+    renderer.draw(entries);
   }
   /** The selected marker's pin stands out. */
   function paintFocus() { for (const [id, m] of markers) m.getElement()?.classList.toggle('focused', id === viewId); }
@@ -870,7 +863,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   }
   map.on('popupopen', (e) => { tagLayer.clearLayers(); pickId = null; viewId = e.popup._poiId ?? null; relink(); });
   map.on('popupclose', (e) => { if (e.popup._poiId === viewId) { viewId = null; relink(); } });
-  map.on('zoomend', () => { if (viewId || shownDay) redrawRoutes(); }); // the arrows turn with the map's scale
+  map.on('moveend', () => { if (viewId || shownDay) redrawRoutes(); }); // bands, chevrons and labels are laid out in screen pixels: again after a zoom or a pan (no route is asked for)
 
   /** Fills the tiles under the zone verdict in a marker window: elevation and the 5-hour weather, as enabled. */
   function renderStats(box, id) {
@@ -1729,6 +1722,8 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     /** Puts the cursor in the saved-places search box; the query and everything else stay as they are. */
     focusSearch() { searchEl.focus({ preventScroll: false }); },
     onNewTypeShared: (fn) => newerListeners.add(fn),
+    /** The route router (route/router.js): main.js gives it the account backend once sign-in is available. */
+    routeRouter: router,
     /** Whether a marker is drawn on the map under the trip rules (not counting the POI layer switch). */
     isShownOnMap: (id) => shownOnMap(store.get(id)),
     setTripShown,

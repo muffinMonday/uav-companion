@@ -1527,3 +1527,13 @@ button.ses-attendee{cursor:pointer}
 .dash-diag .diag-latest{margin:4px 0}
 .dash-diag .btn-row{margin:8px 0 4px}
 .dash-diag a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+
+/* ---- itinerary routes (src/route/render.js): a broad band in the trip colour with chevrons inside it, a light casing, a label per leg ---- */
+.route-case{stroke:var(--surface);stroke-opacity:.72;pointer-events:none}
+.route-band,.route-chev{pointer-events:none}
+.route-band.route-fallback{stroke-opacity:.5}
+.route-chev{fill:none}
+.route-label{font-variant-numeric:tabular-nums}
+.route-label.bold{box-shadow:0 0 0 1px var(--surface),0 1px 4px rgba(0,0,0,.25)}
+.route-label.fallback{border-style:dashed;font-weight:var(--fw-regular,400)}
+.route-label.overnight::before{content:"\263E\00a0"} /* a crescent: the leg between two days */
