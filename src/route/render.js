@@ -45,15 +45,15 @@ export function createRouteRenderer({ L, map, el, fmt, pins = () => [] }) {
     }).sort((a, b) => (a.bold === b.bold ? (a.result.key < b.result.key ? -1 : a.result.key > b.result.key ? 1 : 0) : a.bold ? -1 : 1));
     // 2. parallel lanes where two legs run over the same road in opposite directions (the overlapping stretch only)
     assignLanes(items, { lane: (it) => it.width * 0.5 + 1.5 });
-    // 3. bands and chevrons
-    for (const it of items) {
+    // 3. bands and chevrons; the emphasised (selected) legs are drawn last, so they lie on top where legs share a road
+    for (const it of [...items].reverse()) {
       const road = it.result.state === 'road', ink = inkFor(it.color);
       const cls = ['route-band', it.bold ? 'bold' : '', road ? 'road' : 'route-fallback fallback', it.overnight ? 'overnight' : ''].filter(Boolean).join(' ');
       const ll = (it.drawPts ?? it.pts).map(toLL), st = bandStyle({ road, overnight: it.overnight }), dashed = !!st.dash;
       L.polyline(ll, { color: it.color, weight: it.width + 4, opacity: 1, className: 'route-case' + (it.bold ? ' bold' : ''), interactive: false, lineCap: 'butt', lineJoin: 'round', dashArray: st.dash, noClip: dashed }).addTo(it.layer);
       L.polyline(ll, { color: it.color, weight: it.width, opacity: it.bold ? 0.92 : 0.62, className: cls, interactive: false, lineCap: st.cap, lineJoin: 'round', dashArray: st.dash, noClip: dashed }).addTo(it.layer);
       for (const m of chevronMarks(it.drawPts ?? it.pts, { inView: near, spacing: st.spacing, first: st.first })) {
-        L.polyline(chevronShape(m, 3.4, armFor(it.width)).map(toLL), { color: ink, weight: 2.1, opacity: 0.95, className: 'route-chev', interactive: false, lineCap: 'round', lineJoin: 'round' }).addTo(it.layer);
+        L.polyline(chevronShape(m, 3.4, armFor(it.width)).map(toLL), { color: ink, weight: 2.1, opacity: 0.95, className: 'route-chev', interactive: false, smoothFactor: 0, lineCap: 'round', lineJoin: 'round' }).addTo(it.layer);
       }
     }
     // 4. labels, one per leg, placed without overlap (geometry.js documents the degradation order)

@@ -9,6 +9,7 @@ const { encodePolyline } = await imp('src/route/polyline.js');
 const { STORE_KEY } = await imp('src/route/router.js');
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
+
 const iso = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 const D = iso(5), D2 = iso(6);
 const trips = [{ id: 't1', name: 'Hubei', startDate: D, endDate: D2, description: '', color: '#e91e63', created: '2026-01-01T00:00:00.000Z' }];
@@ -177,6 +178,34 @@ await open1(p, 'Bravo');
 labs = await labelRects(p);
 ok(labs.length === 2 && labs.every((l) => l.state === 'fallback' && /straight line/.test(l.text)) && await count(p, 'path.route-band.road') === 0, 'with no account and no cached road, both legs are dashed straight lines labelled as such');
 ok(requests.every((u) => !/route-leg|heigit/i.test(u)), 'and no routing request is made');
+await ctx.close();
+
+// ================= opposite directions over one road: parallel lanes
+const back = { ...mk('c', 'Charlie', 30.590, 114.300, { tripId: 't1', date: D2, order: 1 }) }; // the next day starts where the first day began
+const loop = [items[0], items[1], back];
+({ ctx, p } = await open({ list: loop, cache: false }));
+await open1(p, 'Bravo');
+const lanes = await p.evaluate(() => {
+  const bands = [...document.querySelectorAll('path.route-band')];
+  const info = bands.map((bd) => { const L = bd.getTotalLength(), m = bd.getPointAtLength(L / 2), a = bd.getPointAtLength(L / 2 - 4), c = bd.getPointAtLength(L / 2 + 4); return { m: { x: m.x, y: m.y }, dir: { x: c.x - a.x, y: c.y - a.y } }; });
+  const chev = [...document.querySelectorAll('path.route-chev')].map((c) => {
+    const bb = c.getBBox(), pt = new DOMPoint(bb.x + bb.width / 2, bb.y + bb.height / 2), own = bands.findIndex((bd) => bd.isPointInStroke(pt));
+    const m = (c.getAttribute('d') || '').match(/-?\d+\.?\d*/g); if (!m || m.length < 6) return null; // (a chevron outside the drawn area has an empty path)
+    const d = m.map(Number); // M x y L x y L x y: the tip is the middle point
+    return { own, dx: d[2] - (d[0] + d[4]) / 2, dy: d[3] - (d[1] + d[5]) / 2 };
+  }).filter(Boolean);
+  return { n: bands.length, info, chev };
+});
+ok(lanes.n === 2, 'an out-and-back pair of legs: two bands');
+const sep = Math.hypot(lanes.info[0].m.x - lanes.info[1].m.x, lanes.info[0].m.y - lanes.info[1].m.y);
+ok(sep >= 13 && sep <= 17, 'they run as two parallel lanes, side by side without overlapping (' + sep.toFixed(1) + ' px apart for 12 px bands)');
+const dot = lanes.info[0].dir.x * lanes.info[1].dir.x + lanes.info[0].dir.y * lanes.info[1].dir.y;
+ok(dot < 0, 'in opposite directions');
+const g0 = lanes.chev.filter((c) => c.own === 0), g1 = lanes.chev.filter((c) => c.own === 1);
+ok(g0.length >= 1 && g1.length >= 1 && g0.length + g1.length === lanes.chev.length, 'each lane keeps its own chevrons, all inside its band (' + g0.length + ' and ' + g1.length + ')');
+ok(g0[0].dx * g1[0].dx + g0[0].dy * g1[0].dy < 0, 'and the chevrons of the two lanes point opposite ways');
+labs = await labelRects(p);
+ok(labs.length === 2 && noOverlap(labs), 'both lanes keep a label and the labels do not overlap');
 await ctx.close();
 
 await b.close();
