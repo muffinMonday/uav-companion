@@ -28,6 +28,7 @@ import { selectionLegs } from './route/legs.js';
 import { createRouter } from './route/router.js';
 import { createSpider } from './spider.js';
 import { createRouteRenderer } from './route/render.js';
+import { fmtDuration } from './route/geometry.js';
 
 const $ = (id) => document.getElementById(id);
 const HOLD_MS = 380; // press and hold this long before a pin can be moved
@@ -688,6 +689,11 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const txt = el('div', 'dist-txt');
       approx ||= r.found.approx;
       txt.append(el('div', 'dist-v', `${r.found.approx ? '≈ ' : ''}${fmtDistance(r.found.m, units)} ${compass(r.found.bearing)}`), el('small', '', `from ${t.short} ${r.found.item.name}`));
+      txt.title = `Straight line, bearing ${Math.round(r.found.bearing)}° (${compass(r.found.bearing)}). Not a driving distance.`;
+      // a saved driving route between these two places, shown only when one is already known: nothing is requested for a reference link
+      const ends = (m) => ({ id: m.id, lat: m.lat, lon: m.lon });
+      const road = router.peek({ from: ends(r.found.item), to: ends(it) }) ?? router.peek({ from: ends(it), to: ends(r.found.item) });
+      if (road) txt.append(el('small', 'dist-road', `By road (saved): ${fmtDistance(road.distanceM, units)} · ${fmtDuration(road.durationS)}`));
       row.append(ic, txt);
       box.append(row);
     }
@@ -856,9 +862,11 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const f = b[t.id].found;
       if (!f || !shownOnMap(f.item)) continue;
       const color = typeOf(t.id).color;
-      L.polyline([[it.lat, it.lon], [f.item.lat, f.item.lon]], { color, weight: 3, opacity: 0.85, dashArray: '7 7', interactive: false }).addTo(links);
-      const label = el('span', 'dist-label-text', `${f.approx ? '≈ ' : ''}${fmtDistance(f.m, units)}`);
+      // a thin dotted line, no arrow: the straight-line reference from the launch base (FPV range), never a route
+      L.polyline([[it.lat, it.lon], [f.item.lat, f.item.lon]], { color, weight: 2, opacity: 0.9, dashArray: '1 6', lineCap: 'round', className: 'base-link', interactive: false }).addTo(links);
+      const label = el('span', 'dist-label-text base-label', `${f.approx ? '≈ ' : ''}${fmtDistance(f.m, units)}`);
       label.style.borderColor = color;
+      label.setAttribute('role', 'img'); label.setAttribute('aria-label', `Straight-line distance to the ${t.short}, ${fmtDistance(f.m, units)}, bearing ${Math.round(f.bearing)} degrees ${compass(f.bearing)}`);
       L.marker([(it.lat + f.item.lat) / 2, (it.lon + f.item.lon) / 2], { icon: L.divIcon({ className: 'dist-label', html: label, iconSize: null }), interactive: false, keyboard: false }).addTo(links);
     }
   }

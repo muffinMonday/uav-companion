@@ -68,7 +68,7 @@ const closePopup = async (p) => { await p.evaluate(() => document.querySelector(
 const item = (p, name) => p.locator(`#poi-list .poi-item:has-text("${name}")`);
 const distLine = async (p, name) => (await item(p, name).locator('.dist-line').count()) ? (await item(p, name).locator('.dist-line').innerText()) : null;
 const rowsOf = (p) => p.$$eval('.poi-pop .dist-row', (rs) => rs.map((r) => ({ v: r.querySelector('.dist-v').textContent, s: r.querySelector('small').textContent, over: r.classList.contains('over') })));
-const lines = (p) => p.evaluate(() => ({ dashed: document.querySelectorAll('.leaflet-overlay-pane path[stroke-dasharray="7 7"]').length, labels: [...document.querySelectorAll('.dist-label-text')].map((e) => e.textContent) }));
+const lines = (p) => p.evaluate(() => ({ dashed: document.querySelectorAll('.leaflet-overlay-pane path.base-link').length, labels: [...document.querySelectorAll('.dist-label-text:not(.route-label)')].map((e) => e.textContent) }));
 
 // ================= 1. the Home marker next to the Home point
 let S = await session();

@@ -40,7 +40,7 @@ async function open({ vp = { width: 1300, height: 900 }, cache = true, backend =
     if (cd) localStorage.setItem(key, cd);
     window.__routeCalls = [];
     if (useBackend) window.__uavRouteBackend = { signedIn: () => true, fetchShared: async () => [], invoke: async (body) => { window.__routeCalls.push(body); await new Promise((r) => setTimeout(r, 900)); const r = tbl[`${body.from.id}>${body.to.id}`]; if (!r) { const e = new Error('x'); e.code = 'no_route'; throw e; } return r; } };
-  }, [list, trips, cache ? cacheDoc : null, STORE_KEY, backend, table, zoom, theme ?? null]);
+  }, [list, trips, typeof cache === 'string' ? cache : cache ? cacheDoc : null, STORE_KEY, backend, table, zoom, theme ?? null]);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
@@ -206,6 +206,30 @@ ok(g0.length >= 1 && g1.length >= 1 && g0.length + g1.length === lanes.chev.leng
 ok(g0[0].dx * g1[0].dx + g0[0].dy * g1[0].dy < 0, 'and the chevrons of the two lanes point opposite ways');
 labs = await labelRects(p);
 ok(labs.length === 2 && noOverlap(labs), 'both lanes keep a label and the labels do not overlap');
+await ctx.close();
+
+// ================= base-reference links stay straight, thin, dotted, nondirectional, and ask for nothing
+({ ctx, p } = await open({ cache: false, backend: true }));
+await open1(p, 'Bravo'); await p.waitForTimeout(1500);
+const base = await p.$$eval('path.base-link', (e) => e.map((x) => ({ w: Number(x.getAttribute('stroke-width')), dash: x.getAttribute('stroke-dasharray'), d: (x.getAttribute('d').match(/L/g) || []).length })));
+ok(base.length === 1 && base[0].w <= 2.5 && base[0].dash === '1 6' && base[0].d === 1, 'the link to the hotel is a thin dotted straight line (' + JSON.stringify(base) + ')');
+ok(await p.locator('path.base-link').evaluate((e) => !e.classList.contains('route-band')) && await count(p, '.base-label') === 1, 'it is not a route band, and has its own compact label');
+const bl = await p.$eval('.base-label', (e) => ({ t: e.textContent, a: e.getAttribute('aria-label') }));
+ok(/km|m$/.test(bl.t) && !/straight line|min/.test(bl.t) && /^Straight-line distance to the .*bearing \d+ degrees/.test(bl.a), 'the label is the straight-line distance; its accessible text gives the bearing: ' + bl.t + ' / ' + bl.a);
+const asked = await p.evaluate(() => window.__routeCalls.map((c) => c.from.id + '>' + c.to.id));
+ok(asked.length === 2 && asked.every((k) => k === 'a>b' || k === 'b>c') && !asked.some((k) => /h/.test(k)), 'only the two itinerary legs were requested; the hotel reference link used no routing request (' + asked.join(', ') + ')');
+const row = await p.$eval('.dist-row', (e) => ({ title: e.querySelector('.dist-txt').title, road: !!e.querySelector('.dist-road') }));
+ok(/Straight line, bearing \d+° \(\w+\)/.test(row.title) && !row.road, 'the distance row states bearing and that it is not a driving distance, and shows no road line when none is saved');
+await ctx.close();
+// a saved road between the two places is shown as extra detail in the window, still without any request
+const hotelLeg = rowOf(I.h, I.b, 2500, 420);
+({ ctx, p } = await open({ cache: JSON.stringify({ v: 1, items: [hotelLeg] }), backend: true }));
+await open1(p, 'Bravo'); await p.waitForTimeout(300);
+const road = await p.$eval('.dist-row .dist-road', (e) => e.textContent).catch(() => null);
+ok(road && /By road \(saved\): .* · 7 min/.test(road), 'an already saved road between the hotel and this marker is shown as supplemental detail: ' + road);
+ok(await count(p, 'path.base-link') === 1 && await count(p, '.base-label') === 1 && !(await p.$eval('.base-label', (e) => /min/.test(e.textContent))), 'the on-map link and label are still the straight-line reference');
+const asked2 = await p.evaluate(() => window.__routeCalls.map((c) => c.from.id + '>' + c.to.id));
+ok(!asked2.some((k) => /h/.test(k)), 'and nothing was requested for it');
 await ctx.close();
 
 await b.close();

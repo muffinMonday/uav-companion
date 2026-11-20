@@ -132,8 +132,14 @@ export function createRouter({ storage = globalThis.localStorage, now = () => Da
     if (any) pump();
   }
 
+  /** The road for a leg if one is already known (memory, device cache, shared cache), else null. Never asks for anything. */
+  function peek(leg) {
+    const row = roads.get(routeKey(leg));
+    return row ? roadFromRow(row, leg, sources.get(row.key) ?? 'cache') : null;
+  }
+
   return {
-    resolve, ensure,
+    resolve, ensure, peek,
     setBackend(b) { backend = b; onChange(); },
     /** Forgets everything remembered about refusals (not the roads): after signing in, say. */
     resetFailures() { memo.clear(); pausedUntil = 0; pauseReason = null; sharedLoads.clear(); },

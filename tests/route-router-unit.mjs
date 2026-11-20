@@ -173,3 +173,11 @@ ok(!!thrown && !/x/.test(thrown.message), 'a cache read error is reported withou
 // ---------- no provider details in the browser code
 const src = ['src/route/router.js', 'src/route/legs.js', 'src/route/identity.js', 'src/route/result.js'].map((f) => fs.readFileSync(f, 'utf8')).join('');
 ok(!/heigit\.org|openrouteservice\.org|HEIGIT_API_KEY/i.test(src), 'the browser route modules never name the provider endpoint or key');
+
+// ---------- peek: a saved road only, never a request
+s = setup();
+ok(s.router.peek(L1) === null && s.calls.invoke.length === 0, 'peek on an unknown leg answers null and asks for nothing');
+s.router.ensure([L1]); await settle();
+const pk = s.router.peek(L1);
+ok(pk && pk.state === 'road' && pk.distanceM === 15500 && s.router.peek(leg('b', 'a')) === null && s.calls.invoke.length === 1, 'peek returns a known road for that direction only, with no further request');
+ok(s.router.peek(leg('a', 'b', { la: 30.6005 })) === null, 'peek never returns a road for moved end points');
