@@ -723,9 +723,18 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const entries = [];
     if (shownDay && day.length) entries.push(...legEntries(dayLayer, day, tripColour(shownDay.tripId)));
     if (it?.tripId && selected.length) entries.push(...legEntries(routes, selected, tripColour(it.tripId)));
-    if (!entries.length) return;
+    if (!entries.length) { routeCredit(false); return; }
     router.ensure(entries.map((e) => e.leg));
     renderer.draw(entries);
+    routeCredit(entries.some((e) => e.result.state === 'road'));
+  }
+  // the routing credit shows while a road route is drawn, beside (never instead of) the map's own credits
+  const ROUTE_CREDIT = 'Routes: <a href="https://openrouteservice.org/" target="_blank" rel="noopener">openrouteservice.org</a> by HeiGIT';
+  let credited = false;
+  function routeCredit(on) {
+    if (on === credited || !map.attributionControl) return;
+    credited = on;
+    if (on) map.attributionControl.addAttribution(ROUTE_CREDIT); else map.attributionControl.removeAttribution(ROUTE_CREDIT);
   }
   /** The selected marker's pin stands out. */
   function paintFocus() { for (const [id, m] of markers) m.getElement()?.classList.toggle('focused', id === viewId); }

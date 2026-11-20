@@ -5,7 +5,7 @@ import { approxSize as aircraftDiagSize, deleteAll as deleteAircraftDiag } from 
 
 const $ = (id) => document.getElementById(id);
 
-export function initPrivacyUI({ mw, elev, toast = () => {} }) {
+export function initPrivacyUI({ mw, elev, toast = () => {}, routes = null }) {
   const auto = $('pv-auto'), alt = $('pv-alt'), geo = $('pv-geo'), chk = $('pv-checkin'), lau = $('pv-locate'), ash = $('pv-autoshare'), asf = $('pv-autoshare-friends');
   const radios = [...document.querySelectorAll('input[name=pv-prec]')];
 
@@ -37,6 +37,7 @@ export function initPrivacyUI({ mw, elev, toast = () => {} }) {
   const attendance = initSessionAttendance(toast);
   initDiagnostics(toast);
   initAircraftDiagnostics(toast);
+  if (routes) initRoutePrivacy(routes, toast);
   return attendance;
 }
 
@@ -90,6 +91,20 @@ function initDiagnostics(toast) {
   clr.addEventListener('click', async () => { await diagnostics.clear(); await refresh(); toast('Diagnostics cleared.'); });
   $('privacy-btn')?.addEventListener('click', refresh); // each time the panel is opened
   refresh();
+}
+
+/** Driving routes: what is sent to draw a road route, and a button to forget the routes kept on this device. */
+function initRoutePrivacy(routes, toast) {
+  const anchor = $('diag-card');
+  if (!anchor) return;
+  const card = document.createElement('div'); card.className = 'card'; card.id = 'route-privacy-card';
+  const h = document.createElement('h2'); h.textContent = 'Driving routes';
+  const hint = document.createElement('p'); hint.className = 'hint';
+  hint.textContent = 'When you are signed in, an itinerary leg between two stops in the same country is sent to this app’s route service as two coordinate pairs, nothing else (no names, notes or trip details), so a road route can be drawn. Routes are kept on this device; on a shared trip they are also kept with the trip for its members. Your Home marker is never sent. Without an account, or when the service is unavailable, a straight line is drawn and marked as a straight line. Routes come from openrouteservice.org (HeiGIT) with OpenStreetMap data.';
+  const row = document.createElement('div'); row.className = 'btn-row';
+  const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'btn small'; clear.id = 'route-clear'; clear.textContent = 'Forget routes saved on this device';
+  clear.addEventListener('click', () => { routes.clearLocal(); toast('Saved routes on this device forgotten.'); });
+  row.append(clear); card.append(h, hint, row); anchor.after(card);
 }
 
 /** Aircraft diagnostic data (motor-diagnostic records kept by aircraft-diag-data.js): its own card, shown only while something is stored.

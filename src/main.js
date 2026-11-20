@@ -106,7 +106,7 @@ const poi = initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, showWe
   const mig = poi.store.takeMigration();
   if (mig) toast(`Day numbers now follow the dates: ${mig.corrected} corrected${mig.converted ? `, ${mig.converted} turned into dates` : ''}.`, 9000);
 }
-const privacyUI = initPrivacyUI({ mw: poi.mw, elev: poi.elev, toast }); // the privacy settings own the weather and elevation switches
+const privacyUI = initPrivacyUI({ mw: poi.mw, elev: poi.elev, toast, routes: { clearLocal: () => { poi.routeRouter.clearLocal(); } } }); // the privacy settings own the weather and elevation switches
 const trips = initTripsUI({ poi, panel, toast, checkPoint, zoneSummary });             // the Trips tab: create and edit trips, tag markers with them
 const ai = initAI({ map, toast, panel, poi });  // paste an AI's itinerary, or open a share link, then preview and add
 const opensShareLink = /^#import=/.test(location.hash); // read before fromHash() clears it

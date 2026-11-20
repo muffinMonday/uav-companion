@@ -208,6 +208,20 @@ labs = await labelRects(p);
 ok(labs.length === 2 && noOverlap(labs), 'both lanes keep a label and the labels do not overlap');
 await ctx.close();
 
+// ================= credit, privacy note
+({ ctx, p } = await open());
+const credit = () => p.$eval('.leaflet-control-attribution', (e) => e.textContent);
+await open1(p, 'Bravo');
+ok(/openrouteservice.org by HeiGIT/.test(await credit()) && /OpenStreetMap/.test(await credit()), 'while a road route is drawn the credit names openrouteservice.org by HeiGIT beside the OpenStreetMap credit');
+ok(await p.$eval('.leaflet-control-attribution a[href*="openrouteservice"]', (e) => e.rel.includes('noopener') && e.target === '_blank'), 'and links out safely');
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(300);
+ok(!/openrouteservice/.test(await credit()) && /OpenStreetMap/.test(await credit()), 'with no road route on show the routing credit is gone and the existing credits remain');
+await p.evaluate(() => document.getElementById('privacy-btn')?.click()); await p.waitForTimeout(300);
+ok(await count(p, '#route-privacy-card') === 1 && /two coordinate pairs/.test(await p.textContent('#route-privacy-card')) && /Home marker is never sent/.test(await p.textContent('#route-privacy-card')), 'the privacy panel explains what is sent for routes, and that the Home marker never is');
+await p.click('#route-clear'); await p.waitForTimeout(300);
+ok(await p.evaluate((k) => localStorage.getItem(k), STORE_KEY) === null, 'its button forgets the routes kept on this device');
+await ctx.close();
+
 // ================= base-reference links stay straight, thin, dotted, nondirectional, and ask for nothing
 ({ ctx, p } = await open({ cache: false, backend: true }));
 await open1(p, 'Bravo'); await p.waitForTimeout(1500);
