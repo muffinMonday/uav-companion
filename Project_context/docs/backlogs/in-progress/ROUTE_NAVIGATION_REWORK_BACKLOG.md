@@ -1,7 +1,6 @@
 # UAV Companion --- Route Visualization & Driving Navigation Rework
 
-**Status:** APPROVED PRODUCT SPECIFICATION --- BACKLOG ONLY, NO CODE OR
-DEPLOYMENT\
+**Status:** IMPLEMENTED ON `main` (2026-11-21), NOT DEPLOYED. Migration not applied, HeiGIT secret not set, function not deployed (owner steps below).\
 **Prepared:** 2026-11-21\
 **Repository:** `muffinMonday/uav-companion`\
 **Review baseline:** `main` observed at
@@ -608,3 +607,19 @@ current semantics, and stop for owner clarification only when a material
 conflict cannot be resolved from code/docs/spec. Commit logical phases
 separately. Do not deploy unless the owner explicitly authorizes
 deployment after review.
+
+## 15. Implementation status (2026-11-21)
+
+**Commits (phase by phase):** Phase 0/1 `c0e968a` (route domain, leg derivation extracted from poi-ui); Phase 2 `9993f08` (migration `20261121100000_trip_routes.sql`, `route-leg` edge function, shared rules, client router); Phase 3 `6569d72` (bands, chevrons, labels, road and fallback rendering); Phase 4 `00de92b` (parallel lanes); Phase 5 `71c5381` (coincident-marker fan); Phase 6 `7ae8f73` (base-reference links); Phase 7 credit, privacy note and forget button, then documentation and a fix for blocked storage. See `git log` for the exact list.
+
+**Where:** `src/route/`, `src/spider.js`, `supabase/functions/route-leg/`, `supabase/functions/_shared/route-rules.js` and `route-polyline.js`, `supabase/migrations/20261121100000_trip_routes.sql`. Code map: MODULES.md; schema: DATABASE.md; decisions: DECISIONS.md.
+
+**Verified HeiGIT facts (read 2026-11-21; the owner's own plan could not be inspected):** endpoint `POST https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson` (the old `api.openrouteservice.org` is deprecated, per HeiGIT's announcement; quota there is cut and the host shuts down 2026-09-28 per the search snippet, which now lies in the past). Hosted API restrictions page: driving profiles maximum distance 6,000 km, route waypoints 50. Terms page: results are licensed CC-BY 4.0 and must credit "openrouteservice.org by HeiGIT" and OpenStreetMap contributors (implemented as the map credit while a road is drawn). Quota figures seen only in a search summary, not confirmed for any plan: 2,000 requests per day and 40 per minute for the free tier; the budgets (150/user/day, 1,500/day, 30/minute) sit below them. **Not verified, owner to check on account.heigit.org (the pages need a JavaScript browser):** the authorization header format (the function sends the key as `Authorization: <key>`, the documented ORS convention, not confirmed here), your active plan's daily and per-minute limits, and the terms on storing results (the app stores routes on the device and, for a shared trip, in the database).
+
+**Tests:** new unit suites `route-core-unit` (91), `route-geometry-unit` (38), `route-overlap-unit` (26), `route-router-unit` (46), `route-leg-unit` (50, mocked HeiGIT wired to the real SQL), `db-routes-unit` (57), `spider-unit` (16); browser `routes` (about 50) and `spider` (28). Updated `dayroute` (new markup, dates made relative because it failed on a past date before this work, assertions by count not DOM order) and `trip` (class selectors for the base link). Full `node tests/run.mjs`: 176 suites ok, 7 failed, none caused by this work: `region-labels-unit`, `country-groups-unit`, `country-buttons`, `splash`, `prefs` (local `public/data` holds more regions than the tests list; known from earlier status entries) and `poi2` (fails identically on the unchanged baseline, a TimeoutError). The run also found `opacity` failing with blocked storage because of this work; fixed (`safeStorage`) and rerun clean. `npm run build` ok. `npm run test:unit`: only the known two data-environment failures.
+
+**Owner actions needed before this works on the live site:** (1) apply the migration (`npx supabase db push --remote --dry-run`, then for real); (2) `npx supabase secrets set HEIGIT_API_KEY=<key> --project-ref <ref>`; (3) `npx supabase functions deploy route-leg --project-ref <ref>`; (4) check plan limits, header format and storage terms (above); (5) deploy the front end when satisfied. Until (1) to (3) are done, guests and signed-in users see straight-line fallbacks (the function call fails and is remembered), and everything else works as before.
+
+**Residual risks / manual checks:** not checked against the real HeiGIT service or a real hosted database (mocked provider, in-memory Postgres); country outlines are deliberately coarse and conservative; lane detection is tuned for same-road reversals, complex multi-route overlaps are not specially handled; labels degrade by the documented order and a leg shorter than 40 px on screen has none; the fan covers stacks that mix trips only (same-trip visits keep the window's visit chips); no real phone test; the routing credit shows only while a road is drawn; per-user budget counters hold the user id for up to two days; `.route-arrow` CSS is now unused.
+
+**Not done / deferred:** hidden-trip and marker-deletion removal of route layers in the browser are covered by the leg derivation unit tests and the window-close test, not a dedicated browser deletion test; no deployment.

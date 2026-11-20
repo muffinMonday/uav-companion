@@ -26,7 +26,9 @@ export function roadFromRow(row, leg, source) {
   return roadFrom(leg, { coords, distanceM: d, durationS: t }, source);
 }
 
-export function createRouter({ storage = globalThis.localStorage, now = () => Date.now(), onChange = () => {}, maxConcurrent = 2, isShared = () => false, log = () => {} } = {}) {
+const safeStorage = () => { try { return globalThis.localStorage; } catch { return null; } }; // reading it can throw when storage is blocked
+
+export function createRouter({ storage = safeStorage(), now = () => Date.now(), onChange = () => {}, maxConcurrent = 2, isShared = () => false, log = () => {} } = {}) {
   let backend = null;                 // { signedIn(), invoke(body) -> data, fetchShared(tripId) -> rows }
   const roads = new Map();            // key -> stored road row (geometry string, numbers), from any source
   const sources = new Map();          // key -> 'cache' | 'provider'

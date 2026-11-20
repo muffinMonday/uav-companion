@@ -131,6 +131,14 @@ Current, constraining decisions only; superseded ones are removed (history: git,
 
 **Automatic attendance (waves C and D, flag `auto_attendance_enabled` = 0, stays 0 in this backlog).** Any host; thresholds in `progression_settings`: at least 2 distinct non-host people with a qualifying check-in, attendee account at least 24 h old, host account at least 7 days, caps 1 per day and 5 per week, no per-pair limit, host never earns from their own session, place and times frozen once a session starts. Evidence is server-measured: the coordinates are used for one distance check and discarded; only server timestamps and a count are stored per (session, person). GPS can be spoofed; caps bound the damage, they do not stop a ring. Auto awards count toward the attendance achievements. Consent is a server row, separate from `checkIn`, `locateOnLaunch` and `autoShare`.
 
+## Itinerary routes and coincident markers (owner-approved backlog 2026-11-21; `backlogs/in-progress/ROUTE_NAVIGATION_REWORK_BACKLOG.md`)
+- **Account required for provider routing:** the edge function is a paid-quota proxy, so it needs a signed-in session. A guest sees straight-line fallbacks (and any road already on the device). Choice made during implementation; the backlog did not say.
+- **Same-country gate = conservative coarse outlines** (China including Hainan, Singapore), each inside the real border; near a border or anywhere else is "unknown" and not routed. No existing country resolver existed (a trip stores a country code but not per point). Known limit: border towns, Hong Kong/Macau handling and far west Xinjiang may fall back.
+- **Shared cache is its own table, written only by the edge function** (service role with the verified caller passed in), so a client can never forge a cache entry or trigger a provider call for coordinates that are not the trip's markers.
+- **Spider only for stacks that mix trips.** Existing same-place visits within one trip (or none) keep the top pin and the window's visit chips; fanning them would have changed intentional behaviour and broke `mapsel`, `visits` and `cardsel`.
+- **Enter on a pin now acts as a click** (Leaflet only does that for bound popups); needed for the keyboard path into a fan, and applies to every pin.
+- **Budget defaults** (150 per user per day, 1,500 per day, 30 per minute) sit below the quota figures seen in HeiGIT's public pages (2,000 per day, 40 per minute, not confirmed for the owner's plan); adjust with the function's environment variables.
+
 ## Testing and process
 **Tests live in `tests/`; browser suites need the dev server on :5173 and Edge; external services mocked; Supabase tests run the real SQL on PGlite.** Suites must be parallel-safe (rules in `DEVELOPMENT.md`).
 

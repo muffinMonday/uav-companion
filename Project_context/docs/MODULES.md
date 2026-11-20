@@ -71,6 +71,21 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 | `live.js` (pure rules), `livemap.js` | Sending positions (trips and the `FRIENDS` scope); pins on the map (friends drawn as rounded squares) | `createLive`, `createLiveLayer` |
 | `autoshare.js` (pure) | Decides when to start and stop sharing by itself (consent, who is online, by-hand stops); wired in `party-ui.js` | `createAutoShare` |
 
+## Itinerary routes and coincident markers (`src/route/`, `src/spider.js`; backlog `backlogs/in-progress/ROUTE_NAVIGATION_REWORK_BACKLOG.md`)
+| File | Responsibility | Interface |
+|---|---|---|
+| `route/legs.js` (pure) | Which directed legs are drawn: the day's chain and the overnight links through a hotel (the sequencing that used to be inline in `poi-ui.js`) | `selectionLegs`, `chainOf`, `stopDates` |
+| `route/identity.js`, `route/country.js`, `route/polyline.js` | Re-exports of `supabase/functions/_shared/route-rules.js` and `route-polyline.js` (one source for the browser and the edge function): route key (ids, coordinates to 5 decimals, profile, schema version), same-country gate (conservative outlines for China and Singapore; anything else is unknown), eligibility, check of a provider answer, polyline codec | `routeKey`, `countryOf`, `ineligibleReason`, `readOrsGeoJson`, `encodePolyline` |
+| `route/result.js` | The two result states (road, fallback) and their builders | `fallbackFor`, `roadFrom` |
+| `route/router.js` | Cache first: memory, device cache (`uavzones.routes.v1`), shared-trip cache (`get_trip_routes`), then the `route-leg` function; de-duplication, 2 requests at once, back-off by answer code, pause on budget, `peek` (a saved road, never a request); `createBackend(client, signedIn)` | `createRouter`, `resolve`, `ensure`, `peek` |
+| `route/geometry.js` (pure) | Chevron placement along a screen path and their fit inside the band, band styles (dash patterns keep chevrons on dashes), label text, deterministic label placement with its degradation order | `chevronMarks`, `bandStyle`, `labelText`, `layoutLabels` |
+| `route/overlap.js` (pure) | Opposite-direction overlaps: detection, partial runs, smooth ramp, right-hand lane offset in screen pixels | `assignLanes` |
+| `route/render.js` | Leaflet drawing of bands, casings, chevrons and labels in layer space (turns with the map; labels stay upright through `maprotate.js`) | `createRouteRenderer` |
+| `spider.js` | Coincident pins of different trips: grouping by screen distance, fan layout, the fan itself (display position only, closes on background click, Escape, zoom, pan, choice) | `createSpider`, `clusterByScreen`, `fanLayout` |
+| `poi-ui.js` (route parts) | `redrawRoutes` builds entries from `selectionLegs`, asks the router, draws; the base-reference links (`relink`, class `base-link`) stay Haversine; routing credit while a road is drawn; Enter on a pin acts as a click | - |
+| `supabase/functions/route-leg/` | The edge function (`handler.js` rules, `index.ts` Deno entry with the HeiGIT call; key `HEIGIT_API_KEY` server-side) | - |
+Tests: `route-core-unit`, `route-geometry-unit`, `route-overlap-unit`, `route-router-unit`, `route-leg-unit`, `db-routes-unit`, `spider-unit`; browser `routes`, `spider`, `dayroute`, `trip`.
+
 ## Shell and settings
 | File | Responsibility |
 |---|---|
