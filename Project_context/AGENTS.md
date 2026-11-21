@@ -56,6 +56,9 @@ When a backlog is completed, archive its handoff and update all references. Arch
 ## UI and startup map
 For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map": feature -> HTML fragment -> JS -> CSS -> suites) before opening `index.html` or `main.js`. `index.html` is a shell; fragments are in `src/components/`; startup responsibilities are in `src/app/`. Refactor history: `docs/backlogs/completed/HTML_MAIN_REFACTOR_BACKLOG.md`.
 
+## Backlog: UI/UX Review 01 (proposed, unapproved)
+- `docs/backlogs/for-review/UAV_COMPANION_UI_UX_REVIEW_01_PROPOSED_BACKLOG.md`: premium redesign, four-destination shell and adaptive marker detail panel. **Revision 2 (2026-11-21) reconciled with the HTML prototype** `docs/design-references/uav_companion_review01_marker_panel_refined_v4.html`. Every item is PROPOSED / UNAPPROVED; open owner decisions are in its section 11. Documentation only: no code, flag, migration, commit, push or deploy is authorized.
+
 ## Future backlog (documentation only)
 - `docs/COMMUNITY_FLYING_AREAS_PLAN.md`: approved product specification for locally saved, admin-reviewed community polygons. **Planned, not implemented**; its file paths should follow the component convention above. Do not start it, commit, push or deploy without owner authorization.
 

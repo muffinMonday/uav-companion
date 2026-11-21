@@ -1,0 +1,440 @@
+# UAV Companion — UI/UX Review 01: Proposed Implementation Backlog
+
+**Status:** PROPOSED / ALL ITEMS UNAPPROVED — planning artifact only (revision 2, reconciled with the HTML prototype v4)  
+**Date:** 2026-11-21 (revision 2 same day; status changes below)  
+**Prototype reference:** [`docs/design-references/uav_companion_review01_marker_panel_refined_v4.html`](../../design-references/uav_companion_review01_marker_panel_refined_v4.html) (SHA-256 `a4ebbc90…3962`). A design prototype, not application code. Reconciliation: section 9; amendments: section 10; open decisions: section 11; sequence: section 12.  
+**Repository:** `muffinMonday/uav-companion` (`main`, reviewed read-only)  
+**Authority:** User decisions in UI/UX Review 01; source code wins over stale documentation.  
+**Authorization:** No application changes, migrations, commits, pushes, feature-flag changes, hardware tests, or deployments. This document is **not** permission to implement.  
+**Scope:** Premium teal visual redesign of the main application and motor-diagnostics presentation; mobile-first, adaptive tablet, desktop navigation rail; one gated coordinated release.  
+**Evidence limit:** Prior read-only GitHub source inspection and backlog review, not a completed live-device or every-element audit. Reconfirm current HEAD, branch, flags, and backlog statuses before execution.
+
+## Status history
+
+- 2026-11-21: revision 1 written from a read-only GitHub review (all items unapproved). File was untracked at `docs/backlogs/`.
+- 2026-11-21: revision 2. File moved to `docs/backlogs/for-review/` (lifecycle convention in `AGENTS.md`). Reconciled with prototype v4 and with source on `main` at `cd70661`. Sections 0 to 8 are kept; items changed by the reconciliation carry an "Amended (AM-nn)" note. Sections 9 to 12 are new. Nothing is approved; no application code, flag, migration, commit, push or deploy was touched.
+- 2026-11-21: owner accepted the recommendation of every decision U-01 to U-12 (section 11, column "Status"). Design decisions only: the marker-detail items are still PROPOSED, and no implementation, commit, push or deploy is authorized until the owner approves S1 onward.
+- 2026-11-21: owner authorized S1 (baseline capture and popup-test triage; no application code). Done: [REVIEW_01_S1_MARKER_WINDOW_BASELINE.md](../../design-references/REVIEW_01_S1_MARKER_WINDOW_BASELINE.md). Two backlog edits came from it (MD-08 covers bottom sheets too; U-01 keeps today's verdict wording). S2 onward still needs the owner's go-ahead.
+- Evidence limit of revision 2: source read for the marker window, view, panel, explorer, point check, swipe, sessions hub, settings and diagnostics step list; no browser run of the prototype, no live-device check.
+
+## 0. Decision register — design directions, not build approval
+
+| ID | Area | Selected direction |
+|---|---|---|
+| D01 | Overall | Premium visual redesign, teal-led identity, mobile first, exhaustive audit |
+| D02 | Navigation | Hybrid, four primary destinations: Map, Trips, Explore, Profile; preserve destination state |
+| D03 | Map shell | Compact search opening full-screen search; floating Layers sheet; hide mobile zoom buttons; regions integrated into search; contextual actions |
+| D04 | Map inspection | Keep two-second long-press and add explicit Inspect action; crosshair contextual |
+| D05 | Map overlays | Adaptive compact/medium/expanded sheets; full-screen primary destinations and map-related sheets |
+| D06 | Map / POIs | Saved Places in expandable Map sheet; marker tap opens sheet; progressive separate creation; explicit coordinate Move with Save/Cancel; bulk selection toolbar |
+| D07 | Routes | Contextual summary expanding into management sheet; preserve existing route renderer and straight-line references |
+| D08 | Trips | Upcoming hero + list; full-screen trip details; horizontal day selector; secondary actions in overflow |
+| D09 | Explore | Session-first cards; card tap opens full-screen details; separate map-preview action |
+| D10 | Profile | Gamified overview, compact existing mascot, rank and XP; three featured achievements + View All |
+| D11 | Guests | All four destinations visible; gate only restricted actions with sign-in prompt |
+| D12 | Notifications | Global bell, central Activity inbox as adaptive sheet, source-specific shortcuts |
+| D13 | Forms | Wizard for complex workflows only; inline validation; durable drafts for trips, sessions and AI imports, subject to privacy design |
+| D14 | Destructive actions | Explicit consequence-specific confirmation dialogs |
+| D15 | Onboarding | Short welcome with optional task choices/tutorial; guest goes directly to usable Map |
+| D16 | Settings/auth | Grouped Settings page; compact sign-in dialog |
+| D17 | Desktop/tablet | Left rail + contextual panels/map; responsive layout based on usable space |
+| D18 | Motor diagnostics | Include visual and usability redesign in same release; **no safety logic, state machine, transport, command or authorization changes** |
+| D19 | Delivery | One production release after independently tested workstreams, integration and explicit approval gates |
+
+**Clarifications to preserve:** “Wizard for complex workflows” supersedes earlier preference for a single progressive form generally; the dedicated marker creation sheet remains progressive unless its complexity demonstrably warrants steps. “Durable drafts=session” in the decision interface means **trip forms, Flight Session forms, and AI itinerary imports**, not all forms. Existing privacy restrictions and browser-storage limitations must be designed before persisting sensitive draft contents.
+
+## 1. Source and backlog evidence register
+
+Paths are source-owner candidates verified during the read-only review; the final implementation owner must re-check exact symbols and current HEAD.
+
+| Domain | Primary code references | Existing design/backlog references |
+|---|---|---|
+| Shell, tabs, dock, sheets | `src/panel.js`, `src/components/dock.html`, `src/components/panel.html`, `src/styles.css`, `src/view.js`, `src/main.js` | `Project_context/docs/DESIGN.md`; `Project_context/docs/backlogs/completed/DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md` |
+| Search, country, map | `src/search.js`, `src/app/country-menu.js`, `src/components/map-config.html`, `src/map.js`, `src/locate.js`, `src/crosshair.js`, `src/holdcheck.js`, `src/map-more-tools.js` | `src/help-content.js` |
+| POIs | `src/poi-ui.js`, `src/poi-model.js`, `src/components/poi-panel.html`, `src/spider.js`, `src/view.js` | Existing POI/list/drag regression suites |
+| Trips | `src/trips-ui.js`, `src/components/trips-panel.html`, `src/party-ui.js`, `src/trips.js` | Dashboard/Toolbar backlog; route backlog |
+| Routes | `src/route/router.js`, `src/route/render.js`, `src/route/identity.js`, `src/route/geometry.js`, `src/route/overlap.js` | `Project_context/docs/backlogs/in-progress/ROUTE_NAVIGATION_REWORK_BACKLOG.md` |
+| Sessions | `src/sessions-hub.js`, `src/sessions-create.js`, `src/sessions-map-explorer.js`, `src/sessions-preview.js`, `src/sessions-xp.js`, `src/session-arrival.js` | `Project_context/docs/backlogs/completed/FLIGHT_SESSIONS_DISCOVER_AND_AUTO_ATTENDANCE_BACKLOG.md` |
+| Profile, friends, XP | `src/account-ui.js`, `src/profile-dialog.js`, `src/profile-ui.js`, `src/friends-ui.js`, `src/progression-ui.js` | Mascot backlog/status to be reverified |
+| Privacy, sync, settings | `src/privacy.js`, `src/privacy-ui.js`, `src/sync-ui.js`, `src/components/map-config.html` | `Project_context/docs/DESIGN.md` |
+| Welcome and help | `src/splash.js`, `src/help-ui.js`, `src/help-content.js`, `src/touch.js` | Dashboard/Toolbar backlog |
+| Diagnostics | `motor-diagnostics/user.js`, `src/benchtest/bench-ui.js`, `src/benchtest/lifecycle.js`, `src/benchtest/state-machine.js`, `src/preflight/readiness-ui.js`, `src/preflight/ui-parts.js` | `Project_context/docs/backlogs/in-progress/UAV_COMPANION_AUTOMATED_MOTOR_DIAGNOSTICS_BACKLOG.md` (**authoritative**); superseded Addendum 1 is history only |
+
+### Verified baseline constraints
+
+- `src/panel.js` implements the existing tab/dock architecture, phone sheet behavior and dynamic tabs. Existing feature modules depend on its lifecycle.
+- `src/poi-model.js` preserves Trip > day > main stop > Side Quest, plus Unassigned and private Home. Do not flatten the data model.
+- `src/spider.js` expands eligible coincident markers without changing stored coordinates and includes keyboard guidance.
+- `src/route/render.js` implements directional bands, chevrons, parallel opposing lanes, fallback styling and collision-aware labels. `src/route/router.js` uses route identity keys, caching, backoff and backend authorization. Do not create another route engine.
+- `src/sessions-preview.js` builds tile-grid previews lazily, without additional Leaflet instances; airspace is checked on the main map, not in the preview.
+- `src/sessions-create.js` holds drafts in memory during map-point picking, not durably across reloads.
+- `src/sessions-hub.js` distinguishes public discovery from signed-in private/session operations and preserves some scroll/filter state.
+- `src/progression-ui.js` supplies shared rank/XP/achievement components and supports privacy-sensitive states; do not duplicate calculations.
+- `src/privacy.js` defaults sensitive network/location features off except locate-on-launch; attendance and live sharing are independent consents.
+- `src/splash.js` already has Continue as Guest; it currently routes through the old dashboard/help entry flow.
+- `src/touch.js` avoids unsolicited software-keyboard opening on touch devices.
+- `motor-diagnostics/user.js` is feature-flagged and uses `src/benchtest/lifecycle.js`; the diagnostics backlog states hardware validation and real nonzero motor testing are not authorized.
+
+## 2. Supersession register (proposed; not active until approval)
+
+| Old behavior or document | Proposed replacement | Preserve / caveat |
+|---|---|---|
+| `DESIGN.md` principle “refine, do not redesign” | Design System v2 premium redesign | Retain semantic safety/status tokens, contrast, accessibility, light/dark and diagnostics isolation |
+| Current panel/dock and floating dashboard | Four-destination bottom nav / desktop rail | Preserve dynamic feature entry points, user data and all actions |
+| Dashboard as independent drawer | Profile overview; trip tools move to Trips/Map | Do not drop Help, route, check-in, What's New or data shortcuts |
+| Map Configs primary tab | Grouped Settings + floating Layers | Preserve basemaps, country buttons, zone opacity, source/legend, theme and travel app preferences |
+| More tools popover/sheet | Contextual map actions and Layers sheet | Preserve tool handlers and state; no duplicate listeners |
+| POI creation/edit/visibility mixed in one panel | Saved Places sheet + progressive Add + separate Move + Layers | Preserve type rules, Home privacy, Side Quest hierarchy, bulk actions and keyboard reordering |
+| Leaflet marker popup on phone | Adaptive marker detail sheet | Preserve point-check distinction, links, weather/elevation, selection and focus |
+| Discover card click opens Map Explorer (completed backlog) | Discover card click opens full session detail | Retain separate Map preview/Open on map affordance; explicitly test both |
+| Old onboarding/help references to zoom, More tools and panel | New map/search/4-tab orientation | Keep stable help IDs and required acknowledgements where feasible |
+| Existing two-step delete button | Consequence-specific confirmation dialogs | Preserve different semantics for own trip, shared owner delete and member leave |
+| Existing diagnostic styling | Premium visual language applied to diagnostics | **No changes to safety machine, stop controls, power workflow, allowlist, flags, command boundary or claims** |
+
+**Precedence rule:** No earlier approved functional/safety requirement is superseded merely because its UI presentation changes. Explicitly enumerate every changed interaction and have the owner approve it before implementation.
+
+## 3. Workstream backlog — every item UNAPPROVED
+
+Each item below requires a design reference/mockup, source ownership check, acceptance evidence and separate implementation authorization.
+
+### P0-A — Audit closure and evidence baseline
+
+- **A01 [UNAPPROVED] Complete interactive-element inventory.** Enumerate all visible controls, hidden/conditional controls, keyboard shortcuts, tooltips, focus targets, dialogs, toast actions and status states for all destinations and diagnostics. Deliver traceable source path + selector + state + screenshot/recording evidence. **AC:** no unclassified user-facing control; explicitly mark untested items.
+- **A02 [UNAPPROVED] Baseline functional and visual capture.** Record current main HEAD, feature flags, hosted environment and backlog statuses; baseline guest, signed-in, shared-trip, session host/participant and diagnostic mock states. **AC:** reproducible test fixtures and current screenshots at phone/tablet/desktop widths.
+- **A03 [UNAPPROVED] UX flows and permission matrix.** Map entry, deep link, browser Back, form abandonment, shared-party actions, sessions, sync conflicts and hardware gating. **AC:** source-confirmed action/permission mapping and unresolved decision list.
+
+### P0-B — Premium design system v2
+
+- **B01 [UNAPPROVED] Token specification.** Teal-led palette with refined neutrals, typography, radii, spacing, elevation, iconography and light/dark themes. Isolate flight-zone safety colors and diagnostics severity colors. **AC:** token inventory, contrast results, no accidental safety-semantic changes.
+- **B02 [UNAPPROVED] Shared primitives.** Navigation item, header, card, button, input, chip, badge, empty/loading/error states, toast, modal and adaptive sheet. **AC:** keyboard/focus, touch target, reduced-motion, short-screen, 200% zoom and screen-reader contracts.
+- **B03 [UNAPPROVED] Visual reference set.** Final high-fidelity phone/tablet/desktop designs for every destination and diagnostics state. **AC:** owner review before UI code work; use existing approved mascot assets.
+
+### P0-C — Navigation, sheets and app-state coordinator
+
+- **C01 [UNAPPROVED] Four-destination navigation.** Map, Trips, Explore, Profile; mobile bottom nav, tablet adaptation and desktop left rail. **AC:** correct active/selected state, browser Back, keyboard, focus and guest access.
+- **C02 [UNAPPROVED] State preservation.** Preserve map center/zoom/orientation, selected trip/day, list scroll/filters, session context and profile subview. **AC:** switching destinations does not unexpectedly reset state; account change clears/revalidates private data.
+- **C03 [UNAPPROVED] Shared overlay policy.** Compact/medium/expanded map sheets; modal precedence; full-screen search/details; keyboard/safe-area/visual viewport handling. **AC:** no conflicting overlays, hidden actions or focus traps; Leaflet reflows/centers correctly.
+- **C04 [UNAPPROVED] Active-operation navigation guard.** Prompt before leaving active marker placement/move or meaningful unsaved work; separate stricter diagnostics navigation guard. **AC:** no accidental mutation; Cancel restores prior state; diagnostic guard unchanged.
+
+### P0-D — Map and Saved Places
+
+- **D01 [UNAPPROVED] Map shell.** Compact search to full-screen search, supported-region selector within search, floating Layers, Locate and contextual compass, hidden mobile zoom buttons. **AC:** coordinate/map-link search and Photon/Nominatim fallback retained; no lost map attribution. **Amended (AM-07):** prototype search echoes "sample results" while typing and shows an "Other regions" chip; neither is adopted (C-18). Attribution and scale must stay visible beside any side panel (C-22).
+- **D02 [UNAPPROVED] Map inspection.** Keep long-press; add explicit Inspect mode and contextual crosshair. **AC:** inspect works with touch and keyboard, does not interfere with pan/placement, safety caveats visible.
+- **D03 [UNAPPROVED] Saved Places sheet.** Hierarchical list, search, trip/type filters, nested Side Quests, preserved expansion and keyboard reordering. **AC:** counts, visibility and filtering match current data; Home remains private/unassigned.
+- **D04 [UNAPPROVED] Marker detail sheet.** Tap marker opens compact sheet; expand for details and actions; desktop contextual panel. **AC:** weather/elevation, external navigation, notes, point-check distinction, focus restoration and spidering retained. **Amended (AM-01, AM-02):** preferred layout and requirements are now MD-01 to MD-12 in section 10; every item of the current marker window listed in section 9.5 stays.
+- **D05 [UNAPPROVED] Progressive Add Marker.** Separate creation sheet, type/trip/placement selection; no unsupported type-trip combinations. **AC:** existing three placement methods and validation retained; no duplicate marker creation on navigation. **Amended (AM-05):** the prototype shows a 4-step wizard with 5 invented types; it is not adopted. Keep the 16-type taxonomy and group picker (`TYPE_GROUPS`), Side Quest as a relationship (not a type), one progressive sheet.
+- **D06 [UNAPPROVED] Explicit coordinate Move.** Stage new coordinates, Save/Cancel, rollback, map-mode banner. **AC:** no persistent mutation before Save; route key/cache effects verified; shared-trip access rules enforced. **Amended (AM-06):** today a move is hold-to-drag and saves on release with no Cancel (`poi-ui.js` pointer handler); the prototype banner offers Cancel and "Use this point" only. Save/Cancel is still required; the fate of drag is decision U-07.
+- **D07 [UNAPPROVED] Bulk toolbar.** Select, all shown/none, assign trip/type, Side Quest conversion, export-first delete confirmation. **AC:** selection count correct and filters unchanged; no accidental destructive action.
+- **D08 [UNAPPROVED] Contextual routes.** Compact route status and expandable management sheet; preserve driving/fallback, route labels, overnight and accommodation/home displacement semantics. **AC:** no duplicate router, no stale route shown as current after marker edit, no unapproved API calls.
+
+### P1-E — Trips
+
+- **E01 [UNAPPROVED] Trips landing.** Upcoming hero + trip list, clear past/shared/empty states. **AC:** all trips remain reachable and sortable; no duplication of trip data.
+- **E02 [UNAPPROVED] Full-screen itinerary.** Horizontal day selector, main stops/Side Quests, weather, accommodation and airspace warnings, Show on map. **AC:** day selection and marker visibility preserved; warnings remain accessible.
+- **E03 [UNAPPROVED] Trip actions and forms.** Primary actions visible, secondary in overflow; wizard only for genuinely complex creation; simple edits efficient. **AC:** edit, share, delete/leave, use-for-new-markers and fit-map actions retained. **Amended (AM-08):** the prototype merges "Delete or leave" into one dialog; D14 requires separate, consequence-specific flows (C-29).
+- **E04 [UNAPPROVED] Shared-trip management.** Owner/member distinctions, invitations, access revocation and sync conflict surfaces. **AC:** backend authorization unchanged; consequence-specific confirmations.
+- **E05 [UNAPPROVED] AI import and durable draft.** Dedicated preview/validation flow; draft persistence only after privacy/data-lifecycle design. **AC:** no import without confirmation, no silent coordinate lookup, clear malformed-input recovery.
+
+### P1-F — Explore / Flight Sessions
+
+- **F01 [UNAPPROVED] Discover cards.** Today/upcoming/nearby filters, compact metadata, XP eligibility and host profile; card opens full details, separate map preview. **AC:** expiry/pagination and lazy tile preview preserved; map preview never implies airspace clearance.
+- **F02 [UNAPPROVED] Full session details.** Host, attendees, visibility, capacity, participation, XP explanation, navigation, recurrence and moderation. **AC:** correct guest/host/member permissions and accurate server-sourced XP.
+- **F03 [UNAPPROVED] Hosting wizard and drafts.** Basics, schedule/recurrence, location, visibility and review; map picker returns to draft. **AC:** private default and explicit public-location acknowledgement retained; server validation authoritative.
+- **F04 [UNAPPROVED] My Sessions and invitations.** History, pending actions, management, attendance and reporting. **AC:** permission checks, error handling, partial loading and account transitions.
+- **F05 [UNAPPROVED] Attendance UI.** Show consent/eligibility and manual/automatic states. **AC:** do not activate deferred automatic-attendance feature or change backend flags.
+
+### P1-G — Profile, Settings, Authentication and Activity
+
+- **G01 [UNAPPROVED] Gamified Profile.** Compact approved mascot, rank/XP, three featured achievements, collection/history, friends and account. **AC:** use existing progression API; privacy and loading/error/zero states distinct.
+- **G02 [UNAPPROVED] Grouped Settings.** Map/display, navigation/units, privacy/location, account/sync, data, help. **AC:** existing preference keys and opt-in defaults unchanged; quick Layers controls remain synchronized.
+- **G03 [UNAPPROVED] Compact auth dialog.** Google/email magic link, guest prompts, failure/expired-return recovery. **AC:** no implicit account merging or local/cloud overwrite; return focus and mobile keyboard behavior correct.
+- **G04 [UNAPPROVED] Central Activity sheet.** Global bell, actionable requests/invites/notices/sync alerts, source-specific deep links. **AC:** distinguish pending from unread; partial failures do not hide other sources; no invented read state. **Amended (AM-08):** the prototype bell dot is always on; the badge must come from real pending counts (C-17).
+- **G05 [UNAPPROVED] Profile editing and data management.** Unsaved-change confirmation, visibility preview, export/import, account deletion. **AC:** existing privacy/access control and data-safety safeguards retained.
+
+### P0-H — Motor diagnostics presentation (no logic changes)
+
+- **H01 [UNAPPROVED] Nine-step visual audit and redesign.** Connection, readiness, safety confirmations, powered checks, ESC identification, restore, motor test, stop verification, results/history. **AC:** every state mapped to controller capability; no new enabled actions. **Amended (AM-09):** the prototype's diagnostics overlay is a visual sketch only (free Previous / Next stepping, a permanently disabled Stop & zero, an unconditional Profile entry). None of that behaviour may be built; see C-16. The nine step names in the prototype match `STEPS` in `src/preflight/ui-parts.js`.
+- **H02 [UNAPPROVED] Safety-critical UI.** Stop & zero, power/battery notices, recovery marker, unknown/blocked states, evidence panels. **AC:** persistent access to applicable stop control, focus retained after redraw, wording never claims certified safety or definitive diagnosis.
+- **H03 [UNAPPROVED] Technical results and history.** Improve readability, comparison, unavailable telemetry and evidence disclosure. **AC:** no fabricated ESC/FC facts, no unsupported hardware claims, no state-machine modifications.
+- **H04 [UNAPPROVED] Visual isolation.** Shared premium tokens without breaking lab/read-only workspace. **AC:** flags, allowlist, transport, interlocks, output caps and lifecycle guards unchanged; synthetic/mock regression only unless separately authorized.
+
+### P0-I — Cross-cutting quality and single-release gate
+
+- **I01 [UNAPPROVED] Onboarding/help rewrite.** Welcome task choices, direct guest Map entry, revised contextual hints and help references. **AC:** no obsolete navigation instructions; safety/privacy acknowledgements preserved.
+- **I02 [UNAPPROVED] Accessibility and responsive pass.** Keyboard, screen reader, large text, orientation, safe areas, contrast, reduced motion, non-drag alternatives. **AC:** documented test matrix and defects resolved or explicitly accepted.
+- **I03 [UNAPPROVED] Integrated regression and security review.** Shared trips, route caching, session permissions, cloud sync, private data, feature flags and diagnostics safety. **AC:** no unauthorized data exposure or functionality regression.
+- **I04 [UNAPPROVED] Release rehearsal and rollback.** Build from isolated integration branch, capture artifacts, compare to baseline, rehearse rollback. **AC:** all gates signed off; **deployment remains separately owner-authorized**.
+
+## 4. Dependency map and execution strategy
+
+- A01–A03 precede design freeze; B01–B03 define shared presentation contracts.
+- C01–C04 depend on B; D/E/F/G depend on C and their existing feature engines.
+- D06 depends on routing identity/invalidation and shared-trip permissions; E02 depends on Map/Trips state contract; F03 depends on overlay/map-picker contract; G04 depends on source-specific notification APIs.
+- H01–H04 depend on B but can be implemented in parallel with C–G; diagnostic safety code is out of scope.
+- I01 follows navigation freeze; I02 and I03 run continuously and again at integration; I04 is final.
+- **One production release** does not mean one coding pass: isolated branches/workstreams, integration branch, no production deployment until final explicit authorization.
+- Backend activation for HeiGIT/ORS routing, Supabase migrations, automatic attendance, and hardware motor validation are separate release dependencies or out-of-scope operations; do not silently activate them.
+
+## 5. Required test matrix
+
+| Surface / state | Required tests | Existing candidate suites / evidence |
+|---|---|---|
+| Navigation | Map/Trips/Explore/Profile, deep link, Back, state restoration, guest/signed-in, orientation | `tests/dashboard.mjs`, `tests/html-dom.mjs`, navigation tests to add |
+| Map and POIs | Touch/keyboard inspect, marker sheet, place/move Save/Cancel, nested Side Quests, bulk, coincident pins | `tests/hold.mjs`, `tests/edit.mjs`, `tests/bulk.mjs`, `tests/hierarchy.mjs`, spider tests |
+| Routes | Cached road/fallback, invalidation, labels, overnight, shared trip RLS, provider refusal | `tests/dayroute.mjs`, `tests/db-routes-unit.mjs`, route suites |
+| Trips | Date/day, warnings, AI preview, shared owner/member delete/leave, sync conflicts | `tests/days.mjs`, `tests/cloud.mjs`, `tests/db-trips-unit.mjs`, trip suites |
+| Sessions | Today/expiry, card→details, map preview, host/member permissions, invitations, XP, consent | `tests/discover.mjs`, `tests/db-sessions-unit.mjs`, `tests/db-session-arrival-unit.mjs` |
+| Profile/auth | Guest, Google callback, magic link, progression privacy, achievements, cloud conflict | `tests/google-signin.mjs`, `tests/db-profile-unit.mjs`, `tests/db-progression-unit.mjs` |
+| Diagnostics | Readiness, power transitions, Stop & zero, visibility/Back, fault recovery, results/history | `tests/bench-safety-unit.mjs`, `tests/bench-machine-unit.mjs`, `tests/bench-lab.mjs`, `tests/combined-ui.mjs` |
+| Visual/accessibility | 320/360/390/430px phones; short/landscape phones; tablet portrait/landscape; desktop; light/dark; 200% zoom; keyboard; screen reader; reduced motion | `tests/contrast-unit.mjs`, browser screenshot and manual-device tests to add |
+| Security/privacy | Guest/private boundaries, sync conflict, sharing consent, session location, attendance flag, diagnostics flag | Existing DB/privacy tests plus targeted integration assertions |
+
+**Mandatory real-device verification:** Android Chrome, iOS Safari, desktop Chromium/Firefox/Safari where available; touch with virtual keyboard, screen reader (TalkBack/VoiceOver), external keyboard, zoom, safe areas and reduced motion. Report unavailable platforms as **not tested**, never as passed. No real powered motor hardware testing without separate authorization.
+
+## 6. Release gates (all pending / unapproved)
+
+1. **G0 — Evidence complete:** current HEAD/status and exhaustive element inventory, screenshot baseline, open defects and permissions matrix reviewed.
+2. **G1 — Design approved:** high-fidelity responsive screens, design-system v2, interaction contracts, supersession register and diagnostics safety boundaries signed off.
+3. **G2 — Component tests pass:** independently implemented workstreams pass unit/browser/visual/accessibility checks; no safety/business logic changes beyond separately authorized scope.
+4. **G3 — Integration passes:** cross-destination flows, guest/signed-in, shared trips, routing fallback, sessions, progression, cloud conflict and diagnostics isolation verified on integration branch.
+5. **G4 — Release candidate accepted:** real-device checks, regression matrix, performance, privacy/security, documented feature flags, rollback rehearsal and known-issue review complete.
+6. **G5 — Explicit production authorization:** owner separately approves merge/push/deployment, including any backend migrations, secrets, flags or infrastructure steps. **This backlog provides no such authorization.**
+
+### Stop conditions
+
+Stop and request review if any work requires changing diagnostic motor-command behavior, backend authorization/RLS, account merge policy, consent defaults, route provider quotas/credentials, feature flags, destructive data semantics, or an unresolved previous backlog conflict. Never use UI polish as justification for enabling unfinished backend features.
+
+## 7. Remaining gaps and questions before implementation approval
+
+- Complete the **every-element** inventory and capture real rendered UI; prior review was source-based and illustrative.
+- Verify live deployment/HEAD versus backlog status for routing, mascot, Google OAuth, and diagnostics; do not equate “on main” with “deployed.”
+- Confirm exact high-fidelity teal palette, typographic hierarchy and approved mascot placements; visual references are not final assets.
+- Define secure durable draft retention: data minimization, expiry, clearing on sign-out/account switch, shared-trip access changes, storage failures and private meeting-point handling.
+- Define navigation and sheet contracts for Leaflet marker focus, spidering, route-label visibility, browser history and responsive viewport insets.
+- Decide which complex trip flows use wizards; simple edits remain single-page.
+- Validate Activity source aggregation without creating new unread semantics or exposing private session information.
+- Confirm diagnostics' latest authoritative status, enabled flags, and current safety behavior; no real-hardware verification is included.
+
+## 8. Acceptance and handoff discipline
+
+Before any coding authorization, each item must gain: owner-approved mockup or interaction spec; precise source owner and code symbols; current verified behavior; proposed behavior; migration and rollback plan; dependency/permission review; test identifiers; accessibility acceptance criteria; and an explicit **Approved for implementation** decision. Until then every item is **UNAPPROVED**.
+
+**Read-only planning result:** No source changes, commits, pushes, migrations, feature-flag changes or deployments were performed to prepare this document.
+
+## 9. Reconciliation with HTML prototype v4 (revision 2)
+
+### 9.1 What the prototype is, and how its content is classified
+
+The prototype is one self-contained HTML file (53 KB, fake data, glyph icons, a decorative map). It was read in full. It is a design reference. Nothing in it is production code, and nothing in it is approved except the direction named in 9.2.
+
+Every prototype element falls in one class:
+
+| Class | Meaning | Rule |
+|---|---|---|
+| **N** Normative direction | Layout, hierarchy and interaction the owner prefers | Becomes a requirement once this backlog is approved |
+| **F** Functional requirement | Behaviour the production app must have, shown or implied by the prototype | Needs tests |
+| **I** Illustrative only | Sample names, dates, counts, coordinates, glyph icons, decorative map, preview bar, toasts such as "Demo only" | Never copied |
+| **C** Conflict | Contradicts this backlog, the source code or a rule in `AGENTS.md` / `DESIGN.md` | Resolution in 9.4, decision in section 11 |
+| **G** Gap | Needed by the app but absent from the prototype | Listed in 9.5 |
+
+### 9.2 Decisions the prototype demonstrates
+
+| # | Area | Prototype decision | Class | Backlog link |
+|---|---|---|---|---|
+| P1 | Marker detail, folded phone (below 690 px frame) | Full-width bottom sheet, three sizes (compact 45%, medium 72%, expanded 92% of the map), handle, size button, close | N (layout), C (sizes, 9.4 C-08) | D04, MD-02 |
+| P2 | Marker detail, unfolded (about 760) | Right-hand panel, full height, width `clamp(340px, 47%, 480px)` | N | MD-03 |
+| P3 | Marker detail, desktop (about 1080) | Right-hand panel, width `clamp(420px, 38%, 480px)`; cap 480 px | N | MD-04 |
+| P4 | Marker detail content | Small "Marker details" label, name once, one subtitle, status tags, warning, action grid, "Location information" block when expanded | N (hierarchy), C (duplicate metadata, C-09) | MD-05 |
+| P5 | Navigation | Four destinations. Bottom bar below 690 px, 76 px rail from 690, 92 px rail from 1000 | N (four destinations), C (breakpoints, C-04) | C01 |
+| P6 | Top bar | Brand, Activity bell, Settings gear | N | G04, G02 |
+| P7 | Map shell | Search pill opens full-screen search; Layers button; right-hand Locate / Saved places / Inspect; no zoom buttons; no compass | N (D03), G (compass, attribution, scale, rotation) | D01 |
+| P8 | Overlays | Sheets, full views and dialogs from one `renderOverlay` with a shared scrim | N (three kinds), C (scrim on marker detail, C-02) | C03 |
+| P9 | Map modes | Bottom banner for Inspect, Place, Move, Meeting point; leaving asks to confirm | N | D02, D06, C04 |
+| P10 | Trips | Hero, filter chips, cards, full-screen detail, day chips, timeline, "More" sheet | N | E01 to E03 |
+| P11 | Explore | Discover / My Sessions / Invitations chips, session card, full detail with "View on map" | N | F01, F02 |
+| P12 | Wizards | Trip (3 steps), Session (4 steps), Marker (4 steps) with step chips and Back / Next | N for trip and session, C for marker (C-06) | D13, D05, E03, F03 |
+| P13 | Profile | Mascot-sized hero, progress bar, three featured tiles, list rows | N | G01 |
+| P14 | Settings | Six accordions, sign-in dialog, conflict dialog, delete-account dialog | N | G02, G03, G05 |
+| P15 | Diagnostics | Overlay with nine step names, progress bar, disabled Stop button | C (C-16); only the visual language is usable | H01 to H04 |
+| P16 | Preview bar (Actual / Folded 360 / Unfolded 760 / Desktop 1080) | Review aid | I | none |
+
+### 9.3 Preferred marker-detail direction (owner, 2026-11-21) as requirements
+
+These are the only prototype layout decisions the owner has stated as preferred. They are **proposed, unapproved** and become binding on approval.
+
+- **MD-01 Host component, not a Leaflet popup.** One adaptive container outside the Leaflet container (as `.ses-explorer` is), `position:fixed`, at `--z-sheet`. It is **non-modal**: no scrim, the map stays visible and operable.
+- **MD-02 Folded phones: full-width adaptive bottom sheet.** Edge to edge, safe-area aware, a handle, two states (compact, expanded). Expanded must leave the selected pin visible; the existing phone limit is 60% of the map (`expandedMaxHeight` in `src/view.js`). Prototype sizes of 72% and 92% are not adopted without owner sign-off (U-05).
+- **MD-03 Unfolded foldables: wider contextual side panel.** Full height of the free area, `clamp(340px, 47%, 480px)`.
+- **MD-04 Desktop: contextual side panel capped near 480 px** (`clamp(420px, 36 to 38%, 480px)`).
+- **MD-05 No duplicate titles, no cramped actions.** Name appears once (the heading; the container takes its accessible name from it). Type, trip and day appear once, in one metadata line; chips only for states (Side Quest, Unverified, Outside the trip's dates). Action layout in 9.4 C-10: primary Navigate full width, secondary actions wrap, rare actions in an overflow menu. Minimum 44 px targets, no label clipped at 320 px.
+- **MD-06 Choose layout by room, not by device or a hard-coded width.** Side panel when the map container leaves at least 320 px of map beside the panel; otherwise bottom sheet. This is the rule the Sessions explorer already uses (`MAP_MIN`, `layout()` in `src/sessions-map-explorer.js`) and it reproduces P1 to P3 at the prototype widths (side from about 660 px). One shared helper, so the marker panel and the explorer cannot disagree.
+- **MD-07 Preserve map visibility and recentre the selected marker in the free area.** Free area = map container minus the marker panel or sheet, minus the open side panel, minus the explorer dock, minus top search row and bottom navigation where present. Selecting a marker (tap, list row, previous / next, search result) pans so the pin sits at the middle of the free area, keeps the zoom, is rotation-aware, and respects a manual pan until the next explicit selection. This logic exists once, in `centerOn` and `visibleRect` of the explorer; extract it, do not write a second copy. The prototype does not demonstrate recentring (its pins are fixed CSS positions).
+- **MD-08 Attribution, scale and map controls stay reachable.** *(S1 baseline: attribution is 34 to 50 px tall at the bottom of the map on phones, so a bottom sheet covers it as well as a side panel does.)* A right-hand panel or a bottom sheet would cover the Leaflet attribution (bottom right) and any right-hand map buttons. Offset them with a CSS variable the way the explorer offsets controls with `--ses-x-off`.
+- **MD-09 Same content, same rules.** The panel renders everything the current marker window renders (9.5) from one extracted content builder. No simplification of data shown.
+- **MD-10 Focus, keyboard, Escape.** Opening moves focus to the heading; closing returns focus to the pin or list row; Escape closes the panel when no dialog is open; edit form inside the panel keeps keyboard-open behaviour on phones (follow `visualViewport` as the sessions hub does).
+- **MD-11 Gesture parity.** Swipe-to-dismiss and swipe on the previous / next footer behave as today (`onPopupSwipe`), adapted to the sheet (down) and panel (right). Non-drag alternatives (close button, size toggle) always present.
+- **MD-12 Interaction with other overlays.** Opening the Sessions explorer, a point check, the weather card, a dialog or the side panel has a defined precedence (U-04). Defaults: one of marker panel / explorer at a time; point check and weather close the marker panel as they close the popup today.
+
+### 9.4 Conflict register (prototype v4 vs backlog vs source)
+
+| ID | Conflict | Evidence | Recommended resolution |
+|---|---|---|---|
+| C-01 | Today the marker window is a Leaflet popup (`L.popup` in `openPopup`, `src/poi-ui.js`), expanded or collapsed by saved pref `windowExpanded`, with `popupopen` / `popupclose` driving distance lines, name tags and `viewId`. The prototype is a separate sheet. 53 test files mention popups. | `poi-ui.js` 888, 1093 to 1123; `grep` of `tests/` | Build the host component and keep the popup code path until the new one passes. Move listeners from `popupopen` / `popupclose` to explicit open / close events of the new host. Rewrite popup-specific tests, do not delete them. Scope: saved markers only in the first release (U-02). |
+| C-02 | The prototype shows its scrim for the marker sheet (`renderOverlay` removes `hidden` from `#scrim` for every overlay, and a click on it dismisses). That dims and blocks the map, against "preserve map visibility". | prototype `renderOverlay` | Marker detail is non-modal and has no scrim. Scrim only for dialogs and full views. |
+| C-03 | The prototype never recentres. Today there are two centring helpers: `centreOn` in `view.js` (panel inset only, no rotation) and the explorer's `centerOn` (free-rect, rotation-aware). | `view.js` 14 to 20; explorer 63 to 79 | Extract the explorer version to a shared module; `centreOn` callers (point check, marker window) move to it. Explorer behaviour must stay byte-for-byte equal (suites `sessions-explorer`, `session-preview`, `maprotate`). |
+| C-04 | Prototype breakpoints are widths only (690 / 1000). `DESIGN.md` section 9 documents phone at 520 px, compact at 760 px, an unfolded phone told apart by `pointer:coarse`, and "do not change phone sheet sizes without the owner". | `DESIGN.md` section 9 | Use the MD-06 room rule for the marker panel. Treat the 4-destination shell breakpoints separately (decision U-03). Do not edit existing phone breakpoints without sign-off. |
+| C-05 | Prototype marker types are five (Flying spot, Accommodation, Waypoint, Side Quest, Home) and derived by `name.includes('Quest')`. Production has 16 types in groups; Side Quest is a relationship with a parent, not a type; Home, Hotel and Home point are never Side Quests. | `TYPE_GROUPS`, `NOT_SUB`, `isSub` in `poi-ui.js`, `poi.js` | Prototype types are illustrative. Use `typeOf` / `TYPE_GROUPS`. |
+| C-06 | Prototype creates a marker in a 4-step wizard with the name on the last step. Decision D13 (clarification) says marker creation stays one progressive sheet. | decision register D13; prototype `wizard('marker')` | Follow D13. Keep the wizard for trip and session only. If the owner prefers steps for markers, that reverses D13 (U-06). |
+| C-07 | The prototype warning "Airspace not verified. Check official sources before flying." is a fixed line. Production runs `checkPoint` and shows a verdict plus explanation, "most prominent" (`zoneSummary`, `zoneExplanation`), with regional notices where defined. A fixed line must not replace a real result, and a green or "clear" reading must never appear. | `poi-ui.js` 1226 to 1232; CURRENT_STATUS Yunnan notice; `pointcheck.js` | Keep the live verdict block at today's prominence. The fixed caution is the fallback text for loading, unavailable or no-data states only. Wording stays owned by `zoneSummary`. |
+| C-08 | Prototype size control cycles compact, medium, expanded; the "Details" button calls the same cycle, so on a tall sheet it collapses it; on the side panel both are no-ops. Phone expanded is 92%. | prototype `resizeSheet`, `.sheet.expanded` | One control, "Show more / Show less", `aria-expanded`, two states. On side panels the control is absent (content scrolls). Persist the choice in the existing `windowExpanded` pref. Expanded cap 60% (existing). |
+| C-09 | Duplicate metadata: subtitle says "Saved flying place · Lake District FPV · Day 1" and the chips say "Trip stop", "Day 1". Today's window also repeats: toolbar caption (type, Side Quest, trip), then the trip line, then dates. | prototype `marker`; `poi-ui.js` 1169 to 1186 | One metadata line (type · trip · day); chips only for exceptional states. Trip colour dot stays. |
+| C-10 | Action layout: three buttons in a two-column grid leave "Route to" alone on a second row at medium sizes, appear in both the grid and the "Location information" block, and use glyph icons. | prototype `marker-actions`, `marker-extra` | See MD-05 and "Action model" below. Build only through `maplinks-ui.js` `actionControl` (DESIGN section 17). |
+| C-11 | "Route to" has no defined meaning: it opens a demo "route summary" sheet. Production Navigate is one external action, with Home asking first ("Tap again to share"). | `maplinks-ui.js`; DESIGN section 20 | Drop "Route to" from the marker panel for this release. Route management belongs to trip / day (D08) (U-08). |
+| C-12 | Move: prototype banner offers Cancel and "Use this point", then returns to the panel and says nothing was saved. No Save step, no staged coordinate display. Production saves on drag release with no Cancel (a toast only). | prototype `beginMode`, `completeMode`; `poi-ui.js` 1589 to 1615 | Staged Move: crosshair, live coordinates, Cancel / Save. On Save run the same invalidations the drag does (`mw.invalidate`, `elev.invalidate`, `mw.refresh`) plus route keys, zone re-check, spider re-fan, distance lines. Shared-trip edit permission checked before enabling. Drag fate: U-07. |
+| C-13 | The prototype marks a form dirty on any "Next" and asks before leaving. Production disables swipe-dismiss during edit (`editing`) and the edit form lives in the window. | `poi-ui.js` 1128 to 1130, 1250 | Edit stays inside the panel. Closing with changes asks (C04). Do not copy the prototype's "form draft is kept in this preview" text: drafts are limited by D13 and need the privacy design. |
+| C-14 | The prototype's bottom nav sits under sheets. The app has no bottom nav yet; it has a right dock and a dashboard drawer. | `panel.js`, `dock.html` | The free-area service must subtract whichever navigation exists at the time. Until C01 lands, the side panel and dock occupy the right edge; the marker panel suspends the side panel the way the explorer does (`panel.suspend()`). |
+| C-15 | Prototype `popstate` closes an overlay but never pushes history, so Back leaves the page. The app pushes history only for diagnostics (`benchtest/lifecycle.js`) and uses `hashchange` in the AI import. | grep of `pushState` | One history contract for all overlays (U-09). Diagnostics guard is untouched. |
+| C-16 | Diagnostics: free Previous / Next through nine steps, a progress bar that advances without a controller, a Stop & zero button that is permanently disabled, and an entry in Profile with no flag. Production: state machine decides the step; Stop & zero must stay enabled and fixed when applicable; entry exists only in a `VITE_BENCH_PHASE3` build; the workspace is its own page with page-lifecycle guards. | `src/preflight/ui-parts.js` `STEPS`; AGENTS.md; CURRENT_STATUS | Reuse the visual language only. No step navigation, no new states, no entry change, no change to flags. Step names already match `STEPS`. H items stay presentation-only. |
+| C-17 | The bell dot is drawn by CSS and is always on; activity rows are made up. | prototype `.notification:after` | Badge from real pending counts (existing `addTab().badge` sources); distinguish "needs action" from "read"; partial source failure shown, not hidden. |
+| C-18 | Search echoes "Sample results for: …" on every keystroke and has an "Other regions" chip. Production sends nothing while typing; Enter or the "Search online" row sends one request (Photon then Nominatim); coordinates and map links are parsed locally; regional buttons are Singapore and a China menu of regions. | CURRENT_STATUS 2026-11-16; `country-menu.js` | Keep the production search contract. Regions come from the manifest, not a hard-coded list. |
+| C-19 | Prototype settings contain controls that do not exist or have different values (Show completed trips and Show flight zones as plain toggles, Google/Amap select, "Humanitarian / CyclOSM / OpenTopoMap" without their real labels). Existing keys: theme radios `system / light / dark`, basemaps `osm / hot / cyclosm / topo`, map app `auto / amap / google`. | `map-config.html` | Regroup existing controls only; keep storage keys (`uavzones.`); quick Layers controls and Settings share one source of truth. |
+| C-20 | Icons are Unicode and emoji (▱ ▦ ◈ ♙ ⌖ ➤ ✦ 🏅 🛩 ♧). Several buttons have no accessible name (the `›` list buttons) and `♧` is used for both the bell and Saved places. | prototype `item()`, `.notification` | Inline SVG set with names; emoji never used as UI icons. |
+| C-21 | Prototype tokens (`--teal #087f79` etc.) are local and there is no dark theme, no zone colours, no `--pop-alpha`. | prototype `:root` | Not authoritative. First release of the marker panel uses current tokens so light, dark and popup-opacity work; Design System v2 (B01) replaces tokens later. |
+| C-22 | A right-hand panel covers the Leaflet attribution and scale; the prototype footer replaces attribution with "Illustrative map". OSM-based tiles require visible attribution. | `styles.css` `.leaflet-control-attribution`; MD-08 | Offset attribution and scale beside the panel; never hide them. |
+| C-23 | The map can be rotated. The prototype has no rotation. | `maprotate.js`, tests `maprotate` | Centring and the free-area rule are rotation-aware (MD-07). |
+| C-24 | Coincident markers are fanned (`spider.js`) and a "details off" mode exists (`markerDetails` pref: a click only selects and shows the name tag with an info button). The prototype always opens the sheet. | `poi-ui.js` 706, 777, 1001 | Details-off semantics are kept: the name tag's info button opens the panel. Selecting a fanned pin opens its own marker; closing leaves the fan as today. |
+| C-25 | The prototype's confirm dialogs have no focus trap or focus return; one Escape handler closes any overlay. | prototype `keydown` | Dialog contract in B02 / C03: trap, return, precedence. |
+| C-26 | Touch targets in the prototype are 36 to 38 px (`.chip`, `.btn.small`); `DESIGN.md` requires 44 px on touch. | prototype CSS | Use the app's 44 px rule. |
+| C-29 | Prototype "Delete or leave trip" is one dialog for personal, owned shared and member cases. | `tripManage` | Three separate flows with their own wording (D14). |
+
+### Action model for the marker panel (proposed)
+
+- **Primary row:** Navigate, full width, outlined `.btn.map-action`, external link; Home keeps "Tap again to share".
+- **Secondary row (wraps, 2 columns below about 380 px, 3 above):** Edit, Move location, Add visit. Icon plus text.
+- **Overflow "More":** Make Side Quest / Make main stop (only where `NOT_SUB` allows), Delete (danger, confirmation names the consequence), Hide details (the eye).
+- **Order and presence rules** follow today's phone set (`tEye`, `tEdit` on the bar; the rest in the menu) so nothing disappears, it only moves.
+
+### 9.5 Gaps: current marker window features the prototype omits (all must be kept)
+
+Zone verdict and explanation; ground elevation and 5-hour weather (consent-gated); weather button; distance to nearest home point and hotel; note; visits strip for the same place on other dates; "Unverified location" with Mark as checked; "Outside the trip's dates" warning; Side Quest list or parent jump; previous / next stop of the trip with position; check-in stamp; eye (details on/off); Edit (inline form with type, trip, date, order, Side Quest parent); Add visit; Make Side Quest / main stop; Delete with confirmation; Home marker never shared and Navigate asking first; official map link where a region defines one; trip colour dot; disclaimer. Also missing in the prototype generally: dark theme, rotation, spider fan, attribution, visualViewport handling, safe areas on top, short landscape phones, 200% zoom.
+
+### 9.6 Implementation dependencies and regression risks (found in source)
+
+| Area | Dependency or risk | Existing evidence |
+|---|---|---|
+| Popup event coupling | `popupopen` / `popupclose` call `tagLayer.clearLayers()`, `relink()`, `viewId`. The Sessions explorer's Escape handler refuses to act while `.leaflet-popup` exists. Replacing the popup changes both. | `poi-ui.js` 888 to 889; `sessions-map-explorer.js` 41 |
+| `map.closePopup()` | 16 call sites in `src/` close "the window" for placing, deleting, weather, mode changes. They need an equivalent on the new host (a `markerDetail.close()` plus one place that both call). | `grep closePopup` |
+| Centring | Two helpers (C-03). Free-area logic must include every overlay: side panel (380 px), explorer dock, new panel, search row, future nav. | `view.js`, explorer |
+| Swipe and focus | `onPopupSwipe` moves Leaflet children with CSS `translate`; the new host needs its own gesture binding. Close buttons inside an expanded popup are already special-cased (`.pop-close`). | `swipe.js` 101 to 110 |
+| Popup opacity and blur | Settings "popup opacity" (`--pop-alpha`) and the single allowed blur apply to `.leaflet-popup-content-wrapper`. A new surface would lose them or add a second blur. DESIGN section 11 forbids new filters without measurement. | `styles.css` 472 to 477; `popup-theme` suite |
+| Routes | Move changes coordinates; route leg identity keys, cached roads and straight-line references depend on them. | route suites; ROUTE backlog |
+| Shared trips | Member / viewer edit permission, Edit, Move, Delete and Add visit all depend on it. Backend unchanged. | `db-trips-unit`, `sharedtrip-unit` |
+| Spider fan | Fan expands around the selected cluster; the panel must not cover the fan. | `spider*.mjs` |
+| Rotation | Free-area offset must be rotated by the bearing (explorer formula). | `maprotate.mjs` |
+| Phone sheet rules | `DESIGN.md` section 9 forbids changing existing phone sheet sizes without the owner. The new sheet is a new component but a 72% / 92% size would be a de facto change. | `DESIGN.md` 135 to 145 |
+| Keyboard on phones | Edit form in the sheet: use `visualViewport` as in `sessions-hub.js`; `touch.js` avoids auto-focus keyboard. | `sessions-hub.js` 61 |
+| Tests that assume popups | `poi1`, `poi2`, `popswipe`, `popup-theme`, `hold`, `side`, `spider`, `edit`, `visits`, `window`, `mw`, `checkin`, `rain`, `snow`, `cardsel`, `mapsel`, `trip*`, `routes`, `dayroute`, `search`, `shell`, `responsive` and about 30 more (53 files in all). Each must be triaged: selector change only, or behaviour change. | `grep` of `tests/` |
+| Point check, live pins, session pins | Still Leaflet popups (`app/point-check.js`, `livemap.js`). Two visual systems side by side if only saved markers move (U-02). | source |
+| Diagnostics | No file under `src/benchtest/`, `src/preflight/`, `motor-diagnostics/` is touched by marker-detail work. | AGENTS.md |
+
+## 10. Proposed backlog amendments (all PROPOSED / UNAPPROVED)
+
+### 10.1 Amendments to existing items
+
+| ID | Amends | Change |
+|---|---|---|
+| AM-01 | D04, supersession table row "Leaflet marker popup on phone" | Replace the open text with MD-01 to MD-12. Add "saved-marker windows only in the first release" unless U-02 chooses otherwise. |
+| AM-02 | D04 acceptance | Add: all items in 9.5 present; two states only; no scrim; recentre rule; attribution visible; focus return; Escape; swipe parity. |
+| AM-03 | C03 (overlay policy) | Add three overlay kinds (non-modal contextual, modal dialog, full-screen view) and the MD-12 precedence table (U-04). Marker panel is non-modal. |
+| AM-04 | C01, C02 | Breakpoint rule for the 4-destination shell decided separately (U-03). Marker panel uses MD-06. |
+| AM-05 | D05 | Marker creation stays one progressive sheet; prototype wizard and 5-type list not adopted (C-05, C-06). |
+| AM-06 | D06 | Staged Move with Save / Cancel; list of invalidations from C-12. |
+| AM-07 | D01, I01 | Search contract unchanged (C-18); regions from manifest; attribution and scale preserved (C-22); help text and orientation rewritten for the new map controls. |
+| AM-08 | E03, G04, D14 | Separate delete / leave flows; data-driven bell badge. |
+| AM-09 | H01 to H04 | Prototype diagnostics is visual direction only (C-16); entry, flags and page lifecycle unchanged. |
+| AM-10 | B02, B03 | Add: marker detail host (bottom sheet / side panel), action row pattern, overflow menu, inline SVG icon set, 44 px rule. B03 high-fidelity references must replace prototype v4 before design freeze; prototype v4 is not the G1 deliverable. |
+| AM-11 | Test matrix (section 5) | Add rows in 12.3. |
+| AM-12 | Release gate G1 | Add: owner decisions U-01 to U-09 recorded; popup replacement scope decided. |
+
+### 10.2 New items (workstream M, marker detail host)
+
+- **MD-A [UNAPPROVED] Free-area and recentre service.** Extract `visibleRect`, `cut` and `centerOn` from `sessions-map-explorer.js` into a shared module with unit tests; explorer migrates with no behaviour change; `view.js` `centreOn` callers migrate. **AC:** explorer suites pass unchanged; new tests for side, bottom, rotated, manual-pan cases.
+- **MD-B [UNAPPROVED] Adaptive host.** MD-01 to MD-06, MD-08: component, CSS in the section 17 style, room rule, attribution offset, safe-area and `visualViewport`. **AC:** layouts at 320, 360, 390, 430, 520, 660, 760, 1080 px, landscape phone, 200% zoom.
+- **MD-C [UNAPPROVED] Content builder extraction.** Move `popupContent` (view, edit form, visits, weather, distances) out of `poi-ui.js` into a module reusable by the host without a popup instance. **AC:** DOM output equal to today's for the same item (snapshot per type), no behaviour change.
+- **MD-D [UNAPPROVED] Lifecycle wiring.** Open / close events replace `popupopen` / `popupclose`; one `close()` for the 16 `closePopup` call sites; explorer Escape check updated; history entry per U-09.
+- **MD-E [UNAPPROVED] Action model and overflow.** Section 9.4 "Action model", built through `actionControl`; confirm dialogs name the consequence.
+- **MD-F [UNAPPROVED] Staged Move.** C-12.
+- **MD-G [UNAPPROVED] Gesture and focus.** MD-10, MD-11.
+- **MD-H [UNAPPROVED] Tests.** Popup-to-host test migration plan with a per-suite triage table; new suites `marker-host` (browser) and `free-area-unit` (unit).
+
+### 10.3 Items explicitly not added
+
+- Prototype wizard for markers, its 5-type list, "Route to", the 72% and 92% phone sizes, the scrim, "Other regions", search-as-you-type, the always-on bell dot, free diagnostics stepping, the disabled Stop & zero button, any glyph or emoji icon, any sample data, the decorative map, the preview bar.
+
+## 11. Decisions needing owner approval
+
+Ranked by the harm of guessing wrong. Each has a recommendation; none is assumed.
+
+| ID | Decision | Affects | Recommendation (ACCEPTED by owner 2026-11-21) |
+|---|---|---|---|
+| U-01 | **Zone verdict in the marker panel.** Keep the live verdict (status plus explanation) at today's prominence, with the fixed caution line as a fallback only? | Safety wording | Yes. Never show a lone "not verified" when a result exists. Wording and colours stay exactly what `zoneSummary` / `zoneExplanation` produce today (S1 baseline: Hubei shows "Suitable-flight zone, below 120 m true height" with its source line); the panel adds no new wording. |
+| U-02 | **Scope of the popup replacement.** Saved markers only, or also point check, live pins and session pins in the first release? | Architecture, regression size | Saved markers only. Point check next, in a separate approved item, so two systems coexist for one release. |
+| U-03 | **Shell breakpoints** (bottom bar below 690, rail from 690 and 1000) versus the documented 520 / 760 / pointer-coarse rules. | Responsive architecture | Decide at design freeze; marker panel does not depend on it (MD-06). Changing phone breakpoints needs owner approval per `DESIGN.md`. |
+| U-04 | **Overlay precedence.** Marker panel vs Sessions explorer vs side panel vs weather card vs point check vs dialogs. | Interaction | One non-modal contextual overlay at a time (marker panel or explorer); the side panel steps aside only when under 320 px of map is left; dialogs sit above everything. |
+| U-05 | **Phone sheet heights.** Prototype 45 / 72 / 92 versus existing 36 / 60 limits; two states or three. | Visual rule in `DESIGN.md` | Two states, expanded capped at 60%. |
+| U-06 | **Marker creation.** Keep one progressive sheet (D13) or adopt the prototype's 4-step wizard. | Reverses a recorded decision | Keep D13. |
+| U-07 | **Drag to move.** Keep hold-to-drag (with an Undo toast) alongside staged Move, or replace it. Drag today saves at once. | Data mutation, shared trips | Keep both: staged Move as the explicit path with Save / Cancel, drag with Undo. Needs a behaviour change note. |
+| U-08 | **"Route to" in the marker panel.** Remove, or define it (for example "Add to day route" for trip stops). | Routing semantics | Remove for this release. |
+| U-09 | **Back button and history.** Should the marker panel and other overlays push history entries so Android Back closes them? | Architecture, diagnostics guard | Yes for the marker panel and full-screen details, using one manager; diagnostics keeps its own guard unchanged. |
+| U-10 | **Popup opacity and blur on the new surface.** Honour `--pop-alpha` and reuse the single existing blur, or opaque. | Visual rule, performance | Honour `--pop-alpha`, reuse the existing blur, no new filter. |
+| U-11 | **Interim placement against the right dock and 380 px side panel** until the new shell exists: suspend the side panel as the explorer does. | UX | Yes. |
+| U-12 | **Prototype retention.** Keep `docs/design-references/…_v4.html` in the repository as a reference. | Documentation | Yes, until B03 references replace it. |
+
+Owner accepted all twelve recommendations on 2026-11-21; they are design decisions, not implementation approval. None of U-01 to U-12 touches motor-diagnostics logic, backend authorization, consent defaults or flags. U-01, U-07 and U-09 affect safety wording, data mutation and architecture respectively and should be answered before MD-B starts.
+
+## 12. Proposed implementation sequence
+
+Nothing here is authorized. Each step ends with a test run and an owner checkpoint; no step commits, pushes or deploys without separate approval.
+
+### 12.1 Sequence
+
+| Step | Content | Depends on | Output |
+|---|---|---|---|
+| S0 | Owner answers U-01 to U-12; approves this revision | none | Updated status history |
+| S1 | A01 / A02 slice for the marker window only: current behaviour capture, screenshots at the 8 widths, popup-test triage table (MD-H) | S0 | Baseline and triage |
+| S2 | MD-A free-area service, explorer migration | S1 | Shared module, unit tests |
+| S3 | MD-C content builder extraction (no UI change; popup still hosts it) | S1 | Snapshot-equal output |
+| S4 | MD-B adaptive host behind a development-only switch, saved markers, view mode only | S2, S3 | Panel / sheet showing content |
+| S5 | MD-D lifecycle wiring, MD-G gestures and focus | S4 | Open / close parity |
+| S6 | MD-E action model and overflow | S5 | Actions |
+| S7 | MD-F staged Move (and U-07 drag change) | S5, route and mw invalidation review | Move |
+| S8 | Edit form inside the host, visualViewport, short screens | S5 | Edit parity |
+| S9 | Remove the popup path for saved markers after parity; update help text (I01) | S6 to S8 | Single path |
+| S10 | Join the wider plan: B01 to B03 tokens replace interim tokens; C01 shell; D01 map shell; point check (U-02 follow-up) | G1 | Per original section 4 |
+
+The marker host can be built against the current shell (U-11), so it does not wait for C01. Release remains one coordinated release (D19); S1 to S9 happen on the integration branch.
+
+### 12.2 Dependencies summary
+
+- MD-B needs MD-A and MD-C. MD-F needs MD-D and the invalidation review. MD-E needs `maplinks-ui.actionControl` unchanged.
+- C03 (overlay policy) and U-04 must be settled before S4 locks CSS.
+- Nothing in this stream depends on Supabase, HeiGIT, flags or hardware.
+
+### 12.3 Regression tests (added to section 5)
+
+| Surface | Tests |
+|---|---|
+| Free area | New `free-area-unit`; existing `maprotate`, `sessions-explorer`, `session-preview` unchanged and green |
+| Host layout | New browser `marker-host`: widths 320, 360, 390, 430, 520, 660, 760, 1080; landscape 640x360; 200% zoom; light and dark; no horizontal scroll; attribution and scale visible; panel never wider than 480 px; sheet never above 60% of the map |
+| Content parity | Snapshot of builder output per type (saved, Side Quest, Home, hotel, visit strip, unverified, outside dates, check-in) against today's DOM |
+| Behaviour | `poi1`, `poi2`, `edit`, `visits`, `side`, `sidelist`, `spider`, `hold`, `window`, `mw`, `checkin`, `rain`, `snow`, `bulk`, `picker`, `hierarchy`, `popswipe` (adapted), `popup-theme` (adapted to the host surface), `responsive`, `shell`, `search`, `maprotate` |
+| Routes and trips | `routes`, `dayroute`, `route-*-unit`, `db-routes-unit`, `trip*`, `days`, `tripplan`, `sharedtrip-unit`, `db-trips-unit`; plus Move changes route keys and clears stale cached roads |
+| Safety wording | Zone verdict present and equal to point-check wording for the same coordinates; no "clear" or "allowed" phrasing; Yunnan notice still shown where it is shown today |
+| Privacy | Home marker Navigate asks before sharing; no extra network request on open (weather and elevation only when enabled); no draft persisted |
+| Accessibility | Focus to heading on open, return on close, Escape, name from heading, 44 px targets, reduced motion, keyboard-only edit, screen reader pass (manual: TalkBack, VoiceOver, reported as not tested if unavailable) |
+| Diagnostics isolation | `bench-safety-unit`, `bench-machine-unit`, `bench-lab`, `combined-ui`, `motor-diagnostics-ui` run as a no-change check; `git diff` shows no path under `src/benchtest/`, `src/preflight/`, `motor-diagnostics/` |
+| Full run | `npm run test:unit`, then `node tests/run.mjs`; the five known data-environment failures (`region-labels-unit`, `country-groups-unit`, `country-buttons`, `splash`, `prefs`) must not grow |
+
+### 12.4 Stop conditions added by revision 2
+
+Stop and ask if work would: change diagnostics code or flags; replace a live zone verdict with static text; persist any draft; change phone breakpoints or sheet sizes in `DESIGN.md` section 9 without approval; alter route identity or cache semantics; or touch the explorer's behaviour beyond the extraction.
