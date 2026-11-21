@@ -711,11 +711,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const tripColour = (tripId) => store.getTrip(tripId)?.color ?? '#1a73e8';
   // The legs on show are drawn by route/render.js: a broad band, chevrons, a label; road geometry from route/router.js (device cache, shared-trip cache, the route-leg
   // function) and a dashed straight line while there is none. Redrawn on zoom and pan; routes are asked for only when a leg first comes on show.
-  const router = createRouter({ onChange: () => redrawRoutes(), isShared: (id) => !!store.getTrip(id)?.shared, log: (a, c) => log.warn(a, c) });
+  // Route answers arrive one by one (a day of ten legs is ten answers): the first is drawn at once, later ones that come within REDRAW_GAP of the last draw
+  // share one draw at the end of the gap. A draw for any other reason (selection, zoom, pan) happens at once and takes the place of a pending one.
+  const REDRAW_GAP = 150;
+  let redrawTimer = 0, lastRedraw = -Infinity;
+  const redrawSoon = () => { if (!redrawTimer) redrawTimer = setTimeout(redrawRoutes, Math.max(0, lastRedraw + REDRAW_GAP - performance.now())); };
+  const router = createRouter({ onChange: redrawSoon, isShared: (id) => !!store.getTrip(id)?.shared, log: (a, c) => log.warn(a, c) });
   const renderer = createRouteRenderer({ L, map, el, fmt: (m) => fmtDistance(m, getDistanceSettings().units), pins: () => [...markers].filter(([id]) => shownOnMap(store.get(id))).map(([, m]) => m.getLatLng()) });
   const legEntries = (layer, legs, color) => legs.map((l) => { const r = router.resolve(l); return { layer, leg: l, result: r.result, pending: r.pending, color, bold: l.bold, overnight: l.overnight }; });
   let rotHooked = false;
   function redrawRoutes() {
+    clearTimeout(redrawTimer); redrawTimer = 0; lastRedraw = performance.now();
     routes.clearLayers(); dayLayer.clearLayers();
     if (!rotHooked && map._rot?.onChange) { rotHooked = true; let t = 0; map._rot.onChange(() => { clearTimeout(t); t = setTimeout(() => { if (viewId || shownDay) redrawRoutes(); }, 250); }); }
     const it = viewId && store.get(viewId);

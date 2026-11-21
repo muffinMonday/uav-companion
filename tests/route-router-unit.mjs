@@ -181,3 +181,17 @@ s.router.ensure([L1]); await settle();
 const pk = s.router.peek(L1);
 ok(pk && pk.state === 'road' && pk.distanceM === 15500 && s.router.peek(leg('b', 'a')) === null && s.calls.invoke.length === 1, 'peek returns a known road for that direction only, with no further request');
 ok(s.router.peek(leg('a', 'b', { la: 30.6005 })) === null, 'peek never returns a road for moved end points');
+
+// ---------- the decoded road is kept while its stored row is the same one, so a redraw does not decode every geometry again and the renderer can key on it
+{
+  const l = leg('a', 'b');
+  const s3 = setup(); s3.router.ensure([l]); await settle();
+  const first = s3.router.resolve(l).result;
+  ok(first.state === 'road' && s3.router.resolve(l).result === first && s3.router.resolve(l).result.coords === first.coords, 'asking again returns the same road object and the same coordinate array');
+  s3.router.clearLocal();
+  const after = s3.router.resolve(l);
+  ok(after.result.state === 'fallback' && after.result !== first, 'forgetting the saved routes also forgets the decoded ones');
+  s3.router.ensure([l]); await settle();
+  const second = s3.router.resolve(l).result;
+  ok(second.state === 'road' && second !== first, 'a route fetched again is a new object (a new stored row)');
+}

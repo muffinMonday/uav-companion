@@ -32,6 +32,7 @@ export function createRouter({ storage = safeStorage(), now = () => Date.now(), 
   let backend = null;                 // { signedIn(), invoke(body) -> data, fetchShared(tripId) -> rows }
   const roads = new Map();            // key -> stored road row (geometry string, numbers), from any source
   const sources = new Map();          // key -> 'cache' | 'provider'
+  const built = new Map();            // key -> { row, source, road }: the decoded road of a stored row (see resolve)
   const memo = new Map();             // key -> { until, reason, n }
   const inflight = new Map();         // key -> Promise
   const sharedLoads = new Map();      // trip id -> Promise (rows ingested)
@@ -53,7 +54,7 @@ export function createRouter({ storage = safeStorage(), now = () => Date.now(), 
   function saveLocal() {
     try {
       const items = [...roads.values()].sort((a, b) => b.t - a.t).slice(0, MAX_LOCAL);
-      for (const k of [...roads.keys()]) if (!items.some((i) => i.key === k)) roads.delete(k);
+      for (const k of [...roads.keys()]) if (!items.some((i) => i.key === k)) { roads.delete(k); built.delete(k); }
       storage?.setItem(STORE_KEY, JSON.stringify({ v: 1, items }));
     } catch { /* storage full or blocked: the route still shows this session */ }
   }
@@ -65,7 +66,14 @@ export function createRouter({ storage = safeStorage(), now = () => Date.now(), 
   function resolve(leg) {
     const key = routeKey(leg);
     const row = roads.get(key);
-    if (row) { const road = roadFromRow(row, leg, sources.get(key) ?? 'cache'); if (road) return { result: road, pending: false }; roads.delete(key); }
+    if (row) {
+      // decoding the geometry is not free and a redraw asks for every leg: keep the decoded road while its stored row is the same one (and give the renderer a stable object)
+      const source = sources.get(key) ?? 'cache', hit = built.get(key);
+      if (hit && hit.row === row && hit.source === source) return { result: hit.road, pending: false };
+      const road = roadFromRow(row, leg, source);
+      if (road) { built.set(key, { row, source, road }); return { result: road, pending: false }; }
+      roads.delete(key); built.delete(key);
+    }
     const why = ineligibleReason(leg);
     if (why) return { result: fallbackFor(leg, why), pending: false };
     const m = memo.get(key);
@@ -145,7 +153,7 @@ export function createRouter({ storage = safeStorage(), now = () => Date.now(), 
     setBackend(b) { backend = b; onChange(); },
     /** Forgets everything remembered about refusals (not the roads): after signing in, say. */
     resetFailures() { memo.clear(); pausedUntil = 0; pauseReason = null; sharedLoads.clear(); },
-    clearLocal() { roads.clear(); sources.clear(); try { storage?.removeItem(STORE_KEY); } catch { /* ignore */ } },
+    clearLocal() { roads.clear(); sources.clear(); built.clear(); try { storage?.removeItem(STORE_KEY); } catch { /* ignore */ } },
     stats: () => ({ roads: roads.size, queued: queue.length, running, pausedUntil }),
   };
 }
