@@ -34,4 +34,11 @@ ok(all(panel) === Object.keys(photo).sort().join(',') && all(ph) === Object.keys
 ok(panel.overflow.find((a) => a.id === 'delete').danger === true, 'Delete is flagged destructive in the overflow');
 // a marker of a shared trip has the same actions: marker permissions are not decided here (trip deletion is, in poi.js)
 ok(ids(Object.values(markerActions({ type: 'photo', name: 'x', tripId: 's1' }, h))) === ids(Object.values(photo)), 'a marker in a shared trip has the same action list');
+// S7: Move exists only when the host passes a handler (the popup never gets it)
+const mv = markerActions({ type: 'photo', name: 'x' }, { ...h, move() {} });
+ok(!photo.move && !!mv.move && mv.move.label === 'Move location', 'Move is in the list only when a handler is given');
+ok(ids(popupLayout(mv, false).tools) === 'eye,edit,visit,side,delete' && ids(popupLayout(mv, true).menu) === 'visit,side,delete', 'the popup layouts never show Move');
+ok(ids(panelLayout(mv).secondary) === 'edit,move,visit' && ids(panelLayout(mv).overflow) === 'side,delete,eye', 'host: Edit, Move location, Add visit as buttons');
+for (const type of ['residence', 'hotel', 'accommodation', 'photo']) ok(!!markerActions({ type, name: 'x' }, { ...h, move() {} }).move, `${type}: Move is available (all types)`);
+ok(ids(panelLayout(markerActions({ type: 'residence', name: 'x' }, { ...h, move() {} })).secondary) === 'edit,move', 'host, Home marker: Edit and Move location');
 process.exit(fails ? 1 : 0);

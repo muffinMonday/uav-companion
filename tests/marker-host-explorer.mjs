@@ -139,6 +139,28 @@ await scenario('desktop, a point check', { width: 1300, height: 850 }, async (p)
   await ctx.close();
 }
 
+// DEF-S5-01: can a person actually click the saved marker's pin while the explorer dock is open? (the `tap` helper above bypasses hit-testing)
+for (const [label, vp] of [['desktop', { width: 1300, height: 850 }], ['folded phone', { width: 360, height: 740 }]]) {
+  const { ctx, p } = await open('guest', { vp });
+  await explore(p);
+  const ids = await p.$$eval(X + ' .ses-xcard', (c) => c.map((x) => x.dataset.id));
+  await cardOf(p, ids[3]).locator('.ses-xsel').click(); await settle(p, 900);
+  const hit = await p.evaluate(() => {
+    const pin = [...document.querySelectorAll('.poi-pin')].find((x) => x.getAttribute('title') === 'Saved tower');
+    if (!pin) return { found: false };
+    const r = pin.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, top = document.elementFromPoint(x, y);
+    const m = document.getElementById('map').getBoundingClientRect();
+    return { found: true, x, y, onScreen: x >= m.left && x <= m.right && y >= m.top && y <= m.bottom, reachable: !!top && (top === pin || pin.contains(top)), covering: top ? (top.closest('#ses-explorer') ? 'explorer' : top.id || top.className || top.tagName) : null };
+  });
+  console.log(`INFO  DEF-S5-01 ${label}: Saved tower pin ${hit.found ? `at ${Math.round(hit.x)},${Math.round(hit.y)}, on screen ${hit.onScreen}, reachable by a real pointer ${hit.reachable}${hit.reachable ? '' : ', covered by ' + hit.covering}` : 'not found'}`);
+  if (hit.found && hit.onScreen && hit.reachable) {
+    await p.mouse.click(hit.x, hit.y); await settle(p, 1200);
+    const st = await state(p);
+    ok(!st.hostHidden && st.exHidden, `DEF-S5-01 ${label}: a real mouse click on the pin opens the marker panel and parks the explorer`);
+  } else console.log(`OPEN  DEF-S5-01 ${label}: no real-pointer check was possible (the pin is ${hit.onScreen ? "covered by " + hit.covering : "off screen"} with this fixture); the item stays open`);
+  await ctx.close();
+}
+
 ok(errs.length === 0, 'no page errors ' + errs.join(' | ').slice(0, 300));
 await b.close();
 await db.close?.();

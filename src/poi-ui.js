@@ -25,6 +25,7 @@ import { zoneExplanation } from './legends.js';
 import { onPopupSwipe } from './swipe.js';
 import { mascotEl } from './mascot-ui.js';
 import { createMarkerContent, fmt, tripLabel } from './marker-content.js';
+import { createMarkerMove } from './marker-move.js';
 import { createMarkerHost, markerHostEnabled } from './marker-host.js';
 import { selectionLegs } from './route/legs.js';
 import { createRouter } from './route/router.js';
@@ -1093,6 +1094,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function openPopup(id, edit = false) {
     const item = store.get(id), m = markers.get(id);
     if (!item || !m) return;
+    move?.abort(); // a staged Move ends when another marker window opens
     if (markerHostEnabled()) { // development switch: the adaptive host instead of the popup; it recentres through free-area.js, the popup keeps view.js centreOn
       map.closePopup(); panel.closeIfPhone(); expanded = windowExpanded();
       hostFor().open(id, { edit });
@@ -1133,8 +1135,21 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     store, cin, elev, toast, checkPoint, zoneSummary, weatherButton, showWeather, tripOf, iconOf, sigOf, eyeLabel, renderDist, renderStats, addVisit, convert, remove, openPopup, selectMarker, setDetails, setWindowMode, goTo,
     detailsOn: () => detailsOn, expanded: () => expanded, markers: () => markers, visitMap: () => visitMap, sideMap: () => sideMap, subParent: () => subParent,
     newTripHandler: () => newTripHandler, setWxLine: (line) => { wxLine = line; },
-    closeWindow,
+    closeWindow, startMove: (id) => move?.start(id),
   });
+  // staged Move (Review 01 S7; host only). Save uses the drag's own update and invalidation; see marker-move.js
+  function applyStagedMove(id, lat, lon) {
+    const m = markers.get(id);
+    if (m) m.setLatLng([lat, lon]);
+    const res = store.update(id, { lat, lon }); // persists and emits: routes, distance lines, spider fan, list and shared sync follow, as for a drag
+    if (!res.item) return res;
+    if (m) m.setLatLng([res.item.lat, res.item.lon]); // the pin is not re-read from the store on a change
+    mw.invalidate(id); // the old forecast and elevation belong to the old spot
+    elev.invalidate(id);
+    mw.refresh([id]);
+    return res;
+  }
+  const move = markerHostEnabled() ? createMarkerMove({ map, panel, get: (id) => store.get(id), apply: applyStagedMove, isShared: (it) => !!store.getTrip(it.tripId)?.shared, closeWindow, reopen: (id) => openPopup(id), toast }) : null;
   let markerHost = null; // the adaptive marker host (Review 01 S4, S5): development switch only, see marker-host.js
   /** Closes the marker window, whichever is open: the Leaflet popup, or the development marker host. The one place every "close the window" goes through. */
   function closeWindow() { map.closePopup(); markerHost?.close(); }

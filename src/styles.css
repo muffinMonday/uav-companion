@@ -1579,6 +1579,21 @@ button.ses-attendee{cursor:pointer}
 .marker-host .pop-overflow .btn.tool.danger:not(.armed){color:var(--danger)}
 @media (hover:hover){.marker-host .pop-secondary .btn.tool:hover,.marker-host .pop-overflow .btn.tool:hover{background:var(--accent-soft);color:var(--fg)}}
 @media (pointer:coarse){.marker-host .pop-secondary .btn.tool,.marker-host .pop-overflow .btn.tool{min-height:44px}}
+/* staged Move (Review 01 S7, src/marker-move.js; development switch only): a crosshair at the map centre and a Cancel / Save bar */
+.mv-cross{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;z-index:var(--z-banner);pointer-events:none;color:#111}
+.mv-cross[hidden]{display:none}
+.mv-cross svg{display:block;width:40px;height:40px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1px #fff)}
+.mv-bar{position:fixed;z-index:var(--z-sheet);left:50%;bottom:calc(56px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);box-sizing:border-box;width:min(420px,calc(100% - 24px));display:flex;flex-direction:column;gap:6px;padding:12px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2)}
+.mv-bar[hidden]{display:none}
+.mv-bar:focus{outline:none}
+.mv-bar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mv-text{font-size:var(--fs-small);line-height:1.35}
+.mv-coords{font-variant-numeric:tabular-nums;font-weight:var(--fw-semibold);font-size:var(--fs-small)}
+.mv-row{display:flex;gap:8px}
+.mv-row .btn{flex:1;min-height:40px}
+@media (pointer:coarse){.mv-row .btn{min-height:44px}}
+.leaflet-container.is-moving .poi-pin{pointer-events:none}
+.leaflet-container.is-moving .crosshair{display:none}
 @keyframes mh-in{from{opacity:0}to{opacity:1}} /* opacity only: the size is read the moment it opens to keep the pin in the free area */
 body[data-mh=side] .leaflet-top.leaflet-right,body[data-mh=side] .leaflet-bottom.leaflet-right{margin-right:var(--mh-off)}
 body[data-mh=bottom] .leaflet-bottom{margin-bottom:var(--mh-off)}

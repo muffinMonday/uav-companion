@@ -69,13 +69,13 @@ for (const [label, w, h, touch] of [['folded phone 360', 360, 740, true], ['narr
       secondaryRows: new Set([...acts.querySelectorAll('.pop-secondary > *')].filter((x) => x.offsetParent).map((x) => Math.round(x.getBoundingClientRect().top))).size,
     };
   });
-  ok(g.acts.join('|') === 'Navigate|Edit|Add visit|More', `${label}: Navigate, Edit, Add visit and More in that order (${g.acts.join('|')})`);
+  ok(g.acts.join('|') === 'Navigate|Edit|Move location|Add visit|More', `${label}: Navigate, Edit, Move location, Add visit and More in that order (${g.acts.join('|')})`);
   ok(g.navCount === 1 && g.barTools === 0, `${label}: Navigate appears once and the top bar carries no action icons`);
   ok(g.nameCount === 1, `${label}: the marker name appears once in the panel (${g.nameCount})`);
   ok(g.navW >= g.actsW - 1 && g.navW > g.hostW * 0.7, `${label}: Navigate is the full width of the action area (${Math.round(g.navW)} of ${Math.round(g.actsW)}, panel ${Math.round(g.hostW)})`);
   ok(!g.overflowX && g.inside && !g.clipped, `${label}: no horizontal overflow, every action inside the panel, no label clipped`);
   ok(g.minFont >= 12, `${label}: action text stays readable (${g.minFont}px)`);
-  ok(g.secondaryRows === 1, `${label}: Edit, Add visit and More share one row`);
+  ok(g.secondaryRows <= 2, `${label}: the four secondary buttons use at most two rows (${g.secondaryRows})`);
   if (touch) ok(g.minH >= 43.5, `${label}: touch targets are at least 44 px (${Math.round(g.minH)})`);
   if (label.includes('desktop')) ok(g.mode === 'side' && g.hostW <= 480, `${label}: capped side panel (${Math.round(g.hostW)} px)`);
   if (w === 760) ok(g.mode === 'side' && g.hostW >= 340 && g.hostW <= 480, `unfolded: the actions sit in the 340 to 480 px side panel (${Math.round(g.hostW)})`);
@@ -209,7 +209,7 @@ for (const touch of [false, true]) {
   ok(g.nav === 'BUTTON', 'Home marker: Navigate is the asking button, not a link');
   await s.p.locator(`${H} .pop-primary .map-action`).click(); await s.p.waitForTimeout(150);
   ok((await s.p.locator(`${H} .pop-primary .map-action`).innerText()).includes('Tap again to share'), 'Home marker: the first tap still reads Tap again to share');
-  ok(g.sec.join('|') === 'Edit|More' && g.ov.join('|') === 'Delete|Open detail', `Home marker: Edit and More; the menu has Delete and the details switch only (${g.sec}; ${g.ov})`);
+  ok(g.sec.join('|') === 'Edit|Move location|More' && g.ov.join('|') === 'Delete|Open detail', `Home marker: Edit and More; the menu has Delete and the details switch only (${g.sec}; ${g.ov})`);
   await s.ctx.close();
 }
 {
@@ -218,7 +218,7 @@ for (const touch of [false, true]) {
   const sec = await labels(s.p, `${H} .pop-secondary .tool-label`);
   await s.p.locator(`${H} .pop-more`).click();
   const ov = await labels(s.p, `${H} [role=menuitem]`);
-  ok(sec.join('|') === 'Edit|Add visit|More' && ov.slice(0, 2).join('|') === 'Make Side Quest|Delete', `marker of a shared trip: same actions as an owned marker (${sec}; ${ov.slice(0, 2)})`);
+  ok(sec.join('|') === 'Edit|Move location|Add visit|More' && ov.slice(0, 2).join('|') === 'Make Side Quest|Delete', `marker of a shared trip: same actions as an owned marker (${sec}; ${ov.slice(0, 2)})`);
   ok(await s.p.evaluate(() => /Friends trip/.test(document.getElementById('marker-host').innerText)), 'the shared trip name is shown once as before');
   await s.ctx.close();
 }
@@ -228,12 +228,12 @@ for (const touch of [false, true]) {
   const s = await session({ width: 1440, height: 900 });
   await click(s.p, 'Tower');
   const seen = [];
-  for (let i = 0; i < 14 && seen.length < 4; i++) {
+  for (let i = 0; i < 16 && seen.length < 5; i++) {
     await s.p.keyboard.press('Tab');
     const a = await s.p.evaluate(() => { const e = document.activeElement; return e && e.closest('#marker-host .pop-actions') ? (e.querySelector('.tool-label, .map-action-label')?.textContent || '').trim() : null; });
     if (a && seen[seen.length - 1] !== a) seen.push(a);
   }
-  ok(seen.join('|') === 'Navigate|Edit|Add visit|More', `Tab reaches Navigate, Edit, Add visit, More in order (${seen.join('|')})`);
+  ok(seen.join('|') === 'Navigate|Edit|Move location|Add visit|More', `Tab reaches Navigate, Edit, Move location, Add visit, More in order (${seen.join('|')})`);
   await s.ctx.close();
 }
 

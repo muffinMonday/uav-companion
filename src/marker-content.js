@@ -59,6 +59,7 @@ export function createMarkerContent(d) {
       const trip0 = tripLabel(it, store.getTrip(it.tripId));
       const phone = window.matchMedia('(max-width: 520px)').matches;
       // the eye: the same setting as the map button and the switch in the Points of Interest tab
+      const panel = host.actions === 'panel'; // the adaptive host: Navigate and the actions go under the heading, not in the bar and the coordinate row
       // one list of actions (marker-actions.js); the popup and the host only lay it out differently
       const acts = markerActions(it, {
         eyeOn: d.detailsOn(), eyeLabel: eyeLabel(),
@@ -69,9 +70,9 @@ export function createMarkerContent(d) {
         visit: () => setTimeout(() => addVisit(id), 0),
         side: () => setTimeout(() => { if (convert(id, !isSub(it))) openPopup(id); }, 0),
         remove: () => remove(id),
+        move: panel && d.startMove ? () => setTimeout(() => d.startMove(id), 0) : null, // staged Move (S7): host only; the popup keeps hold-to-drag
       });
       const caption = [typeOf(it.type).label, isSub(it) && 'Side Quest', trip0].filter(Boolean).join(' · ');
-      const panel = host.actions === 'panel'; // the adaptive host: Navigate and the actions go under the heading, not in the bar and the coordinate row
       root.append(toolBar(panel ? { caption } : { caption, ...popupLayout(acts, phone) }));
       const head = el('div', 'pop-head');
       const badge = el('span', 'pop-badge');

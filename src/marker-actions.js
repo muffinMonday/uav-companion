@@ -1,13 +1,13 @@
 // The marker window's actions (Review 01 S6, MD-E): ONE list of what can be done to a marker, and two layouts of it.
 //   markerActions(it, h)    the list, with today's availability rules (no Visit for Home, no Side Quest for a Home point, Hotel or Home marker)
 //   popupLayout(acts, phone) the Leaflet popup's icon bar and ⋯ menu, exactly as before S6
-//   panelLayout(acts)        the adaptive host: Edit and Add visit as secondary buttons, the rest behind "More"
+//   panelLayout(acts)        the adaptive host: Edit, Move location (S7) and Add visit as secondary buttons, the rest behind "More"
 // Navigate is not here: it is an external link built by maplinks-ui.js `mapLinkIcons` (it keeps its Home confirmation).
 import { isSub, NOT_SUB } from './poi.js';
 import { el, toolButton } from './cards.js';
 
 /**
- * `h` = { eyeOn, eyeLabel, edit(), visit(), side(), remove(), toggleEye() }: what each action does (supplied by poi-ui.js through marker-content.js).
+ * `h` = { eyeOn, eyeLabel, edit(), visit(), side(), remove(), toggleEye(), move() (host only) }: what each action does (supplied by poi-ui.js through marker-content.js).
  * -> { eye, edit, visit?, side?, delete }, each { id, icon, label, onClick, cls?, danger? }. Nothing here changes data: the handlers do.
  */
 export function markerActions(it, h) {
@@ -17,6 +17,7 @@ export function markerActions(it, h) {
     edit: { id: 'edit', icon: 'edit', label: 'Edit', onClick: h.edit },
     delete: { id: 'delete', icon: 'trash', label: 'Delete', danger: true, onClick: h.remove }, // keeps the two-press confirmation of toolButton
   };
+  if (h.move) acts.move = { id: 'move', icon: 'move', label: 'Move location', cls: 'pop-move', onClick: h.move }; // the host only: the popup keeps its drag
   if (!home) acts.visit = { id: 'visit', icon: 'visit', label: 'Add visit', onClick: h.visit };
   if (!home && !NOT_SUB.has(it.type)) acts.side = { id: 'side', icon: 'flag', label: isSub(it) ? 'Make main stop' : 'Make Side Quest', onClick: h.side };
   return acts;
@@ -34,7 +35,7 @@ export function popupLayout(a, phone) {
 
 /** The adaptive host: the frequent actions beside each other, the rare and destructive ones in the overflow menu. */
 export function panelLayout(a) {
-  return { secondary: list(a.edit, a.visit), overflow: list(a.side, a.delete, a.eye) };
+  return { secondary: list(a.edit, a.move, a.visit), overflow: list(a.side, a.delete, a.eye) };
 }
 
 let uid = 0;
