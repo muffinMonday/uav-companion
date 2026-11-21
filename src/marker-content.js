@@ -5,6 +5,7 @@ import { typeOf, TYPE_GROUPS, pinSvg, sortForList, posInt, isoDate, listMode, da
 import { sortTrips, tripDatesLabel, outsideTrip, dayInfo, dayText, tripSequence } from './trips.js';
 import { visitLabel } from './places.js';
 import { mapLinkIcons } from './maplinks-ui.js';
+import { markerActions, popupLayout, panelLayout, panelActions } from './marker-actions.js';
 import { el, statusEl, disclaimer, toolBar } from './cards.js';
 import { zoneExplanation } from './legends.js';
 import { onPopupSwipe } from './swipe.js';
@@ -58,19 +59,20 @@ export function createMarkerContent(d) {
       const trip0 = tripLabel(it, store.getTrip(it.tripId));
       const phone = window.matchMedia('(max-width: 520px)').matches;
       // the eye: the same setting as the map button and the switch in the Points of Interest tab
-      const tEye = { icon: 'eye', label: eyeLabel(), cls: d.detailsOn() ? 'pop-eye' : 'pop-eye off', onClick: () => { const turningOff = d.detailsOn(); setDetails(!d.detailsOn()); if (turningOff) selectMarker(id); } };
-      const tEdit = { icon: 'edit', label: 'Edit', onClick: () => setTimeout(editForm, 0) };
-      // swap the contents after the click has finished: removing the clicked button mid-click would make Leaflet close the window
-      const tVisit = { icon: 'visit', label: 'Add visit', onClick: () => setTimeout(() => addVisit(id), 0) };
-      const tDelete = { icon: 'trash', label: 'Delete', danger: true, onClick: () => remove(id) };
-      const canSub = !NOT_SUB.has(it.type); // a Home point, Hotel or Home marker is never a Side Quest
-      const tSide = { icon: 'flag', label: isSub(it) ? 'Make main stop' : 'Make Side Quest', onClick: () => setTimeout(() => { if (convert(id, !isSub(it))) openPopup(id); }, 0) };
-      const isHome = it.type === 'residence';
-      root.append(toolBar({
-        caption: [typeOf(it.type).label, isSub(it) && 'Side Quest', trip0].filter(Boolean).join(' · '),
-        tools: phone ? [tEye, tEdit] : isHome ? [tEye, tEdit, tDelete] : [tEye, tEdit, tVisit, ...(canSub ? [tSide] : []), tDelete],
-        menu: phone ? (isHome ? [tDelete] : [tVisit, ...(canSub ? [tSide] : []), tDelete]) : [],
-      }));
+      // one list of actions (marker-actions.js); the popup and the host only lay it out differently
+      const acts = markerActions(it, {
+        eyeOn: d.detailsOn(), eyeLabel: eyeLabel(),
+        // the eye: the same setting as the map button and the switch in the Points of Interest tab
+        toggleEye: () => { const turningOff = d.detailsOn(); setDetails(!d.detailsOn()); if (turningOff) selectMarker(id); },
+        edit: () => setTimeout(editForm, 0),
+        // swap the contents after the click has finished: removing the clicked button mid-click would make Leaflet close the window
+        visit: () => setTimeout(() => addVisit(id), 0),
+        side: () => setTimeout(() => { if (convert(id, !isSub(it))) openPopup(id); }, 0),
+        remove: () => remove(id),
+      });
+      const caption = [typeOf(it.type).label, isSub(it) && 'Side Quest', trip0].filter(Boolean).join(' · ');
+      const panel = host.actions === 'panel'; // the adaptive host: Navigate and the actions go under the heading, not in the bar and the coordinate row
+      root.append(toolBar(panel ? { caption } : { caption, ...popupLayout(acts, phone) }));
       const head = el('div', 'pop-head');
       const badge = el('span', 'pop-badge');
       badge.innerHTML = pinSvg(it.type); // built from constants only
@@ -86,11 +88,14 @@ export function createMarkerContent(d) {
       }
       if (it.date) titles.append(el('div', 'pop-dates', dateLabel(it)));
       const coordRow = el('div', 'coords-row');
-      coordRow.append(el('span', 'coords', `${fmt(it.lat)}, ${fmt(it.lon)}`), mapLinkIcons({ lat: it.lat, lon: it.lon, name: it.name, home: it.type === 'residence' }));
+      const navigate = mapLinkIcons({ lat: it.lat, lon: it.lon, name: it.name, home: it.type === 'residence' });
+      coordRow.append(el('span', 'coords', `${fmt(it.lat)}, ${fmt(it.lon)}`));
+      if (!panel) coordRow.append(navigate);
       titles.append(coordRow);
       { const stamp = checkinStamp({ cin, store, id }); if (stamp) titles.append(stamp); }
       head.append(badge, titles);
       root.append(head);
+      if (panel) root.append(panelActions({ navigate, layout: panelLayout(acts) }));
       const visits = d.visitMap().get(id);
       if (visits) {
         // the same place saved for other dates: each visit is a button that switches the window to it

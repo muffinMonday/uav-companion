@@ -26,7 +26,7 @@ export const keyboardInset = (innerH, vv) => { const k = vv ? Math.round(innerH 
 /**
  * { map, panel, build(id, edit, host) -> element, getExpanded(), setExpanded(on), latlngOf(id), onOpen(id), onClose(id), returnFocusTo(id) -> element | null }
  * -> { open(id, { edit }), close(), isOpen(), id(), mode(), layout(), el }.
- * host (given to `build`) = { close(), closeSelf(), update(), verticalSwipe: false }.
+ * host (given to `build`) = { close(), closeSelf(), update(), verticalSwipe: false, actions: 'panel' } (actions: 'panel' = the action layout of marker-actions.js).
  */
 export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, latlngOf, onOpen, onClose, returnFocusTo }) {
   let isOpen = false, openId = null, mode = 'side', token = 0, raf = 0, opener = null, restorePanel = null, offUnsub = null, userMoved = false, drag = null;
@@ -128,7 +128,7 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
       offUnsub = onOverlay((owner, phase) => { if (owner === 'explorer' && phase === 'open') close({ keepFocus: true }); });
     }
     openId = id; userMoved = false; // an explicit selection starts from the person's hands off the map
-    const host = { close: () => close(), closeSelf: () => { if (mine === token) close(); }, update: () => schedule(), verticalSwipe: false };
+    const host = { close: () => close(), closeSelf: () => { if (mine === token) close(); }, update: () => schedule(), verticalSwipe: false, actions: 'panel' };
     body.replaceChildren(build(id, edit, host));
     root.hidden = false;
     const h = body.querySelector('h3');

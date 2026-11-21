@@ -1562,6 +1562,23 @@ button.ses-attendee{cursor:pointer}
 .marker-host[data-mode=side] .pop-head{padding-right:40px}
 .marker-host[data-mode=bottom] .pop{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 @media (pointer:coarse){.mh-handle{height:44px}.marker-host .pop-close,.marker-host .pop-toggle{width:44px;height:44px;top:2px}.marker-host .pop-toggle{right:46px}}
+/* the host's action area (Review 01 S6, src/marker-actions.js): Navigate full width, Edit and Add visit beside More, the rest in an inline menu */
+.marker-host .pop-actions{display:flex;flex-direction:column;gap:8px;margin:10px 0 4px}
+.marker-host .pop-primary .maplinks{display:block;margin:0}
+.marker-host .pop-primary .map-action{display:flex;width:100%;min-height:44px;justify-content:center;font-size:var(--fs-body)}
+.marker-host .pop-secondary{display:flex;flex-wrap:wrap;gap:8px}
+.marker-host .pop-secondary .btn.tool,.marker-host .pop-overflow .btn.tool{width:auto;height:auto;min-height:40px;padding:6px 12px;gap:6px;grid-auto-flow:column;border:1px solid var(--control-border,var(--line));border-radius:var(--radius-sm);background:transparent;color:var(--fg);font-size:var(--fs-small);font-weight:var(--fw-semibold)}
+.marker-host .pop-secondary .btn.tool{flex:1 1 auto;min-width:0}
+.marker-host .pop-secondary .btn.tool.pop-more{flex:0 0 auto}
+.marker-host .btn.tool.tool-text .tool-label{position:static;width:auto;height:auto;overflow:visible;clip:auto;white-space:normal;overflow-wrap:anywhere;text-align:left}
+.marker-host .btn.tool.tool-text svg{flex:none}
+.marker-host .btn.tool.tool-text.armed{border-color:var(--danger-solid);background:var(--danger-solid);color:var(--on-danger)}
+.marker-host .pop-overflow{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2)}
+.marker-host .pop-overflow[hidden]{display:none}
+.marker-host .pop-overflow .btn.tool{width:100%;justify-content:flex-start}
+.marker-host .pop-overflow .btn.tool.danger:not(.armed){color:var(--danger)}
+@media (hover:hover){.marker-host .pop-secondary .btn.tool:hover,.marker-host .pop-overflow .btn.tool:hover{background:var(--accent-soft);color:var(--fg)}}
+@media (pointer:coarse){.marker-host .pop-secondary .btn.tool,.marker-host .pop-overflow .btn.tool{min-height:44px}}
 @keyframes mh-in{from{opacity:0}to{opacity:1}} /* opacity only: the size is read the moment it opens to keep the pin in the free area */
 body[data-mh=side] .leaflet-top.leaflet-right,body[data-mh=side] .leaflet-bottom.leaflet-right{margin-right:var(--mh-off)}
 body[data-mh=bottom] .leaflet-bottom{margin-bottom:var(--mh-off)}

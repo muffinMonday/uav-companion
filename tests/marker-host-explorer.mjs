@@ -123,7 +123,7 @@ async function scenario(label, vp, how) {
 }
 await scenario('desktop, Escape', { width: 1300, height: 850 }, async (p) => { await p.keyboard.press('Escape'); await settle(p, 500); });
 await scenario('desktop, close button', { width: 1300, height: 850 }, async (p) => { await p.click('#marker-host .pop-close'); await settle(p, 500); });
-await scenario('desktop, map click', { width: 1300, height: 850 }, async (p) => { await p.mouse.click(520, 250); await settle(p, 500); });
+await scenario('desktop, map click', { width: 1300, height: 850 }, async (p) => { await p.mouse.click(60, 600); await settle(p, 500); });
 await scenario('folded phone, close button', { width: 360, height: 740 }, async (p) => { await p.click('#marker-host .pop-close'); await settle(p, 500); });
 await scenario('unfolded 760, Escape', { width: 760, height: 800 }, async (p) => { await p.keyboard.press('Escape'); await settle(p, 500); });
 await scenario('desktop, a point check', { width: 1300, height: 850 }, async (p) => { await p.mouse.click(150, 400, { button: 'right' }); await settle(p, 2500); });

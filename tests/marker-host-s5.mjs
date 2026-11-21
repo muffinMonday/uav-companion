@@ -232,6 +232,7 @@ const mapGeo = (p) => p.evaluate(() => JSON.stringify(JSON.parse(localStorage.ge
   // delete
   await s.p.keyboard.press('Escape');
   await click(s.p, 'Bridge');
+  await s.p.locator(`${H} .pop-more`).click(); await s.p.waitForTimeout(100); // Delete is in the More menu since S6
   await s.p.locator(`${H} button.danger`).first().click(); await s.p.waitForTimeout(200); await s.p.locator(`${H} button.danger`).first().click(); await s.p.waitForTimeout(800); // the second press confirms
   ok(!(await shown(s.p)) && await s.p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.every((i) => i.name !== 'Bridge')), 'deleting the open marker closes the panel and removes it');
   // the point-check popup is untouched
