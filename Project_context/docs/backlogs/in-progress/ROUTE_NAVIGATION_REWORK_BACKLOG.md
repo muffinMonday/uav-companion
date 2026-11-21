@@ -623,3 +623,26 @@ deployment after review.
 **Residual risks / manual checks:** not checked against the real HeiGIT service or a real hosted database (mocked provider, in-memory Postgres); country outlines are deliberately coarse and conservative; lane detection is tuned for same-road reversals, complex multi-route overlaps are not specially handled; labels degrade by the documented order and a leg shorter than 40 px on screen has none; the fan covers stacks that mix trips only (same-trip visits keep the window's visit chips); no real phone test; the routing credit shows only while a road is drawn; per-user budget counters hold the user id for up to two days; `.route-arrow` CSS is now unused.
 
 **Not done / deferred:** hidden-trip and marker-deletion removal of route layers in the browser are covered by the leg derivation unit tests and the window-close test, not a dedicated browser deletion test; no deployment.
+
+## 16. Selection fix and performance pass (2026-11-21)
+
+**Selection fix (`8e5fb4a`).** A numbered Accommodation is a stop of its day's chain (it used to be skipped, so stop 2's route ran to stop 4 and an overnight leg ran from stop 4 back to a hotel that was stop 3). Overnight links stay for other days of a stay and for an unnumbered hotel; a last stop does not link back to a hotel that is already one of its day's stops. DECISIONS records the change.
+
+**Performance pass (`327e338`, `33b4f1f`, `ddf7038`).** Measured with a phone viewport (390x844, device scale 2, 4x CPU throttle), cached roads and a mocked provider, geometries of 120 to 3,000 points per leg; headless Edge. Medians of ten forced redraws:
+
+| Scenario (cached roads) | Redraw before | after | SVG paths before | after |
+|---|---|---|---|---|
+| 6 short urban legs, z14 | 16 ms | 11 ms | 28 | 18 |
+| 10 medium legs, z11 | 28 ms | 15 ms | 34 | 30 |
+| 4 long legs of 3,000 points, z9 | 56 ms | 10 ms | 21 | 12 |
+| the same, z13 | 69 ms | 23 ms | 35 | 10 |
+| out and back (opposite lanes), z12 | 23 ms | 13 ms | 39 | 15 |
+| 6 legs, z17 | 26 ms | 13 ms | 39 | 14 |
+
+Draws while answers arrive (10 legs, answers 40 to 100 ms apart): 11 before, 5 after; 359 polylines created before, 150 after. Heap kept after drawing: 0.9 to 2.7 MB before, 0.9 to 2.2 MB after.
+
+What was done: (1) route answers share a draw (`redrawSoon` in `poi-ui.js`: first at once, later ones within 150 ms together; any other draw is immediate and cancels a pending one); (2) the router keeps the decoded road per stored row; (3) each geometry is projected once (Web Mercator is linear in 2^zoom) and thinned to 0.5 px once per zoom (`simplifyIdx`; a pan moves points by whole pixels so it keeps the same ones), the band uses the matching stored coordinates (nothing unprojected unless the leg is in a lane), the canonical geometry, distance, duration and cache keys are untouched; (4) overlap grids are built once per path, numeric keys, samples outside the other path's box skipped; (5) a leg's chevrons are one compound path.
+
+**Investigated, not changed.** Incremental keyed reuse of route layers (P2): after the above, Leaflet layer creation is roughly half of a draw (3 to 5 ms real on this machine) and a worst case is 23 ms at 4x throttle; the saving did not justify state for every band, label and chevron path. Skipping a redraw after a small pan: labels sit on the visible part of a leg and would drift off screen. Pin collision filtering and marker lookups: not in the profile. Culling off-screen points before thinning: chevron positions are measured from the start of the whole path, so the full path length must stay.
+
+**Remaining risks.** Very long days (over about 20 legs of high detail) have not been measured; the draw is still O(visible legs) on every zoom and pan; the 150 ms gap delays a road that arrives right after another by up to that long; low-end Android was not tried, only the throttled desktop browser.
