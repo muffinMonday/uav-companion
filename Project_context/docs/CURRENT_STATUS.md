@@ -1,3 +1,8 @@
+## Latest: UI/UX Review 01 S3 (marker content builder extraction) done in the working tree, NOT committed (2026-11-22)
+- **Done:** `popupContent` body moved to `src/marker-content.js`, no UI change; popup still hosts it. New browser suite `tests/marker-content.mjs` + `tests/fixtures/marker-content-baseline.json` (baseline recorded before the move, identical after; two runs stable). Docs: MODULES, backlog status history.
+- **Tests:** `marker-content` 34 checks; browser `poi1`, `poi2`, `edit`, `visits`, `side`, `sidelist`, `popswipe`, `window`, `mw`, `checkin`, `hold`, `rain`, `bulk`, `picker`, `hierarchy`, `popup-theme`, `spider`, `routes`, `dayroute`, `days`, `tripplan`, `maprotate` pass; `test:unit` all pass except the known `region-labels-unit`, `country-groups-unit`. Full `node tests/run.mjs` not run.
+- **Next:** commit (needs owner), then S4 (adaptive host behind a development-only switch; needs owner go-ahead).
+
 ## Latest: UI/UX Review 01 S2 (free-area service) done in the working tree, NOT committed (2026-11-21)
 - **Done:** `src/free-area.js` extracted from `sessions-map-explorer.js` (same formulas); explorer uses it, behaviour unchanged. New `tests/free-area-unit.mjs` (24, in the unit list). Docs: MODULES, backlog status history.
 - **Tests:** `test:unit` all pass except the known `region-labels-unit`, `country-groups-unit` and one `live-engine-unit` timing assertion (passes alone, twice). Browser `sessions-explorer`, `session-preview`, `maprotate`, `sessions` pass on a dev server.
