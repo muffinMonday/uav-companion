@@ -1,0 +1,31 @@
+{
+  "generated": "2026-11-20T15:57:31.040Z",
+  "countries": [
+    {
+      "id": "cn",
+      "name": "China",
+      "nameZh": "中国",
+      "view": [
+        73.5,
+        18,
+        135.1,
+        53.6
+      ],
+      "regions": 30,
+      "manifest": "cn/manifest.json"
+    },
+    {
+      "id": "sg",
+      "name": "Singapore",
+      "nameZh": "新加坡",
+      "view": [
+        103.6,
+        1.15,
+        104.1,
+        1.48
+      ],
+      "regions": 1,
+      "manifest": "sg/manifest.json"
+    }
+  ]
+}
