@@ -5,6 +5,36 @@ export const BAND = { normal: 9, bold: 12 };        // band width in CSS px: "ba
 export const CHEVRON_SPACING = 80;                   // px between chevrons along the path
 const deg = (r) => (r * 180) / Math.PI;
 
+/**
+ * Which points of a pixel path to draw (indices, ascending, always including the first and the last): the points that matter at `tol` px. A road geometry has a
+ * point every few metres, many of them in the same pixel; every one costs a projection, a path segment and a pass in each step below, and none of the ones left
+ * out moves the line by more than `tol` px (Douglas-Peucker, iterative, so a long path cannot overflow the stack). Only what is drawn is simplified; the stored geometry is not touched.
+ */
+export function simplifyIdx(pts, tol = 0.5) {
+  const n = pts.length;
+  if (n <= 2) return pts.map((_, i) => i);
+  // points that are not finite cannot be measured: they are kept (and break nothing: the test below is false for them)
+  const keep = new Uint8Array(n); keep[0] = 1; keep[n - 1] = 1;
+  const t2 = tol * tol, stack = [0, n - 1];
+  while (stack.length) {
+    const hi = stack.pop(), lo = stack.pop();
+    if (hi - lo < 2) continue;
+    const a = pts[lo], b = pts[hi], dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+    let far = -1, farD = t2;
+    for (let i = lo + 1; i < hi; i++) {
+      const p = pts[i];
+      let d;
+      if (l2 === 0) d = (p.x - a.x) ** 2 + (p.y - a.y) ** 2;
+      else { const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)); d = (a.x + t * dx - p.x) ** 2 + (a.y + t * dy - p.y) ** 2; }
+      if (d > farD || !Number.isFinite(d)) { farD = Number.isFinite(d) ? d : Infinity; far = i; if (!Number.isFinite(d)) break; }
+    }
+    if (far >= 0) { keep[far] = 1; stack.push(lo, far, far, hi); }
+  }
+  const out = [];
+  for (let i = 0; i < n; i++) if (keep[i]) out.push(i);
+  return out;
+}
+
 /** Cumulative path length at each point, and the total. */
 export function cumulative(pts) {
   const cum = [0];

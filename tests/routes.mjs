@@ -30,17 +30,29 @@ const table = {}; // what the mocked route function answers, by "from>to"
 for (const [a, b] of [['a', 'b'], ['b', 'c'], ['c', 'h'], ['h', 'x']]) table[`${a}>${b}`] = { source: 'provider', route: { key: routeKey(leg(I[a], I[b])), from: a, to: b, geometry: encodePolyline(bend(I[a], I[b])), points: 4, distance_m: 3100, duration_s: 420 } };
 
 const b = await chromium.launch({ channel: CHANNEL });
+// A spy for the performance checks: it keeps the map (window.__map) and counts how many times the routes were drawn (a draw creates its casings in one go, so the
+// first casing of a task opens a draw) and how many route layers were created.
+const SPY = () => {
+  window.__draws = 0; window.__casings = 0;
+  let Lv; Object.defineProperty(window, 'L', { configurable: true, get() { return Lv; }, set(v) {
+    Lv = v; if (!v || !v.Map || !v.Map.addInitHook) return;
+    v.Map.addInitHook(function () { window.__map = this; });
+    const ini = v.Polyline.prototype.initialize; let open = false;
+    v.Polyline.prototype.initialize = function (ll, o) { if (o && o.className && o.className.startsWith('route-case')) { window.__casings++; if (!open) { open = true; window.__draws++; queueMicrotask(() => { open = false; }); } } return ini.call(this, ll, o); };
+  } });
+};
 const requests = [];
-async function open({ vp = { width: 1300, height: 900 }, cache = true, backend = false, zoom = 15, list = items, theme } = {}) {
+async function open({ vp = { width: 1300, height: 900 }, cache = true, backend = false, zoom = 15, list = items, theme, delay = 900, spy = false } = {}) {
   const ctx = await b.newContext({ viewport: vp });
-  await ctx.addInitScript(([po, tr, cd, key, useBackend, tbl, z, th]) => {
+  if (spy) await ctx.addInitScript(SPY);
+  await ctx.addInitScript(([po, tr, cd, key, useBackend, tbl, z, th, dl]) => {
     if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
     localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po })); localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr }));
     localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.60, lon: 114.31, zoom: z }, basemap: 'osm', ...(th ? { theme: th } : {}) }));
     if (cd) localStorage.setItem(key, cd);
     window.__routeCalls = [];
-    if (useBackend) window.__uavRouteBackend = { signedIn: () => true, fetchShared: async () => [], invoke: async (body) => { window.__routeCalls.push(body); await new Promise((r) => setTimeout(r, 900)); const r = tbl[`${body.from.id}>${body.to.id}`]; if (!r) { const e = new Error('x'); e.code = 'no_route'; throw e; } return r; } };
-  }, [list, trips, typeof cache === 'string' ? cache : cache ? cacheDoc : null, STORE_KEY, backend, table, zoom, theme ?? null]);
+    if (useBackend) window.__uavRouteBackend = { signedIn: () => true, fetchShared: async () => [], invoke: async (body) => { window.__routeCalls.push(body); await new Promise((r) => setTimeout(r, dl)); const r = tbl[`${body.from.id}>${body.to.id}`]; if (!r) { const e = new Error('x'); e.code = 'no_route'; throw e; } return r; } };
+  }, [list, trips, typeof cache === 'string' ? cache : cache ? cacheDoc : null, STORE_KEY, backend, table, zoom, theme ?? null, delay]);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
@@ -56,14 +68,17 @@ async function select(p, name) {
 }
 const open1 = async (p, name) => { await pin(p, name).evaluate((e) => e.click()); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 }); await p.waitForTimeout(500); };
 const count = (p, sel) => p.locator(sel).count();
+// the chevrons of a leg are one compound path (one "M x y L x y L x y" stroke each): how many strokes are on the page
+const chevCount = (p) => p.evaluate(() => [...document.querySelectorAll('path.route-chev')].reduce((n, c) => n + (c.getAttribute('d') || '').split('M').filter((x) => (x.match(/-?\d+\.?\d*/g) || []).length >= 6).length, 0));
 // is every chevron's centre inside the stroke of one of the bands?
 const chevronsInside = (p) => p.evaluate(() => {
-  const bands = [...document.querySelectorAll('path.route-band')], chevs = [...document.querySelectorAll('path.route-chev')];
-  const svg = bands[0]?.ownerSVGElement;
-  if (!svg || !chevs.length) return { n: chevs.length, inside: 0 };
+  const bands = [...document.querySelectorAll('path.route-band')], paths = [...document.querySelectorAll('path.route-chev')];
+  const svg = bands[0]?.ownerSVGElement, strokes = (c) => (c.getAttribute('d') || '').split('M').map((x) => (x.match(/-?\d+\.?\d*/g) || []).map(Number)).filter((d) => d.length >= 6);
+  const all = paths.flatMap(strokes);
+  if (!svg || !all.length) return { n: all.length, inside: 0 };
   let inside = 0;
-  for (const c of chevs) { const bb = c.getBBox(); const pt = new DOMPoint(bb.x + bb.width / 2, bb.y + bb.height / 2); if (bands.some((bd) => bd.isPointInStroke(pt))) inside++; }
-  return { n: chevs.length, inside };
+  for (const d of all) { const xs = [d[0], d[2], d[4]], ys = [d[1], d[3], d[5]]; const pt = new DOMPoint((Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2); if (bands.some((bd) => bd.isPointInStroke(pt))) inside++; }
+  return { n: all.length, inside };
 });
 const labelRects = (p) => p.$$eval('.route-label', (e) => e.map((x) => { const r = x.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, text: x.textContent, state: x.dataset.state, aria: x.getAttribute('aria-label') }; }));
 const noOverlap = (rs) => rs.every((a, i) => rs.every((c, j) => j <= i || a.r <= c.l + 1 || c.r <= a.l + 1 || a.b <= c.t + 1 || c.b <= a.t + 1));
@@ -80,7 +95,7 @@ ok(widths.every((w) => w >= 8 && w <= 12), 'bands are broad but restrained: 8 to
 ok(await count(p, 'path.route-case') === 2, 'each band has a light casing so it reads on any basemap');
 let ci = await chevronsInside(p);
 ok(ci.n >= 2 && ci.inside === ci.n, 'every chevron sits inside its band (' + ci.inside + ' of ' + ci.n + ')');
-ok(await count(p, 'path.route-chev') >= 6, 'chevrons repeat along a route, not one arrow per leg (' + await count(p, 'path.route-chev') + ')');
+ok(await chevCount(p) >= 6 && await count(p, 'path.route-chev') <= 2, 'chevrons repeat along a route, not one arrow per leg, and a leg draws all of them as one path (' + await chevCount(p) + ' chevrons in ' + await count(p, 'path.route-chev') + ' paths)');
 let labs = await labelRects(p);
 ok(labs.length === 2 && labs.some((l) => l.state === 'road' && /· 5 min/.test(l.text)) && labs.some((l) => l.state === 'fallback' && /straight line/.test(l.text) && /≈/.test(l.text)), 'each leg has a label: driving distance and time for the road, "≈ ... straight line" for the fallback: ' + labs.map((l) => l.text).join(' | '));
 ok(labs.every((l) => l.aria && (l.state !== 'fallback' || /Driving route unavailable/.test(l.aria)) && (l.state !== 'road' || /^Driving route/.test(l.aria))) && noOverlap(labs), 'labels have accessible text that says which is which, and do not overlap');
@@ -138,7 +153,7 @@ await ctx.close();
 // ================= zoomed far out: legs are tiny, nothing breaks
 ({ ctx, p } = await open({ zoom: 10 }));
 await open1(p, 'Bravo');
-ok(await count(p, 'path.route-chev') === 0, 'when a leg is a few pixels long it gets no chevron (they would sit on the pins)');
+ok(await chevCount(p) === 0, 'when a leg is a few pixels long it gets no chevron (they would sit on the pins)');
 await ctx.close();
 
 // ================= a mocked route function: pending fallback, then the road; asked once; never again for pan, zoom or turn
@@ -188,12 +203,10 @@ await open1(p, 'Bravo');
 const lanes = await p.evaluate(() => {
   const bands = [...document.querySelectorAll('path.route-band')];
   const info = bands.map((bd) => { const L = bd.getTotalLength(), m = bd.getPointAtLength(L / 2), a = bd.getPointAtLength(L / 2 - 4), c = bd.getPointAtLength(L / 2 + 4); return { m: { x: m.x, y: m.y }, dir: { x: c.x - a.x, y: c.y - a.y } }; });
-  const chev = [...document.querySelectorAll('path.route-chev')].map((c) => {
-    const bb = c.getBBox(), pt = new DOMPoint(bb.x + bb.width / 2, bb.y + bb.height / 2), own = bands.findIndex((bd) => bd.isPointInStroke(pt));
-    const m = (c.getAttribute('d') || '').match(/-?\d+\.?\d*/g); if (!m || m.length < 6) return null; // (a chevron outside the drawn area has an empty path)
-    const d = m.map(Number); // M x y L x y L x y: the tip is the middle point
+  const chev = [...document.querySelectorAll('path.route-chev')].flatMap((c) => (c.getAttribute('d') || '').split('M').map((x) => (x.match(/-?\d+\.?\d*/g) || []).map(Number)).filter((d) => d.length >= 6)).map((d) => { // M x y L x y L x y: the tip is the middle point
+    const xs = [d[0], d[2], d[4]], ys = [d[1], d[3], d[5]], pt = new DOMPoint((Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2), own = bands.findIndex((bd) => bd.isPointInStroke(pt));
     return { own, dx: d[2] - (d[0] + d[4]) / 2, dy: d[3] - (d[1] + d[5]) / 2 };
-  }).filter(Boolean);
+  });
   return { n: bands.length, info, chev };
 });
 ok(lanes.n === 2, 'an out-and-back pair of legs: two bands');
@@ -207,6 +220,32 @@ ok(g0[0].dx * g1[0].dx + g0[0].dy * g1[0].dy < 0, 'and the chevrons of the two l
 labs = await labelRects(p);
 ok(labs.length === 2 && noOverlap(labs), 'both lanes keep a label and the labels do not overlap');
 await ctx.close();
+
+// ================= performance guards: answers that arrive together share a draw, redraws do not pile up layers, a leg has one chevron path
+{
+  const day = Array.from({ length: 7 }, (_, i) => mk('q' + i, 'Stop ' + i, 30.585 + i * 0.004 + (i % 2) * 0.001, 114.296 + i * 0.006, { tripId: 't1', date: D, order: i + 1 }));
+  const Q = Object.fromEntries(day.map((i) => [i.id, i]));
+  for (let i = 1; i < day.length; i++) { const a = day[i - 1], c = day[i]; table[a.id + '>' + c.id] = { source: 'provider', route: { key: routeKey(leg(a, c)), from: a.id, to: c.id, geometry: encodePolyline(bend(a, c)), points: 4, distance_m: 1500, duration_s: 200 } }; }
+  ({ ctx, p } = await open({ list: day, cache: false, backend: true, delay: 30, spy: true, zoom: 14 }));
+  const t0 = Date.now();
+  await p.evaluate(() => { window.__draws = 0; window.__casings = 0; });
+  await pin(p, 'Stop 3').evaluate((e) => e.click()); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+  ok(await count(p, 'path.route-band') >= 1 && Date.now() - t0 < 2500, 'selecting a stop draws its day at once, before any road has arrived');
+  await p.waitForFunction(() => document.querySelectorAll('path.route-band.road').length === 6, null, { timeout: 8000 });
+  await p.waitForTimeout(600);
+  const draws = await p.evaluate(() => window.__draws);
+  ok(draws >= 2 && draws <= 4, 'six road answers that arrive within a few hundred ms are drawn in a few draws, not one each (' + draws + ' draws for 6 answers; it was 7)');
+  ok(await count(p, 'path.route-band.road') === 6 && await count(p, 'path.route-band.route-fallback') === 0, 'and every leg ends up as a road');
+  const before = await p.evaluate(() => ({ band: document.querySelectorAll('path.route-band').length, casing: document.querySelectorAll('path.route-case').length, chev: document.querySelectorAll('path.route-chev').length, label: document.querySelectorAll('.route-label').length, overlay: document.querySelectorAll('.leaflet-overlay-pane path').length, marker: document.querySelectorAll('.leaflet-marker-pane > *').length, ev: Object.fromEntries(Object.entries(window.__map._events).map(([k, v]) => [k, v.length])) }));
+  await p.evaluate(async () => { for (let i = 0; i < 8; i++) { window.__map.fire('moveend'); await new Promise((r) => setTimeout(r, 20)); } });
+  const afterwards = await p.evaluate(() => ({ band: document.querySelectorAll('path.route-band').length, casing: document.querySelectorAll('path.route-case').length, chev: document.querySelectorAll('path.route-chev').length, label: document.querySelectorAll('.route-label').length, overlay: document.querySelectorAll('.leaflet-overlay-pane path').length, marker: document.querySelectorAll('.leaflet-marker-pane > *').length, ev: Object.fromEntries(Object.entries(window.__map._events).map(([k, v]) => [k, v.length])) }));
+  ok(JSON.stringify(before) === JSON.stringify(afterwards), 'eight more redraws leave the same layers and the same map listeners (no pile-up): ' + JSON.stringify({ ...afterwards, ev: undefined }));
+  ok(before.band === 6 && before.casing === 6 && before.chev <= 6 && before.overlay <= 6 * 3, 'a leg is a casing, a band and at most one chevron path: ' + before.overlay + ' paths for 6 legs');
+  const calls0 = await p.evaluate(() => window.__routeCalls.length);
+  await p.evaluate(async () => { const m = window.__map; m.setZoom(m.getZoom() + 1, { animate: false }); m.panBy([60, 40], { animate: false }); m.setZoom(m.getZoom() - 1, { animate: false }); await new Promise((r) => setTimeout(r, 300)); });
+  ok(await p.evaluate(() => window.__routeCalls.length) === calls0 && await count(p, 'path.route-band.road') === 6, 'zooming and panning ask for no route and keep every road');
+  await ctx.close();
+}
 
 // ================= credit, privacy note
 ({ ctx, p } = await open());

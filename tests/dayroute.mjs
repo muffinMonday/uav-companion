@@ -40,7 +40,7 @@ const popup = (p) => p.locator('.leaflet-popup').count();
 let { ctx, p } = await open();
 await pin(p, 'Bravo').click(); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 }); await p.waitForTimeout(300);
 ok((await segs(p)).length === 2 && (await segs(p)).every(Boolean), 'selecting the middle stop draws its day, and both arrows touching it are bold');
-ok(await count(p, '.route-chev') >= 2 && await count(p, '.route-case') === 2, 'each leg is a broad band with a casing and chevrons drawn inside it (bold when it touches the selected stop)');
+ok(await p.evaluate(() => [...document.querySelectorAll('path.route-chev')].reduce((n, c) => n + (c.getAttribute('d') || '').split('M').filter((x) => (x.match(/-?\d+\.?\d*/g) || []).length >= 6).length, 0)) >= 2 && await count(p, '.route-case') === 2, 'each leg is a broad band with a casing and chevrons drawn inside it (bold when it touches the selected stop)');
 ok(await count(p, '.seg-label') === 2 && /\d/.test(await p.locator('.seg-label').first().textContent()), 'the bold segments say how far: ' + await p.locator('.seg-label').first().textContent());
 ok(await count(p, '.dist-label-text:not(.seg-label)') >= 1, 'the dashed displacement line to the hotel is still drawn, with its own label');
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(300);

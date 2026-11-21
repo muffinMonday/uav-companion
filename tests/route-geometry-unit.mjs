@@ -1,5 +1,5 @@
 // Route drawing geometry: chevron placement and fit, label text, deterministic label placement. Pure, no browser.
-import { cumulative, pointAt, tangentAt, chevronMarks, chevronShape, armFor, visibleSpan, fmtDuration, labelText, labelSize, layoutLabels, BAND, CHEVRON_SPACING } from '../src/route/geometry.js';
+import { cumulative, pointAt, tangentAt, chevronMarks, chevronShape, armFor, visibleSpan, simplifyIdx, fmtDuration, labelText, labelSize, layoutLabels, BAND, CHEVRON_SPACING } from '../src/route/geometry.js';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const P = (...a) => a.map(([x, y]) => ({ x, y }));
 const near = (a, b, e = 0.01) => Math.abs(a - b) <= e;
@@ -93,3 +93,24 @@ const rotate90 = (p) => ({ x: -p.y, y: p.x });
 const vert = mkItem('v', P([0, 0], [0, 300])), horiz = mkItem('h', P([-150, 150], [150, 150]));
 out = layoutLabels([vert, horiz], { screen: rotate90 });
 ok(!out.get('h').omitted && !out.get('v').omitted, 'with a turned map the rectangles are compared the way the viewer sees them');
+
+// ---------- render-time simplification: fewer points to project and draw, the same line to within half a pixel
+{
+  const distTo = (pt, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy, t = l2 ? Math.max(0, Math.min(1, ((pt.x - a.x) * dx + (pt.y - a.y) * dy) / l2)) : 0; return Math.hypot(a.x + t * dx - pt.x, a.y + t * dy - pt.y); };
+  const within = (pts, idx, tol) => pts.every((pt) => { let best = Infinity; for (let k = 1; k < idx.length; k++) best = Math.min(best, distTo(pt, pts[idx[k - 1]], pts[idx[k]])); return best <= tol + 1e-9; });
+  const road = Array.from({ length: 4000 }, (_, i) => ({ x: Math.round(i * 0.4 + 6 * Math.sin(i / 90)), y: Math.round(40 * Math.sin(i / 300) + 3 * Math.sin(i / 7)) }));
+  const idx = simplifyIdx(road, 0.5);
+  ok(idx[0] === 0 && idx[idx.length - 1] === road.length - 1 && idx.every((v, i) => i === 0 || v > idx[i - 1]), 'the first and last points are kept and the indices ascend');
+  ok(idx.length < road.length / 3 && within(road, idx, 0.5), 'a dense road keeps a fraction of its points (' + idx.length + ' of ' + road.length + ') and no dropped point is further than half a pixel from the line drawn');
+  ok(simplifyIdx(P([0, 0], [10, 0], [20, 0], [30, 0])).join() === '0,3', 'collinear points collapse to the two ends');
+  ok(simplifyIdx(P([0, 0], [10, 8], [20, 0])).join() === '0,1,2' && simplifyIdx(P([0, 0], [5, 5])).join() === '0,1' && simplifyIdx(P([3, 3])).join() === '0' && simplifyIdx([]).length === 0, 'a real corner is kept; two points, one point and none are returned as they are');
+  ok(simplifyIdx(P([0, 0], [10, 10], [0, 0])).join() === '0,1,2' && simplifyIdx(P([4, 4], [4, 4], [4, 4])).join() === '0,2', 'a path that returns to its start keeps its turning point; identical points collapse');
+  const bad = simplifyIdx([{ x: 0, y: 0 }, { x: NaN, y: 2 }, { x: 5, y: 0 }, { x: Infinity, y: 1 }, { x: 9, y: 0 }]);
+  ok(bad[0] === 0 && bad[bad.length - 1] === 4 && bad.includes(1) && bad.includes(3), 'points that are not finite are kept and do not hang or throw');
+  const huge = Array.from({ length: 60000 }, (_, i) => ({ x: i * 0.05, y: Math.sin(i / 50) * 30 + Math.sin(i * 1.7) * 0.2 }));
+  const t0 = performance.now(), hi = simplifyIdx(huge);
+  ok(performance.now() - t0 < 1500 && hi.length < huge.length && hi.length > 100, 'sixty thousand points are simplified in well under 1.5 s (' + Math.round(performance.now() - t0) + ' ms) without recursion');
+  const zig = Array.from({ length: 20000 }, (_, i) => ({ x: i, y: (i % 2) * 40 })); // every point is a corner: nothing may be dropped, and it must still finish
+  const t1 = performance.now();
+  ok(simplifyIdx(zig).length === zig.length && performance.now() - t1 < 1500, 'a path with no redundant point loses none and does not go quadratic');
+}
