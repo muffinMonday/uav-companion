@@ -4,9 +4,13 @@
 import { isMain } from '../poi.js';
 import { addDays } from '../dates.js';
 
-/** The stops of one trip on one date, joined in stop order. Hotels and the Home marker are not part of the chain. */
+/**
+ * The stops of one trip on one date, joined in stop order, as the trips screen numbers them: an Accommodation that has a stop number (the day it is
+ * checked in) is a stop of the chain, so a day that goes airport, hotel, street is drawn airport > hotel > street. The Home marker is never part of it,
+ * and neither is an Accommodation with no stop number (older data): that one is drawn only as an overnight link.
+ */
 export function chainOf(items, tripId, date) {
-  return items.filter((i) => i.tripId === tripId && i.date === date && isMain(i) && i.order !== undefined && i.type !== 'hotel' && i.type !== 'residence')
+  return items.filter((i) => i.tripId === tripId && i.date === date && isMain(i) && i.order !== undefined && i.type !== 'residence')
     .sort((a, b) => a.order - b.order || String(a.created).localeCompare(String(b.created)));
 }
 
@@ -41,30 +45,32 @@ export function selectionLegs({ items, it, shownDay, tripDrawn }) {
   if (chain.length >= 2) selected.push(...chainLegs(chain, it.id, tripId));
   const dates = stopDates(items, tripId);
   const over = (a, b) => selected.push(makeLeg(a, b, tripId, { bold: true, overnight: true }));
-  // a hotel is where the day ends: a leg in from the last stop of its first day, and one out to the first stop of the day after it checks out
+  const hotels = items.filter((h) => h.tripId === tripId && h.type === 'hotel' && h.date);
+  const hotelFor = (night) => hotels.find((h) => h.date <= night && night <= (h.endDate && h.endDate > h.date ? addDays(h.endDate, -1) : h.date));
+  const at = chain.findIndex((x) => x.id === it.id), di = dates.indexOf(it.date);
+  // the first stop of a day follows the hotel of the night before (or, with none, the last stop of the day before)
+  const arrivalInto = () => {
+    const hotel = hotelFor(addDays(it.date, -1));
+    if (hotel) { if (hotel.id !== it.id) over(hotel, it); }
+    else if (di > 0) { const before = chainOf(items, tripId, dates[di - 1]); if (before.length) over(before[before.length - 1], it); }
+  };
   if (it.type === 'hotel') {
-    const d = [...dates].reverse().find((x) => x <= it.date);
-    if (d) { const c = chainOf(items, tripId, d); if (c.length) over(c[c.length - 1], it); }
+    if (at < 0) { // an Accommodation with no stop number: a leg in from the last stop of its first day
+      const d = [...dates].reverse().find((x) => x <= it.date);
+      if (d) { const c = chainOf(items, tripId, d); if (c.length) over(c[c.length - 1], it); }
+    } else if (at === 0 && di >= 0) arrivalInto(); // checked in first thing: it follows the night before (otherwise the chain already leads into it)
+    // out to the first stop of the day it checks out
     const morning = it.endDate && it.endDate > it.date ? it.endDate : addDays(it.date, 1);
     const next = dates.find((x) => x >= morning);
     if (next) { const c = chainOf(items, tripId, next); if (c.length) over(it, c[0]); }
     return { day, selected };
   }
-  // the first stop of a day follows the hotel of the night before (or, with none, the last stop of the day before); the last stop leads to
-  // its night's hotel (or, with none, the first stop of the next day)
-  const at = chain.findIndex((x) => x.id === it.id);
   if (at < 0) return { day, selected };
-  const di = dates.indexOf(it.date);
-  const hotels = items.filter((h) => h.tripId === tripId && h.type === 'hotel' && h.date);
-  const hotelFor = (night) => hotels.find((h) => h.date <= night && night <= (h.endDate && h.endDate > h.date ? addDays(h.endDate, -1) : h.date));
-  if (at === 0 && di >= 0) {
-    const hotel = hotelFor(addDays(it.date, -1));
-    if (hotel) over(hotel, it);
-    else if (di > 0) { const before = chainOf(items, tripId, dates[di - 1]); if (before.length) over(before[before.length - 1], it); }
-  }
+  if (at === 0 && di >= 0) arrivalInto();
+  // the last stop leads to its night's hotel (or, with none, the first stop of the next day); a hotel that is already a stop of this day is in the chain, not linked again
   if (at === chain.length - 1 && di >= 0) {
     const hotel = hotelFor(it.date);
-    if (hotel) over(it, hotel);
+    if (hotel) { if (!chain.some((x) => x.id === hotel.id)) over(it, hotel); }
     else if (di < dates.length - 1) { const after = chainOf(items, tripId, dates[di + 1]); if (after.length) over(it, after[0]); }
   }
   return { day, selected };

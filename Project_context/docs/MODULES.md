@@ -74,7 +74,7 @@ Navigation index; read the file for exports and details. Paths under `src/` unle
 ## Itinerary routes and coincident markers (`src/route/`, `src/spider.js`; backlog `backlogs/in-progress/ROUTE_NAVIGATION_REWORK_BACKLOG.md`)
 | File | Responsibility | Interface |
 |---|---|---|
-| `route/legs.js` (pure) | Which directed legs are drawn: the day's chain and the overnight links through a hotel (the sequencing that used to be inline in `poi-ui.js`) | `selectionLegs`, `chainOf`, `stopDates` |
+| `route/legs.js` (pure) | Which directed legs are drawn: the day's chain (a numbered Accommodation is a stop of it) and the overnight links through a hotel on other days of a stay (the sequencing that used to be inline in `poi-ui.js`) | `selectionLegs`, `chainOf`, `stopDates` |
 | `route/identity.js`, `route/country.js`, `route/polyline.js` | Re-exports of `supabase/functions/_shared/route-rules.js` and `route-polyline.js` (one source for the browser and the edge function): route key (ids, coordinates to 5 decimals, profile, schema version), same-country gate (conservative outlines for China and Singapore; anything else is unknown), eligibility, check of a provider answer, polyline codec | `routeKey`, `countryOf`, `ineligibleReason`, `readOrsGeoJson`, `encodePolyline` |
 | `route/result.js` | The two result states (road, fallback) and their builders | `fallbackFor`, `roadFrom` |
 | `route/router.js` | Cache first: memory, device cache (`uavzones.routes.v1`), shared-trip cache (`get_trip_routes`), then the `route-leg` function; de-duplication, 2 requests at once, back-off by answer code, pause on budget, `peek` (a saved road, never a request); `createBackend(client, signedIn)` | `createRouter`, `resolve`, `ensure`, `peek` |

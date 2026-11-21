@@ -47,6 +47,37 @@ ok(!r.selected.some((l) => l.id.includes('s')) && r.selected.every((l) => !l.bol
 const l1 = selectionLegs({ items, it: items[1], shownDay: null, tripDrawn: drawn }).selected[0];
 ok(l1.from.id === 'a' && l1.to.id === 'b' && Object.keys(l1.from).sort().join() === 'id,lat,lon' && !('name' in l1.from), 'a leg carries only ids and coordinates (no names or notes can reach a provider)');
 
+// ---------- an Accommodation with a stop number is a stop of the day (the reported Day 1: airport, airport, hotel, street; the hotel stays 4 nights)
+{
+  const day = '2026-12-05', t2 = 't2';
+  const m2 = (id, order, lat, lon, extra = {}) => ({ id, type: 'photo', name: id, tripId: t2, date: day, order, lat, lon, created: `2026-11-01T00:00:0${order}Z`, ...extra });
+  const trip = [
+    m2('s1', 1, 1.3627, 103.9895, { type: 'airport' }), m2('s2', 2, 30.7757, 114.2171, { type: 'airport' }),
+    m2('s3', 3, 30.5921, 114.2561, { type: 'hotel', endDate: '2026-12-09' }), m2('s4', 4, 30.5852, 114.2841, { type: 'shopping' }),
+    m2('n1', 1, 30.5845, 114.2796, { date: '2026-12-06' }), m2('n2', 2, 30.58, 114.30, { date: '2026-12-06' }),
+    m2('w1', 1, 30.5845, 114.2796, { date: '2026-12-09' }), m2('w2', 2, 30.61, 114.26, { date: '2026-12-09' }),
+  ];
+  const pick = (id, shownDay = null) => selectionLegs({ items: trip, it: trip.find((x) => x.id === id), shownDay, tripDrawn: drawn });
+  const bold = (l) => l.filter((x) => x.bold).map((x) => x.id).join();
+  ok(ids(chainOf(trip, t2, day).map((x) => ({ id: x.id }))) === 's1 s2 s3 s4', 'the chain of a day follows the trips screen: the numbered Accommodation is stop 3');
+  let q = pick('s2');
+  ok(ids(q.selected) === 's1>s2 s2>s3 s3>s4' && bold(q.selected) === 's1>s2,s2>s3' && q.selected.every((l) => !l.overnight), 'selecting stop 2: bold 1>2 and 2>3 (the hotel), thin 3>4, no overnight leg and no 2>4 skipping the hotel');
+  q = pick('s4');
+  ok(ids(q.selected) === 's1>s2 s2>s3 s3>s4' && bold(q.selected) === 's3>s4' && q.selected.every((l) => !l.overnight), 'the last stop of the check-in day: its own leg is bold and there is no 4>hotel leg back to a hotel that is already stop 3');
+  q = pick('s3');
+  ok(ids(q.selected) === 's1>s2 s2>s3 s3>s4 s3>w1' && bold(q.selected) === 's2>s3,s3>s4,s3>w1' && q.selected.filter((l) => l.overnight).map((l) => l.id).join() === 's3>w1', 'selecting the hotel: its stops in and out are bold, and the only overnight leg is the one out to the first stop of the day it checks out');
+  ok(!q.selected.some((l) => l.id === 's4>s3'), 'no leg runs from stop 4 back to stop 3');
+  q = pick('n2');
+  ok(ids(q.selected) === 'n1>n2 n2>s3' && q.selected[1].overnight, 'a later day of the stay: the last stop still leads to the hotel');
+  q = pick('n1');
+  ok(ids(q.selected) === 'n1>n2 s3>n1' && q.selected[1].overnight, 'a later day of the stay: the first stop follows the hotel');
+  q = pick('s1', { tripId: t2, date: day });
+  ok(ids(q.day) === 's1>s2 s2>s3 s3>s4' && q.day.every((l) => !l.bold), 'a day shown from the trips screen runs through the hotel, all thin');
+  const hFirst = trip.map((x) => (x.id === 's3' ? { ...x, order: 1 } : x.id === 's1' ? { ...x, order: 3 } : x));
+  q = selectionLegs({ items: hFirst, it: hFirst.find((x) => x.id === 's3'), shownDay: null, tripDrawn: drawn });
+  ok(ids(chainOf(hFirst, t2, day).map((x) => ({ id: x.id }))) === 's3 s2 s1 s4' && q.selected.every((l) => l.from.id !== l.to.id), 'a hotel that is the first stop of the first day: no leg in from nowhere, none to itself');
+}
+
 // ---------- identity and invalidation
 const leg = (o = {}) => ({ from: { id: 'a', lat: 30.6, lon: 114.3, ...o.from }, to: { id: 'b', lat: 30.7, lon: 114.4, ...o.to } });
 const k0 = routeKey(leg());
