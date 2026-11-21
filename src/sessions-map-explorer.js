@@ -6,7 +6,8 @@ import { xpBadge } from './sessions-xp.js';
 import L from 'leaflet';
 import { whenText, capacityText, seriesText } from './sessions.js';
 import { sessionMapActions, hasPoint } from './maplinks-ui.js';
-import { createFreeArea } from './free-area.js';
+import { createFreeArea, dockMode } from './free-area.js';
+import { announce, onOverlay } from './overlay-policy.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -20,7 +21,7 @@ const I_CLOSE = svg('M6 6l12 12M18 6L6 18'), I_FOLD = svg('M6 9l6 6 6-6'), I_OUT
  * getItems() returns the sessions to show (the hub's current list; sessions with `lat`/`lng`); onDetails(session), onExpand() and onClose() are the three exits.
  */
 export function createExplorer({ map, panel, getItems, onDetails, onExpand, onClose }) {
-  let isOpen = false, collapsed = false, mode = 'side', selectedId = null, items = [], sig = '', token = 0, zoomed = false, userMoved = false, raf = 0, restorePanel = null, layer = null, markers = new Map();
+  let isOpen = false, collapsed = false, mode = 'side', selectedId = null, items = [], sig = '', token = 0, zoomed = false, userMoved = false, raf = 0, restorePanel = null, layer = null, markers = new Map(), parked = false, parkScroll = 0;
 
   // ---- the dock
   const dock = el('aside', 'ses-explorer'); dock.hidden = true; dock.id = 'ses-explorer'; dock.setAttribute('role', 'region'); dock.setAttribute('aria-labelledby', 'ses-x-title');
@@ -39,7 +40,7 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
     dock.dataset.collapsed = String(collapsed); foldB.setAttribute('aria-expanded', String(!collapsed));
     const t = collapsed ? 'Show the list' : 'Collapse the list'; foldB.title = t; foldB.setAttribute('aria-label', t); body.hidden = collapsed;
   };
-  const onKey = (e) => { if (e.key === 'Escape' && isOpen && !e.defaultPrevented && !document.querySelector('dialog[open]') && !map.getContainer().querySelector('.leaflet-popup')) { e.preventDefault(); onClose?.(); } };
+  const onKey = (e) => { if (e.key === 'Escape' && isOpen && !parked && !e.defaultPrevented && !document.querySelector('dialog[open]') && !map.getContainer().querySelector('.leaflet-popup')) { e.preventDefault(); onClose?.(); } };
 
   // ---- geometry: the part of the map the dock and the side panel do not cover (shared module, src/free-area.js)
   const area = createFreeArea(map, () => [dock, document.getElementById('panel')].filter((e) => e && !(e === dock && collapsed && mode === 'side')));
@@ -57,10 +58,10 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
 
   // ---- docking: which side, how big, and the room it leaves
   function layout({ recenter = false } = {}) {
-    if (!isOpen) return;
+    if (!isOpen || parked) return;
     const w = innerWidth, vh = window.visualViewport?.height || innerHeight;
     const dw = clamp(Math.round(w * 0.36), DOCK_MIN, DOCK_MAX);
-    const next = w - dw >= MAP_MIN ? 'side' : 'bottom';
+    const next = dockMode(w, dw, MAP_MIN);
     mode = next; dock.dataset.mode = mode; document.body.dataset.sesx = mode;
     const root = document.documentElement.style;
     if (mode === 'side') { root.setProperty('--ses-x-w', dw + 'px'); root.setProperty('--ses-x-off', dw + GAP + 'px'); root.setProperty('--ses-x-h', '0px'); }
@@ -70,6 +71,17 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
     if (!restorePanel && panel?.isOpen?.() && panelEl && !panelEl.hidden) { const v = visibleRect(); if (v.right - v.left < MAP_MIN || v.bottom - v.top < 200) restorePanel = panel.suspend?.() ?? null; }
     if (recenter && selectedId && !userMoved) { const s = items.find((x) => x.id === selectedId); if (s && hasPoint(s.lat, s.lng)) centerOn(s, { keepZoom: true, animate: false }); }
   }
+  /** The marker panel opened: hide the dock but keep the items, the selection, the filters (the hub's) and the list's scroll position. */
+  function park() {
+    if (!isOpen || parked) return;
+    parked = true; parkScroll = body.scrollTop; dock.hidden = true; delete document.body.dataset.sesx;
+    for (const v of ['--ses-x-w', '--ses-x-h', '--ses-x-off']) document.documentElement.style.removeProperty(v);
+  }
+  function unpark() {
+    if (!parked) return;
+    parked = false; dock.hidden = false; layout(); body.scrollTop = parkScroll;
+  }
+  onOverlay((owner, phase) => { if (owner === 'marker') { if (phase === 'open') park(); else unpark(); } });
   const schedule = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; layout({ recenter: true }); }); };
   const touched = () => { userMoved = true; }; // the visitor moved the map by hand: leave it where they put it until the next selection
 
@@ -140,6 +152,7 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
   }
 
   function open({ focusId = null } = {}) {
+    announce('explorer', 'open'); // the marker panel, if open, gives way (U-04)
     if (isOpen) { update(); if (focusId) select(focusId); return; }
     isOpen = true; collapsed = false; zoomed = false; userMoved = false; sig = ''; selectedId = null;
     dock.hidden = false; paintFold(); items = []; update(); layout();
@@ -151,7 +164,7 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
   }
   function close() {
     if (!isOpen) return;
-    isOpen = false; token++; cancelAnimationFrame(raf); raf = 0;
+    isOpen = false; parked = false; token++; cancelAnimationFrame(raf); raf = 0;
     layer?.remove(); layer = null; markers = new Map(); list.replaceChildren(); items = []; sig = ''; selectedId = null;
     dock.hidden = true; delete document.body.dataset.sesx; for (const v of ['--ses-x-w', '--ses-x-h', '--ses-x-off']) document.documentElement.style.removeProperty(v);
     const c = map.getContainer(); for (const ev of ['pointerdown', 'wheel', 'touchstart', 'keydown']) c.removeEventListener(ev, touched, { capture: true });

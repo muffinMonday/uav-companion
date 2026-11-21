@@ -1,5 +1,5 @@
 // The free area of the map (src/free-area.js): rectangle cutting, centre, rotation and the pan. A fake map and fake overlays; no browser.
-import { cut, freeRect, freeCentre, unrotate, createFreeArea } from '../src/free-area.js';
+import { cut, freeRect, freeCentre, unrotate, createFreeArea, dockMode } from '../src/free-area.js';
 let fails = 0;
 const ok = (c, m) => { console.log((c ? 'PASS' : 'FAIL') + ' ' + m); if (!c) fails++; };
 const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
@@ -81,6 +81,10 @@ fa = createFreeArea(fake, () => open ? [el(R(0, 0, 360, 600))] : []);
 fa.centerOn(target, { zoom: 14, animate: false }); const withDock = pxOffset(calls.pop().ll, 14, target).x;
 open = false; fa.centerOn(target, { zoom: 14, animate: false }); const without = pxOffset(calls.pop().ll, 14, target).x;
 ok(near(withDock, -180, 1e-3) && near(without, 0, 1e-3), 'covers are re-read on every call');
+
+// dockMode: the room rule shared by the explorer and the marker panel
+ok(dockMode(1200, 360, 320) === 'side' && dockMode(680, 360, 320) === 'side' && dockMode(679, 360, 320) === 'bottom' && dockMode(360, 300, 320) === 'bottom', 'dockMode: side while 320 px of map remain beside the dock, else bottom');
+ok(dockMode(660, 340) === 'side' && dockMode(640, 340) === 'bottom', 'dockMode: default minimum 320 (660 side, 640 bottom for a 340 px panel)');
 
 console.log(fails ? `${fails} FAILED` : 'ALL PASS');
 process.exit(fails ? 1 : 0);

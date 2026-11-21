@@ -15,14 +15,14 @@ export const tripLabel = (it, trip) => [dayText(dayInfo(it, trip)), stopNo(it) !
 
 /**
  * `d` = {
- *   store, cin, elev, map, toast, checkPoint, zoneSummary, weatherButton, showWeather,
+ *   store, cin, elev, toast, checkPoint, zoneSummary, weatherButton, showWeather,
  *   detailsOn(), expanded(), markers(), visitMap(), sideMap(), subParent(), newTripHandler(), setWxLine(line | null),
  *   tripOf, iconOf, sigOf, eyeLabel, renderDist, renderStats, addVisit, convert, remove, openPopup, selectMarker, setDetails, setWindowMode, goTo,
  * } -> { buildContent(id, startEditing, host) -> root element }, with host = { close(), closeSelf(), update() }:
  * close() and update() act on the window that is open now, closeSelf() on the window this content was built for.
  */
 export function createMarkerContent(d) {
-  const { store, cin, elev, map, toast, checkPoint, zoneSummary, weatherButton, showWeather, tripOf, iconOf, sigOf, eyeLabel, renderDist, renderStats, addVisit, convert, remove, openPopup, selectMarker, setDetails, setWindowMode, goTo } = d;
+  const { store, cin, elev, toast, checkPoint, zoneSummary, weatherButton, showWeather, tripOf, iconOf, sigOf, eyeLabel, renderDist, renderStats, addVisit, convert, remove, openPopup, selectMarker, setDetails, setWindowMode, goTo } = d;
 
   function buildContent(id, startEditing, host) {
     const root = el('div', 'pop poi-pop');
@@ -139,7 +139,7 @@ export function createMarkerContent(d) {
       const line = { id, render: () => { renderDist(dist, id); renderStats(stats, id); } };
       d.setWxLine(line);
       line.render();
-      root.append(stats, weatherButton(() => { map.closePopup(); showWeather(it.lat, it.lon, it.name); }), dist); // conditions first, distances after
+      root.append(stats, weatherButton(() => { d.closeWindow(); showWeather(it.lat, it.lon, it.name); }), dist); // conditions first, distances after
       elev.ensure(id); // no-op unless ground elevation is on
 
       if (it.note) root.append(el('p', 'note', it.note));
@@ -255,7 +255,7 @@ export function createMarkerContent(d) {
       tripPick.addEventListener('change', () => {
         if (tripPick.value === '__new') { // hand over to the Trips tab, which tags this marker once the trip is saved
           tripPick.value = lastTrip;
-          setTimeout(() => { map.closePopup(); d.newTripHandler()?.(id); }, 0);
+          setTimeout(() => { d.closeWindow(); d.newTripHandler()?.(id); }, 0);
           return;
         }
         lastTrip = tripPick.value;

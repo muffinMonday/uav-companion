@@ -25,6 +25,7 @@ import { zoneExplanation } from './legends.js';
 import { onPopupSwipe } from './swipe.js';
 import { mascotEl } from './mascot-ui.js';
 import { createMarkerContent, fmt, tripLabel } from './marker-content.js';
+import { createMarkerHost, markerHostEnabled } from './marker-host.js';
 import { selectionLegs } from './route/legs.js';
 import { createRouter } from './route/router.js';
 import { createSpider } from './spider.js';
@@ -1092,6 +1093,12 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function openPopup(id, edit = false) {
     const item = store.get(id), m = markers.get(id);
     if (!item || !m) return;
+    if (markerHostEnabled()) { // development switch: the adaptive host instead of the popup (same content, same centring as today)
+      map.closePopup(); panel.closeIfPhone(); expanded = windowExpanded();
+      hostFor().open(id, { edit });
+      centreOn(map, m.getLatLng());
+      return;
+    }
     // The pin is centred on the map and the window opens above it. A window too tall for that space scrolls inside, so it never
     // runs off the screen and the map is never moved to fit it. On a phone the sheet is closed first so it does not cover the pin.
     const OFFSET_Y = -36;
@@ -1115,6 +1122,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function setWindowMode(on) {
     expanded = on;
     savePrefs({ windowExpanded: on });
+    if (markerHost?.isOpen()) { markerHost.layout(); return; }
     if (!popup) return;
     popup.options.maxHeight = windowMaxHeight(on);
     popup.getElement()?.classList.toggle('is-expanded', on);
@@ -1123,9 +1131,18 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
 
   // the content builder lives in marker-content.js; the popup only hosts it
   const content = createMarkerContent({
-    store, cin, elev, map, toast, checkPoint, zoneSummary, weatherButton, showWeather, tripOf, iconOf, sigOf, eyeLabel, renderDist, renderStats, addVisit, convert, remove, openPopup, selectMarker, setDetails, setWindowMode, goTo,
+    store, cin, elev, toast, checkPoint, zoneSummary, weatherButton, showWeather, tripOf, iconOf, sigOf, eyeLabel, renderDist, renderStats, addVisit, convert, remove, openPopup, selectMarker, setDetails, setWindowMode, goTo,
     detailsOn: () => detailsOn, expanded: () => expanded, markers: () => markers, visitMap: () => visitMap, sideMap: () => sideMap, subParent: () => subParent,
     newTripHandler: () => newTripHandler, setWxLine: (line) => { wxLine = line; },
+    closeWindow: () => { map.closePopup(); markerHost?.close(); }, // the popup, or the development marker host when that is what is open
+  });
+  let markerHost = null; // the adaptive marker host (Review 01 S4): development switch only, see marker-host.js
+  const hostFor = () => markerHost ??= createMarkerHost({
+    map, panel, build: (id, edit, h) => content.buildContent(id, edit, h), getExpanded: () => expanded,
+    onOpen: (id) => { tagLayer.clearLayers(); pickId = null; viewId = id; relink(); }, // what 'popupopen' does for the popup
+    onClose: (id) => { if (viewId === id) { viewId = null; relink(); } },
+    returnFocusTo: (id) => markers.get(id)?.getElement() ?? null,
+    toggleSize: () => setWindowMode(!expanded),
   });
   function popupContent(id, startEditing) {
     const win = popup; // this window's own popup (read now, while it is the one being opened)

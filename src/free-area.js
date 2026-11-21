@@ -41,3 +41,6 @@ export function createFreeArea(map, covers) {
   }
   return { rect, centre, centerOn };
 }
+
+/** Where a docked overlay of width `dockW` goes in a viewport `viewW` wide: 'side' while the map keeps at least `mapMin` px beside it, else 'bottom'. One rule for the explorer and the marker panel. */
+export const dockMode = (viewW, dockW, mapMin = 320) => (viewW - dockW >= mapMin ? 'side' : 'bottom');
