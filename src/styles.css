@@ -1547,11 +1547,13 @@ button.ses-attendee{cursor:pointer}
 .marker-host[hidden]{display:none}
 .marker-host:focus{outline:none}
 .marker-host[data-mode=side]{top:8px;bottom:8px;right:var(--mh-right,8px);width:var(--mh-w,420px);max-width:calc(100% - 16px);border-radius:var(--radius)}
-.marker-host[data-mode=bottom]{left:0;right:0;bottom:0;height:var(--mh-h,240px);border-radius:var(--radius) var(--radius) 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.marker-host[data-mode=bottom]{left:0;right:0;bottom:var(--mh-kb,0px);height:var(--mh-h,240px);border-radius:var(--radius) var(--radius) 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.mh-handle,.marker-host[data-mode=bottom] .pop-bar{touch-action:none}
+.marker-host.mh-dragging{user-select:none}
 .mh-handle{flex:none;display:grid;place-items:center;width:100%;height:24px;padding:0;border:0;background:transparent;cursor:pointer}
 .marker-host[data-mode=side] .mh-handle{display:none}
 .mh-grip{width:40px;height:4px;border-radius:2px;background:var(--line)}
-.mh-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.mh-body{flex:1;min-height:0;touch-action:pan-y;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .marker-host h3:focus{outline:none}
 .marker-host h3:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 .marker-host .pop{max-width:none;width:auto}
@@ -1560,6 +1562,6 @@ button.ses-attendee{cursor:pointer}
 .marker-host[data-mode=side] .pop-head{padding-right:40px}
 .marker-host[data-mode=bottom] .pop{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 @media (pointer:coarse){.mh-handle{height:44px}.marker-host .pop-close,.marker-host .pop-toggle{width:44px;height:44px;top:2px}.marker-host .pop-toggle{right:46px}}
-@keyframes mh-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes mh-in{from{opacity:0}to{opacity:1}} /* opacity only: the size is read the moment it opens to keep the pin in the free area */
 body[data-mh=side] .leaflet-top.leaflet-right,body[data-mh=side] .leaflet-bottom.leaflet-right{margin-right:var(--mh-off)}
 body[data-mh=bottom] .leaflet-bottom{margin-bottom:var(--mh-off)}

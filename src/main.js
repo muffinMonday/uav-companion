@@ -140,7 +140,7 @@ const hold = initHoldCheck({ map, isBusy: () => poi.isBusy(), onCheck: checkAt, 
 // (windows are opened with closeOnClick off: Leaflet would close them on the release that ends a hold, before this runs)
 map.on('click', (e) => {
   if (hold.consumeClick()) return;   // the release after a hold is not a click
-  map.closePopup();
+  poi.closeWindow();                 // the marker window: the popup, or the development marker host
   if (poi.handleMapClick(e)) return; // placing or editing markers: no point check
   if (!loadPrefs().holdHint) {
     savePrefs({ holdHint: true });

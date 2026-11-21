@@ -103,11 +103,11 @@ export function onSwipe(el, { direction, onDismiss, canStart = () => true, enabl
  * The whole pane moves: the bubble, its tip and its close button, which are the children of the Leaflet popup container. They move with the CSS `translate`
  * property, because Leaflet positions the container with `transform`, and the map's rotation may set `translate` on it.
  */
-export function onPopupSwipe(root, { close, enabled = () => true, borders }) {
+export function onPopupSwipe(root, { close, enabled = () => true, borders, vertical = true }) {
   const pane = () => { const pop = root.closest('.leaflet-popup'); return pop ? [...pop.children] : [root]; };
   const opts = { enabled, follow: pane, css: 'translate', fade: true, onDismiss: close };
   for (const direction of ['left', 'right']) onSwipe(root, { ...opts, direction });
-  for (const direction of ['up', 'down']) onSwipe(root, { ...opts, direction, canStart: (t) => borders(t, root) });
+  if (vertical) for (const direction of ['up', 'down']) onSwipe(root, { ...opts, direction, canStart: (t) => borders(t, root) });
 }
 
 /**

@@ -28,7 +28,7 @@ export function createMarkerContent(d) {
     const root = el('div', 'pop poi-pop');
     let editing = false; // the edit form is up: a swipe does not close the window then
     // swipe left or right anywhere, or up or down from the top bar (with the close and collapse buttons) or the previous / next footer
-    onPopupSwipe(root, { close: () => host.closeSelf(), enabled: () => !editing, borders: (t) => !!t.closest('.pop-bar, .pop-seq, .pop-toggle, .pop-close') });
+    onPopupSwipe(root, { close: () => host.closeSelf(), enabled: () => !editing, vertical: host.verticalSwipe !== false, borders: (t) => !!t.closest('.pop-bar, .pop-seq, .pop-toggle, .pop-close') });
 
     function view() {
       editing = false;

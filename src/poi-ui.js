@@ -526,7 +526,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   };
   function setSelecting(on) {
     setTimeout(refreshIcons, 0); // while selecting, every Side Quest is on show so it can be ticked
-    if (on) { setMode(null); map.closePopup(); panel.closeIfPhone(); } // exclusive with placing and editing; the map must be free to tap
+    if (on) { setMode(null); closeWindow(); panel.closeIfPhone(); } // exclusive with placing and editing; the map must be free to tap
     selecting = on; selected.clear(); selConfirm.hidden = true;
     renderList();
     renderRoute(); // selecting ended (or began): the route card follows
@@ -559,7 +559,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       if (m) layer.removeLayer(m);
       markers.delete(id); mw.forget(id); elev.forget(id);
     }
-    map.closePopup();
+    closeWindow();
     const res = store.removeMany(ids);
     setSelecting(false);
     const n = res.removed.length;
@@ -748,7 +748,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function selectMarker(id) {
     const it = store.get(id), m = markers.get(id);
     if (!it || !m) return;
-    map.closePopup();
+    closeWindow();
     tagLayer.clearLayers();
     pickId = null; viewId = id; relink();
     const box = el('div', 'name-tag');
@@ -1031,7 +1031,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
       const on = shownOnMap(store.get(id));
       if (!on && layer.hasLayer(m)) layer.removeLayer(m);
       else if (on && !layer.hasLayer(m)) layer.addLayer(m);
-      if (!on && viewId === id) { map.closePopup(); tagLayer.clearLayers(); viewId = null; }
+      if (!on && viewId === id) { closeWindow(); tagLayer.clearLayers(); viewId = null; }
     }
   }
   /** syncPins, then routes, Side Quest links and pin badges. */
@@ -1093,10 +1093,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   function openPopup(id, edit = false) {
     const item = store.get(id), m = markers.get(id);
     if (!item || !m) return;
-    if (markerHostEnabled()) { // development switch: the adaptive host instead of the popup (same content, same centring as today)
+    if (markerHostEnabled()) { // development switch: the adaptive host instead of the popup; it recentres through free-area.js, the popup keeps view.js centreOn
       map.closePopup(); panel.closeIfPhone(); expanded = windowExpanded();
       hostFor().open(id, { edit });
-      centreOn(map, m.getLatLng());
       return;
     }
     // The pin is centred on the map and the window opens above it. A window too tall for that space scrolls inside, so it never
@@ -1134,15 +1133,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     store, cin, elev, toast, checkPoint, zoneSummary, weatherButton, showWeather, tripOf, iconOf, sigOf, eyeLabel, renderDist, renderStats, addVisit, convert, remove, openPopup, selectMarker, setDetails, setWindowMode, goTo,
     detailsOn: () => detailsOn, expanded: () => expanded, markers: () => markers, visitMap: () => visitMap, sideMap: () => sideMap, subParent: () => subParent,
     newTripHandler: () => newTripHandler, setWxLine: (line) => { wxLine = line; },
-    closeWindow: () => { map.closePopup(); markerHost?.close(); }, // the popup, or the development marker host when that is what is open
+    closeWindow,
   });
-  let markerHost = null; // the adaptive marker host (Review 01 S4): development switch only, see marker-host.js
+  let markerHost = null; // the adaptive marker host (Review 01 S4, S5): development switch only, see marker-host.js
+  /** Closes the marker window, whichever is open: the Leaflet popup, or the development marker host. The one place every "close the window" goes through. */
+  function closeWindow() { map.closePopup(); markerHost?.close(); }
   const hostFor = () => markerHost ??= createMarkerHost({
     map, panel, build: (id, edit, h) => content.buildContent(id, edit, h), getExpanded: () => expanded,
+    setExpanded: (on) => setWindowMode(on), latlngOf: (id) => markers.get(id)?.getLatLng(),
     onOpen: (id) => { tagLayer.clearLayers(); pickId = null; viewId = id; relink(); }, // what 'popupopen' does for the popup
     onClose: (id) => { if (viewId === id) { viewId = null; relink(); } },
     returnFocusTo: (id) => markers.get(id)?.getElement() ?? null,
-    toggleSize: () => setWindowMode(!expanded),
   });
   function popupContent(id, startEditing) {
     const win = popup; // this window's own popup (read now, while it is the one being opened)
@@ -1156,7 +1157,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     mw.forget(id);
     elev.forget(id);
     const res = store.remove(id);
-    map.closePopup();
+    closeWindow();
     if (!res.ok) toast('Deleted for now, but the browser would not update its storage.');
   }
 
@@ -1271,7 +1272,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (mode === 'edit') { map.dragging.enable(); container.classList.remove('is-editing'); }
     if (mode === 'place') container.classList.remove('is-placing');
     mode = next;
-    if (mode) { map.closePopup(); clearSelection(); panel.closeIfPhone(); ensureVisible(); addCard.open = true; } // the controls that end a mode are never hidden by a folded card
+    if (mode) { closeWindow(); clearSelection(); panel.closeIfPhone(); ensureVisible(); addCard.open = true; } // the controls that end a mode are never hidden by a folded card
     if (mode === 'edit') { map.dragging.disable(); container.classList.add('is-editing'); }
     if (mode === 'place') container.classList.add('is-placing');
     editSwitch.checked = mode === 'edit';
@@ -1292,7 +1293,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   $('poi-showcompleted').addEventListener('change', (e) => setShowCompleted(e.target.checked));
   panel.onChange?.(() => { if (tripViewId && panel.getTab() !== 'trips') setTripView(null); }); // a trip shown on its own lasts while the Trips tab is the open tab
   showSwitch.addEventListener('change', () => {
-    if (showSwitch.checked) map.addLayer(layer); else { map.removeLayer(layer); map.closePopup(); }
+    if (showSwitch.checked) map.addLayer(layer); else { map.removeLayer(layer); closeWindow(); }
     renderList(); // the list explains an override
   });
 
@@ -1323,7 +1324,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
 
     const lift = () => {
       lifted = true;
-      map.closePopup();
+      closeWindow();
       icon.classList.add('lifted');
       navigator.vibrate?.(15);
       // keep the pin where it is under the finger or cursor: remember the offset between the pointer and the pin's tip
@@ -1489,6 +1490,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   return {
     store,
     route: routeApi,
+    closeWindow,
     checkin: cin,
     fitTrip,
     /** The trip shown on its own on the map (Trips tab), or null; set it (null clears), and hear about changes. */
