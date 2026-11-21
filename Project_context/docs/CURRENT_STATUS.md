@@ -1,3 +1,9 @@
+## Latest: UI/UX Review 01 S2 (free-area service) done in the working tree, NOT committed (2026-11-21)
+- **Done:** `src/free-area.js` extracted from `sessions-map-explorer.js` (same formulas); explorer uses it, behaviour unchanged. New `tests/free-area-unit.mjs` (24, in the unit list). Docs: MODULES, backlog status history.
+- **Tests:** `test:unit` all pass except the known `region-labels-unit`, `country-groups-unit` and one `live-engine-unit` timing assertion (passes alone, twice). Browser `sessions-explorer`, `session-preview`, `maprotate`, `sessions` pass on a dev server.
+- **Owner decision 2026-11-22:** S2 scope approved; moving `view.js` `centreOn` callers is deferred as DEF-S2-01 in the backlog (open; popup centring unchanged until the marker host and point-check sheet work).
+- **Not done:** S3 (content builder extraction) is next and is independent of S2.
+
 ## Latest: UI/UX Review 01 backlog reconciled with prototype v4, documentation only (2026-11-21; nothing approved, no code touched)
 - **Done:** backlog moved to `docs/backlogs/for-review/` and revised (sections 9 to 12: conflict register C-01 to C-29, marker-detail requirements MD-01 to MD-12, amendments AM-01 to AM-12, owner decisions U-01 to U-12, sequence S0 to S10 with regression tests). Prototype copied to `docs/design-references/` (SHA-256 `a4ebbc90...3962`).
 - **Key findings:** marker window is a Leaflet popup today (53 test files mention popups); prototype scrim would block the map; no recentre shown, two centring helpers exist; static airspace line must not replace the live zone verdict; marker wizard and 5-type list conflict with D13 and the 16-type taxonomy; side panel would cover attribution; diagnostics sketch has free stepping and a disabled Stop button (visual direction only).

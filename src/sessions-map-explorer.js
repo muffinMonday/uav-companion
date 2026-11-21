@@ -6,6 +6,7 @@ import { xpBadge } from './sessions-xp.js';
 import L from 'leaflet';
 import { whenText, capacityText, seriesText } from './sessions.js';
 import { sessionMapActions, hasPoint } from './maplinks-ui.js';
+import { createFreeArea } from './free-area.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -40,41 +41,18 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
   };
   const onKey = (e) => { if (e.key === 'Escape' && isOpen && !e.defaultPrevented && !document.querySelector('dialog[open]') && !map.getContainer().querySelector('.leaflet-popup')) { e.preventDefault(); onClose?.(); } };
 
-  // ---- geometry: the part of the map the dock and the side panel do not cover
-  const rectOf = (e) => e.getBoundingClientRect();
-  /** `r` minus an overlay `o` that sits along one edge: a bar over most of the height trims left or right, one over most of the width trims top or bottom. */
-  function cut(r, o) {
-    if (o.width <= 0 || o.height <= 0 || o.right <= r.left || o.left >= r.right || o.bottom <= r.top || o.top >= r.bottom) return r;
-    const out = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
-    if (o.height >= 0.7 * (r.bottom - r.top) && o.width < 0.85 * (r.right - r.left)) { if ((o.left + o.right) / 2 < (r.left + r.right) / 2) out.left = Math.max(out.left, o.right); else out.right = Math.min(out.right, o.left); }
-    else if (o.width >= 0.7 * (r.right - r.left)) { if ((o.top + o.bottom) / 2 > (r.top + r.bottom) / 2) out.bottom = Math.min(out.bottom, o.top); else out.top = Math.max(out.top, o.bottom); }
-    return out;
-  }
-  function visibleRect() {
-    let r = rectOf(map.getContainer());
-    r = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
-    const covers = [dock, document.getElementById('panel')].filter((e) => e && !e.hidden);
-    for (const e of covers) { if (e === dock && collapsed && mode === 'side') continue; r = cut(r, rectOf(e)); }
-    return r;
-  }
-  /** The middle of the visible part, in the map container's own pixels. */
-  function visibleCenter() {
-    const v = visibleRect(), c = rectOf(map.getContainer());
-    return L.point((v.left + v.right) / 2 - c.left, (v.top + v.bottom) / 2 - c.top);
-  }
-  const bearing = () => (map._rot?.bearing?.() ?? 0) * Math.PI / 180;
+  // ---- geometry: the part of the map the dock and the side panel do not cover (shared module, src/free-area.js)
+  const area = createFreeArea(map, () => [dock, document.getElementById('panel')].filter((e) => e && !(e === dock && collapsed && mode === 'side')));
+  const visibleRect = () => area.rect();
 
-  /** Pans (and, the first time, zooms) so the marker of `s` ends up at the middle of the visible part. Rotation-aware: the map pane is turned about the container's centre. */
+  /** Pans (and, the first time, zooms) so the marker of `s` ends up at the middle of the visible part. */
   function centerOn(s, { keepZoom = false, animate = !reduced() } = {}) {
     const my = ++token;
     userMoved = false; // an explicit selection starts from the person's hands off the map
     if (map._animatingZoom) { map.once('zoomend', () => { if (my === token && !userMoved) centerOn(s, { keepZoom, animate }); }); return; } // Leaflet ignores a zoom asked for during a zoom animation
-    const ll = L.latLng(s.lat, s.lng);
     let z = map.getZoom();
     if (!keepZoom && !zoomed) { z = Math.max(z, FIRST_ZOOM); zoomed = true; }
-    const c = map.getSize().divideBy(2), t = visibleCenter().subtract(c), b = bearing();
-    const d = L.point(t.x * Math.cos(b) - t.y * Math.sin(b), t.x * Math.sin(b) + t.y * Math.cos(b)); // the same offset in the map's own (unturned) pixels
-    map.setView(map.unproject(map.project(ll, z).subtract(d), z), z, { animate, duration: 0.35 });
+    area.centerOn([s.lat, s.lng], { zoom: z, animate });
   }
 
   // ---- docking: which side, how big, and the room it leaves
