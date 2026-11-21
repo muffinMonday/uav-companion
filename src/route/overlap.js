@@ -37,17 +37,37 @@ function toSegment(p, a, b) {
   return { d: Math.hypot(a.x + t * dx - p.x, a.y + t * dy - p.y), dir: l2 ? { x: dx / Math.sqrt(l2), y: dy / Math.sqrt(l2) } : { x: 1, y: 0 } };
 }
 const box = (pts, pad) => pts.reduce((b, p) => ({ x0: Math.min(b.x0, p.x - pad), y0: Math.min(b.y0, p.y - pad), x1: Math.max(b.x1, p.x + pad), y1: Math.max(b.y1, p.y + pad) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
-const meets = (a, b) => a.x0 <= b.x1 && b.x0 <= a.x1 && a.y0 <= b.y1 && b.y0 <= a.y1;
+const CELL = 16; // px; at least the 8 px resample step, so a segment of a resampled path covers at most four cells
+const meets = (a, b) =>a.x0 <= b.x1 && b.x0 <= a.x1 && a.y0 <= b.y1 && b.y0 <= a.y1;
 
 /** Which samples of `a` run within `tol` px of `b` in the opposite direction. Returns a boolean array. */
 export function oppositeFlags(a, ta, b, tol = 10) {
   const flags = new Array(a.length).fill(false);
   if (!meets(box(a, tol), box(b, tol))) return flags;
+  // A sample can only be near the segments whose cell it reaches, so b's segments go into a grid: the work grows with the length of the paths, not with its square
+  // (consecutive legs always touch at their shared stop, so the box test above never rules a pair out, and a long road has thousands of samples).
+  const grid = new Map();
+  const finite = (q) => Number.isFinite(q.x) && Number.isFinite(q.y);
+  for (let k = 1; k < b.length; k++) {
+    if (!finite(b[k - 1]) || !finite(b[k])) continue; // a non-finite point would make the cell loops endless; it has no place on the map anyway
+    const x0 = Math.floor(Math.min(b[k - 1].x, b[k].x) / CELL), x1 = Math.floor(Math.max(b[k - 1].x, b[k].x) / CELL);
+    const y0 = Math.floor(Math.min(b[k - 1].y, b[k].y) / CELL), y1 = Math.floor(Math.max(b[k - 1].y, b[k].y) / CELL);
+    for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) { const key = cx + ',' + cy; const cell = grid.get(key); if (cell) cell.push(k); else grid.set(key, [k]); }
+  }
+  const seen = new Int32Array(b.length);
   for (let i = 0; i < a.length; i++) {
-    let best = Infinity, dir = null;
-    for (let k = 1; k < b.length; k++) {
-      const r = toSegment(a[i], b[k - 1], b[k]);
-      if (r.d < best) { best = r.d; dir = r.dir; }
+    let best = Infinity, bestK = Infinity, dir = null;
+    const p = a[i];
+    if (!finite(p)) continue;
+    for (let cx = Math.floor((p.x - tol) / CELL); cx <= Math.floor((p.x + tol) / CELL); cx++) {
+      for (let cy = Math.floor((p.y - tol) / CELL); cy <= Math.floor((p.y + tol) / CELL); cy++) {
+        for (const k of grid.get(cx + ',' + cy) ?? []) {
+          if (seen[k] === i + 1) continue;
+          seen[k] = i + 1;
+          const r = toSegment(p, b[k - 1], b[k]);
+          if (r.d < best || (r.d === best && k < bestK)) { best = r.d; bestK = k; dir = r.dir; } // the nearest segment; the earlier one on a tie, as a full scan would pick
+        }
+      }
     }
     if (best <= tol && dir && ta[i].x * dir.x + ta[i].y * dir.y < -0.5) flags[i] = true;
   }

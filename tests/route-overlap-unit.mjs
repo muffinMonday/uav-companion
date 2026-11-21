@@ -74,3 +74,29 @@ ok(Math.abs(small.drawPts[4].y) >= 7 && Math.abs(small.drawPts[4].y) <= 7.6, 'a 
 const part = mk(P([0, 0], [300, 0]));
 assignLanes([part, mk(P([300, 0], [200, 0]))], { lane: () => 8 });
 ok(part.drawPts[0].x === 0 && part.drawPts[0].y === 0, 'the start of a leg stays on its marker');
+
+// ---------- the grid gives the answers of a full scan, and long legs stay fast
+{
+  const scan = (a, ta, b, tol) => a.map((p, i) => { // the straightforward version: every sample against every segment
+    let best = Infinity, dir = null;
+    for (let k = 1; k < b.length; k++) { const dx = b[k].x - b[k - 1].x, dy = b[k].y - b[k - 1].y, l2 = dx * dx + dy * dy; const t = l2 ? Math.max(0, Math.min(1, ((p.x - b[k - 1].x) * dx + (p.y - b[k - 1].y) * dy) / l2)) : 0; const d = Math.hypot(b[k - 1].x + t * dx - p.x, b[k - 1].y + t * dy - p.y); if (d < best) { best = d; dir = l2 ? { x: dx / Math.sqrt(l2), y: dy / Math.sqrt(l2) } : { x: 1, y: 0 }; } }
+    return best <= tol && dir && ta[i].x * dir.x + ta[i].y * dir.y < -0.5;
+  });
+  let seed = 7; const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const wander = (x0, y0, n, dir) => { const pts = [{ x: x0, y: y0 }]; for (let i = 1; i < n; i++) pts.push({ x: pts[i - 1].x + dir * (20 + rnd() * 30), y: pts[i - 1].y + (rnd() - 0.5) * 40 }); return pts; };
+  let same = true, any = 0;
+  for (let n = 0; n < 40; n++) {
+    const a = resample(wander(0, 0, 30, 1)), b = resample(rev(wander(0, (rnd() - 0.5) * 30, 30, 1)).map((p) => ({ x: p.x + (rnd() - 0.5) * 6, y: p.y + (rnd() - 0.5) * 6 })));
+    const ta = tangentsOf(a), got = oppositeFlags(a, ta, b, 10), want = scan(a, ta, b, 10);
+    any += want.filter(Boolean).length;
+    if (got.some((f, i) => f !== !!want[i])) same = false;
+  }
+  ok(same && any > 50, 'on 40 random pairs of paths the indexed search flags the same samples as a full scan (' + any + ' flagged in all)');
+  const longRoad = (x0, n, ph) => Array.from({ length: n }, (_, i) => ({ x: x0 + (60000 * i) / n, y: 300 * Math.sin(i / 40 + ph) }));
+  const legs = [0, 60000, 120000].map((x, i) => ({ pts: longRoad(x, 8000, i), width: 9 })); // three consecutive 60,000 px legs of 8,000 points
+  const t0 = performance.now();
+  assignLanes(legs);
+  const ms = performance.now() - t0;
+  ok(ms < 1500, 'three consecutive 60,000 px legs of 8,000 points lay out in under 1.5 s (took ' + Math.round(ms) + ' ms; the full scan took about 7 s)');
+  ok(oppositeFlags([{ x: NaN, y: 0 }, { x: Infinity, y: 0 }, { x: 0, y: 0 }], [{ x: 1, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 0 }], [{ x: 0, y: 0 }, { x: Infinity, y: 5 }, { x: 10, y: 0 }], 10).length === 3, 'a non-finite point does not hang the search');
+}
