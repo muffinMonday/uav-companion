@@ -36,34 +36,45 @@ function toSegment(p, a, b) {
   const t = l2 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)) : 0;
   return { d: Math.hypot(a.x + t * dx - p.x, a.y + t * dy - p.y), dir: l2 ? { x: dx / Math.sqrt(l2), y: dy / Math.sqrt(l2) } : { x: 1, y: 0 } };
 }
-const box = (pts, pad) => pts.reduce((b, p) => ({ x0: Math.min(b.x0, p.x - pad), y0: Math.min(b.y0, p.y - pad), x1: Math.max(b.x1, p.x + pad), y1: Math.max(b.y1, p.y + pad) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
+const box = (pts, pad) => { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const p of pts) { if (p.x - pad < x0) x0 = p.x - pad; if (p.y - pad < y0) y0 = p.y - pad; if (p.x + pad > x1) x1 = p.x + pad; if (p.y + pad > y1) y1 = p.y + pad; } return { x0, y0, x1, y1 }; };
 const CELL = 16; // px; at least the 8 px resample step, so a segment of a resampled path covers at most four cells
-const meets = (a, b) =>a.x0 <= b.x1 && b.x0 <= a.x1 && a.y0 <= b.y1 && b.y0 <= a.y1;
+const meets = (a, b) => a.x0 <= b.x1 && b.x0 <= a.x1 && a.y0 <= b.y1 && b.y0 <= a.y1;
+const cellKey = (cx, cy) => cx * 2097152 + cy; // a number, not a string: no allocation per lookup (two far-apart cells that share a key only add a candidate; the distance test decides)
+const finite = (q) => Number.isFinite(q.x) && Number.isFinite(q.y);
 
-/** Which samples of `a` run within `tol` px of `b` in the opposite direction. Returns a boolean array. */
-export function oppositeFlags(a, ta, b, tol = 10) {
-  const flags = new Array(a.length).fill(false);
-  if (!meets(box(a, tol), box(b, tol))) return flags;
-  // A sample can only be near the segments whose cell it reaches, so b's segments go into a grid: the work grows with the length of the paths, not with its square
-  // (consecutive legs always touch at their shared stop, so the box test above never rules a pair out, and a long road has thousands of samples).
+/**
+ * What is needed to ask "which samples of another path run near this one": its segments in a grid (the work grows with the length of the paths, not with its
+ * square) and its bounding box. Built once per path and reused against every other path.
+ */
+export function indexPath(b, tol = 10) {
   const grid = new Map();
-  const finite = (q) => Number.isFinite(q.x) && Number.isFinite(q.y);
   for (let k = 1; k < b.length; k++) {
     if (!finite(b[k - 1]) || !finite(b[k])) continue; // a non-finite point would make the cell loops endless; it has no place on the map anyway
     const x0 = Math.floor(Math.min(b[k - 1].x, b[k].x) / CELL), x1 = Math.floor(Math.max(b[k - 1].x, b[k].x) / CELL);
     const y0 = Math.floor(Math.min(b[k - 1].y, b[k].y) / CELL), y1 = Math.floor(Math.max(b[k - 1].y, b[k].y) / CELL);
-    for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) { const key = cx + ',' + cy; const cell = grid.get(key); if (cell) cell.push(k); else grid.set(key, [k]); }
+    for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) { const key = cellKey(cx, cy), cell = grid.get(key); if (cell) cell.push(k); else grid.set(key, [k]); }
   }
-  const seen = new Int32Array(b.length);
+  return { b, grid, box: box(b, tol), seen: new Int32Array(b.length), stamp: 0 };
+}
+
+/** Which samples of `a` run within `tol` px of `b` in the opposite direction. Returns a boolean array. `index`: indexPath(b), when it is already built. */
+export function oppositeFlags(a, ta, b, tol = 10, index = null, boxA = null) {
+  const flags = new Array(a.length).fill(false);
+  const ix = index ?? indexPath(b, tol);
+  if (!meets(boxA ?? box(a, tol), ix.box)) return flags;
+  const { grid, seen } = ix, bx = ix.box;
   for (let i = 0; i < a.length; i++) {
-    let best = Infinity, bestK = Infinity, dir = null;
     const p = a[i];
-    if (!finite(p)) continue;
+    if (!finite(p) || p.x < bx.x0 || p.x > bx.x1 || p.y < bx.y0 || p.y > bx.y1) continue; // outside b's box widened by tol: nothing of b is near it
+    let best = Infinity, bestK = Infinity, dir = null;
+    const stamp = ++ix.stamp;
     for (let cx = Math.floor((p.x - tol) / CELL); cx <= Math.floor((p.x + tol) / CELL); cx++) {
       for (let cy = Math.floor((p.y - tol) / CELL); cy <= Math.floor((p.y + tol) / CELL); cy++) {
-        for (const k of grid.get(cx + ',' + cy) ?? []) {
-          if (seen[k] === i + 1) continue;
-          seen[k] = i + 1;
+        const cell = grid.get(cellKey(cx, cy));
+        if (!cell) continue;
+        for (const k of cell) {
+          if (seen[k] === stamp) continue;
+          seen[k] = stamp;
           const r = toSegment(p, b[k - 1], b[k]);
           if (r.d < best || (r.d === best && k < bestK)) { best = r.d; bestK = k; dir = r.dir; } // the nearest segment; the earlier one on a tie, as a full scan would pick
         }
@@ -97,10 +108,11 @@ export function laneWeights(flags, { ramp = 3, minRun = 3 } = {}) {
  */
 export function assignLanes(items, { lane = (it) => it.width / 2 + 1.5, step = 8, tol = 10 } = {}) {
   if (items.length < 2) return items;
-  const rs = items.map((it) => { const p = resample(it.pts, step); return { p, t: tangents(p) }; });
+  const rs = items.map((it) => { const p = resample(it.pts, step); return { p, t: tangents(p), box: box(p, tol), index: null }; });
+  const indexOf = (j) => (rs[j].index ??= indexPath(rs[j].p, tol)); // a path's grid is built when first needed, once, not once per pair
   items.forEach((it, i) => {
     const flags = new Array(rs[i].p.length).fill(false);
-    items.forEach((_, j) => { if (j !== i) oppositeFlags(rs[i].p, rs[i].t, rs[j].p, tol).forEach((f, k) => { if (f) flags[k] = true; }); });
+    items.forEach((_, j) => { if (j !== i) oppositeFlags(rs[i].p, rs[i].t, rs[j].p, tol, meets(rs[i].box, rs[j].box) ? indexOf(j) : { box: rs[j].box }, rs[i].box).forEach((f, k) => { if (f) flags[k] = true; }); });
     const w = laneWeights(flags);
     if (!w.some((x) => x > 0)) return;
     const o = lane(it);

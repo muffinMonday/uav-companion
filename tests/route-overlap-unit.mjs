@@ -1,5 +1,5 @@
 // Parallel lanes for opposite-direction overlaps: detection, tolerance, partial overlap, smooth merge, left-alone cases. Pure geometry, no browser.
-import { resample, oppositeFlags, laneWeights, assignLanes } from '../src/route/overlap.js';
+import { resample, oppositeFlags, indexPath, laneWeights, assignLanes } from '../src/route/overlap.js';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const P = (...a) => a.map(([x, y]) => ({ x, y }));
 const near = (a, b, e = 0.5) => Math.abs(a - b) <= e;
@@ -99,4 +99,21 @@ ok(part.drawPts[0].x === 0 && part.drawPts[0].y === 0, 'the start of a leg stays
   const ms = performance.now() - t0;
   ok(ms < 1500, 'three consecutive 60,000 px legs of 8,000 points lay out in under 1.5 s (took ' + Math.round(ms) + ' ms; the full scan took about 7 s)');
   ok(oppositeFlags([{ x: NaN, y: 0 }, { x: Infinity, y: 0 }, { x: 0, y: 0 }], [{ x: 1, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 0 }], [{ x: 0, y: 0 }, { x: Infinity, y: 5 }, { x: 10, y: 0 }], 10).length === 3, 'a non-finite point does not hang the search');
+}
+
+// ---------- an index built once serves every other path; many legs stay linear in the number of pairs
+{
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const mkPath = () => { const x = rnd() * 400, y = rnd() * 400, a = rnd() * 6.28; return resample(P([x, y], [x + Math.cos(a) * 300, y + Math.sin(a) * 300], [x + Math.cos(a) * 300 + rnd() * 100, y + Math.sin(a) * 300 + rnd() * 100]), 8); };
+  let same = true, flagged = 0;
+  for (let n = 0; n < 40; n++) {
+    const a = mkPath(), b = mkPath(), ta = tangentsOf(a), ix = indexPath(b, 10);
+    const plain = oppositeFlags(a, ta, b, 10), viaIndex = oppositeFlags(a, ta, b, 10, ix), again = oppositeFlags(a, ta, b, 10, ix); // the same index three times: it keeps no state between uses
+    flagged += plain.filter(Boolean).length;
+    if (plain.join() !== viaIndex.join() || plain.join() !== again.join()) same = false;
+  }
+  ok(same, 'a prebuilt index gives the same flags as building one for each call, and can be used again');
+  const day = Array.from({ length: 14 }, (_, i) => ({ pts: Array.from({ length: 1500 }, (_, k) => ({ x: i * 90 + (k * 90) / 1500, y: 200 * Math.sin(k / 120 + i) + (i % 2 ? 0 : 3 * Math.sin(k)) })), width: 9 })); // 14 touching legs of 1,500 points: 182 ordered pairs
+  const t0 = performance.now(); assignLanes(day); const ms = performance.now() - t0;
+  ok(ms < 2000, 'fourteen consecutive detailed legs lay out in under 2 s (took ' + Math.round(ms) + ' ms)');
 }
