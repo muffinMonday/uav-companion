@@ -178,3 +178,79 @@ html{scroll-padding-bottom:9.5rem} /* scrolled-to controls stay clear of the fix
 .dg-receiver p{margin:var(--sp-1) 0}
 .dg-sub-title{margin:var(--sp-2) 0 var(--sp-1);font-size:var(--fs-body);font-weight:var(--fw-bold)}
 .dg-electronics .dash-card,.dg-result .dg-combined-result,.dg-result .dg-electronics{margin:var(--sp-3) 0}
+
+/* ======================================================================================
+   S10.7 (H01-H04): premium presentation pass, same tokens, no new palette.
+   Everything below is arrangement/elevation/emphasis only: no colour introduces a new
+   meaning (STATUS/CELL vocabulary in ui-parts.js is unchanged), no control gains a new
+   enabled action, no section changes which state unlocks it. ====================== */
+
+/* elevation: every diagnostics card reads as a distinct, liftable surface (DESIGN.md's
+   card language), with hover lift only where a fine pointer is present (no hover-only
+   affordance: the content and state are already visible without it). */
+.dg-section.dash-card,.dg-card,.dg-esc-list .dg-card,.dg-hist-item{box-shadow:var(--shadow-1);transition:box-shadow var(--dur,.2s) var(--ease,ease),transform var(--dur,.2s) var(--ease,ease)}
+@media (hover:hover){
+  .dg-section.dash-card:hover,.dg-card:hover,.dg-hist-item:hover{box-shadow:var(--shadow-2)}
+}
+
+/* step progress: a connected timeline instead of plain top rules, still text + colour (the
+   step name remains in the <li>, aria-current and the compact "Step N of 9" line are unchanged) */
+.dg-steps{position:relative;border-top:0;counter-reset:dgstep}
+.dg-steps li{counter-increment:dgstep;border-top:0;padding-top:calc(var(--sp-3) + 14px);position:relative;text-align:center}
+.dg-steps li::before{content:counter(dgstep);position:absolute;top:0;left:50%;transform:translateX(-50%);width:22px;height:22px;line-height:20px;text-align:center;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--muted);font-size:var(--fs-micro);font-weight:var(--fw-bold)}
+.dg-steps li::after{content:"";position:absolute;top:10px;left:calc(-50% - 1px);right:calc(50% + 11px);height:2px;background:var(--line)}
+.dg-steps li:first-child::after{display:none}
+.dg-steps li.done::before{border-color:var(--accent);background:var(--accent);color:var(--accent-fg)}
+.dg-steps li.done::after{background:var(--accent)}
+.dg-steps li.now::before{border-color:var(--accent);background:var(--surface);color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+/* safety-weighted sections: the physical checklist and every powered/battery-connected step
+   get a slightly heavier top accent than an ordinary card, in the app's own caution tone
+   (the same --unk colour the shared STATUS vocabulary already uses for "needs attention"/
+   unconfirmed state) - a visual hierarchy cue, never the only carrier (every one of these
+   screens already states the caution in words, unchanged). */
+#bt-sec-checklist,#bt-sec-confirm,#bt-sec-power,#bt-sec-zero,#bt-sec-reconnect,#bt-sec-stopval,#bt-sec-powered-stopval{border-top:3px solid var(--unk)}
+
+/* the active motor test gets the strongest single accent on the screen: a glowing border on
+   the running cell and on Stop & zero, tied to the workspace's own `data-state` (unchanged,
+   already set by bench-ui.js for other purposes) so it only appears while something can spin. */
+.dg-m-checking,.dg-m-connecting{box-shadow:0 0 0 3px var(--accent-soft)}
+.dg-body[data-state="RUNNING"] ~ #bt-stophost .btn.dg-stop,.dg-body[data-state="MOTOR_READY"] ~ #bt-stophost .btn.dg-stop{box-shadow:0 0 0 7px color-mix(in srgb,var(--danger-solid) 18%,transparent),var(--shadow-2)}
+@media (prefers-reduced-motion:no-preference){
+  .dg-body[data-state="RUNNING"] ~ #bt-stophost .btn.dg-stop{animation:dg-stop-pulse 1.8s ease-in-out infinite}
+}
+@keyframes dg-stop-pulse{0%,100%{box-shadow:0 0 0 7px color-mix(in srgb,var(--danger-solid) 18%,transparent),var(--shadow-2)}50%{box-shadow:0 0 0 11px color-mix(in srgb,var(--danger-solid) 10%,transparent),var(--shadow-2)}}
+
+/* result/history rhythm: the result section itself gets the same four-category left accent
+   its own motor cards already carry (.dg-card.dg-st-* above, result-ui.js's bt-res-* classes) */
+.dg-result{border-left:4px solid var(--muted)}
+.dg-result.bt-res-completed{border-left-color:var(--ok)}
+.dg-result.bt-res-difference{border-left-color:var(--unk)}
+.dg-result.bt-res-inspect{border-left-color:var(--no)}
+.dg-result.bt-res-incomplete{border-left-color:var(--muted)}
+.dg-timeline>li::before{background:var(--accent)}
+
+/* responsive tiers, matching the G1 shell specification's own signals (width/height/pointer,
+   never device category); legacy breakpoints elsewhere in DESIGN.md are untouched - this file
+   only ever governs .dg-/#bt- diagnostics selectors. */
+@media (min-width:601px) and (max-width:900px){ /* Tier 2: expanded touch */
+  .dg-app{max-width:820px}
+  .dg-confirms{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dg-esc-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (min-width:901px){ /* Tier 3 (tablet) and Tier 4 (desktop) */
+  .dg-app{max-width:960px}
+  .dg-confirms{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dg-esc-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dg-readout{grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content) minmax(0,1fr)}
+  .dg-checks{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (min-width:1201px){ /* Tier 4: desktop */
+  .dg-app{max-width:1080px}
+}
+/* Tier 3's touch-only case (U-16): no hover affordance exists here already; this only raises the
+   minimum touch size above the 44px floor the way U-16 asks for a touch-only 901-1200px rail. */
+@media (min-width:901px) and (max-width:1200px) and (hover:none) and (pointer:coarse){
+  .dg-section .btn,.dg-keep .btn,.dg-actions .btn{min-height:48px}
+  .dg-confirm input{width:28px;height:28px}
+}
