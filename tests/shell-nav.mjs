@@ -43,23 +43,38 @@ try {
     await ctx.close();
   }
 
-  // ---- flag ON, desktop (1400x900, mouse): rail placement, labels shown, Tier 4
+  // ---- flag ON, desktop (1400x900, mouse): rail placement, Tier 4
+  // Production hotfix, Issue 1: the desktop rail used to show inline labels at full content width, which made it wide enough to
+  // crowd the map search box and Leaflet's top-left controls. It is now a compact icon-only rail (tooltips via the native `title`
+  // attribute, aria-label unaffected), and the map's own chrome shifts to clear it (--shell-nav-rail-w, see nav.js/styles.css).
   {
     const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
     const nav = p.locator('#shell-nav');
     ok((await nav.count()) === 1, 'flag on: #shell-nav exists');
     ok((await nav.getAttribute('data-placement')) === 'rail', 'desktop: rail placement');
-    ok((await nav.getAttribute('data-labels')) === 'true', 'desktop: labels shown on the rail');
+    ok((await nav.getAttribute('data-labels')) === 'false', 'Issue 1: the desktop rail is now icon-only, like the touch-only tablet rail');
     const items = await nav.locator('[data-dest]').all();
     ok(items.length === 4, 'four destinations (Map, Trips, Explore, Profile)');
     const names = await Promise.all(items.map((i) => i.getAttribute('aria-label')));
-    ok(names.join('|') === 'Map|Trips|Explore|Profile', 'named in order, each with an accessible aria-label');
+    ok(names.join('|') === 'Map|Trips|Explore|Profile', 'named in order, each with an accessible aria-label (unaffected by hiding the visible label)');
+    const titles = await Promise.all(items.map((i) => i.getAttribute('title')));
+    ok(titles.join('|') === 'Map|Trips|Explore|Profile', 'Issue 1: each destination still carries a native tooltip (title) now that the label is not shown inline');
     const box = await nav.boundingBox();
     ok(box.x === 0 && box.height > 700, 'rail spans the left edge, nearly the full height');
+    ok(box.width >= 56 && box.width <= 64, `Issue 1: the compact desktop rail is approximately 56-64px wide (was ${box.width}px)`);
+    const [searchBox, zoomBox] = await Promise.all([p.locator('.search').boundingBox(), p.locator('.leaflet-top.leaflet-left .leaflet-control').first().boundingBox()]);
+    ok(searchBox.x >= box.x + box.width, `Issue 1: the search box no longer overlaps the rail (search left ${searchBox.x}, rail right ${box.x + box.width})`);
+    ok(zoomBox.x >= box.x + box.width, `Issue 1: the Leaflet zoom control no longer overlaps the rail (control left ${zoomBox.x}, rail right ${box.x + box.width})`);
     await ctx.close();
   }
+  // (The fix is a CSS var()/calc() relationship, not a viewport-specific patch, so one desktop width exercising it is enough regression
+  // coverage here - a second width would only re-prove the same arithmetic holds, not catch a new failure mode.)
 
   // ---- flag ON, phone (390x844): bottom placement
+  // Production hotfix, Issue 2: the persistent bottom bar used to show up to eight items at once on the Map destination (four
+  // destinations + Layers + Saved Places + Settings + Activity). Layers/Saved Places and Settings/Activity now relocate to a
+  // compact top bar (the same button elements and adapters, physically moved - nothing duplicated), so the bottom bar is always
+  // exactly the four destinations, and there is still only one bottom toolbar, not two.
   {
     const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const nav = p.locator('#shell-nav');
@@ -68,8 +83,28 @@ try {
     ok(Math.abs(box.y + box.height - 844) < 2, 'bottom bar sits at the bottom edge');
     const overflow = await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
     ok(!overflow, 'no horizontal overflow with the bottom bar present');
+    const bottomItems = await nav.locator('.shell-nav-item').all();
+    ok(bottomItems.length === 4, `Issue 2: the persistent bottom bar holds exactly the four destinations, not eight (found ${bottomItems.length})`);
+    const topbar = p.locator('#shell-topbar');
+    ok(await topbar.isVisible(), 'Issue 2: Layers/Saved Places/Settings/Activity relocate to a compact top bar on a phone');
+    const topbarBox = await topbar.boundingBox();
+    ok(topbarBox.y < 100, 'Issue 2: the relocated actions sit in a top bar, not a second bottom toolbar');
+    ok(Math.abs(topbarBox.y + topbarBox.height - box.y) > 50 || topbarBox.y < box.y, 'Issue 2: the top bar and the bottom bar are different bars, not stacked at the same edge');
+    // on the Map destination the two map-only quick actions (Layers, Saved Places) also show in the top bar, alongside the always-global Settings/Activity
+    ok((await topbar.locator('[data-action=layers]').isVisible()) && (await topbar.locator('[data-action=places]').isVisible()), 'Issue 2: Layers/Saved Places are reachable as contextual map actions in the top bar');
+    const target = await topbar.locator('[data-action=settings]').boundingBox();
+    ok(target.width >= 44 && target.height >= 44, 'Issue 2: the relocated actions keep at least a 44px touch target on a phone');
+    // Settings/Activity still open the same real panel tabs they always have (S10.7) - just reached from a different physical button
+    await topbar.locator('[data-action=settings]').click();
+    ok(await p.locator('#pane-settings').isVisible(), 'Issue 2: Settings still opens the same adapter panel from the relocated button');
+    await p.keyboard.press('Escape');
+    await topbar.locator('[data-action=activity]').click();
+    ok(await p.locator('#pane-activity').isVisible(), 'Issue 2: Activity still opens the same adapter panel from the relocated button');
     await ctx.close();
   }
+  // (The four-item rule is driven by placement, not by a specific width - compact and expandedTouch both resolve to navPlacement
+  // 'bottom', the one branch this fix changes - so one phone width covers both; a second bottom-nav width would only re-prove the
+  // same branch, not catch a new failure mode.)
 
   // ---- U-16: a touch-only tablet (1000x800, hasTouch, no hover) gets the compact rail, icon-only, 44px targets
   {
@@ -285,6 +320,48 @@ try {
   {
     const { ctx, p } = await openApp('http://127.0.0.1:5193/'); // flag off
     ok(await p.locator('.route-summary').count() === 0, 'flag off: the route summary element does not exist at all (tree-shaken, same as the rest of the new shell)');
+    await ctx.close();
+  }
+
+  // ---- Production hotfix, Issue 3: on a phone the marker host is a bottom sheet, not a side panel, and the route-summary chip used
+  // to float at a fixed distance from the viewport bottom regardless - overlapping the sheet, specifically its pinned previous/next
+  // waypoint bar (.pop-seq). The fix reuses marker-host.js's own --mh-off (already used by Leaflet's bottom controls, styles.css:1617)
+  // instead of inventing a new coordination mechanism. Same seeded two-stop trip as the desktop MAP-10 test above.
+  {
+    const iso = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+    const D = iso(5);
+    const seededTrips = [{ id: 't1', name: 'Hubei', startDate: D, endDate: D, description: '', color: '#e91e63', created: '2026-01-01T00:00:00.000Z' }];
+    const seededItems = [
+      { id: 'a', type: 'photo', name: 'Alpha', note: '', lat: 30.590, lon: 114.300, created: '2026-11-01T00:00:01.000Z', tripId: 't1', date: D, order: 1 },
+      { id: 'b', type: 'photo', name: 'Bravo', note: '', lat: 30.600, lon: 114.310, created: '2026-11-01T00:00:02.000Z', tripId: 't1', date: D, order: 2 },
+    ];
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    await ctx.addInitScript(([po, tr]) => {
+      localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po }));
+      localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr }));
+      localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.595, lon: 114.305, zoom: 14 }, basemap: 'osm' }));
+    }, [seededItems, seededTrips]);
+    await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
+    await p.locator('.leaflet-marker-icon[title="Alpha"]').first().click();
+    await p.waitForSelector('.pop h3, #marker-host h3', { timeout: 8000 }); await p.waitForTimeout(400);
+    ok(await p.locator('#marker-host').getAttribute('data-mode') === 'bottom', 'the marker host is a bottom sheet on a phone (the case this fix targets)');
+    ok(await p.locator('.route-summary').isVisible(), 'the route summary still appears contextually on a phone, same as on desktop');
+    const [summaryBox, hostBox, seqBox] = await Promise.all([
+      p.locator('.route-summary').boundingBox(),
+      p.locator('#marker-host').boundingBox(),
+      p.locator('.pop-seq').boundingBox(),
+    ]);
+    ok(summaryBox.y + summaryBox.height <= hostBox.y + 1, `Issue 3: the route summary sits above the marker sheet, not on top of it (summary bottom ${summaryBox.y + summaryBox.height}, sheet top ${hostBox.y})`);
+    ok(seqBox !== null, 'the previous/next waypoint bar (.pop-seq) is present for this two-stop trip');
+    ok(seqBox.y >= summaryBox.y + summaryBox.height - 1, 'Issue 3: the previous/next waypoint bar is not covered by the route summary');
+    const nextBtn = p.locator('.pop-seq-btn').last();
+    ok(await nextBtn.isVisible() && await nextBtn.isEnabled(), 'Issue 3: the Next waypoint control is visible and operable, not obstructed');
+    await nextBtn.click();
+    await p.waitForTimeout(400);
+    ok(/Bravo/.test(await p.locator('#marker-host h3, .pop h3').first().textContent()), 'Issue 3: Next waypoint still navigates correctly once unobstructed');
+    await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click());
+    await p.waitForTimeout(400);
+    ok(await p.locator('.route-summary').isHidden(), 'Issue 3: dismissing the marker details restores the standalone route-summary presentation (hidden again, no route selected)');
     await ctx.close();
   }
 } finally {

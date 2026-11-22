@@ -27,7 +27,8 @@ ok(isShort('tabletHover', 300) === false && isShort('desktop', 300) === false, '
 ok(navPlacement('compact') === 'bottom' && navPlacement('expandedTouch') === 'bottom', 'Tier 1/2 use the bottom bar');
 ok(navPlacement('tabletTouch') === 'rail' && navPlacement('tabletHover') === 'rail' && navPlacement('desktop') === 'rail', 'Tier 3/4 use a rail');
 ok(railLabelsShown('tabletTouch') === false, 'U-16: the compact touch-only rail never shows text labels');
-ok(railLabelsShown('tabletHover') === true && railLabelsShown('desktop') === true, 'the labeled rail (hybrid tablet and desktop) shows text labels');
+ok(railLabelsShown('tabletHover') === true, 'the labeled rail (hybrid tablet) shows text labels');
+ok(railLabelsShown('desktop') === false, 'production hotfix (Issue 1): the desktop rail is icon-only too now - a full-width labeled rail crowded the map search/Leaflet controls, see nav.js\'s --shell-nav-rail-w');
 
 // touchTarget: 44px wherever a coarse pointer is detected, independent of tier (the cross-cutting rule; U-16 makes it explicit for tabletTouch)
 ok(touchTarget(true) === 44, 'a coarse pointer always gets a 44px minimum target');

@@ -79,7 +79,7 @@ textarea{resize:vertical;min-height:60px}
 .hint{margin:8px 0 0;color:var(--muted);font-size:var(--fs-small)}
 
 /* ---------- search ---------- */
-.search{position:absolute;z-index:var(--z-search);top:12px;left:56px;width:min(340px,calc(100% - 56px - 72px))}
+.search{position:absolute;z-index:var(--z-search);top:12px;left:calc(56px + var(--shell-nav-rail-w,0px));width:min(340px,calc(100% - 56px - var(--shell-nav-rail-w,0px) - 72px))}
 .search input{width:100%;padding:10px 14px;border:0;border-radius:var(--radius-pill);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-1)}
 .results{list-style:none;margin:6px 0 0;padding:6px;background:var(--surface);color:var(--fg);border-radius:var(--radius);box-shadow:var(--shadow-2);max-height:50vh;overflow-y:auto}
 .results[hidden]{display:none}
@@ -1620,6 +1620,7 @@ body[data-mh=bottom] .leaflet-bottom{margin-bottom:var(--mh-off)}
 .shell-nav{position:fixed;z-index:var(--z-dock);display:flex;background:var(--surface);box-shadow:var(--shadow-1)}
 .shell-nav[data-placement="bottom"]{left:0;right:0;bottom:0;flex-direction:row;justify-content:space-around;align-items:stretch;border-top:1px solid var(--line);padding:var(--sp-1) max(var(--sp-2),env(safe-area-inset-left)) max(var(--sp-1),env(safe-area-inset-bottom)) max(var(--sp-2),env(safe-area-inset-right))}
 .shell-nav[data-placement="rail"]{top:0;left:0;bottom:0;flex-direction:column;align-items:center;gap:var(--sp-2);padding:var(--sp-4) var(--sp-1);border-right:1px solid var(--line)}
+.shell-nav[data-placement="rail"][data-labels="false"]{width:60px} /* production hotfix, Issue 1: a fixed compact width (the desktop rail is icon-only now, see tier.js's railLabelsShown) instead of sizing to whatever label text happened to be widest */
 .shell-nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:var(--shell-nav-target,44px);min-height:var(--shell-nav-target,44px);border:0;background:none;border-radius:var(--radius-sm);color:var(--muted);cursor:pointer}
 .shell-nav-item[hidden]{display:none} /* the Map destination's Layers/Saved Places actions (S10.3), hidden on every other destination */
 .shell-nav-action{color:var(--accent)} /* a quick action, not a primary destination: never takes aria-current */
@@ -1631,6 +1632,16 @@ body[data-mh=bottom] .leaflet-bottom{margin-bottom:var(--mh-off)}
 .shell-nav[data-placement="rail"][data-labels="false"] .shell-nav-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* the compact touch-only rail (U-16): icon-only, name kept for screen readers via aria-label */
 .shell-nav[data-short="true"] .shell-nav-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* short/landscape viewports collapse to icon-only too */
 .shell-nav-global{position:relative} /* Settings/Activity (S10.7): app-wide, always shown, so their badge needs an anchor */
+/* Production hotfix, Issue 1: Leaflet's own top-left/bottom-left controls (zoom, scale bar) never accounted for a left-side rail; gated on
+   the attribute nav.js sets only while the rail placement is actually showing, so a bottom-nav tier or the flag-off build (where the
+   attribute is never set) keeps Leaflet's unmodified default margin. Same `var(..., fallback)` pattern as `--ses-x-off`/`--mh-off` above. */
+html[data-shell-nav-rail="true"] .leaflet-left .leaflet-control{margin-left:calc(var(--shell-nav-rail-w,0px) + 10px)}
+/* Production hotfix, Issue 2: on a bottom-nav tier the persistent bar is only the four destinations; Layers/Saved Places and
+   Settings/Activity relocate here (nav.js moves the same button elements, nothing duplicated) instead of crowding the bottom bar
+   to eight items. Same slot `.dock` used before the new shell hid it (styles.css:1639), so nothing new competes for that corner. */
+.shell-topbar{position:fixed;z-index:var(--z-dock);top:max(var(--sp-2),env(safe-area-inset-top));right:max(var(--sp-2),env(safe-area-inset-right));display:flex;align-items:center;gap:2px;background:var(--surface);border-radius:var(--radius-pill);box-shadow:var(--shadow-1);padding:4px}
+.shell-topbar[hidden]{display:none}
+.shell-topbar .shell-nav-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* icon-only here too (compact header controls); the accessible name stays on aria-label/title, same clip technique as the rail's icon-only tiers */
 
 /* S10.9 (NAV-04 row 2, NAV integration): the legacy dock rail and the panel's own tab row are superseded by the new shell's nav and its
    Settings/Activity adapters - every control they reached is still reachable (through a shell destination, a quick action, or Settings),
@@ -1674,6 +1685,11 @@ body[data-shell="new"] .search:not(.collapsed) .results{position:static;flex:1 1
    shifts this centered the same way .dash and .dash-peek already move aside for it - the two are shown together whenever a selected
    stop's day has a route, so this must never sit under the host that triggered it. */
 .route-summary{position:fixed;z-index:calc(var(--z-sheet) + 1);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:fit-content;max-width:min(420px,calc(100% - 24px - var(--panel-w,0px)));display:flex;flex-direction:column;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2);overflow:hidden}
+/* Production hotfix, Issue 3: a selected marker's bottom sheet (--mh-off, marker-host.js's own reserved vertical space, already used by
+   Leaflet's bottom controls at styles.css:1617) was never accounted for here, so the chip sat on top of the sheet - specifically over
+   the previous/next waypoint bar (.pop-seq), which is pinned to the sheet's own bottom edge. The side-docked case needs no equivalent
+   fix: --panel-w (used above) already keeps this clear of a side host, which is why only data-mh=bottom is gated here. */
+body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + env(safe-area-inset-bottom,0px))}
 .route-summary[hidden]{display:none}
 .route-summary-status{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .route-summary-status svg{width:var(--icon);height:var(--icon);flex:0 0 auto;transition:transform var(--dur-fast) var(--ease)}

@@ -17,8 +17,12 @@ export const isShort = (tier, height) => (tier === 'compact' || tier === 'expand
 /** 'bottom' | 'rail'. */
 export const navPlacement = (tier) => (tier === 'compact' || tier === 'expandedTouch') ? 'bottom' : 'rail';
 
-/** Whether the rail shows text labels (the compact touch-only rail at tabletTouch never does; the cross-cutting rule is icon-only + 44px there). */
-export const railLabelsShown = (tier) => tier === 'tabletHover' || tier === 'desktop';
+/** Whether the rail shows text labels (the compact touch-only rail at tabletTouch never does; the cross-cutting rule is icon-only + 44px there).
+ * Production hotfix (S10.x responsive defects, Issue 1): the desktop rail no longer shows inline labels - at full content width they made the
+ * rail wide enough to crowd the map search box and the Leaflet top-left controls, which never accounted for a left-side rail's width. Desktop
+ * now gets the same compact icon-only rail as the touch-only tablet, with the accessible name available as a native tooltip (`title`, already
+ * set in nav.js) and to assistive tech (`aria-label`, unaffected). `tabletHover` (901-1200px, non-touch) is unaffected - not part of this report. */
+export const railLabelsShown = (tier) => tier === 'tabletHover';
 
 /** Minimum touch target in px: 44 wherever a coarse pointer is detected, independent of tier (the cross-cutting rule; U-16 makes it explicit and non-optional for tabletTouch). */
 export const touchTarget = (coarse) => (coarse ? 44 : 40);

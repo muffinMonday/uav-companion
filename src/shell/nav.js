@@ -76,10 +76,15 @@ function buildNav() {
     return b;
   });
   document.body.append(root);
+  // Production hotfix (Issue 2): on a bottom-nav tier the persistent bar holds only the four destinations - Layers/Saved Places and
+  // Settings/Activity move into this small top bar instead (same button elements, same adapters, physically relocated; see the tier
+  // watcher below), so the bottom bar never shows more than four items at once. Hidden by default; only shown on bottom-nav tiers.
+  const topbar = el('div', 'shell-topbar'); topbar.id = 'shell-topbar'; topbar.setAttribute('aria-label', 'Map and account actions'); topbar.hidden = true;
+  document.body.append(topbar);
   // Review 01 S10.9 (NAV-04 row 2): marks the legacy dock/panel-tabs as superseded so styles.css can hide that now-duplicate chrome
   // while the new shell is active, without this file (or panel.js) knowing anything about the other's DOM.
   document.body.dataset.shell = 'new';
-  return { root, buttons, mapActions, globalActions };
+  return { root, buttons, mapActions, globalActions, topbar };
 }
 
 /**
@@ -91,7 +96,7 @@ function buildNav() {
  * Returns { destination(), setDestination(key), destroy() }, or null if the flag is off (nothing was built).
  */
 function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud, getDash, accountBtnId = 'account-btn' }) {
-  const { root, buttons, mapActions, globalActions } = buildNav();
+  const { root, buttons, mapActions, globalActions, topbar } = buildNav();
   let current = 'map';
   let stopTier = null;
 
@@ -221,19 +226,37 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
 
   paint(); // establish the initial state (Map current, its actions visible) without calling go('map') and closing a panel the real app may have opened by default
 
+  // Production hotfix (Issue 1): the rail is a fixed-position overlay on the left edge of the map; nothing else in the app ever
+  // accounted for its width, so the map search box and Leaflet's own top-left/bottom-left controls (sized for the pre-shell layout)
+  // overlapped it on desktop. `--shell-nav-rail-w`, measured from the rendered rail, lets styles.css offset both - 0px, and the
+  // attribute absent, whenever the nav is a bottom bar or the flag is off, so this is a pure addition with no effect on either.
   stopTier = watchTier(({ tier, short, coarse }) => {
     root.dataset.tier = tier;
     root.dataset.placement = navPlacement(tier);
     root.dataset.labels = String(railLabelsShown(tier));
     root.dataset.short = String(short);
     root.style.setProperty('--shell-nav-target', `${touchTarget(coarse)}px`);
+    const rail = navPlacement(tier) === 'rail';
+    document.documentElement.dataset.shellNavRail = String(rail);
+    document.documentElement.style.setProperty('--shell-nav-rail-w', rail ? `${root.offsetWidth}px` : '0px');
+    // Issue 2: relocate the map/global actions between the rail (where there is vertical room for eight items, unaffected by this
+    // fix) and the top bar (where the bottom nav bar needs to stay at exactly four items). Re-running this on every tier change is
+    // cheap and idempotent - `append` on an already-correctly-parented node is a no-op in the DOM.
+    const actionHome = rail ? root : topbar;
+    for (const b of [...mapActions, ...globalActions]) actionHome.append(b);
+    topbar.hidden = rail;
   });
 
   return {
     el: root,
     destination: () => current,
     setDestination: go,
-    destroy() { stopTier?.(); tripHistory.destroy(); exploreHistory.destroy(); profileHistory.destroy(); root.remove(); delete document.body.dataset.shell; },
+    destroy() {
+      stopTier?.(); tripHistory.destroy(); exploreHistory.destroy(); profileHistory.destroy(); root.remove(); topbar.remove();
+      delete document.body.dataset.shell;
+      delete document.documentElement.dataset.shellNavRail;
+      document.documentElement.style.removeProperty('--shell-nav-rail-w');
+    },
   };
 }
 
