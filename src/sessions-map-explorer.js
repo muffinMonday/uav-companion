@@ -8,6 +8,7 @@ import { whenText, capacityText, seriesText } from './sessions.js';
 import { sessionMapActions, hasPoint } from './maplinks-ui.js';
 import { createFreeArea, dockMode } from './free-area.js';
 import { announce, onOverlay } from './overlay-policy.js';
+import { SHELL_NAV_ID } from './shell/nav-id.js'; // Review 01 S10.2: the new shell's nav bar/rail, when built (VITE_NEW_SHELL), is a cover like the side panel; null (filtered out) otherwise. A plain constant, not shell/nav.js itself, so this file stays free of import.meta.env
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -43,7 +44,7 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
   const onKey = (e) => { if (e.key === 'Escape' && isOpen && !parked && !e.defaultPrevented && !document.querySelector('dialog[open]') && !map.getContainer().querySelector('.leaflet-popup')) { e.preventDefault(); onClose?.(); } };
 
   // ---- geometry: the part of the map the dock and the side panel do not cover (shared module, src/free-area.js)
-  const area = createFreeArea(map, () => [dock, document.getElementById('panel')].filter((e) => e && !(e === dock && collapsed && mode === 'side')));
+  const area = createFreeArea(map, () => [dock, document.getElementById('panel'), document.getElementById(SHELL_NAV_ID)].filter((e) => e && !(e === dock && collapsed && mode === 'side')));
   const visibleRect = () => area.rect();
 
   /** Pans (and, the first time, zooms) so the marker of `s` ends up at the middle of the visible part. */

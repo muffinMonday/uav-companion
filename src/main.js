@@ -38,6 +38,7 @@ import { loadPrefs, savePrefs } from './prefs.js';
 import { initTheme } from './theme.js';
 import { log, applyDebugParam } from './log.js';
 import { installErrorHandlers } from './errors.js';
+import { initShellNav } from './shell/nav.js'; // Review 01 S10.2 (NAV-01..09): a constant no-op unless the build has VITE_NEW_SHELL=1
 
 applyDebugParam(location.search); // ?debug=1 keeps DEBUG notes in the local log, ?debug=0 stops (log.js)
 installErrorHandlers({ log }); // uncaught errors and rejected promises leave a note in the local log; the browser still reports them as before
@@ -115,6 +116,7 @@ const cross = initCrosshair(map); // a crosshair at the centre of the map (the b
 // the zone verdict for where I am now (the position is read once, when the button is pressed)
 const checkHere = () => locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ });
 const cloud = { handle: null, refresh: null }; // the optional cloud copy: filled in once its code has loaded (only when this build has a project address)
+initShellNav({ panel, getSessionsHub: () => cloud.sessions, toast }); // new shell chrome, experimental (VITE_NEW_SHELL); adapts onto the panel/sessions-hub/account popover below, none of which this changes
 addCompassControl(map, { rotation, onPress: () => locate.northUp() }); // after the other left-hand buttons, so their places do not move
 const helpRef = { h: null }; // the contextual hints (help-wire.js), created just below; the toolbar reports to them
 const toolbar = initMapMoreTools(map, { onOpen: () => helpRef.h?.moreToolsOpened(), onUse: () => helpRef.h?.mapToolUsed() }); // the More tools button under Zoom, Locate and Compass: the other map tools in one menu

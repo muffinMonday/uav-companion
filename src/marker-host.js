@@ -5,6 +5,7 @@
 import { el } from './cards.js';
 import { createFreeArea, dockMode } from './free-area.js';
 import { announce, onOverlay } from './overlay-policy.js';
+import { SHELL_NAV_ID } from './shell/nav-id.js'; // Review 01 S10.2: the new shell's nav bar/rail, when built (VITE_NEW_SHELL), is a cover like the side panel; null (filtered out) otherwise. A plain constant, not shell/nav.js itself, so this file stays free of import.meta.env (marker-host-unit.mjs runs under plain Node, not Vite)
 
 const MAP_MIN = 320, MAP_MIN_H = 200, GAP = 8, PANEL_GAP = 12, DRAG_START = 8, DRAG_STEP = 40;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -41,7 +42,7 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
     const l = Math.min(...rs.map((r) => r.left)), r = Math.max(...rs.map((q) => q.right)), tp = Math.min(...rs.map((q) => q.top)), b = Math.max(...rs.map((q) => q.bottom));
     return { left: l, right: r, top: tp, bottom: b, width: r - l, height: b - tp };
   } };
-  const area = createFreeArea(map, () => [mode === 'side' ? bar : root, mode === 'side' ? null : document.getElementById('panel'), document.getElementById('ses-explorer')]);
+  const area = createFreeArea(map, () => [mode === 'side' ? bar : root, mode === 'side' ? null : document.getElementById('panel'), document.getElementById('ses-explorer'), document.getElementById(SHELL_NAV_ID)]);
   function recentre({ animate = true } = {}) {
     const ll = openId != null ? latlngOf?.(openId) : null;
     if (!ll) return;
