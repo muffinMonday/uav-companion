@@ -3,7 +3,7 @@ import { chromium } from './lib.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { dashClick, pickType, HOST, MW } from './lib.mjs';
+import { dashClick, pickType, MW } from './lib.mjs';
 const dist = await import(pathToFileURL(path.join(ROOT, 'src/distance.js')).href);
 const aiimp = await import(pathToFileURL(path.join(ROOT, 'src/aiimport.js')).href);
 // the Distances settings live in the privacy settings: open them, act, and come back to the list
@@ -64,7 +64,7 @@ async function session({ keys = Object.keys(P), extra, prefs, viewport = { width
 const store = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois') || '{"items":[]}').items);
 const prefsOf = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}'));
 const open = async (p, name) => { await p.click(`#poi-list .poi-item:has-text("${name}")`); await p.waitForFunction((n) => document.querySelector('.poi-pop h3')?.textContent === n, name, { timeout: 8000 }); await p.waitForTimeout(900); };
-const pressDelete = async (p) => { if (HOST) await p.click(`${MW} .pop-more`); await p.click(`${MW} .btn:has-text("Delete")`); }; // the host keeps Delete in the More menu
+const pressDelete = async (p) => { await p.click(`${MW} .pop-more`); await p.click(`${MW} .btn:has-text("Delete")`); }; // the host keeps Delete in the More menu
 const closePopup = async (p) => { await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host:not([hidden]) .pop-close')?.click()); await p.waitForFunction(() => !document.querySelector('.leaflet-popup, #marker-host:not([hidden])'), null, { timeout: 3000 }).catch(() => {}); await p.waitForTimeout(150); };
 const item = (p, name) => p.locator(`#poi-list .poi-item:has-text("${name}")`);
 const distLine = async (p, name) => (await item(p, name).locator('.dist-line').count()) ? (await item(p, name).locator('.dist-line').innerText()) : null;

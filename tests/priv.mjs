@@ -1,5 +1,5 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium, dashClick, HOST, MW } from './lib.mjs';
+import { chromium, dashClick, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const OFFSET = 28800;
 const errs = [];
@@ -207,7 +207,7 @@ await S.ctx.close();
 S = await session({ prefs: { autoWeather: true, fetchAltitude: true }, colorScheme: 'dark' });
 await S.page.waitForTimeout(1200);
 await openMarker(S.page, 'Seed A');
-const bg = await S.page.evaluate((sel) => getComputedStyle(document.querySelector(sel)).backgroundColor, HOST ? '#marker-host' : '.leaflet-popup-content-wrapper');
+const bg = await S.page.evaluate((sel) => getComputedStyle(document.querySelector(sel)).backgroundColor, MW);
 const fg = await S.page.evaluate(() => getComputedStyle(document.querySelector('.poi-pop h3')).color);
 const lum = (c) => { const [r, g, b2] = c.startsWith('color(') ? c.match(/[\d.]+/g).slice(0, 3).map((x) => +x * 255) : c.match(/\d+/g).map(Number); return 0.2126 * r + 0.7152 * g + 0.0722 * b2; };
 ok(lum(bg) < 80 && lum(fg) > 180, `6: dark theme: popup is dark (${bg}) with light text (${fg})`);

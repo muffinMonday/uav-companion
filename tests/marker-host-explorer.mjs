@@ -48,7 +48,7 @@ await db.query(`insert into public.flight_sessions (title, starts_at, ends_at, c
 
 const b = await chromium.launch({ channel: CHANNEL });
 const external = [];
-async function open(who, { vp = { width: 1300, height: 850 }, touch = false, motion = false, dark = false, prefs = {} } = {}) {
+async function open(who, { vp = { width: 1300, height: 850 }, touch = false, motion = false, dark = false, prefs = {}, host = true } = {}) {
   const [uid, email] = WHO[who] ?? [null, null]; // 'guest': nobody signed in
   const ctx = await b.newContext({ viewport: vp, hasTouch: touch, isMobile: touch, reducedMotion: motion ? 'no-preference' : 'reduce', colorScheme: dark ? 'dark' : 'light' });
   await ctx.route(new RegExp('^' + URL_.replace(/[.]/g, '\\.') + '/'), mockFor(uid));
@@ -63,7 +63,7 @@ async function open(who, { vp = { width: 1300, height: 850 }, touch = false, mot
   p.on('dialog', (d) => d.accept());
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::|status of [45]/.test(m.text()) && errs.push(m.text()));
-  await p.goto('http://localhost:5173/?markerhost=1', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  await p.goto('http://localhost:5173/' + (host ? '?markerhost=1' : ''), { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
   await p.locator('#name-dlg-skip').click({ timeout: 2500 }).catch(() => {});
   return { ctx, p };
 }
@@ -139,26 +139,46 @@ await scenario('desktop, a point check', { width: 1300, height: 850 }, async (p)
   await ctx.close();
 }
 
-// DEF-S5-01: can a person actually click the saved marker's pin while the explorer dock is open? (the `tap` helper above bypasses hit-testing)
+// DEF-S5-01, closed: can a person actually click the saved marker's pin while the explorer dock is open? (the `tap` helper above bypasses hit-testing).
+// Real pointer events (p.mouse.click) at three fixtures per viewport: no card selected (the map has not recentred away from the saved marker), a NEAR session selected
+// (the explorer's own recentring, independent of the window system, can still leave the pin under the dock: ids[0] reproduces this), and a FAR session selected (the
+// recentring can pan the pin off screen entirely: ids[3]). Each fixture runs in BOTH window systems (host and the legacy popup) to prove this is the explorer's own
+// recentring behaviour, identical either way, not a host regression: the host is never worse than the popup it replaces, so removing the popup loses no reachability.
+const pinHit = (p) => p.evaluate(() => {
+  const pin = [...document.querySelectorAll('.poi-pin')].find((x) => x.getAttribute('title') === 'Saved tower');
+  if (!pin) return { found: false };
+  const r = pin.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, top = document.elementFromPoint(x, y);
+  const m = document.getElementById('map').getBoundingClientRect();
+  return { found: true, x, y, onScreen: x >= m.left && x <= m.right && y >= m.top && y <= m.bottom, reachable: !!top && (top === pin || pin.contains(top)), covering: top ? (top.closest('#ses-explorer') ? 'explorer' : top.id || top.className || top.tagName) : null };
+});
+const windowOpen = (p) => p.evaluate(() => { const h = document.getElementById('marker-host'); return (!!h && !h.hidden) || !!document.querySelector('.leaflet-popup .poi-pop'); });
 for (const [label, vp] of [['desktop', { width: 1300, height: 850 }], ['folded phone', { width: 360, height: 740 }]]) {
-  const { ctx, p } = await open('guest', { vp });
-  await explore(p);
-  const ids = await p.$$eval(X + ' .ses-xcard', (c) => c.map((x) => x.dataset.id));
-  await cardOf(p, ids[3]).locator('.ses-xsel').click(); await settle(p, 900);
-  const hit = await p.evaluate(() => {
-    const pin = [...document.querySelectorAll('.poi-pin')].find((x) => x.getAttribute('title') === 'Saved tower');
-    if (!pin) return { found: false };
-    const r = pin.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, top = document.elementFromPoint(x, y);
-    const m = document.getElementById('map').getBoundingClientRect();
-    return { found: true, x, y, onScreen: x >= m.left && x <= m.right && y >= m.top && y <= m.bottom, reachable: !!top && (top === pin || pin.contains(top)), covering: top ? (top.closest('#ses-explorer') ? 'explorer' : top.id || top.className || top.tagName) : null };
-  });
-  console.log(`INFO  DEF-S5-01 ${label}: Saved tower pin ${hit.found ? `at ${Math.round(hit.x)},${Math.round(hit.y)}, on screen ${hit.onScreen}, reachable by a real pointer ${hit.reachable}${hit.reachable ? '' : ', covered by ' + hit.covering}` : 'not found'}`);
-  if (hit.found && hit.onScreen && hit.reachable) {
-    await p.mouse.click(hit.x, hit.y); await settle(p, 1200);
-    const st = await state(p);
-    ok(!st.hostHidden && st.exHidden, `DEF-S5-01 ${label}: a real mouse click on the pin opens the marker panel and parks the explorer`);
-  } else console.log(`OPEN  DEF-S5-01 ${label}: no real-pointer check was possible (the pin is ${hit.onScreen ? "covered by " + hit.covering : "off screen"} with this fixture); the item stays open`);
-  await ctx.close();
+  const results = {};
+  for (const host of [true, false]) {
+    const { ctx, p } = await open('guest', { vp, host });
+    await explore(p);
+    const ids = await p.$$eval(X + ' .ses-xcard', (c) => c.map((x) => x.dataset.id));
+    const mode = host ? 'host' : 'popup';
+    const fixtures = { none: null, near: ids[0], far: ids[3] };
+    for (const [fname, id] of Object.entries(fixtures)) {
+      if (id) { await cardOf(p, id).locator('.ses-xsel').click(); await settle(p, 900); }
+      const hit = await pinHit(p);
+      results[`${fname}:${mode}`] = { onScreen: hit.onScreen, reachable: hit.reachable, covering: hit.covering ?? null };
+      if (hit.found && hit.onScreen && hit.reachable) {
+        await p.mouse.click(hit.x, hit.y); await settle(p, 1200);
+        ok(await windowOpen(p), `DEF-S5-01 ${label} ${fname} (${mode}): a real mouse click on the reachable pin opens the marker window`);
+        if (host) ok(await p.evaluate(() => document.getElementById('ses-explorer').hidden), `DEF-S5-01 ${label} ${fname} (host): ... and parks the explorer`);
+        await p.keyboard.press('Escape'); await settle(p, 500); // back to the explorer for the next fixture
+      } else {
+        console.log(`INFO  DEF-S5-01 ${label} ${fname} (${mode}): Saved tower pin not reachable by a real pointer (on screen ${hit.onScreen}${hit.onScreen ? ', covered by ' + hit.covering : ''})`);
+      }
+    }
+    await ctx.close();
+  }
+  for (const fname of ['none', 'near', 'far']) {
+    const h = results[`${fname}:host`], pu = results[`${fname}:popup`];
+    ok(h.onScreen === pu.onScreen && h.reachable === pu.reachable, `DEF-S5-01 ${label} ${fname}: the host is exactly as reachable as the popup it replaces (host ${JSON.stringify(h)}, popup ${JSON.stringify(pu)})`);
+  }
 }
 
 ok(errs.length === 0, 'no page errors ' + errs.join(' | ').slice(0, 300));

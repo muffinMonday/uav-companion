@@ -1,5 +1,5 @@
 // Side Quests, phase 2: making one (point-check window, edit form), turning a marker into one and back (window, Select mode), and Undo.
-import { OUT as SP, CHANNEL, HOST } from './lib.mjs';
+import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
@@ -30,11 +30,10 @@ async function session({ viewport = { width: 1200, height: 800 }, prefs = null }
 const stored = (p, id) => p.evaluate((i) => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.find((x) => x.id === i), id);
 const openName = async (p, name) => { await p.click(`#poi-list .poi-item:has(b:text-is("${name}"))`); await p.waitForFunction((n) => document.querySelector('.poi-pop h3')?.textContent === n, name, { timeout: 8000 }); await p.waitForTimeout(400); };
 const closeWin = async (p) => { await p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button'))?.click()); await p.waitForFunction(() => !document.querySelector('.poi-pop'), null, { timeout: 5000 }); };
-// The popup has icon buttons titled by action; the host has text buttons, some in the More menu (still in the DOM while it is closed).
-const toolTitles = (p) => (HOST ? p.$$eval('#marker-host .pop-actions button', (bs) => bs.map((x) => x.title)) : p.$$eval('.poi-pop .pop-tools button', (bs) => bs.map((x) => x.title)));
-/** Presses a marker-window action by its name; in the host an action in the More menu opens the menu first. */
+// The host has text buttons, some in the More menu (still in the DOM while it is closed).
+const toolTitles = (p) => p.$$eval('#marker-host .pop-actions button', (bs) => bs.map((x) => x.title));
+/** Presses a marker-window action by its name; an action in the More menu opens the menu first. */
 const act = async (p, name) => {
-  if (!HOST) { await p.click(`.poi-pop .pop-tools button[title="${name}"]`); return; }
   const b = p.locator(`#marker-host .pop-actions button[title="${name}"]`);
   if (!(await b.isVisible())) await p.click('#marker-host .pop-more');
   await b.click();

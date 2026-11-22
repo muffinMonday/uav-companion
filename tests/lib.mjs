@@ -10,11 +10,13 @@ fs.mkdirSync(OUT, { recursive: true });
 /** Playwright browser channel. The suites were written against Microsoft Edge; set BROWSER_CHANNEL=chrome to use Chrome. */
 export const CHANNEL = process.env.BROWSER_CHANNEL || 'msedge';
 
-// MARKERHOST=1 runs every suite against the adaptive marker host (see newContext below).
-/** True when the suite runs against the adaptive marker host (MARKERHOST=1). */
-export const HOST = process.env.MARKERHOST === '1';
-/** Selector of the saved-marker window: the adaptive host (MARKERHOST=1) or the Leaflet popup. Point-check and live-pin popups stay '.leaflet-popup'. */
-export const MW = HOST ? '#marker-host' : '.leaflet-popup';
+// Review 01 S9: the adaptive marker host is the single window for a saved marker (the Leaflet popup path was removed from poi-ui.js). HOST/MW are kept as
+// plain constants so suites written during the S9-1 migration (`if (HOST) {...} else {...}`, `${MW} ...`) still parse; the `else`/`if (!HOST)` branches in
+// those suites are dead now (that code path no longer exists) and are being retired suite by suite, not all at once.
+/** Always true: there is only one saved-marker window now. */
+export const HOST = true;
+/** Selector of the saved-marker window: the adaptive host. A point check and a live pin still use their own, separate '.leaflet-popup'. */
+export const MW = '#marker-host';
 // The browser, with the welcome screen switched off in every new context (it would cover the page the suites click on).
 // The welcome suite uses playwright-core directly to see the real thing.
 import { chromium as real } from 'playwright-core';
@@ -29,8 +31,6 @@ export const chromium = {
     const newContext = browser.newContext.bind(browser);
     browser.newContext = async ({ addFolded, listFolded, hubeiView, ...opts } = {}) => {
       const ctx = await newContext({ reducedMotion: 'reduce', ...opts }); // moving elements make timing flaky; motion.mjs asks for it back
-      // MARKERHOST=1: run the suite against the adaptive marker host instead of the Leaflet popup (Review 01 S9-1). Same app, same page; only the opt-in key is set.
-      if (process.env.MARKERHOST === '1') await ctx.addInitScript(() => { try { localStorage.setItem('uavzones.dev.markerhost', '1'); } catch { /* storage unavailable */ } });
       // hubeiView: start on Hubei (the suites that use its Wuhan points). A first visit now opens on Singapore.
       if (hubeiView) await ctx.addInitScript(() => { try { if (localStorage.getItem('uavzones.v1.prefs') === null) localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.6, lon: 114.3, zoom: 7 } })); } catch { /* ignore */ } });
       // (the contextual hints are marked as seen too, or a hint at the top of a pane would move what the suites click on; the discover suite starts without them)

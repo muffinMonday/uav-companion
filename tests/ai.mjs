@@ -1,5 +1,5 @@
 import { OUT as SP, ROOT, CHANNEL } from './lib.mjs';
-import { chromium, HOST, MW } from './lib.mjs';
+import { chromium, MW } from './lib.mjs';
 import fs from 'node:fs';
 import { dashClick } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);

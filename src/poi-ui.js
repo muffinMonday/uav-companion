@@ -19,14 +19,14 @@ import { MODES } from './maplinks.js';
 import { planMove, planSideMove, stepSideIndex, stepSlot, groupKey, addDays } from './reorder.js';
 import { initReorder } from './reorder-ui.js';
 import { queryTerms, matches, newExpansion, scopeOpen, dayOpen, dayId, summarise, summaryText, isOutside, reveal as revealSection, prune as pruneSections, unlinkedSideQuests, SCOPE_HOME, mapHiddenReason, markerLabel } from './poi-model.js';
-import { centreOn, popupMaxHeight, expandedMaxHeight, defaultExpanded } from './view.js';
+import { defaultExpanded } from './view.js';
 import { el, statusEl, tile, statsGrid, rainBlock, disclaimer, toolBar } from './cards.js';
 import { zoneExplanation } from './legends.js';
 import { onPopupSwipe } from './swipe.js';
 import { mascotEl } from './mascot-ui.js';
 import { createMarkerContent, fmt, tripLabel } from './marker-content.js';
 import { createMarkerMove } from './marker-move.js';
-import { createMarkerHost, markerHostEnabled } from './marker-host.js';
+import { createMarkerHost } from './marker-host.js';
 import { selectionLegs } from './route/legs.js';
 import { createRouter } from './route/router.js';
 import { createSpider } from './spider.js';
@@ -63,7 +63,6 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let currentTripId = null;   // the trip new markers are put in (never applies to a Home marker)
   let newTripHandler = null;  // set by the Trips tab: starts a new trip and tags a marker with it
   let suppressClick = false;
-  let popup = null;
   let visitMap = new Map();   // id -> every marker at the same spot (two or more), see places.js
   let sideMap = { byParent: new Map(), orphans: [] }; // Side Quests under their parent main stops (trips.js sideQuestMap)
   let subParent = new Map();  // Side Quest id -> its parent's id (a Side Quest with no parent is not in it)
@@ -1090,54 +1089,32 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     if (!map.hasLayer(layer)) { map.addLayer(layer); showSwitch.checked = true; }
   };
 
-  // ---------- popup ----------
+  // ---------- marker window (Review 01 S9: the adaptive host is the single path for a saved marker; a Leaflet popup is still how a point check and a live pin open) ----------
   function openPopup(id, edit = false) {
     const item = store.get(id), m = markers.get(id);
     if (!item || !m) return;
     move?.abort(); // a staged Move ends when another marker window opens
-    if (markerHostEnabled()) { // development switch: the adaptive host instead of the popup; it recentres through free-area.js, the popup keeps view.js centreOn
-      map.closePopup(); panel.closeIfPhone(); expanded = windowExpanded();
-      hostFor().open(id, { edit });
-      return;
-    }
-    // The pin is centred on the map and the window opens above it. A window too tall for that space scrolls inside, so it never
-    // runs off the screen and the map is never moved to fit it. On a phone the sheet is closed first so it does not cover the pin.
-    const OFFSET_Y = -36;
-    panel.closeIfPhone();
-    // Expanded: a tall window centred on the coordinate (covering the pin). Collapsed: a short one above the pin. The visitor's choice is remembered.
-    expanded = windowExpanded();
-    popup = L.popup({
-      maxWidth: Math.min(340, window.innerWidth - 32), minWidth: Math.min(290, window.innerWidth - 40), offset: [0, OFFSET_Y],
-      autoPan: false, closeOnClick: false, closeButton: true, maxHeight: windowMaxHeight(expanded), className: expanded ? 'is-expanded' : '',
-    }).setLatLng(m.getLatLng());
-    popup.setContent(popupContent(id, edit)); // after `popup` is set: the content reads it to close this window
-    popup._poiId = id; // read by the popupopen/popupclose handlers that draw and remove the distance lines
-    centreOn(map, m.getLatLng());
-    popup.openOn(map);
+    map.closePopup(); panel.closeIfPhone(); expanded = windowExpanded(); // recentres through free-area.js; a point check or live pin keeps view.js centreOn (DEF-S2-01)
+    hostFor().open(id, { edit });
   }
 
   let expanded = true; // whether the open marker window is expanded
   const windowExpanded = () => { const v = loadPrefs().windowExpanded; return typeof v === 'boolean' ? v : defaultExpanded(); };
-  const windowMaxHeight = (on) => (on ? expandedMaxHeight(map) : popupMaxHeight(map, -36));
   /** Switches the open window between expanded and collapsed in place (no reopening, so a form or scroll position survives). */
   function setWindowMode(on) {
     expanded = on;
     savePrefs({ windowExpanded: on });
-    if (markerHost?.isOpen()) { markerHost.layout(); return; }
-    if (!popup) return;
-    popup.options.maxHeight = windowMaxHeight(on);
-    popup.getElement()?.classList.toggle('is-expanded', on);
-    popup.update();
+    markerHost?.isOpen() && markerHost.layout();
   }
 
-  // the content builder lives in marker-content.js; the popup only hosts it
+  // the content builder lives in marker-content.js; the host only hosts it
   const content = createMarkerContent({
     store, cin, elev, toast, checkPoint, zoneSummary, weatherButton, showWeather, tripOf, iconOf, sigOf, eyeLabel, renderDist, renderStats, addVisit, convert, remove, openPopup, selectMarker, setDetails, setWindowMode, goTo,
     detailsOn: () => detailsOn, expanded: () => expanded, markers: () => markers, visitMap: () => visitMap, sideMap: () => sideMap, subParent: () => subParent,
     newTripHandler: () => newTripHandler, setWxLine: (line) => { wxLine = line; },
     closeWindow, startMove: (id) => move?.start(id),
   });
-  // staged Move (Review 01 S7; host only). Save uses the drag's own update and invalidation; see marker-move.js
+  // staged Move (Review 01 S7). Save uses the drag's own update and invalidation; see marker-move.js
   function applyStagedMove(id, lat, lon) {
     const m = markers.get(id);
     if (m) m.setLatLng([lat, lon]);
@@ -1149,21 +1126,17 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     mw.refresh([id]);
     return res;
   }
-  const move = markerHostEnabled() ? createMarkerMove({ map, panel, get: (id) => store.get(id), apply: applyStagedMove, isShared: (it) => !!store.getTrip(it.tripId)?.shared, closeWindow, reopen: (id) => openPopup(id), toast }) : null;
-  let markerHost = null; // the adaptive marker host (Review 01 S4, S5): development switch only, see marker-host.js
-  /** Closes the marker window, whichever is open: the Leaflet popup, or the development marker host. The one place every "close the window" goes through. */
+  const move = createMarkerMove({ map, panel, get: (id) => store.get(id), apply: applyStagedMove, isShared: (it) => !!store.getTrip(it.tripId)?.shared, closeWindow, reopen: (id) => openPopup(id), toast });
+  let markerHost = null; // the adaptive marker host (Review 01 S4, S5); see marker-host.js
+  /** Closes the marker window: the host, or (a point check, a live pin) the Leaflet popup those still use. The one place every "close the window" goes through. */
   function closeWindow() { map.closePopup(); markerHost?.close(); }
   const hostFor = () => markerHost ??= createMarkerHost({
     map, panel, build: (id, edit, h) => content.buildContent(id, edit, h), getExpanded: () => expanded,
     setExpanded: (on) => setWindowMode(on), latlngOf: (id) => markers.get(id)?.getLatLng(),
-    onOpen: (id) => { tagLayer.clearLayers(); pickId = null; viewId = id; relink(); }, // what 'popupopen' does for the popup
+    onOpen: (id) => { tagLayer.clearLayers(); pickId = null; viewId = id; relink(); },
     onClose: (id) => { if (viewId === id) { viewId = null; relink(); } },
     returnFocusTo: (id) => markers.get(id)?.getElement() ?? null,
   });
-  function popupContent(id, startEditing) {
-    const win = popup; // this window's own popup (read now, while it is the one being opened)
-    return content.buildContent(id, startEditing, { close: () => popup?.close(), closeSelf: () => win.close(), update: () => popup?.update() });
-  }
 
   function remove(id) {
     const m = markers.get(id);

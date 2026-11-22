@@ -1,5 +1,5 @@
 // Selecting a marker: the day's route with the selected stop's arrows in bold, and the switch that stops the details window opening.
-import { chromium, CHANNEL, ROOT, moreTool, HOST, MW } from './lib.mjs';
+import { chromium, CHANNEL, ROOT, moreTool, MW } from './lib.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 const { haversineM, fmtDistance } = await import(pathToFileURL(path.join(ROOT, 'src/distance.js')).href);
@@ -34,7 +34,7 @@ async function open(prefs = {}, vp = { width: 1300, height: 900 }, list = items)
 const pin = (p, name) => p.locator(`.leaflet-marker-icon[title="${name}"]`).first();
 const segs = (p) => p.$$eval('path.route-band', (e) => e.map((x) => x.classList.contains('bold')));
 const count = (p, sel) => p.locator(sel).count();
-const popup = (p) => p.locator(HOST ? MW + ':visible' : MW).count();
+const popup = (p) => p.locator(MW + ':visible').count();
 
 // ================= details on (the default)
 let { ctx, p } = await open();
@@ -74,29 +74,17 @@ ok((await segs(p)).filter(Boolean).length === 2 && await count(p, '.dist-label-t
 ok(await count(p, '.poi-pin.focused') === 1, 'and the pin stands out');
 await p.click('.name-tag-info'); await p.waitForSelector(MW + ' h3', { timeout: 8000 });
 ok((await p.textContent(MW + ' h3')) === 'Bravo' && await count(p, '.name-tag') === 0, 'the ⓘ opens that marker\'s window (and the tag gives way to it)');
-if (!HOST) {
-  ok(/Hide/.test(await p.getAttribute('.leaflet-popup .pop-toggle', 'aria-label')) && await p.locator('.leaflet-popup .pop-eye.off').count() === 1, 'with details off the window\'s v button says it hides into the ⓘ, and its eye shows the setting as off');
-  await p.click('.leaflet-popup .pop-toggle'); await p.waitForTimeout(500);
-  ok(await popup(p) === 0 && await count(p, '.name-tag') === 1 && (await segs(p)).filter(Boolean).length === 2, 'pressing it tucks the window away into the name tag, and the marker stays selected with its routes');
-  await p.click('.name-tag-info'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
-  await p.click('.leaflet-popup .pop-eye'); await p.waitForTimeout(400);
-  ok(await popup(p) === 1 && await p.locator('.details-btn.off').count() === 0 && await p.locator('#poi-details').isChecked() && await p.locator('.leaflet-popup .pop-eye.off').count() === 0, 'the eye in the window turns details back on: the window stays, and the map button and the switch follow');
-  ok(/Collapse|Expand/.test(await p.getAttribute('.leaflet-popup .pop-toggle', 'aria-label')), 'and the v button is a collapse/expand button again');
-  await p.click('.leaflet-popup .pop-eye'); await p.waitForTimeout(500);
-  ok(await popup(p) === 0 && await count(p, '.name-tag') === 1 && await p.locator('.details-btn.off').count() === 1 && !(await p.locator('#poi-details').isChecked()), 'pressing it again turns details off: the window closes into the name tag, and the button and the switch follow');
-} else {
-  const moreOpen = async () => { if (await p.locator(MW + ' .pop-overflow').isHidden()) await p.locator(MW + ' .pop-secondary .btn', { hasText: 'More' }).click(); };
-  await moreOpen();
-  ok(await p.locator(MW + ' .pop-eye.off').count() === 1, 'with details off the eye in the window (under More) shows the setting as off');
-  await p.click(MW + ' .pop-toggle.is-tuck'); await p.waitForTimeout(500); // the v button (shown in the host while details are off) tucks the window into the name tag, as in the popup
-  ok(await count(p, MW + ':visible') === 0 && await count(p, '.name-tag') === 1 && (await segs(p)).filter(Boolean).length === 2, 'the v button tucks the window away into the name tag, and the marker stays selected with its routes');
-  if (!(await count(p, '.name-tag-info'))) await pin(p, 'Bravo').click({ force: true }).catch(() => {}); // the assertion above failed: reselect so the later steps still run
-  await p.click('.name-tag-info'); await p.waitForSelector(MW + ' h3', { timeout: 8000 });
-  await moreOpen(); await p.click(MW + ' .pop-eye'); await p.waitForTimeout(400);
-  ok(await count(p, MW + ':visible') === 1 && await p.locator('.details-btn.off').count() === 0 && await p.locator('#poi-details').isChecked() && await p.locator(MW + ' .pop-eye.off').count() === 0, 'the eye in the window turns details back on: the window stays, and the map button and the switch follow');
-  await moreOpen(); await p.click(MW + ' .pop-eye'); await p.waitForTimeout(500);
-  ok(await count(p, MW + ':visible') === 0 && await count(p, '.name-tag') === 1 && await p.locator('.details-btn.off').count() === 1 && !(await p.locator('#poi-details').isChecked()), 'pressing it again turns details off: the window closes into the name tag, and the button and the switch follow');
-}
+const moreOpen = async () => { if (await p.locator(MW + ' .pop-overflow').isHidden()) await p.locator(MW + ' .pop-secondary .btn', { hasText: 'More' }).click(); };
+await moreOpen();
+ok(await p.locator(MW + ' .pop-eye.off').count() === 1, 'with details off the eye in the window (under More) shows the setting as off');
+await p.click(MW + ' .pop-toggle.is-tuck'); await p.waitForTimeout(500); // the v button (shown in the host while details are off) tucks the window into the name tag
+ok(await count(p, MW + ':visible') === 0 && await count(p, '.name-tag') === 1 && (await segs(p)).filter(Boolean).length === 2, 'the v button tucks the window away into the name tag, and the marker stays selected with its routes');
+if (!(await count(p, '.name-tag-info'))) await pin(p, 'Bravo').click({ force: true }).catch(() => {}); // the assertion above failed: reselect so the later steps still run
+await p.click('.name-tag-info'); await p.waitForSelector(MW + ' h3', { timeout: 8000 });
+await moreOpen(); await p.click(MW + ' .pop-eye'); await p.waitForTimeout(400);
+ok(await count(p, MW + ':visible') === 1 && await p.locator('.details-btn.off').count() === 0 && await p.locator('#poi-details').isChecked() && await p.locator(MW + ' .pop-eye.off').count() === 0, 'the eye in the window turns details back on: the window stays, and the map button and the switch follow');
+await moreOpen(); await p.click(MW + ' .pop-eye'); await p.waitForTimeout(500);
+ok(await count(p, MW + ':visible') === 0 && await count(p, '.name-tag') === 1 && await p.locator('.details-btn.off').count() === 1 && !(await p.locator('#poi-details').isChecked()), 'pressing it again turns details off: the window closes into the name tag, and the button and the switch follow');
 await p.click('.name-tag-info'); await p.waitForSelector(MW + ' h3', { timeout: 8000 }); // reopened for the steps that follow
 await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(300);
 await pin(p, 'Alpha').click(); await p.waitForTimeout(400);

@@ -1,6 +1,6 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium, HOST, MW } from './lib.mjs';
-// HOST: opening a marker window recentres the pin in the 'free' map area, which today is under the side panel (see the report); the suite checks that, then pans the pin back so the rest of it can run.
+import { chromium, MW } from './lib.mjs';
+// opening a marker window recentres the pin in the 'free' map area, which today is under the side panel (see the report); the suite checks that, then pans the pin back so the rest of it can run.
 const coveredPin = (p) => p.evaluate(() => { const r = document.querySelector('.poi-pin').getBoundingClientRect(); const e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return !e || !e.closest('.poi-pin, #map'); });
 const panPinBack = async (p) => { const r = await rect(p); await p.mouse.move(780, 700); await p.mouse.down(); await p.mouse.move(Math.max(5, 780 + 400 - r.x), Math.max(100, 700 + 400 - r.y), { steps: 8 }); await p.waitForTimeout(300); await p.mouse.up(); await p.waitForTimeout(700); }; // paused before release: no drag inertia
 const closeWin = (p) => p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host:not([hidden]) .pop-close')?.click());
@@ -24,7 +24,7 @@ await p.click('#tab-poi');
 await p.click('#poi-list .poi-item:has-text("Seed Home")');
 await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(900); await p.keyboard.press('Escape');
 
-if (HOST) { await p.waitForTimeout(400); ok(!(await coveredPin(p)), 'host: after opening a marker the pin is not hidden under the side panel'); await panPinBack(p); }
+await p.waitForTimeout(400); ok(!(await coveredPin(p)), 'host: after opening a marker the pin is not hidden under the side panel'); await panPinBack(p);
 // enter edit mode
 await p.check('#poi-edit');
 ok(await p.evaluate(() => document.getElementById('map').classList.contains('is-editing')), 'edit mode adds the editing state to the map');
@@ -40,7 +40,7 @@ ok(Math.abs(pin1.x - pin0.x) < 1 && Math.abs(pin1.y - pin0.y) < 1, 'map cannot b
 await p.mouse.click(pin0.x, pin0.y); await p.waitForSelector('.poi-pop h3', { timeout: 3000 });
 ok((await p.textContent('.poi-pop h3')) === 'Seed Home', 'a quick click on a pin opens its popup in edit mode');
 await closeWin(p);
-if (HOST) { await p.waitForTimeout(400); pin0 = await rect(p); if (await coveredPin(p)) { await p.evaluate(() => document.getElementById('banner-action').click()); await panPinBack(p); await p.check('#poi-edit'); pin0 = await rect(p); } } // the window recentred the pin again
+await p.waitForTimeout(400); pin0 = await rect(p); if (await coveredPin(p)) { await p.evaluate(() => document.getElementById('banner-action').click()); await panPinBack(p); await p.check('#poi-edit'); pin0 = await rect(p); } // the window recentred the pin again
 ok(await p.evaluate(() => document.getElementById('map').classList.contains('is-editing')), 'still in edit mode after closing the popup');
 
 // swipe without holding: must not move the pin
@@ -84,7 +84,7 @@ await p.keyboard.press('Escape'); ok(!(await p.isVisible('#banner')), 'Escape ca
 
 // delete with confirmation
 await p.click('#poi-list .poi-item:has-text("Seed Photo")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(500);
-if (HOST) await p.click(`${MW} .pop-more`); // the host keeps Delete in the More menu
+await p.click(`${MW} .pop-more`); // the host keeps Delete in the More menu
 await p.click(`${MW} .btn:has-text("Delete")`);
 ok((await p.textContent('.poi-pop .btn.danger')) === 'Confirm delete', 'first Delete press asks to confirm');
 ok((await store(p)).length === 2, 'nothing deleted yet');

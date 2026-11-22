@@ -1,6 +1,6 @@
 // Motion: the dashboard, strip and tab centre in the free map area; the basic animations run for visitors who have not asked for less motion
 // and are absent when they have. (The rest of the suite runs with reduced motion, see lib.mjs.)
-import { chromium, CHANNEL, LATEST_SEEN, HOST } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const b = await chromium.launch({ channel: CHANNEL });
@@ -78,7 +78,7 @@ for (const reduced of [false, true]) {
   const entering = await p.evaluate(() => [...document.querySelectorAll('#poi-list li.enter')].length);
   ok(reduced ? entering === 0 : entering >= 1, 'a new row ' + (reduced ? 'just appears' : 'eases in') + tag);
   await p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button'))?.click());
-  if (HOST) for (let i = 0; i < 2; i++) { await p.keyboard.press('Escape'); await p.waitForTimeout(250); } // the host's edit form has no close button: Escape leaves the form, a second one closes the host
+  for (let i = 0; i < 2; i++) { await p.keyboard.press('Escape'); await p.waitForTimeout(250); } // the host's edit form has no close button: Escape leaves the form, a second one closes the host
   await p.focus('#poi-list .poi-item:has-text("Alpha")');
   await p.keyboard.press('Alt+ArrowDown'); await p.waitForTimeout(40);
   const gliding = await p.evaluate(() => [...document.querySelectorAll('#poi-list li')].filter((li) => li.getAnimations().some((a) => a.effect?.getKeyframes?.().some((k) => k.translate))).length);

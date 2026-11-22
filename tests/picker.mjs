@@ -1,6 +1,6 @@
 // Add a marker: folded on load, the four-group type picker (one choice across all 16), placement while folded or open,
 // the Side Quest type switch, grouped edit form, keyboard use, and the small-screen layout. Starts with the card folded, as a visitor sees it.
-import { OUT as SP, CHANNEL, chromium, pickType, HOST, MW } from './lib.mjs';
+import { OUT as SP, CHANNEL, chromium, pickType, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const GROUPS = { travel: 'hotel,food,attraction,shopping,nature,meeting', transport: 'train,airport,transport', drone: 'home,takeoff,landing,photo,hazard', special: 'residence,other' };
@@ -111,7 +111,7 @@ await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #mar
 
 // ================= the edit form: grouped types, and the Side Quest note
 await p.click('#poi-list .poi-item:has-text("Alpha")'); await p.waitForSelector(MW + ' h3');
-await p.click(HOST ? MW + ' .pop-secondary .btn:has-text("Edit")' : MW + ' button[title="Edit"]').catch(() => {}); await p.waitForSelector('.poi-pop form', { timeout: 6000 });
+await p.click(MW + ' .pop-secondary .btn:has-text("Edit")').catch(() => {}); await p.waitForSelector('.poi-pop form', { timeout: 6000 });
 const optgroups = await p.evaluate(() => [...[...document.querySelectorAll('.poi-pop form')].at(-1).querySelectorAll('select optgroup')].map((x) => x.label + ':' + [...x.querySelectorAll('option')].map((o) => o.value).join('+')));
 ok(optgroups.join('|') === 'Travel & Places:hotel+food+attraction+shopping+nature+meeting|Transportation:train+airport+transport|Drone & Safety:home+takeoff+landing+photo+hazard|Special:residence+other', 'the edit form lists the 16 types under the four groups: ' + optgroups.join(' | '));
 ok(await p.evaluate(() => [...document.querySelectorAll('.poi-pop form')].at(-1).querySelector('select:has(optgroup)').value) === 'photo', 'and shows the stored type selected');

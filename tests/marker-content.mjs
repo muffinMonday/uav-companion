@@ -41,7 +41,7 @@ async function open(id, width, edit) {
   }, [items, trips, { lat: it.lat, lon: it.lon, zoom: 14 }]);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
-  await p.goto('http://localhost:5173/?markerhost=0', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
   if (await p.evaluate(() => !document.getElementById('panel').hidden)) await p.click('#panel-close');
   await p.waitForTimeout(300);
   if (process.env.DBG) console.log(JSON.stringify(await p.evaluate(() => [...document.querySelectorAll('.poi-pin')].map((e) => [e.getAttribute('title'), Math.round(e.getBoundingClientRect().x)]))), await p.evaluate(() => localStorage.getItem('uavzones.v1.prefs')));
@@ -64,7 +64,7 @@ else {
   for (const k of Object.keys(want)) ok(got[k] === want[k], 'window DOM unchanged: ' + k);
   ok(Object.keys(got).length === Object.keys(want).length, 'same set of windows');
 }
-for (const k of Object.keys(got)) ok((got[k].includes('<h3>') || got[k].includes('<form')) && got[k].length > 200, 'captured: ' + k);
+for (const k of Object.keys(got)) ok((/<h3[ >]/.test(got[k]) || /<form[ >]/.test(got[k])) && got[k].length > 200, 'captured: ' + k);
 ok(errs.length === 0, 'no page errors ' + errs.join('|'));
 await b.close();
 process.exit(fails ? 1 : 0);

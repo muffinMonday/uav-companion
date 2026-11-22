@@ -1,6 +1,6 @@
 // Saved-places search: finds every marker whatever is folded or hidden on the map, shows trip and day context, works with the filters,
 // never changes a record or a fold, and the folds come back when it is cleared.
-import { OUT as SP, CHANNEL, chromium, LATEST_SEEN, HOST, MW } from './lib.mjs';
+import { OUT as SP, CHANNEL, chromium, LATEST_SEEN, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 

@@ -1,5 +1,5 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium, HOST, MW } from './lib.mjs';
+import { chromium } from './lib.mjs';
 import fs from 'node:fs';
 import { dashClick } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
@@ -100,7 +100,7 @@ const cache = await lsGet(S.page, 'uavzones.v1.wxcache');
 ok(Object.keys(cache.items).length === 3 && typeof cache.lastBulk === 'number', 'B: cache holds 3 markers and the bulk-refresh time');
 const pois = await lsGet(S.page, 'uavzones.v1.pois');
 ok(pois.items.every((i) => Object.keys(i).sort().join() === 'created,id,lat,lon,name,note,type'), 'B: weather is not stored on the markers themselves');
-if (HOST) { await closePopup(S.page); await S.page.waitForTimeout(300); } // the host's side panel covers the dashboard tab
+await closePopup(S.page); await S.page.waitForTimeout(300); // the host's side panel covers the dashboard tab
 const [dl] = await Promise.all([S.page.waitForEvent('download'), dashClick(S.page, '#poi-export')]); await dl.saveAs(SP + '/mw-export.geojson');
 ok(!/temp|wind|gust/i.test(fs.readFileSync(SP + '/mw-export.geojson', 'utf8')), 'B: the GeoJSON export contains no weather');
 await closePopup(S.page);

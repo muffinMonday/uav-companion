@@ -1,4 +1,4 @@
-// Review 01 S6: the marker host's action model and overflow menu (src/marker-actions.js). Development switch only (?markerhost=1).
+// Review 01 S6: the marker host's action model and overflow menu (src/marker-actions.js). The host is the single window for a saved marker.
 // Emulated: Playwright viewports and touch. No real phone, foldable, keyboard or screen reader.
 import { chromium, CHANNEL } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
@@ -18,7 +18,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 const b = await chromium.launch({ channel: CHANNEL });
 const H = '#marker-host';
 
-async function session({ width, height = 800, host = true, touch = false }) {
+async function session({ width, height = 800, touch = false }) {
   const ctx = await b.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
   await ctx.clock.install({ time: new Date('2026-11-13T10:00:00+08:00') }); await ctx.clock.resume();
   await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
@@ -31,7 +31,7 @@ async function session({ width, height = 800, host = true, touch = false }) {
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/arcgisonline|Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
-  await p.goto('http://localhost:5173/' + (host ? '?markerhost=1' : '?markerhost=0'), { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
   if (await p.evaluate(() => !document.getElementById('panel').hidden)) await p.click('#panel-close');
   await p.waitForTimeout(300);
   return { ctx, p };
@@ -237,22 +237,6 @@ for (const touch of [false, true]) {
   await s.ctx.close();
 }
 
-// ---------------------------------------------------------------- 7. switch off: the popup keeps its layout
-for (const [w, touch] of [[1200, false], [360, true]]) {
-  const s = await session({ width: w, height: 800, host: false, touch });
-  await click(s.p, 'Tower');
-  const g = await s.p.evaluate(() => ({
-    popup: !!document.querySelector('.leaflet-popup .pop.poi-pop'), host: !!document.getElementById('marker-host') && !document.getElementById('marker-host').hidden,
-    panel: !!document.querySelector('.leaflet-popup .pop-actions'),
-    tools: [...document.querySelectorAll('.leaflet-popup .pop-tools > .btn.tool .tool-label')].map((x) => x.textContent.trim().slice(0, 6)),
-    menu: [...document.querySelectorAll('.leaflet-popup .pop-menu .tool-label')].map((x) => x.textContent.trim()),
-    navInCoords: !!document.querySelector('.leaflet-popup .coords-row .map-action'),
-  }));
-  ok(g.popup && !g.host && !g.panel && g.navInCoords, `switch off, ${w}px: the Leaflet popup, Navigate beside the coordinates, no host and no action area`);
-  if (w === 1200) ok(g.tools.join('|') === 'Open d|Edit|Add vi|Make S|Delete', `switch off, wide: eye, edit, visit, side, delete icons as before (${g.tools})`);
-  else ok(g.tools.join('|') === 'Open d|Edit|More' && g.menu.join('|') === 'Add visit|Make Side Quest|Delete', `switch off, phone: eye and edit, then More with the rest as before (${g.tools}; ${g.menu})`);
-  await s.ctx.close();
-}
 
 ok(errs.length === 0, 'no page errors ' + errs.join(' | ').slice(0, 300));
 await b.close();

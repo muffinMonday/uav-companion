@@ -1,6 +1,6 @@
 // Itinerary routes on the map (browser): broad bands, chevrons fitted inside them, road geometry from the device cache or a mocked route function, a dashed
 // straight-line fallback, segmented overnight legs, labels that never overlap, turning the map, dark theme, a phone, and no request when the view changes.
-import { chromium, CHANNEL, ROOT, HOST, MW } from './lib.mjs';
+import { chromium, CHANNEL, ROOT, MW } from './lib.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 const imp = (f) => import(pathToFileURL(path.join(ROOT, f)).href);

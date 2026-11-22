@@ -1,9 +1,9 @@
 // Swipe to close the map popups: the marker window (poi-ui.js) and the point-check window (main.js). Left or right anywhere on them, up or down from the border.
 // Touch is simulated with real touch events through the browser protocol, the same way tests/swipe.mjs does it.
-import { chromium, CHANNEL, LATEST_SEEN, HOST } from './lib.mjs';
-// the pane that follows the finger: the popup's bubble, or the host's content (the host has no bubble and no tip)
-const PANE = HOST ? '.poi-pop' : '.leaflet-popup-content-wrapper';
-const EDIT = HOST ? '.poi-pop .pop-secondary button:has-text("Edit")' : '.poi-pop .pop-tools button[title="Edit"]';
+import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
+// the pane that follows the finger: the host's content (the host has no bubble and no tip)
+const PANE = '.poi-pop';
+const EDIT = '.poi-pop .pop-secondary button:has-text("Edit")';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const b = await chromium.launch({ channel: CHANNEL });
@@ -87,26 +87,6 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
   ok(await winOpen(p), 'a downward swipe on the body (not the border) leaves it open');
   ok((await view(p)) === v0, 'and the map underneath does not move');
 
-  if (!HOST) {
-  const top = await box(p, '.poi-pop .pop-type');
-  await swipe([top.cx, top.cy], [top.cx, top.cy + 150]);
-  ok(!(await winOpen(p)), 'swiping down from the top bar closes it');
-
-  await openWindow(p, 'Alpha');
-  const top2 = await box(p, '.poi-pop .pop-type');
-  await swipe([top2.cx, top2.cy], [top2.cx, top2.cy - 150]);
-  ok(!(await winOpen(p)), 'swiping up from the top bar closes it too');
-
-  await openWindow(p, 'Alpha');
-  const seq = await box(p, '.poi-pop .pop-seq');
-  await swipe([seq.cx, seq.cy], [seq.cx, seq.cy - 150]);
-  ok(!(await winOpen(p)), 'swiping up from the previous / next footer closes it');
-
-  await openWindow(p, 'Alpha');
-  const seq2 = await box(p, '.poi-pop .pop-seq');
-  await swipe([seq2.cx, seq2.cy], [seq2.cx, seq2.cy + 150]);
-  ok(!(await winOpen(p)), 'and swiping down from it closes it too');
-  } else {
   // host: the sheet's own gesture (src/marker-host.js): a vertical drag of the top bar resizes the sheet (up expands, down collapses, down from compact closes); the footer takes left / right swipes only
   const hostOpen = () => p.evaluate(() => { const h = document.getElementById('marker-host'); return !!h && !h.hidden; });
   const expanded = () => p.getAttribute('#marker-host', 'data-expanded');
@@ -125,7 +105,6 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
   const seq = await box(p, '.poi-pop .pop-seq');
   await swipe([seq.cx - 60, seq.cy], [seq.cx + 90, seq.cy + 4]);
   ok(!(await hostOpen()), 'host: swiping right on the previous / next footer closes it');
-  }
 
   // the edit form: a swipe does not close it
   await openWindow(p, 'Alpha');
@@ -133,8 +112,7 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
   const f = await box(p, '.poi-pop form');
   await swipe([f.cx, f.cy], [f.cx - 150, f.cy + 4]);
   ok(await winOpen(p) && await p.isVisible('.poi-pop form'), 'in edit mode, a swipe left does not close the window');
-  if (HOST) { await p.click('.poi-pop form button:has-text("Cancel")'); await p.waitForSelector('.poi-pop h3', { timeout: 5000 }); } // the sheet covers the list: Cancel returns to the details
-  else await openWindow(p, 'Alpha'); // back in view mode, where the top bar (and its close button) is
+  await p.click('.poi-pop form button:has-text("Cancel")'); await p.waitForSelector('.poi-pop h3', { timeout: 5000 }); // the sheet covers the list: Cancel returns to the details
   await p.evaluate(() => document.querySelector('.poi-pop .pop-close')?.click()); await p.waitForTimeout(300);
   ok(!(await winOpen(p)), 'the window still closes with its own close button (in the top border)');
   ok(!errs.length, 'no page errors: ' + errs.join(' | '));

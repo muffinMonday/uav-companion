@@ -1,6 +1,6 @@
-// Review 01 S4: the adaptive marker host behind the development switch. Switch off keeps the Leaflet popup; switch on shows the same content in a non-modal
-// bottom sheet (little room) or side panel (room beside it): layouts, no scrim, focus, Escape, dialogs, resizing, and precedence with the Sessions explorer.
-// Emulated only (Playwright viewports); no real foldable or phone. Needs the app on :5173 (a development server: the switch does not exist in a production build).
+// Review 01 S4 to S9: the adaptive marker host, the single window for a saved marker. Layouts (non-modal bottom sheet with little room, side panel with room
+// beside it), no scrim, focus, Escape, dialogs, resizing, and precedence with the Sessions explorer. A point check and a live pin still use a Leaflet popup
+// of their own, unaffected by this file. Emulated only (Playwright viewports); no real foldable or phone. Needs the app on :5173.
 import { chromium, CHANNEL, OUT } from './lib.mjs';
 import fs from 'node:fs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
@@ -11,7 +11,7 @@ const items = [item('a', 'Tower', 30.5, 114.3, { tripId: 't1', date: '2026-11-12
 const trips = [{ id: 't1', name: 'Wuhan', color: '#e91e63', description: '', created: '2026-11-01T00:00:00.000Z', startDate: '2026-11-12', endDate: '2026-11-14' }];
 const b = await chromium.launch({ channel: CHANNEL });
 
-async function session({ width, height = 800, host = true, panelOpen = false, target = items[0], touch = false }) {
+async function session({ width, height = 800, panelOpen = false, target = items[0], touch = false }) {
   const ctx = await b.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
   await ctx.clock.install({ time: new Date('2026-11-13T10:00:00+08:00') }); await ctx.clock.resume();
   await ctx.addInitScript(([po, tr, v]) => {
@@ -22,7 +22,7 @@ async function session({ width, height = 800, host = true, panelOpen = false, ta
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/arcgisonline|Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
-  await p.goto('http://localhost:5173/' + (host ? '?markerhost=1' : '?markerhost=0'), { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
   const open = await p.evaluate(() => !document.getElementById('panel').hidden);
   if (open !== panelOpen) await p.click(open ? '#panel-close' : '#dock button >> nth=0');
   await p.waitForTimeout(300);
@@ -37,15 +37,6 @@ const H = '#marker-host';
 const box = (p, sel) => p.evaluate((q) => { const e = document.querySelector(q); if (!e || e.hidden) return null; const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; }, sel);
 const mapBox = (p) => box(p, '#map');
 const shown = (p) => p.evaluate(() => { const e = document.getElementById('marker-host'); return !!e && !e.hidden; });
-
-// ---- 1. switch off: the popup, as before
-{
-  const { ctx, p } = await session({ width: 1200, host: false });
-  await pinClick(p, 'Tower');
-  ok(await p.locator('.leaflet-popup .poi-pop h3').count() === 1 && !(await shown(p)), 'switch off: the content is in the Leaflet popup and no marker host is shown');
-  ok(await p.locator('#marker-host').count() === 0, 'switch off: the host element is never created');
-  await ctx.close();
-}
 
 // ---- 2. folded phone: full-width bottom sheet
 {

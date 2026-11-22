@@ -1,4 +1,4 @@
-// Review 01 S5: the marker host's recentring (free-area service), lifecycle, gestures, keyboard and motion. Development switch only (?markerhost=1).
+// Review 01 S5: the marker host's recentring (free-area service), lifecycle, gestures, keyboard and motion. The host is the single window for a saved marker.
 // Emulated: Playwright viewports, CDP touch events, an overridden visualViewport for the on-screen keyboard. No real phone, foldable or keyboard.
 import { chromium, CHANNEL, OUT } from './lib.mjs';
 import fs from 'node:fs';
@@ -12,7 +12,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 const b = await chromium.launch({ channel: CHANNEL });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function session({ width, height = 800, host = true, touch = false, panelOpen = false, motion = false, bearingTwist = 0 }) {
+async function session({ width, height = 800, touch = false, panelOpen = false, motion = false, bearingTwist = 0 }) {
   const ctx = await b.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: motion ? 'no-preference' : 'reduce' });
   await ctx.clock.install({ time: new Date('2026-11-13T10:00:00+08:00') }); await ctx.clock.resume();
   await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
@@ -25,7 +25,7 @@ async function session({ width, height = 800, host = true, touch = false, panelO
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/arcgisonline|Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
-  await p.goto('http://localhost:5173/' + (host ? '?markerhost=1' : '?markerhost=0'), { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
   const open = await p.evaluate(() => !document.getElementById('panel').hidden);
   if (open !== panelOpen) await p.click(open ? '#panel-close' : '#dock button >> nth=0');
   await p.waitForTimeout(300);
@@ -90,15 +90,6 @@ const mapGeo = (p) => p.evaluate(() => JSON.stringify(JSON.parse(localStorage.ge
   await click(s.p, 'Tower');
   const o = await off(s.p);
   ok(o <= 40, `desktop with the side panel open: the pin sits at the middle of what both leave free (${Math.round(o)} px off)`);
-  await s.ctx.close();
-}
-{
-  const s = await session({ width: 1200, height: 800, host: false });
-  await click(s.p, 'Tower');
-  const q = await pinPos(s.p, 'Tower'), m = await box(s.p, '#map');
-  ok(Math.abs(q.x - (m.l + m.w / 2)) <= 3, `switch off: the popup keeps view.js centring (the pin is at the horizontal middle of the map: ${Math.round(q.x)} of ${Math.round(m.l + m.w / 2)})`);
-  await s.p.mouse.click(60, 600); await s.p.waitForTimeout(400);
-  ok(await s.p.locator('.leaflet-popup').count() === 0, 'switch off: a map click still closes the popup');
   await s.ctx.close();
 }
 

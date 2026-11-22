@@ -1,11 +1,11 @@
 // Contextual help for the POI explorer: the reworded poi hint keeps its seen state, the type-picker and trip-visibility hints show once at a first use,
 // nothing shows while placing, editing, selecting or dragging, the older-version notice must be dismissed and waits for a quiet moment,
 // and the dashboard shortcuts and Tips replay them. Screenshots go to tests/out/helppoi/.
-import { chromium, CHANNEL, LATEST_SEEN, OUT, HOST, MW } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN, OUT } from './lib.mjs';
 import fs from 'node:fs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
-// Closes the saved-marker window. The host shows no close button while its edit form is up (Cancel leaves the form first), the popup always has Leaflet's.
-const closeWin = async (p) => { if (HOST && await p.locator('#marker-host form').count()) await p.locator('#marker-host form .btn:not(.primary)').first().click(); await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click()); };
+// Closes the saved-marker window. The host shows no close button while its edit form is up (Cancel leaves the form first).
+const closeWin = async (p) => { if (await p.locator('#marker-host form').count()) await p.locator('#marker-host form .btn:not(.primary)').first().click(); await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click()); };
 const errs = [];
 const shots = `${OUT}/helppoi`; fs.mkdirSync(shots, { recursive: true });
 const HELPKEY = 'uavzones.v1.help';

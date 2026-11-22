@@ -1,5 +1,5 @@
 // Rain chance in the marker window: peak and the hour strip, the fallbacks, and that nothing shows when weather is off.
-import { OUT as SP, CHANNEL, HOST, MW } from './lib.mjs';
+import { OUT as SP, CHANNEL } from './lib.mjs';
 import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const OFFSET = 28800; // mock location is UTC+8

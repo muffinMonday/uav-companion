@@ -1,9 +1,9 @@
 // The day follows from the date; trips need dates; the start-up fix of old day numbers; the AI import turning days into dates.
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium, HOST } from './lib.mjs';
-// the marker window's scrolling body and close control: the popup's, or the adaptive host's
-const SCROLLER = HOST ? '#marker-host .mh-body' : '.leaflet-popup-content';
-const CLOSE = HOST ? '#marker-host .pop-close' : '.leaflet-popup-close-button';
+import { chromium } from './lib.mjs';
+// the marker window's scrolling body and close control: the adaptive host's
+const SCROLLER = '#marker-host .mh-body';
+const CLOSE = '#marker-host .pop-close';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 

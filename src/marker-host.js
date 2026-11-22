@@ -1,27 +1,14 @@
-// The adaptive marker host (Review 01 S4 and S5, MD-01 to MD-12): the marker window's content in a non-modal bottom sheet (little room) or side panel (room beside it),
-// outside the Leaflet container, no scrim, the map stays operable. OPT-IN SWITCH ONLY (`?markerhost=1`): poi-ui.js opens it instead of the popup when `markerHostEnabled()` is true,
-// which is never the case by default. The lifecycle (open, close, replace) is this file's small interface; poi-ui.js routes every "close the window" through it.
-// Recentring uses the shared free-area service (src/free-area.js); the pop-up path keeps view.js centreOn (DEF-S2-01).
+// The adaptive marker host (Review 01 S4 to S9, MD-01 to MD-12): the single marker window for a saved marker, in a non-modal bottom sheet (little room) or side
+// panel (room beside it), outside the Leaflet container, no scrim, the map stays operable. S9: this replaces the Leaflet popup poi-ui.js used to show instead;
+// a point check and a live pin still open a Leaflet popup of their own (view.js centreOn, DEF-S2-01), unaffected by this file. The lifecycle (open, close,
+// replace) is this file's small interface; poi-ui.js routes every "close the window" through it. Recentring uses the shared free-area service (src/free-area.js).
 import { el } from './cards.js';
 import { createFreeArea, dockMode } from './free-area.js';
 import { announce, onOverlay } from './overlay-policy.js';
 
 const MAP_MIN = 320, MAP_MIN_H = 200, GAP = 8, PANEL_GAP = 12, DRAG_START = 8, DRAG_STEP = 40;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-const KEY = 'uavzones.dev.markerhost';
 const reduced = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-/**
- * Opt-in only, in development and in production: `?markerhost=1` turns the adaptive host on for this browser (remembered in localStorage), `?markerhost=0` turns it off again.
- * Nothing else enables it, and the default everywhere is the Leaflet popup. (Review 01 S8 deploy: owner-authorized remote testing; S9, the removal of the popup, is not done.)
- */
-export function markerHostEnabled() {
-  try {
-    const q = /[?&]markerhost=([01])(?:&|#|$)/.exec(location.search);
-    if (q) { const was = localStorage.getItem(KEY) === '1'; if (q[1] === '1' && !was) localStorage.setItem(KEY, '1'); else if (q[1] === '0' && was) localStorage.removeItem(KEY); return q[1] === '1'; }
-    return localStorage.getItem(KEY) === '1';
-  } catch { return false; }
-}
 
 /** Width of the side panel for a viewport `w`: about 37% on a desktop (420 to 480 px), about 47% on an unfolded foldable (340 to 480 px). */
 export const hostWidth = (w) => (w >= 1000 ? clamp(Math.round(w * 0.37), 420, 480) : clamp(Math.round(w * 0.47), 340, 480));

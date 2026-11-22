@@ -1,6 +1,6 @@
 // The same place saved for several dates: the x2 badge, the visit chips, Add visit, the AI import, and one weather request per spot.
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium, HOST, MW } from './lib.mjs';
+import { chromium, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const OFFSET = 28800;
@@ -78,7 +78,7 @@ ok(bd.filter((x) => x.t === 'Yellow Crane Tower').length === 3 && bd.filter((x) 
 ch = await chips(p);
 ok(ch.length === 3 && /Nov 12/.test(ch[0].t) && /Nov 13/.test(ch[1].t) && /Nov 14/.test(ch[2].t) && ch[1].cur, 'the three visits are listed in date order, the new one marked: ' + ch.map((c) => c.t).join(' | '));
 // delete it again
-if (HOST) await p.click(`${MW} .pop-more`); // the host keeps Delete in the More menu
+await p.click(`${MW} .pop-more`); // the host keeps Delete in the More menu
 await p.click(`${MW} .btn.danger`); await p.click(`${MW} .btn.danger`); await p.waitForTimeout(600);
 bd = await badges(p);
 ok((await stored(p)).length === 3 && bd.filter((x) => x.t === 'Yellow Crane Tower').every((x) => x.v === '×2'), 'deleting one visit takes the others back to ×2');

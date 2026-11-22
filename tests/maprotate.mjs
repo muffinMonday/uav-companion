@@ -1,6 +1,6 @@
 // Turning the map (src/maprotate.js) in a real browser with real touch events: the two-finger twist, and that everything still lands where it should on a
 // turned map: markers upright on the spot they mark, popups upright, a press-and-hold and a drag at the right coordinates, tiles to the corners.
-import { chromium, CHANNEL, LATEST_SEEN, HOST, MW } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
@@ -93,14 +93,10 @@ ok(Math.abs(pin.x - (c.x + 100 * Math.cos(phi))) < 6 && Math.abs(pin.y - (c.y + 
 // ================= a popup stays upright, above the pin
 await s.p.tap('.poi-pin'); await s.p.waitForSelector(`${MW}:not([hidden])`, { timeout: 8000 });
 await sleep(400);
-if (HOST) { // the host is not anchored to the pin: it must stay upright and the turned map must keep the pin in the free part, clear of the host
+{ // the host is not anchored to the pin: it must stay upright and the turned map must keep the pin in the free part, clear of the host
   const h = await s.p.evaluate(() => { const e = document.getElementById('marker-host'), r = e.getBoundingClientRect(), m = document.getElementById('map').getBoundingClientRect(), q = document.querySelector('.poi-pin').getBoundingClientRect(); return { rot: getComputedStyle(e).rotate, tf: getComputedStyle(e).transform, side: e.dataset.mode === 'side', l: r.left, t: r.top, mid: { x: q.x + q.width / 2, y: q.y + q.height / 2 }, m: { l: m.left, t: m.top, r: m.right, b: m.bottom } }; });
   const clear = h.side ? h.mid.x < h.l : h.mid.y < h.t;
   ok((h.rot === 'none' || h.rot === '0deg') && (h.tf === 'none' || /^matrix\(1, 0, 0, 1, /.test(h.tf)) && clear && h.mid.x > h.m.l && h.mid.x < h.m.r && h.mid.y > h.m.t && h.mid.y < h.m.b, 'the host is upright (no rotation) and the pin on the turned map sits in the free part beside it: pin (' + Math.round(h.mid.x) + ',' + Math.round(h.mid.y) + '), host ' + (h.side ? 'left ' : 'top ') + Math.round(h.side ? h.l : h.t));
-} else {
-const pop = await s.p.$eval(MW, (e) => { const r = e.getBoundingClientRect(); return { cx: r.x + r.width / 2, bottom: r.bottom, w: r.width, h: r.height, rot: getComputedStyle(e).rotate }; });
-const pin2 = await s.p.$eval('.poi-pin', (e) => { const r = e.getBoundingClientRect(); return { cx: r.x + r.width / 2, top: r.y }; });
-ok(pop.w > pop.h * 0.6 && Math.abs(pop.cx - pin2.cx) < 14 && pop.bottom <= pin2.top + 30, 'the popup is upright and sits above the pin it belongs to (centre off by ' + Math.round(Math.abs(pop.cx - pin2.cx)) + ' px)');
 }
 await s.p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button'))?.click()); await sleep(300);
 

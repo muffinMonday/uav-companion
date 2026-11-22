@@ -1,4 +1,4 @@
-// Review 01 S7: staged Move in the marker host (src/marker-move.js, applyStagedMove in poi-ui.js). Development switch only (?markerhost=1).
+// Review 01 S7: staged Move in the marker host (src/marker-move.js, applyStagedMove in poi-ui.js). The host is the single window for a saved marker.
 // Real mouse and keyboard events (Playwright). No real phone or foldable.
 import { chromium, CHANNEL } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
@@ -18,7 +18,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 const b = await chromium.launch({ channel: CHANNEL });
 const H = '#marker-host';
 
-async function session({ width = 1200, height = 800, host = true, touch = false }) {
+async function session({ width = 1200, height = 800, touch = false }) {
   const ctx = await b.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
   await ctx.clock.install({ time: new Date('2026-11-13T10:00:00+08:00') }); await ctx.clock.resume();
   await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
@@ -33,7 +33,7 @@ async function session({ width = 1200, height = 800, host = true, touch = false 
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/arcgisonline|Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
-  await p.goto('http://localhost:5173/' + (host ? '?markerhost=1' : '?markerhost=0'), { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
   if (await p.evaluate(() => !document.getElementById('panel').hidden)) await p.click('#panel-close');
   await p.waitForTimeout(300);
   return { ctx, p };
@@ -200,15 +200,6 @@ const num = (t) => t.split(',').map((x) => parseFloat(x));
   ok(g.l >= 0 && g.r <= g.w && g.hs.every((h) => h >= 43.5), `phone: the bar fits the screen and its buttons are 44 px tall (${g.hs.map(Math.round)})`);
   await s.p.locator('.mv-cancel').tap(); await s.p.waitForTimeout(800);
   ok(await shown(s.p), 'phone: Cancel reopens the sheet');
-  await s.ctx.close();
-}
-
-// ---------------------------------------------------------------- 6. switch off: popup and drag unchanged
-{
-  const s = await session({ host: false });
-  await click(s.p, 'Tower');
-  const g = await s.p.evaluate(() => ({ popup: !!document.querySelector('.leaflet-popup .poi-pop'), labels: [...document.querySelectorAll('.leaflet-popup .tool-label')].map((x) => x.textContent), bar: !!document.querySelector('.mv-bar'), cross: !!document.querySelector('.mv-cross') }));
-  ok(g.popup && !g.labels.includes('Move location') && !g.bar && !g.cross, 'switch off: the popup has no Move action and no move bar or crosshair exists');
   await s.ctx.close();
 }
 

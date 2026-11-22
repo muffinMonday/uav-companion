@@ -1,6 +1,6 @@
-// Review 01 S8: the edit form inside the marker host. Development switch only (?markerhost=1).
+// Review 01 S8: the edit form inside the marker host, the single window for a saved marker.
 // Short screens and landscape (Save / Cancel stay reachable), software keyboard (overridden visualViewport), focus, Escape / swipe-down / Cancel with the unsaved-change question,
-// Save parity, the "New trip..." hand-off, the popup (switch off) unchanged. Emulated: Playwright viewports, CDP touch. No real phone, keyboard or screen reader.
+// Save parity, the "New trip..." hand-off. Emulated: Playwright viewports, CDP touch. No real phone, keyboard or screen reader.
 import { chromium, CHANNEL } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
@@ -12,7 +12,7 @@ const b = await chromium.launch({ channel: CHANNEL });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const H = '#marker-host';
 
-async function session({ width, height = 800, host = true, touch = false }) {
+async function session({ width, height = 800, touch = false }) {
   const ctx = await b.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
   await ctx.clock.install({ time: new Date('2026-11-13T10:00:00+08:00') }); await ctx.clock.resume();
   await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
@@ -27,7 +27,7 @@ async function session({ width, height = 800, host = true, touch = false }) {
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/arcgisonline|Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
-  await p.goto('http://localhost:5173/' + (host ? '?markerhost=1' : '?markerhost=0'), { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
   if (await p.evaluate(() => !document.getElementById('panel').hidden)) await p.click('#panel-close');
   await p.waitForTimeout(300);
   const s = { ctx, p };
@@ -203,24 +203,6 @@ for (const [w, h, touch] of [[360, 740, true], [660, 800, false], [760, 800, tru
   ok(!(await shown(s.p)), '"New trip…" closes the host (the existing hand-off)');
   ok(await s.p.evaluate(() => !document.getElementById('panel').hidden), 'the side panel opens for the new trip');
   ok((await poiWrites(s.p)) === 0 && (await stored(s.p, 'a')).tripId === 't1', 'nothing stored by the hand-off');
-  await s.ctx.close();
-}
-
-// ---------------------------------------------------------------- 8. switch off: the popup keeps its behaviour
-{
-  const s = await session({ width: 1200, host: false });
-  await click(s.p, 'Tower');
-  const popEdit = () => s.p.evaluate(() => [...document.querySelectorAll('.leaflet-popup button')].find((e) => /^Edit$/.test(e.getAttribute('aria-label') || e.title || e.textContent.trim()))?.click());
-  await popEdit(); await s.p.waitForTimeout(600);
-  ok(await s.p.evaluate(() => !!document.querySelector('.leaflet-popup form')), 'popup: the edit form opens');
-  await s.p.locator('.leaflet-popup form input[type=text]').fill('Popup renamed');
-  await s.p.locator('.leaflet-popup form .acts .btn', { hasText: 'Cancel' }).click(); await s.p.waitForTimeout(400);
-  ok(await s.p.evaluate(() => !document.querySelector('.leaflet-popup form') && !!document.querySelector('.leaflet-popup h3') && !document.querySelector('.edit-discard')), 'popup: Cancel returns at once without a question (unchanged)');
-  ok(!(await shown(s.p)), 'popup: no marker host is shown');
-  await popEdit(); await s.p.waitForTimeout(500);
-  await s.p.locator('.leaflet-popup form input[type=text]').fill('Popup saved');
-  await s.p.locator('.leaflet-popup form .acts .primary').click(); await s.p.waitForTimeout(400);
-  ok((await stored(s.p, 'a')).name === 'Popup saved', 'popup: Save still stores');
   await s.ctx.close();
 }
 
