@@ -12,6 +12,9 @@ import { savePrefs } from './prefs.js';
 import { focusField, showModalQuiet } from './touch.js';
 import { mascotEl } from './mascot-ui.js';
 import { countryPicker } from './app/country-menu.js';
+/** Review 01 S10.6 (AUTH-03): the one place the new shell changes splash.js's routing - "Continue as guest"/"Skip" opens the Map
+ * destination directly (the shell's own default view) instead of the legacy dashboard/help entry flow. Off by default. */
+const NEW_SHELL = import.meta.env.VITE_NEW_SHELL === '1';
 
 export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud = {}, toolbar = null }) {
   const dlg = document.createElement('dialog');
@@ -21,7 +24,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
   let settled = false; // the dialog was closed on purpose (an answer, or Skip); a close without it (Escape) counts as Skip
 
   const finish = () => { settled = true; saveDash({ welcomed: true }); if (dlg.open) dlg.close(); };
-  const skip = () => { finish(); dash.open(); };
+  const skip = () => { finish(); if (!NEW_SHELL) dash.open(); }; // the new shell's Map destination is already the default view once the dialog closes
   dlg.addEventListener('close', () => { if (!settled) skip(); });
   dlg.addEventListener('cancel', () => { /* Escape: the close event follows and skips */ });
 

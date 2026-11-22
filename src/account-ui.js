@@ -23,6 +23,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   const session = () => handle.sync.status().session;
   let profile = null, profileFor = null, loading = false, trigger = null;
   const openState = {}; // which sections the person left open, kept between redraws
+  const closeListeners = new Set(); // Review 01 S10.6 (NAV-07): fired whenever hide() runs; see onClose below
   const progression = getProgression(handle.adapter.client); // the one shared instance (also feeds other people's cards, see friends-ui.js)
   const steam = createSteamCard({ client: handle.adapter.client, onChange: () => { progression.forget(); if (!pop.hidden) render(); } });
   const steamSlot = el('div'); steam.mount(steamSlot); // kept between redraws so an open form is not lost
@@ -196,6 +197,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     pop.hidden = true;
     for (const b of [headBtn, dockBtn]) b.setAttribute('aria-expanded', 'false');
     if (focus && trigger && trigger.offsetParent !== null) trigger.focus();
+    for (const fn of closeListeners) fn();
   }
   for (const b of [headBtn, dockBtn]) b.addEventListener('click', () => (pop.hidden ? show(b) : hide()));
   onSwipe(pop, { direction: 'down', enabled: () => isPhone() && !pop.hidden, canStart: (t) => pop.scrollTop <= 0 && atTop(t, pop), onDismiss: () => hide() }); // the bottom sheet on a phone
@@ -215,5 +217,11 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   paintButtons();
   if (session()) loadProfile();
   if (!session() && handle.hasSignInNotice()) show(); // a failed or cancelled Google return: open the popover so the message is seen (quiet on success)
-  return { reload: () => loadProfile({ force: true }) };
+  return {
+    reload: () => loadProfile({ force: true }),
+    // Review 01 S10.6 (NAV-07): used only by shell/nav.js, to keep the shell's current destination in sync with the popover closing by its
+    // own means (its ✕, Escape, an outside tap, a swipe-down). Harmless if never called.
+    isOpen: () => !pop.hidden,
+    onClose(fn) { closeListeners.add(fn); return () => closeListeners.delete(fn); },
+  };
 }

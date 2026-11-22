@@ -60,11 +60,12 @@ function buildNav() {
 }
 
 /**
- * `deps`: { map, panel, getSessionsHub() -> hub|null, toast, trips?, accountBtnId = 'account-btn' }.
+ * `deps`: { map, panel, getSessionsHub() -> hub|null, getAccount() -> account|null, toast, trips?, accountBtnId = 'account-btn' }.
  * `trips`: the object `initTripsUI` returns (S10.4, TRIP-02/NAV-07) - optional so this still works if Trips has not been wired up yet.
+ * `getAccount`: a lazy getter for what `initAccountUI` returns (S10.6, PROF-01..06) - optional for the same reason.
  * Returns { destination(), setDestination(key), destroy() }, or null if the flag is off (nothing was built).
  */
-function createShellNav({ panel, getSessionsHub, toast, trips, accountBtnId = 'account-btn' }) {
+function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, accountBtnId = 'account-btn' }) {
   const { root, buttons, mapActions } = buildNav();
   let current = 'map';
   let stopTier = null;
@@ -99,6 +100,19 @@ function createShellNav({ panel, getSessionsHub, toast, trips, accountBtnId = 'a
     });
   }
 
+  // S10.6/PROF-01..06: the account popover (`account-ui.js`) already holds everything the Profile destination needs - progression (rank/
+  // XP/achievements), friends, Steam (PROF-06/C-35) and account controls - unmodified. Only the nav-state reconciliation is new here, the
+  // same pattern Trips and Explore already have: the popover can close by its own means (✕, Escape, an outside tap, a swipe-down), so
+  // reflect that as "Map" being current again. No NAV-07 history entry: the popover, like the hub, is reachable from several pre-existing
+  // entry points (the panel header button, the rail button, an automatic open after a failed sign-in return), so the *outer* Back-closes-it
+  // level is deferred for the same reason it is for Trips and Explore - only wiring it for Profile alone would be an inconsistent partial fix.
+  let accountWired = false;
+  function wireAccount(acct) {
+    if (accountWired) return;
+    accountWired = true;
+    acct.onClose(() => { if (current === 'profile') go('map'); });
+  }
+
   function paint() {
     for (const b of buttons) b.setAttribute('aria-current', String(b.dataset.dest === current));
     for (const b of mapActions) b.hidden = current !== 'map'; // the Layers/Saved Places quick actions only make sense while viewing the map
@@ -114,7 +128,11 @@ function createShellNav({ panel, getSessionsHub, toast, trips, accountBtnId = 'a
       if (hub) { wireExploreHub(hub); hub.open('discover'); } else toast?.('Explore needs an internet connection to this build’s project.', 5000);
       return;
     }
-    if (key === 'profile') { document.getElementById(accountBtnId)?.click(); }
+    if (key === 'profile') {
+      const acct = getAccount?.();
+      if (acct) wireAccount(acct);
+      document.getElementById(accountBtnId)?.click();
+    }
   }
 
   for (const b of buttons) b.addEventListener('click', () => go(b.dataset.dest));
