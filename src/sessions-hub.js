@@ -39,6 +39,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   let quietClose = false; // the close event is queued and fires later; this marks the close that only steps aside for the map
   let opener = null; // the element that had focus when the hub was opened
   const listeners = new Set();
+  const viewListeners = new Set(); // Review 01 S10.5 (NAV-07): fn(stacked: boolean), fired on every paint() while the hub is open; see onViewChange below
   const scroll = new Map();
   // automatic attendance (off unless the database switch, the person's consent and the local switch are all on): one foreground sampler, see session-arrival.js
   const arrival = createArrival({ api, candidates: () => mine.sessions, signedIn, pref: () => getPrivacy().autoSessionAttendance === true, setPref: (v) => setPrivacy({ autoSessionAttendance: v }), toast });
@@ -316,6 +317,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (view === 'create') drawCreate(frag); else if (view === 'detail') drawDetail(frag); else if (section === 'discover') drawDiscover(frag); else if (section === 'mine') drawMine(frag); else drawInvites(frag);
     body.setAttribute('aria-label', SECTIONS.find((x) => x[0] === section)[1]);
     body.replaceChildren(frag); body.scrollTop = keep;
+    for (const fn of viewListeners) fn(view !== 'list'); // S10.5/NAV-07: a session's full-screen detail (or the New session form) is a "stacked" view
   }
   body.addEventListener('scroll', () => scroll.set(`${section}:${view}`, body.scrollTop), { passive: true });
 
@@ -625,5 +627,12 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     onSummary: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
     setNearby(on) { savePrefs({ sessionsNearby: on ? true : null }); return loadNearby().then(summaryDone); },
     redeemFromHash,
+    // Review 01 S10.5 (NAV-07): used only by shell/nav.js, to keep the shell's current destination in sync with the dialog closing by its
+    // own means (✕, Escape, an outside tap), and to give a session's full-screen detail one browser-history entry (Back returns to the
+    // list). Harmless if never called; nothing here duplicates the dialog's own Escape/back() handling above.
+    isOpen: () => dlg.open,
+    onClose(fn) { dlg.addEventListener('close', fn); return () => dlg.removeEventListener('close', fn); },
+    onViewChange(fn) { viewListeners.add(fn); return () => viewListeners.delete(fn); },
+    back,
   };
 }

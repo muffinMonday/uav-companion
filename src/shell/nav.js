@@ -3,10 +3,10 @@
 // everything it imports is tree-shaken out of the bundle, the same build-flag-gated-constant pattern already used elsewhere in this app
 // for another experimental feature.
 //
-// Scope: the chrome, its destination adapters (S10.2), and - as of S10.3 - the Map destination's two quick-access actions (Layers,
-// Saved Places), themselves adapters onto the existing, unmodified Map Configs and POI panes. Trips/Explore/Profile *content*
-// (S10.4-S10.6) is still explicitly out of scope. Nothing in panel.js/poi-ui.js/app/map-settings.js is modified by this file, so every
-// control those modules already offer stays reachable exactly as the G1 spec section 28.3 entry-point inventory requires.
+// Scope: the chrome, its destination adapters (S10.2), the Map destination's two quick-access actions (Layers, Saved Places; S10.3),
+// NAV-07 history for Trips (S10.4) and Explore (S10.5). Profile *content* (S10.6) is still explicitly out of scope. Nothing in
+// panel.js/poi-ui.js/sessions-hub.js/app/map-settings.js is modified by this file beyond the small, additive hooks those modules expose
+// for it, so every control they already offer stays reachable exactly as the G1 spec section 28.3 entry-point inventory requires.
 import { el } from '../cards.js';
 import { watchTier, navPlacement, railLabelsShown, touchTarget, isShort } from './tier.js';
 import { SHELL_NAV_ID } from './nav-id.js';
@@ -79,6 +79,26 @@ function createShellNav({ panel, getSessionsHub, toast, trips, accountBtnId = 'a
     else if (!open && tripEntry) { tripEntry.pop(); tripEntry = null; }
   });
 
+  // S10.5/NAV-07: the Sessions hub (Explore) is its own native <dialog>, already full-screen on a phone with no change needed here - only
+  // wire (a) a session's full-screen detail/New-session form into one history entry (Back returns to the Discover/My sessions/Invitations
+  // list), same granularity as Trips above, and (b) the shell's current destination reverting to Map when the hub closes by its own means
+  // (✕, Escape, an outside tap) - the same reconciliation `panel.onChange` already does for Trips. Wired lazily, once, the first time the
+  // hub actually exists (it loads after this module does), exactly like `getSessionsHub` is already called lazily below.
+  const exploreHistory = createHistoryStack();
+  let exploreEntry = null, hubWired = false;
+  function wireExploreHub(hub) {
+    if (hubWired) return;
+    hubWired = true;
+    hub.onClose(() => {
+      if (exploreEntry) { exploreEntry.pop(); exploreEntry = null; } // the hub can close while a detail/form was showing (no paint() runs to report it closed)
+      if (current === 'explore') go('map');
+    });
+    hub.onViewChange((open) => {
+      if (open && !exploreEntry) exploreEntry = exploreHistory.push(() => hub.back());
+      else if (!open && exploreEntry) { exploreEntry.pop(); exploreEntry = null; }
+    });
+  }
+
   function paint() {
     for (const b of buttons) b.setAttribute('aria-current', String(b.dataset.dest === current));
     for (const b of mapActions) b.hidden = current !== 'map'; // the Layers/Saved Places quick actions only make sense while viewing the map
@@ -91,7 +111,7 @@ function createShellNav({ panel, getSessionsHub, toast, trips, accountBtnId = 'a
     if (key === 'trips') { panel.open('trips'); return; }
     if (key === 'explore') {
       const hub = getSessionsHub?.();
-      if (hub) hub.open('discover'); else toast?.('Explore needs an internet connection to this build’s project.', 5000);
+      if (hub) { wireExploreHub(hub); hub.open('discover'); } else toast?.('Explore needs an internet connection to this build’s project.', 5000);
       return;
     }
     if (key === 'profile') { document.getElementById(accountBtnId)?.click(); }
@@ -122,7 +142,7 @@ function createShellNav({ panel, getSessionsHub, toast, trips, accountBtnId = 'a
     el: root,
     destination: () => current,
     setDestination: go,
-    destroy() { stopTier?.(); tripHistory.destroy(); root.remove(); },
+    destroy() { stopTier?.(); tripHistory.destroy(); exploreHistory.destroy(); root.remove(); },
   };
 }
 
