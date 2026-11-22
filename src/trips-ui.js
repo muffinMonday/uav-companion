@@ -18,11 +18,33 @@ import { MAX_STOPS } from './maplinks.js';
 import { loadPrefs } from './prefs.js';
 import { initReorder } from './reorder-ui.js';
 import { mascotEl } from './mascot-ui.js';
+import { wireDisclosure } from './marker-actions.js';
 
 const $ = (id) => document.getElementById(id);
 /** Review 01 S10.4 (TRIP-01, the upcoming-trip hero): this module backs both the legacy side panel and the new shell's Trips destination,
  * so the hero (and the full-screen expansion wired in shell/nav.js) stays out of the production interface unless the new shell is built in. */
 const NEW_SHELL = import.meta.env.VITE_NEW_SHELL === '1';
+
+let moreUid = 0;
+/**
+ * Review 01 S10.8 (TRIP-03): moves the less-frequent card actions behind a "More" disclosure, reusing the marker host's own
+ * role=menu keyboard/outside-press wiring (`wireDisclosure`) rather than a second implementation. New-shell only (`NEW_SHELL`): the
+ * production default keeps every action visible in the row exactly as before (no test in trip/trips/tripplan/tripview/party needs
+ * to change). `buttons` are already-built, already-wired `<button>` elements (their own click handlers, including Delete's two-press
+ * confirmation, are untouched) - this only relocates them into the menu and closes it after a press.
+ */
+function attachOverflow(container, buttons) {
+  if (!buttons.length) return;
+  if (!NEW_SHELL) { container.append(...buttons); return; } // production default: every action stays visible in the row, exactly as before S10.8
+  const id = `trip-more-${++moreUid}`;
+  const more = el('button', 'btn small', 'More'); more.type = 'button';
+  more.setAttribute('aria-haspopup', 'menu'); more.setAttribute('aria-expanded', 'false'); more.setAttribute('aria-controls', id);
+  more.title = 'More trip actions';
+  const menu = el('div', 'pop-overflow'); menu.id = id; menu.hidden = true; menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', 'More trip actions');
+  const wiring = wireDisclosure({ root: container, more, menu, itemEls: () => [...menu.querySelectorAll('[role=menuitem]')] });
+  for (const b of buttons) { b.setAttribute('role', 'menuitem'); b.tabIndex = -1; b.addEventListener('click', () => wiring.close(false)); menu.append(b); }
+  container.append(more, menu);
+}
 
 export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   const store = poi.store;
@@ -97,10 +119,14 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     btn('Open', () => openDetail(t.id), 'primary');
     tripViewBtn(btn, t);
     btn('Fit map', () => { if (poi.fitTrip(t.id)) panel.closeIfPhone(); });
-    if (!isCurrent) btn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast('New markers will go into “' + t.name + '”.', 4000); });
-    btn('Edit', () => openForm(t));
     deleteOrLeave(btn, t, n);
     li.append(acts);
+    // TRIP-03: Use for new markers and Edit are the less-frequent pair, moved behind More (new-shell only; see attachOverflow above)
+    const overflow = [];
+    const obtn = (text, fn) => { const b = el('button', 'btn small', text); b.type = 'button'; b.addEventListener('click', fn); overflow.push(b); return b; };
+    if (!isCurrent) obtn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast('New markers will go into “' + t.name + '”.', 4000); });
+    obtn('Edit', () => openForm(t));
+    attachOverflow(acts, overflow);
     li.addEventListener('click', (e) => { if (!e.target.closest('button, a, input')) openDetail(t.id); });
     return li;
   }
@@ -207,10 +233,14 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     const btn = (text, fn, cls = '') => { const x = el('button', ('btn small ' + cls).trim(), text); x.type = 'button'; x.addEventListener('click', fn); acts.append(x); return x; };
     tripViewBtn(btn, t);
     btn('Fit map', () => { if (poi.fitTrip(t.id)) panel.closeIfPhone(); });
-    if (poi.getCurrentTrip() !== t.id) btn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast('New markers will go into “' + t.name + '”.', 4000); });
     const n = items.filter((i) => i.tripId === t.id).length;
     deleteOrLeave(btn, t, n);
     detail.append(acts);
+    // TRIP-03: same split as the card (above) - Use for new markers behind More (new-shell only)
+    const detailOverflow = [];
+    const dobtn = (text, fn) => { const x = el('button', 'btn small', text); x.type = 'button'; x.addEventListener('click', fn); detailOverflow.push(x); return x; };
+    if (poi.getCurrentTrip() !== t.id) dobtn('Use for new markers', () => { poi.setCurrentTrip(t.id); render(); toast('New markers will go into “' + t.name + '”.', 4000); });
+    attachOverflow(acts, detailOverflow);
     if (party) detail.append(party.section(t)); // Party Members: share the trip, invite friends, see who is in it
 
     const dated = !!tripLength(t);

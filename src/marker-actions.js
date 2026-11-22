@@ -41,26 +41,17 @@ export function panelLayout(a) {
 let uid = 0;
 
 /**
- * The host's action area: Navigate (the `navigate` element, full width), a row of secondary buttons and a "More" menu button.
- * The menu is a disclosure inside the panel (not a popover, not a dialog), so it can neither be clipped by the scrolling body nor take the map's clicks.
- * Keyboard: Enter, Space or an arrow opens it with the first item focused; Up, Down, Home, End move; Escape closes it and returns to the button (the key does not
- * reach the host, which would close the marker panel); Tab leaves and closes it. A press outside closes it. Delete keeps its confirmation: the first press only arms it.
+ * The generic "More" disclosure: one `role=menu` box wired with the marker host's keyboard/outside-press contract (Enter/Space/an
+ * arrow opens it, focused at the first or last item; Up/Down/Home/End move; Escape closes and returns focus to the trigger without
+ * reaching whatever hosts this (a marker panel, a trip card); Tab leaves and closes it; a press outside closes it). First built for
+ * the marker host's More menu (S6, MD-E); reused verbatim by `panelActions` below and by Trips' card/detail overflow (Review 01
+ * S10.8, TRIP-03) - one implementation, not two. `root`/`more`/`menu`/`itemEls` are already-built elements; this function only wires
+ * the open/close/keyboard behavior onto them, so each caller keeps building its own trigger/menu markup and its own item buttons
+ * (with whatever danger-confirm wording they already have) exactly as before.
  */
-export function panelActions({ navigate, layout }) {
-  const root = el('div', 'pop-actions'); root.setAttribute('role', 'group'); root.setAttribute('aria-label', 'Marker actions');
-  const primary = el('div', 'pop-primary'); if (navigate) primary.append(navigate);
-  const row = el('div', 'pop-secondary');
-  for (const a of layout.secondary) row.append(toolButton({ ...a, cls: ['tool-text', a.cls].filter(Boolean).join(' ') }));
-  root.append(primary, row);
-  if (!layout.overflow.length) return root;
-
-  const id = `mh-more-${++uid}`;
-  const more = toolButton({ icon: 'more', label: 'More', cls: 'tool-text pop-more', onClick: () => {} });
-  more.setAttribute('aria-haspopup', 'menu'); more.setAttribute('aria-expanded', 'false'); more.setAttribute('aria-controls', id);
-  more.title = 'More actions';
-  const menu = el('div', 'pop-overflow'); menu.id = id; menu.hidden = true; menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', 'More marker actions');
+export function wireDisclosure({ root, more, menu, itemEls }) {
   let opened = false;
-  const items = () => [...menu.querySelectorAll('[role=menuitem]')];
+  const items = () => itemEls();
   const onDown = (e) => { if (!root.isConnected) { close(false); return; } if (!root.contains(e.target)) close(false); };
   function close(restoreFocus) {
     if (!opened) return;
@@ -75,11 +66,6 @@ export function panelActions({ navigate, layout }) {
     const it = items(); const t = it[focusAt < 0 ? it.length + focusAt : focusAt]; t?.focus({ preventScroll: true });
     menu.scrollIntoView?.({ block: 'nearest' });
   }
-  for (const a of layout.overflow) {
-    const b = toolButton({ ...a, cls: ['tool-text', a.cls].filter(Boolean).join(' '), onClick: (e) => { close(false); a.onClick(e); } }); // only the confirmed press gets here
-    b.setAttribute('role', 'menuitem'); b.tabIndex = -1;
-    menu.append(b);
-  }
   more.addEventListener('click', () => { if (opened) close(true); else openMenu(0); });
   more.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); openMenu(0); } else if (e.key === 'ArrowUp') { e.preventDefault(); openMenu(-1); }
@@ -93,6 +79,33 @@ export function panelActions({ navigate, layout }) {
     else if (e.key === 'Tab') close(false);
   });
   root.addEventListener('focusout', (e) => { if (opened && e.relatedTarget && !root.contains(e.relatedTarget)) close(false); });
+  return { close, openMenu, isOpen: () => opened };
+}
+
+/**
+ * The host's action area: Navigate (the `navigate` element, full width), a row of secondary buttons and a "More" menu button.
+ * The menu is a disclosure inside the panel (not a popover, not a dialog), so it can neither be clipped by the scrolling body nor take the map's clicks.
+ * Delete keeps its confirmation: the first press only arms it.
+ */
+export function panelActions({ navigate, layout }) {
+  const root = el('div', 'pop-actions'); root.setAttribute('role', 'group'); root.setAttribute('aria-label', 'Marker actions');
+  const primary = el('div', 'pop-primary'); if (navigate) primary.append(navigate);
+  const row = el('div', 'pop-secondary');
+  for (const a of layout.secondary) row.append(toolButton({ ...a, cls: ['tool-text', a.cls].filter(Boolean).join(' ') }));
+  root.append(primary, row);
+  if (!layout.overflow.length) return root;
+
+  const id = `mh-more-${++uid}`;
+  const more = toolButton({ icon: 'more', label: 'More', cls: 'tool-text pop-more', onClick: () => {} });
+  more.setAttribute('aria-haspopup', 'menu'); more.setAttribute('aria-expanded', 'false'); more.setAttribute('aria-controls', id);
+  more.title = 'More actions';
+  const menu = el('div', 'pop-overflow'); menu.id = id; menu.hidden = true; menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', 'More marker actions');
+  const wiring = wireDisclosure({ root, more, menu, itemEls: () => [...menu.querySelectorAll('[role=menuitem]')] });
+  for (const a of layout.overflow) {
+    const b = toolButton({ ...a, cls: ['tool-text', a.cls].filter(Boolean).join(' '), onClick: (e) => { wiring.close(false); a.onClick(e); } }); // only the confirmed press gets here
+    b.setAttribute('role', 'menuitem'); b.tabIndex = -1;
+    menu.append(b);
+  }
   row.append(more);
   root.append(menu);
   return root;

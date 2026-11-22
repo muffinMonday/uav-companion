@@ -163,6 +163,21 @@ try {
     await ctx.close();
   }
 
+  // ---- S10.8: TRIP-03 - Use for new markers/Edit move behind a "More" disclosure on the trip card (new-shell only)
+  {
+    const seeded = [{ id: 't2', name: 'Overflow trip', startDate: null, endDate: null, description: '', color: '#2196f3', created: '2026-01-01T00:00:00.000Z' }];
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    await ctx.addInitScript(([tr]) => { localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr })); }, [seeded]);
+    await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
+    await p.click('#shell-nav [data-dest=trips]');
+    const card = p.locator('#trips-list .trip-card', { hasText: 'Overflow trip' });
+    ok(await card.getByRole('button', { name: 'Open' }).isVisible() && await card.getByRole('button', { name: 'Fit map' }).isVisible(), 'TRIP-03: Open and Fit map stay visible, primary actions');
+    ok(await card.getByRole('button', { name: 'Edit' }).isHidden(), 'TRIP-03: Edit starts behind the More menu, not visible');
+    await card.getByRole('button', { name: 'More' }).click();
+    ok(await card.getByRole('menuitem', { name: 'Edit' }).isVisible() && await card.getByRole('menuitem', { name: 'Use for new markers' }).isVisible(), 'TRIP-03: the overflow menu holds Edit and Use for new markers');
+    await ctx.close();
+  }
+
   // ---- free-area integration: the rail is a cover, so a saved marker's host does not sit under it (NAV-09 cross-cutting rule)
   {
     const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
