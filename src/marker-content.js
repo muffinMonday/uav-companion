@@ -21,6 +21,8 @@ export const tripLabel = (it, trip) => [dayText(dayInfo(it, trip)), stopNo(it) !
  *   tripOf, iconOf, sigOf, eyeLabel, renderDist, renderStats, addVisit, convert, remove, openPopup, selectMarker, setDetails, setWindowMode, goTo,
  * } -> { buildContent(id, startEditing, host) -> root element }, with host = { close(), closeSelf(), update() }:
  * close() and update() act on the window that is open now, closeSelf() on the window this content was built for.
+ * An adaptive host also passes guardEdit: true and may read host.edit = { leave() } while the edit form is up (Review 01 S8): Escape, a swipe down and Cancel go through
+ * leave(), which returns to the details at once or, with unsaved changes, asks before discarding them. The popup passes no guardEdit and keeps its old behaviour.
  */
 export function createMarkerContent(d) {
   const { store, cin, elev, toast, checkPoint, zoneSummary, weatherButton, showWeather, tripOf, iconOf, sigOf, eyeLabel, renderDist, renderStats, addVisit, convert, remove, openPopup, selectMarker, setDetails, setWindowMode, goTo } = d;
@@ -31,8 +33,10 @@ export function createMarkerContent(d) {
     // swipe left or right anywhere, or up or down from the top bar (with the close and collapse buttons) or the previous / next footer
     onPopupSwipe(root, { close: () => host.closeSelf(), enabled: () => !editing, vertical: host.verticalSwipe !== false, borders: (t) => !!t.closest('.pop-bar, .pop-seq, .pop-toggle, .pop-close') });
 
+    const focusEdit = () => { if (host.guardEdit) [...root.querySelectorAll('.pop-secondary .btn')].find((b) => b.textContent.trim() === 'Edit')?.focus({ preventScroll: true }); }; // host only: after the form, focus is back on Edit
     function view() {
       editing = false;
+      if (host.guardEdit) host.edit = null;
       const it = store.get(id);
       if (!it) return;
       root.replaceChildren();
@@ -287,7 +291,28 @@ export function createMarkerContent(d) {
       const acts = el('div', 'acts');
       const save = el('button', 'btn small primary', 'Save'); save.type = 'submit';
       const cancel = el('button', 'btn small', 'Cancel'); cancel.type = 'button';
-      cancel.addEventListener('click', () => setTimeout(view, 0)); // deferred for the same reason as Edit
+      // The form's own values are the only record of "unsaved": compared with what they were when the form opened. Nothing is stored before Save.
+      const snapshot = () => JSON.stringify([name.value, type.value, note.value, order.value, date.value, endDate.value, tripPick.value, subBox.checked, nearPick.value]);
+      const opened = snapshot();
+      let ask = null, lastField = name;
+      form.addEventListener('focusin', (e) => { if (!ask?.contains(e.target)) lastField = e.target; });
+      const back = () => { view(); host.update(); focusEdit(); };
+      const keepEditing = () => { ask?.remove(); ask = null; acts.hidden = false; (lastField?.isConnected ? lastField : name).focus({ preventScroll: true }); host.update(); };
+      /** Leave the form for the details: at once when nothing changed, otherwise after an explicit Discard (host only). A second request while asking means Keep editing. */
+      function leave() {
+        if (ask) { keepEditing(); return; }
+        if (snapshot() === opened) { back(); return; }
+        ask = el('div', 'edit-discard'); ask.setAttribute('role', 'group'); ask.setAttribute('aria-label', 'Unsaved changes');
+        const keep = el('button', 'btn small primary', 'Keep editing'); keep.type = 'button';
+        const drop = el('button', 'btn small danger', 'Discard changes'); drop.type = 'button';
+        keep.addEventListener('click', keepEditing); drop.addEventListener('click', () => { ask = null; back(); });
+        const btns = el('div', 'acts'); btns.append(keep, drop);
+        ask.append(el('strong', '', 'Discard your changes?'), el('small', '', 'This marker has changes that are not saved yet.'), btns);
+        acts.hidden = true; acts.after(ask); host.update();
+        keep.focus({ preventScroll: true });
+      }
+      if (host.guardEdit) host.edit = { leave };
+      cancel.addEventListener('click', () => { if (host.guardEdit) leave(); else setTimeout(view, 0); }); // deferred for the same reason as Edit (popup)
       acts.append(save, cancel);
       form.append(lab('Name', name), lab('Type', type), subLost, subLab, tripLab, nearLab, when, dayLine, trip, hint, el('small', 'form-hint', 'Trip, dates and stop are all optional. Use an end date for a stay of several days.'), lab('Note', note), acts);
       form.addEventListener('submit', (e) => {
@@ -308,6 +333,7 @@ export function createMarkerContent(d) {
         }
         view();
         host.update();
+        focusEdit();
       });
       root.append(form);
       host.update();

@@ -26,10 +26,11 @@ export const keyboardInset = (innerH, vv) => { const k = vv ? Math.round(innerH 
 /**
  * { map, panel, build(id, edit, host) -> element, getExpanded(), setExpanded(on), latlngOf(id), onOpen(id), onClose(id), returnFocusTo(id) -> element | null }
  * -> { open(id, { edit }), close(), isOpen(), id(), mode(), layout(), el }.
+ * host.guardEdit / host.edit (S8): the content sets host.edit = { leave() } while its edit form is up; Escape and a sheet drag down then call leave() instead of closing.
  * host (given to `build`) = { close(), closeSelf(), update(), verticalSwipe: false, actions: 'panel' } (actions: 'panel' = the action layout of marker-actions.js).
  */
 export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, latlngOf, onOpen, onClose, returnFocusTo }) {
-  let isOpen = false, openId = null, mode = 'side', token = 0, raf = 0, opener = null, restorePanel = null, offUnsub = null, userMoved = false, drag = null;
+  let lastKb = 0, hostApi = null, isOpen = false, openId = null, mode = 'side', token = 0, raf = 0, opener = null, restorePanel = null, offUnsub = null, userMoved = false, drag = null;
 
   const root = el('aside', 'marker-host'); root.hidden = true; root.id = 'marker-host'; root.setAttribute('role', 'region'); root.tabIndex = -1;
   const handle = el('button', 'mh-handle'); handle.type = 'button'; handle.setAttribute('aria-label', 'Change the size of the marker sheet'); handle.append(el('span', 'mh-grip'));
@@ -75,8 +76,9 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
       rs.setProperty('--mh-off', dw + right + GAP + 'px'); rs.setProperty('--mh-h', '0px');
     } else {
       const { expandedH, compactH } = sizes(), kb = keyboardInset(innerHeight, vv());
-      const h = getExpanded?.() ? expandedH : compactH;
+      const h = getExpanded?.() || (kb && hostApi?.edit) ? expandedH : compactH; // typing in the edit form with a keyboard up: the existing expanded size (still capped by the visible height), no new size (S8)
       root.style.setProperty('--mh-h', h + 'px'); root.style.setProperty('--mh-kb', kb + 'px'); root.style.setProperty('--mh-w', '0px');
+      if (kb !== lastKb) { lastKb = kb; setTimeout(() => { const f = document.activeElement; if (isOpen && f && root.contains(f) && f.matches?.('input,select,textarea')) f.scrollIntoView?.({ block: 'nearest' }); }, 60); } // the keyboard came or went: keep the field being typed in visible (S8)
       rs.setProperty('--mh-off', h + kb + GAP + 'px');
     }
     root.dataset.expanded = String(!!getExpanded?.());
@@ -108,13 +110,19 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
     const was = !!getExpanded?.();
     if (!cancelled && dy <= -DRAG_STEP && !was) setExpanded?.(true);
     else if (!cancelled && dy >= DRAG_STEP && was) setExpanded?.(false);
-    else if (!cancelled && dy >= DRAG_STEP && !was) { close(); return; }
+    else if (!cancelled && dy >= DRAG_STEP && !was) { if (hostApi?.edit) { hostApi.edit.leave(); layout(); return; } close(); return; } // a form asks first (S8)
     else layout(); // not far enough: back to the size it had
   };
   root.addEventListener('pointerup', (e) => endDrag(e, false));
   root.addEventListener('pointercancel', (e) => endDrag(e, true));
 
   // ---- the lifecycle: one open marker panel; opening another replaces it; the rest close it
+  /** The heading is the host's accessible name. The content redraws its heading after Save or Cancel (S8), so the name is attached again on every update. */
+  function tagTitle() {
+    const h = body.querySelector('h3');
+    if (h) { h.id = 'mh-title'; h.tabIndex = -1; root.setAttribute('aria-labelledby', 'mh-title'); root.removeAttribute('aria-label'); } else { root.removeAttribute('aria-labelledby'); root.setAttribute('aria-label', 'Marker'); }
+    return h;
+  }
   function open(id, { edit = false } = {}) {
     const mine = ++token;
     if (!isOpen) {
@@ -128,11 +136,10 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
       offUnsub = onOverlay((owner, phase) => { if (owner === 'explorer' && phase === 'open') close({ keepFocus: true }); });
     }
     openId = id; userMoved = false; // an explicit selection starts from the person's hands off the map
-    const host = { close: () => close(), closeSelf: () => { if (mine === token) close(); }, update: () => schedule(), verticalSwipe: false, actions: 'panel' };
+    const host = hostApi = { close: () => close(), closeSelf: () => { if (mine === token) close(); }, update: () => { tagTitle(); schedule(); }, verticalSwipe: false, actions: 'panel', guardEdit: true, edit: null };
     body.replaceChildren(build(id, edit, host));
     root.hidden = false;
-    const h = body.querySelector('h3');
-    if (h) { h.id = 'mh-title'; h.tabIndex = -1; root.setAttribute('aria-labelledby', 'mh-title'); } else { root.removeAttribute('aria-labelledby'); root.setAttribute('aria-label', 'Marker'); }
+    const h = tagTitle();
     place();
     recentre({ animate: true });
     onOpen?.(id);
@@ -144,7 +151,7 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
   function close({ keepFocus = false } = {}) {
     if (!isOpen) return;
     const id = openId;
-    isOpen = false; openId = null; token++; cancelAnimationFrame(raf); raf = 0; drag = null;
+    hostApi = null; isOpen = false; openId = null; token++; cancelAnimationFrame(raf); raf = 0; drag = null;
     root.classList.remove('mh-dragging'); root.hidden = true; body.replaceChildren(); root.removeAttribute('aria-labelledby');
     delete document.body.dataset.mh; for (const v of ['--mh-off', '--mh-h']) document.documentElement.style.removeProperty(v);
     removeEventListener('resize', schedule); removeEventListener('orientationchange', schedule); map.off('resize', schedule);
@@ -160,7 +167,7 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
   }
 
   // Escape closes the panel unless a dialog is open (the dialog takes the key)
-  function onKey(e) { if (e.key === 'Escape' && isOpen && !e.defaultPrevented && !document.querySelector('dialog[open]')) { e.preventDefault(); close(); } }
+  function onKey(e) { if (e.key === 'Escape' && isOpen && !e.defaultPrevented && !document.querySelector('dialog[open]')) { e.preventDefault(); if (hostApi?.edit) hostApi.edit.leave(); else close(); } } // in the edit form Escape goes back to the details (S8)
 
   return { open, close, isOpen: () => isOpen, id: () => openId, mode: () => mode, layout, el: root };
 }

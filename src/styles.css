@@ -1575,6 +1575,13 @@ button.ses-attendee{cursor:pointer}
 .marker-host .btn.tool.tool-text.armed{border-color:var(--danger-solid);background:var(--danger-solid);color:var(--on-danger)}
 .marker-host .pop-overflow{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2)}
 .marker-host .pop-overflow[hidden]{display:none}
+/* S8: the edit form in the host. Save and Cancel stay at the bottom of the scrolling body (short screens, landscape, keyboard); the discard question takes their place */
+.marker-host .pop form .acts,.marker-host .pop form .edit-discard{position:sticky;bottom:0;margin:0 -2px;padding:10px 2px calc(10px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--surface) 96%,transparent);border-top:1px solid var(--line);z-index:1}
+.marker-host .pop form .acts[hidden]{display:none}
+.marker-host .pop form .edit-discard{display:grid;gap:6px}
+.marker-host .mh-body{scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))} /* a field scrolled into view stops above the sticky Save / Cancel row */
+.marker-host .pop form .edit-discard .acts{position:static;margin:4px 0 0;padding:0;border:0;background:none}
+@media (pointer:coarse){.marker-host .pop form .acts .btn,.marker-host .pop form .edit-discard .btn{min-height:44px}}
 .marker-host .pop-overflow .btn.tool{width:100%;justify-content:flex-start}
 .marker-host .pop-overflow .btn.tool.danger:not(.armed){color:var(--danger)}
 @media (hover:hover){.marker-host .pop-secondary .btn.tool:hover,.marker-host .pop-overflow .btn.tool:hover{background:var(--accent-soft);color:var(--fg)}}
