@@ -108,6 +108,20 @@ try {
   ok(await p.getAttribute('#shell-nav [data-dest=map]', 'aria-current') === 'true' && await p.getAttribute('#shell-nav [data-dest=explore]', 'aria-current') === 'false', 'S10.5: closing the hub by its own means reverts the shell nav to Map (the same reconciliation Trips already had)');
 
   await ctx.close();
+
+  // ---- S10.9 (outer NAV-07): the hub itself, with no detail open, also gets one history entry - Back closes it back to Map, the same
+  // unified fix now given to Trips and Profile.
+  {
+    const { ctx, p } = await open({ width: 1400, height: 900 }, false);
+    await p.waitForFunction(() => document.getElementById('shell-nav') != null, { timeout: 10000 });
+    await p.click('#shell-nav [data-dest=explore]');
+    await p.waitForSelector('#ses-hub[open]', { timeout: 10000 });
+    await p.goBack();
+    await p.waitForTimeout(400);
+    ok((await p.locator('#ses-hub[open]').count()) === 0, 'S10.9 (outer NAV-07): Back closes the hub back to Map with no detail open');
+    ok(await p.getAttribute('#shell-nav [data-dest=map]', 'aria-current') === 'true', 'S10.9: Map is current again after Back');
+    await ctx.close();
+  }
 } finally {
   await b.close();
   vite.kill();

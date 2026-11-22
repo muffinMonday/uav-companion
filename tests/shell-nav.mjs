@@ -142,6 +142,19 @@ try {
     await ctx.close();
   }
 
+  // ---- S10.9 (outer NAV-07): the panel itself, showing Trips with no detail open, also gets one history entry - Back closes it back to
+  // Map, from any entry point (the shell's own Trips button here), not only the inner trip-detail level S10.4 already gave it.
+  {
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    await p.click('#shell-nav [data-dest=trips]');
+    ok(await p.isVisible('#panel') && await p.isVisible('#pane-trips'), 'Trips opens the panel, as before');
+    await p.goBack();
+    await p.waitForTimeout(300);
+    ok(!(await p.isVisible('#panel')), 'S10.9 (outer NAV-07): Back closes the panel back to Map with no detail open');
+    ok((await p.getAttribute('#shell-nav [data-dest=map]', 'aria-current')) === 'true', 'S10.9: Map is current again after Back');
+    await ctx.close();
+  }
+
   // ---- S10.9 (NAV-04 row 2): the legacy dock rail and the panel's own tab row are hidden once the new shell is active - every control
   // they reached stays reachable (through a shell destination or a quick action), but the duplicate chrome itself is gone
   {

@@ -103,6 +103,23 @@ try {
     await ctx.close();
   }
 
+  // ---- S10.9 (outer NAV-07): the browser/gesture Back button closes the popover back to Map, the same unified fix now given to Trips
+  // and Explore - and the popover no longer floats directly over the dashboard's own "Welcome back"/sign-in card (found during S10.9
+  // visual verification: the panel already steps the dashboard to its peek strip when it opens, but the account popover never did).
+  {
+    const { ctx, p } = await open({ uid: A, email: 'a@example.test' });
+    await p.waitForFunction(() => document.getElementById('shell-nav') != null, { timeout: 10000 });
+    ok(await p.evaluate(() => document.body.dataset.dash) === 'expanded', 'baseline: the dashboard starts expanded (signed-in, no prior fold)');
+    await p.click('#shell-nav [data-dest=profile]');
+    await p.waitForSelector('#account-pop:not([hidden])', { timeout: 10000 });
+    ok(await p.evaluate(() => document.body.dataset.dash) === 'peek', 'S10.9: opening Profile also folds the dashboard to its peek strip, the same step-aside Trips/Settings/Activity already get from the panel - no more stacked "Welcome back" card under the popover');
+    await p.goBack();
+    await p.waitForTimeout(400);
+    ok(await p.locator('#account-pop:not([hidden])').count() === 0, 'S10.9 (outer NAV-07): the browser Back button closes the popover');
+    ok(await p.getAttribute('#shell-nav [data-dest=map]', 'aria-current') === 'true', 'S10.9: Back on Profile returns to Map as the current destination');
+    await ctx.close();
+  }
+
   // ---- AUTH-03: "Skip, just show me the map" opens the Map destination directly under the new shell, not the legacy dashboard. Reopened
   // through the always-available "Quick setup" entry (same dialog, same skip() code path a true first visit uses) so this does not depend
   // on reproducing a genuine first-run detection race in a headless harness.

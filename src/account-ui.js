@@ -24,6 +24,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   let profile = null, profileFor = null, loading = false, trigger = null;
   const openState = {}; // which sections the person left open, kept between redraws
   const closeListeners = new Set(); // Review 01 S10.6 (NAV-07): fired whenever hide() runs; see onClose below
+  const showListeners = new Set(); // Review 01 S10.9 (outer NAV-07): fired whenever show() runs, from any entry point; see onShow below
   const progression = getProgression(handle.adapter.client); // the one shared instance (also feeds other people's cards, see friends-ui.js)
   const steam = createSteamCard({ client: handle.adapter.client, onChange: () => { progression.forget(); if (!pop.hidden) render(); } });
   const steamSlot = el('div'); steam.mount(steamSlot); // kept between redraws so an open form is not lost
@@ -191,6 +192,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     for (const b of [headBtn, dockBtn]) b.setAttribute('aria-expanded', String(b === trigger));
     (coarse() ? pop : pop.querySelector('input, button:not(.account-close)') || pop).focus?.(); // on a touch screen the sign-in field is not focused: that would raise the keyboard
     loadProfile({ force: true });
+    for (const fn of showListeners) fn();
   }
   function hide(focus = true) {
     if (pop.hidden) return;
@@ -223,5 +225,9 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     // own means (its ✕, Escape, an outside tap, a swipe-down). Harmless if never called.
     isOpen: () => !pop.hidden,
     onClose(fn) { closeListeners.add(fn); return () => closeListeners.delete(fn); },
+    // Review 01 S10.9 (outer NAV-07): fired on every show(), from any entry point (the panel header button, the rail button, an
+    // automatic open after a failed sign-in return) - lets shell/nav.js give the popover one history entry regardless of how it opened.
+    onShow(fn) { showListeners.add(fn); return () => showListeners.delete(fn); },
+    close: () => hide(false),
   };
 }

@@ -40,6 +40,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   let opener = null; // the element that had focus when the hub was opened
   const listeners = new Set();
   const viewListeners = new Set(); // Review 01 S10.5 (NAV-07): fn(stacked: boolean), fired on every paint() while the hub is open; see onViewChange below
+  const showListeners = new Set(); // Review 01 S10.9 (outer NAV-07): fired whenever the dialog opens, from any entry point; see onShow below
   const scroll = new Map();
   // automatic attendance (off unless the database switch, the person's consent and the local switch are all on): one foreground sampler, see session-arrival.js
   const arrival = createArrival({ api, candidates: () => mine.sessions, signedIn, pref: () => getPrivacy().autoSessionAttendance === true, setPref: (v) => setPrivacy({ autoSessionAttendance: v }), toast });
@@ -588,7 +589,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (exploring) endExplore();
     section = sec === 'detail' ? 'mine' : sec; view = 'list'; detail = null; message = ''; editing = null; reporting = null;
     if (opts.near) pub = { ...pub, near: String(opts.near) };
-    if (!dlg.open) { opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : opener; dlg.showModal(); fit(); }
+    if (!dlg.open) { opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : opener; dlg.showModal(); fit(); for (const fn of showListeners) fn(); }
     paint();
     if (signedIn()) loadMine({ quiet: mine.status === 'ready' }).then(() => { if (opts.id) { const s = mine.sessions.find((x) => x.id === opts.id) ?? opts.fallback; if (s) openDetail(s); } });
     else if (opts.id && opts.fallback) openDetail(opts.fallback);
@@ -633,6 +634,11 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     isOpen: () => dlg.open,
     onClose(fn) { dlg.addEventListener('close', fn); return () => dlg.removeEventListener('close', fn); },
     onViewChange(fn) { viewListeners.add(fn); return () => viewListeners.delete(fn); },
+    // Review 01 S10.9 (outer NAV-07): fired on every open(), from any entry point (the map button, the dashboard card, the Friends tab) -
+    // lets shell/nav.js give the hub one history entry regardless of how it opened. `close` exposes exactly the same dlg.close() its own
+    // ✕ button and backdrop click already call - nothing new is invented.
+    onShow(fn) { showListeners.add(fn); return () => showListeners.delete(fn); },
+    close: () => dlg.close(),
     back,
   };
 }

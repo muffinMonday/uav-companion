@@ -109,8 +109,17 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
 
   // NAV-07/TRIP-02: a trip's full-screen detail gets one history entry (Back returns to the trip list instead of leaving the app),
   // and expands the phone sheet to nearly full height while it is open (a no-op above the phone breakpoint, where "tall" has no CSS effect).
+  // S10.9 (outer NAV-07, completing the item every prior S10.x entry deferred): the panel itself, showing the Trips tab, also gets one
+  // history entry - from any entry point, not only the shell's own Trips button - so Back on the list closes the panel back to Map. Both
+  // levels share one stack (not two), so they nest in the correct order regardless of which one was opened first: pushed outer-then-inner,
+  // a first Back pops the detail, a second Back then closes the panel.
   const tripHistory = createHistoryStack();
-  let tripEntry = null;
+  let tripEntry = null, tripOuterEntry = null;
+  function syncTripOuter() {
+    const showing = panel.isOpen() && panel.getTab() === 'trips';
+    if (showing && !tripOuterEntry) tripOuterEntry = tripHistory.push(() => panel.close());
+    else if (!showing && tripOuterEntry) { tripOuterEntry.pop(); tripOuterEntry = null; }
+  }
   trips?.onDetailChange((open) => {
     panel.setExpanded?.(open);
     if (open && !tripEntry) tripEntry = tripHistory.push(() => trips.closeDetail());
@@ -122,13 +131,18 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
   // list), same granularity as Trips above, and (b) the shell's current destination reverting to Map when the hub closes by its own means
   // (✕, Escape, an outside tap) - the same reconciliation `panel.onChange` already does for Trips. Wired lazily, once, the first time the
   // hub actually exists (it loads after this module does), exactly like `getSessionsHub` is already called lazily below.
+  // S10.9 (outer NAV-07): the hub dialog itself also gets one history entry on `onShow` - fired from any entry point (the map button, the
+  // dashboard card, the Friends tab), not only the shell's own Explore button - so Back on the Discover/My sessions/Invitations list closes
+  // the hub back to Map. One shared stack with the inner (detail) level, same nesting reasoning as Trips above.
   const exploreHistory = createHistoryStack();
-  let exploreEntry = null, hubWired = false;
+  let exploreEntry = null, exploreOuterEntry = null, hubWired = false;
   function wireExploreHub(hub) {
     if (hubWired) return;
     hubWired = true;
+    hub.onShow(() => { if (!exploreOuterEntry) exploreOuterEntry = exploreHistory.push(() => hub.close()); });
     hub.onClose(() => {
       if (exploreEntry) { exploreEntry.pop(); exploreEntry = null; } // the hub can close while a detail/form was showing (no paint() runs to report it closed)
+      if (exploreOuterEntry) { exploreOuterEntry.pop(); exploreOuterEntry = null; }
       if (current === 'explore') go('map');
     });
     hub.onViewChange((open) => {
@@ -138,16 +152,28 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
   }
 
   // S10.6/PROF-01..06: the account popover (`account-ui.js`) already holds everything the Profile destination needs - progression (rank/
-  // XP/achievements), friends, Steam (PROF-06/C-35) and account controls - unmodified. Only the nav-state reconciliation is new here, the
-  // same pattern Trips and Explore already have: the popover can close by its own means (✕, Escape, an outside tap, a swipe-down), so
-  // reflect that as "Map" being current again. No NAV-07 history entry: the popover, like the hub, is reachable from several pre-existing
-  // entry points (the panel header button, the rail button, an automatic open after a failed sign-in return), so the *outer* Back-closes-it
-  // level is deferred for the same reason it is for Trips and Explore - only wiring it for Profile alone would be an inconsistent partial fix.
-  let accountWired = false;
+  // XP/achievements), friends, Steam (PROF-06/C-35) and account controls - unmodified. The nav-state reconciliation is the same pattern
+  // Trips and Explore already have: the popover can close by its own means (✕, Escape, an outside tap, a swipe-down), so reflect that as
+  // "Map" being current again.
+  // S10.9 (outer NAV-07, completing the item deferred since S10.6): the popover also gets one history entry on `onShow` - fired from any
+  // entry point (the panel header button, the rail button, an automatic open after a failed sign-in return), not only the shell's own
+  // Profile button - so Back closes it back to Map, the same unified fix now given to Trips and Explore.
+  const profileHistory = createHistoryStack();
+  let profileEntry = null, accountWired = false;
   function wireAccount(acct) {
     if (accountWired) return;
     accountWired = true;
-    acct.onClose(() => { if (current === 'profile') go('map'); });
+    // Found during S10.9 visual verification: unlike Trips/Settings/Activity (the panel, which already folds the dashboard to its peek
+    // strip on a phone via panel.onOpen) and Explore (a native <dialog>, already covering the page on its own), the account popover is a
+    // plain toggled element with no dashboard-stepping-aside of its own - on both phone and desktop it was floating directly over the
+    // dashboard's own full "Welcome back"/sign-in card, two cards fighting for the same area. `dash.fold()` is the same existing peek-strip
+    // call the panel already makes; not gated to phone since, unlike the side panel, this popover's position overlaps the dashboard on a
+    // computer too (it is centred near the legacy header button, not docked clear of it).
+    acct.onShow(() => { getDash?.()?.fold?.(); if (!profileEntry) profileEntry = profileHistory.push(() => acct.close()); });
+    acct.onClose(() => {
+      if (profileEntry) { profileEntry.pop(); profileEntry = null; }
+      if (current === 'profile') go('map');
+    });
   }
 
   const bellButton = globalActions.find((b) => b.dataset.action === 'activity');
@@ -191,7 +217,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
   // The panel can close by other means (Escape, a map click, swipe-to-dismiss); reflect that as "Map" being current again,
   // but only when it was Trips that closed (Layers/Saved Places already leave current as 'map') - Explore/Profile use their own,
   // separate surfaces and are not affected by the panel.
-  panel.onChange(() => { if (current === 'trips' && !panel.isOpen()) go('map'); paint(); });
+  panel.onChange(() => { if (current === 'trips' && !panel.isOpen()) go('map'); paint(); syncTripOuter(); });
 
   paint(); // establish the initial state (Map current, its actions visible) without calling go('map') and closing a panel the real app may have opened by default
 
@@ -207,7 +233,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
     el: root,
     destination: () => current,
     setDestination: go,
-    destroy() { stopTier?.(); tripHistory.destroy(); exploreHistory.destroy(); root.remove(); delete document.body.dataset.shell; },
+    destroy() { stopTier?.(); tripHistory.destroy(); exploreHistory.destroy(); profileHistory.destroy(); root.remove(); delete document.body.dataset.shell; },
   };
 }
 
