@@ -76,6 +76,9 @@ function buildNav() {
     return b;
   });
   document.body.append(root);
+  // Review 01 S10.9 (NAV-04 row 2): marks the legacy dock/panel-tabs as superseded so styles.css can hide that now-duplicate chrome
+  // while the new shell is active, without this file (or panel.js) knowing anything about the other's DOM.
+  document.body.dataset.shell = 'new';
   return { root, buttons, mapActions, globalActions };
 }
 
@@ -204,7 +207,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
     el: root,
     destination: () => current,
     setDestination: go,
-    destroy() { stopTier?.(); tripHistory.destroy(); exploreHistory.destroy(); root.remove(); },
+    destroy() { stopTier?.(); tripHistory.destroy(); exploreHistory.destroy(); root.remove(); delete document.body.dataset.shell; },
   };
 }
 

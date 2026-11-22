@@ -1624,6 +1624,13 @@ body[data-mh=bottom] .leaflet-bottom{margin-bottom:var(--mh-off)}
 .shell-nav[data-short="true"] .shell-nav-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* short/landscape viewports collapse to icon-only too */
 .shell-nav-global{position:relative} /* Settings/Activity (S10.7): app-wide, always shown, so their badge needs an anchor */
 
+/* S10.9 (NAV-04 row 2, NAV integration): the legacy dock rail and the panel's own tab row are superseded by the new shell's nav and its
+   Settings/Activity adapters - every control they reached is still reachable (through a shell destination, a quick action, or Settings),
+   so this only removes the now-duplicate chrome, never a control. The privacy/close icon buttons beside the tab row are untouched: they
+   stay reachable in both the legacy and the new shell. Flag-off builds never set body[data-shell], so this never applies there. */
+body[data-shell="new"] #dock{display:none}
+body[data-shell="new"] .sidepanel .tabs{display:none}
+
 /* Settings page (S10.7, SET-01..08): grouped adapter rows, each a real link onto the existing control surface it names */
 .set-row{display:flex;align-items:center;gap:var(--sp-3);justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
 .set-row:last-child{border-bottom:0}

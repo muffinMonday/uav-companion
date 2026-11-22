@@ -142,6 +142,22 @@ try {
     await ctx.close();
   }
 
+  // ---- S10.9 (NAV-04 row 2): the legacy dock rail and the panel's own tab row are hidden once the new shell is active - every control
+  // they reached stays reachable (through a shell destination or a quick action), but the duplicate chrome itself is gone
+  {
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    ok(await p.isHidden('#dock'), 'the legacy dock rail is hidden while the new shell is active');
+    ok(await p.isHidden('.sidepanel .tabs'), 'the panel\'s own tab row is hidden too (Trips/Map Configs/POI are reached through the shell now)');
+    ok(await p.locator('#privacy-btn').isVisible() && await p.locator('#panel-close').isVisible(), 'the privacy and close icon buttons beside the tab row are untouched, not part of the removed chrome');
+    await ctx.close();
+  }
+  {
+    const { ctx, p } = await openApp('http://127.0.0.1:5193/'); // flag off
+    ok(await p.isVisible('#dock') || (await p.locator('#dock').count()) === 1, 'flag off: the legacy dock element still exists in the production default (hidden by panel state only, never by the shell)');
+    ok(!(await p.evaluate(() => document.body.dataset.shell)), 'flag off: body never gets the new-shell marker, so the S10.9 CSS rule can never apply there');
+    await ctx.close();
+  }
+
   // ---- S10.7: Settings (SET-01..08) and the Activity bell (ACT-01..04) are global - always visible, on every destination, as adapters onto real, unmodified surfaces
   {
     const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
@@ -181,7 +197,7 @@ try {
   // ---- free-area integration: the rail is a cover, so a saved marker's host does not sit under it (NAV-09 cross-cutting rule)
   {
     const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
-    await p.click('#tab-poi').catch(() => {});
+    await p.click('#shell-nav [data-action=places]').catch(() => {}); // S10.9: the legacy tab row is hidden once the new shell is active - use the Saved Places quick action instead
     await pickType(p, 'other');
     await p.click('#poi-place');
     await p.mouse.click(700, 450);
