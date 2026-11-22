@@ -47,7 +47,14 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
   root.addEventListener('focusin', (e) => { if (mode === 'bottom' && e.target.matches?.('input,select,textarea')) setTimeout(() => e.target.scrollIntoView?.({ block: 'nearest' }), 60); });
 
   // ---- the free part of the map: the container minus this host, the open side panel and an open explorer dock
-  const area = createFreeArea(map, () => [root, document.getElementById('panel'), document.getElementById('ses-explorer')]);
+  // In side mode the host stands beside the open side panel, not at the map's edge: the two together are one bar on the right, so the free area is what is left of it.
+  // (Cutting the host alone would take everything up to its right edge, the part beside the panel included, and put the pin under the panel.)
+  const bar = { hidden: false, getBoundingClientRect() {
+    const rs = [root, panelShown() ? panelEl() : null].filter(Boolean).map((e) => e.getBoundingClientRect());
+    const l = Math.min(...rs.map((r) => r.left)), r = Math.max(...rs.map((q) => q.right)), tp = Math.min(...rs.map((q) => q.top)), b = Math.max(...rs.map((q) => q.bottom));
+    return { left: l, right: r, top: tp, bottom: b, width: r - l, height: b - tp };
+  } };
+  const area = createFreeArea(map, () => [mode === 'side' ? bar : root, mode === 'side' ? null : document.getElementById('panel'), document.getElementById('ses-explorer')]);
   function recentre({ animate = true } = {}) {
     const ll = openId != null ? latlngOf?.(openId) : null;
     if (!ll) return;
@@ -58,6 +65,15 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
   const touched = () => { userMoved = true; }; // the visitor moved the map by hand: leave it until the next explicit selection
 
   const panelEl = () => document.getElementById('panel');
+  // The person opened the side panel while a marker is open. A bottom sheet and the panel (a sheet too on a phone) take turns; a side host keeps the panel beside it when the map keeps
+  // MAP_MIN px, otherwise the panel takes over and the marker panel closes (it used to be left on top of the panel, or the panel was folded away again at once).
+  panel?.onOpen?.(() => {
+    if (!isOpen) return;
+    if (mode === 'bottom') { close({ keepFocus: true }); return; }
+    const c = map.getContainer().getBoundingClientRect(), pw = (panelEl()?.offsetWidth || 0) + PANEL_GAP;
+    if (c.width - hostWidth(innerWidth) - pw - GAP < MAP_MIN || c.height < MAP_MIN_H) { restorePanel = null; close({ keepFocus: true }); return; }
+    schedule();
+  });
   const panelShown = () => { const p = panelEl(); return !!p && !p.hidden && !!panel?.isOpen?.(); };
   const vv = () => window.visualViewport;
   const sizes = () => {
@@ -80,10 +96,12 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
       }
       root.style.setProperty('--mh-w', dw + 'px'); root.style.setProperty('--mh-right', right + 'px'); root.style.setProperty('--mh-kb', '0px');
       rs.setProperty('--mh-off', dw + right + GAP + 'px'); rs.setProperty('--mh-h', '0px');
+      document.body.style.setProperty('--panel-w', dw + right + GAP + 'px'); // the dashboard, its strip and tab centre in the map beside the host and the panel (they used to centre beside the panel alone)
     } else {
       const { expandedH, compactH } = sizes(), kb = keyboardInset(innerHeight, vv());
       const h = getExpanded?.() || (kb && hostApi?.edit) ? expandedH : compactH; // typing in the edit form with a keyboard up: the existing expanded size (still capped by the visible height), no new size (S8)
       root.style.setProperty('--mh-h', h + 'px'); root.style.setProperty('--mh-kb', kb + 'px'); root.style.setProperty('--mh-w', '0px');
+      document.body.style.removeProperty('--panel-w');
       if (kb !== lastKb) { lastKb = kb; setTimeout(() => { const f = document.activeElement; if (isOpen && f && root.contains(f) && f.matches?.('input,select,textarea')) f.scrollIntoView?.({ block: 'nearest' }); }, 60); } // the keyboard came or went: keep the field being typed in visible (S8)
       rs.setProperty('--mh-off', h + kb + GAP + 'px');
     }
@@ -160,6 +178,7 @@ export function createMarkerHost({ map, panel, build, getExpanded, setExpanded, 
     hostApi = null; isOpen = false; openId = null; token++; cancelAnimationFrame(raf); raf = 0; drag = null;
     root.classList.remove('mh-dragging'); root.hidden = true; body.replaceChildren(); root.removeAttribute('aria-labelledby');
     delete document.body.dataset.mh; for (const v of ['--mh-off', '--mh-h']) document.documentElement.style.removeProperty(v);
+    document.body.style.removeProperty('--panel-w');
     removeEventListener('resize', schedule); removeEventListener('orientationchange', schedule); map.off('resize', schedule);
     vv()?.removeEventListener('resize', schedule); vv()?.removeEventListener('scroll', schedule);
     const c = map.getContainer(); for (const ev of ['pointerdown', 'wheel', 'touchstart', 'keydown']) c.removeEventListener(ev, touched, { capture: true });

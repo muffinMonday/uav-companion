@@ -1,5 +1,5 @@
 // Colour theme in the browser: System follows the device live, Light / Dark override it, the choice survives a reload and is set before first paint.
-import { chromium, CHANNEL } from './lib.mjs';
+import { chromium, CHANNEL, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const b = await chromium.launch({ channel: CHANNEL });
 const errs = [];
@@ -58,12 +58,12 @@ ok((await theme(p)) === 'light', 'a choice made in another tab is followed');
   ok((await q.evaluate(() => document.querySelectorAll('.base-tiles').length)) === 1, 'exactly one layer carries .base-tiles (the zones are not filtered)');
   ok((await filt('.base-tiles')) === 'none', 'light: no filter on the base tiles');
   await q.click('.leaflet-marker-icon.poi-pin, .poi-pin'); await q.waitForTimeout(800);
-  const before = await q.evaluate(() => ({ pop: !!document.querySelector('.leaflet-popup'), z: document.querySelector('.leaflet-control-scale-line')?.textContent, m: document.querySelectorAll('.poi-pin').length }));
+  const before = await q.evaluate((mw) => ({ pop: !!document.querySelector(mw), z: document.querySelector('.leaflet-control-scale-line')?.textContent, m: document.querySelectorAll('.poi-pin').length }), MW);
   const n0 = tiles.length;
   await q.check('#theme-radios input[value=dark]'); await q.waitForTimeout(800);
   ok((await filt('.base-tiles')).includes('invert'), 'dark: the base tiles are inverted by a filter');
   ok(tiles.length === n0, 'switching to dark requests no new tiles');
-  const after = await q.evaluate(() => ({ pop: !!document.querySelector('.leaflet-popup'), z: document.querySelector('.leaflet-control-scale-line')?.textContent, m: document.querySelectorAll('.poi-pin').length }));
+  const after = await q.evaluate((mw) => ({ pop: !!document.querySelector(mw), z: document.querySelector('.leaflet-control-scale-line')?.textContent, m: document.querySelectorAll('.poi-pin').length }), MW);
   ok(JSON.stringify(before) === JSON.stringify(after) && before.m >= 1 && before.pop, 'markers, the open window and the scale are unchanged by the switch');
   await q.selectOption('#base', 'topo'); await q.waitForTimeout(1500);
   ok((await filt('.base-tiles')).includes('invert') && (await q.evaluate(() => document.querySelectorAll('.base-tiles').length)) === 1, 'changing the basemap style in dark keeps the filter, on one layer');

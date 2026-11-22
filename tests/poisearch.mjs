@@ -1,6 +1,6 @@
 // Saved-places search: finds every marker whatever is folded or hidden on the map, shows trip and day context, works with the filters,
 // never changes a record or a fold, and the folds come back when it is cleared.
-import { OUT as SP, CHANNEL, chromium, LATEST_SEEN } from './lib.mjs';
+import { OUT as SP, CHANNEL, chromium, LATEST_SEEN, HOST, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 
@@ -109,8 +109,8 @@ await typeIn(p, '');
 ok(JSON.stringify(await stored(p)) === before, 'no saved marker was changed by any of it');
 ok(!/only a stay|crane|tower/i.test(await p.evaluate(() => localStorage.getItem('uavzones.v1.prefs') ?? '')), 'the query is not stored');
 // result click opens the marker
-await typeIn(p, 'tower'); await p.click('#poi-list li[data-id="tower"] .poi-item'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
-ok((await p.textContent('.leaflet-popup h3')).includes('Tower'), 'a result opens its marker');
+await typeIn(p, 'tower'); await p.click('#poi-list li[data-id="tower"] .poi-item'); await p.waitForSelector(MW + ' h3', { timeout: 8000 });
+ok((await p.textContent(MW + ' h3')).includes('Tower'), 'a result opens its marker');
 await p.screenshot({ path: SP + '/poisearch-desktop.png' });
 await p.close(); await ctx.close();
 

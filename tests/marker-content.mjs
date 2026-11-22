@@ -41,7 +41,7 @@ async function open(id, width, edit) {
   }, [items, trips, { lat: it.lat, lon: it.lon, zoom: 14 }]);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
-  await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  await p.goto('http://localhost:5173/?markerhost=0', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
   if (await p.evaluate(() => !document.getElementById('panel').hidden)) await p.click('#panel-close');
   await p.waitForTimeout(300);
   if (process.env.DBG) console.log(JSON.stringify(await p.evaluate(() => [...document.querySelectorAll('.poi-pin')].map((e) => [e.getAttribute('title'), Math.round(e.getBoundingClientRect().x)]))), await p.evaluate(() => localStorage.getItem('uavzones.v1.prefs')));

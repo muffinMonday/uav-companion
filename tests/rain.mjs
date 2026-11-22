@@ -1,5 +1,5 @@
 // Rain chance in the marker window: peak and the hour strip, the fallbacks, and that nothing shows when weather is off.
-import { OUT as SP, CHANNEL } from './lib.mjs';
+import { OUT as SP, CHANNEL, HOST, MW } from './lib.mjs';
 import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const OFFSET = 28800; // mock location is UTC+8
@@ -67,7 +67,7 @@ const rain = (p) => p.evaluate(() => {
     head: r.querySelector('.rain-head').textContent,
     cols: [...r.querySelectorAll('.rain-col')].map((c) => ({ v: c.querySelector('.rain-v').textContent, t: c.querySelector('.rain-t').textContent, h: c.querySelector('.rain-bar').getBoundingClientRect().height })),
     aria: r.querySelector('.rain-strip')?.getAttribute('aria-label') || null,
-    width: r.getBoundingClientRect().width, pop: document.querySelector('.leaflet-popup-content').getBoundingClientRect().width,
+    width: r.getBoundingClientRect().width, pop: (document.querySelector('.leaflet-popup-content') || document.querySelector('#marker-host .mh-body')).getBoundingClientRect().width,
   };
 });
 
@@ -85,7 +85,7 @@ const hs = r.cols.map((c) => c.h);
 ok(hs[2] > hs[1] && hs[1] > hs[3] && hs[3] > hs[0] && hs[0] > hs[4] && hs[2] > 20, 'bar heights follow the chance (70 > 40 > 30 > 10 > 0): ' + hs.map((x) => Math.round(x)));
 ok(/Rain chance by hour/.test(r.aria) && r.aria.includes(hh(2) + ' 70%'), 'the strip has a text equivalent for screen readers');
 ok(r.width <= r.pop + 1, 'the rain block fits inside the window');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click());
 await p.waitForTimeout(400);
 
 // ---- only millimetres
@@ -93,7 +93,7 @@ await openMarker(p, 'Millimetres');
 r = await rain(p);
 ok(r && /Rain expected: 1\.2 mm/.test(r.head) && /no chance given/.test(r.head), 'a place with only expected rain: "1.2 mm", noting that no chance was given: ' + (r && r.head));
 ok(r.cols.map((c) => c.v).join() === '0.0,0.3,0.9,0.0,0.0', 'the bars show millimetres per hour: ' + r.cols.map((c) => c.v));
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click());
 await p.waitForTimeout(400);
 
 // ---- nothing from the model
@@ -123,7 +123,7 @@ r = await rain(p);
 const over = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
 ok(r && r.width <= r.pop + 1 && !over, 'at 360 px the rain block fits and the page does not scroll sideways');
 await p.screenshot({ path: `${SP}/rain-phone.png` });
-await p.evaluate(() => { document.querySelector('.leaflet-popup-content').scrollTop = 9999; }); await p.waitForTimeout(200);
+await p.evaluate(() => { (document.querySelector('.leaflet-popup-content') || document.querySelector('#marker-host .mh-body')).scrollTop = 9999; }); await p.waitForTimeout(200);
 await p.screenshot({ path: `${SP}/rain-phone2.png` });
 await S.ctx.close();
 

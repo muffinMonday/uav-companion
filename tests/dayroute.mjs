@@ -1,5 +1,5 @@
 // Selecting a marker: the day's route with the selected stop's arrows in bold, and the switch that stops the details window opening.
-import { chromium, CHANNEL, ROOT, moreTool } from './lib.mjs';
+import { chromium, CHANNEL, ROOT, moreTool, HOST, MW } from './lib.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 const { haversineM, fmtDistance } = await import(pathToFileURL(path.join(ROOT, 'src/distance.js')).href);
@@ -34,30 +34,30 @@ async function open(prefs = {}, vp = { width: 1300, height: 900 }, list = items)
 const pin = (p, name) => p.locator(`.leaflet-marker-icon[title="${name}"]`).first();
 const segs = (p) => p.$$eval('path.route-band', (e) => e.map((x) => x.classList.contains('bold')));
 const count = (p, sel) => p.locator(sel).count();
-const popup = (p) => p.locator('.leaflet-popup').count();
+const popup = (p) => p.locator(HOST ? MW + ':visible' : MW).count();
 
 // ================= details on (the default)
 let { ctx, p } = await open();
-await pin(p, 'Bravo').click(); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 }); await p.waitForTimeout(300);
+await pin(p, 'Bravo').click(); await p.waitForSelector(MW + ' h3', { timeout: 8000 }); await p.waitForTimeout(300);
 ok((await segs(p)).length === 2 && (await segs(p)).every(Boolean), 'selecting the middle stop draws its day, and both arrows touching it are bold');
 ok(await p.evaluate(() => [...document.querySelectorAll('path.route-chev')].reduce((n, c) => n + (c.getAttribute('d') || '').split('M').filter((x) => (x.match(/-?\d+\.?\d*/g) || []).length >= 6).length, 0)) >= 2 && await count(p, '.route-case') === 2, 'each leg is a broad band with a casing and chevrons drawn inside it (bold when it touches the selected stop)');
 ok(await count(p, '.seg-label') === 2 && /\d/.test(await p.locator('.seg-label').first().textContent()), 'the bold segments say how far: ' + await p.locator('.seg-label').first().textContent());
 ok(await count(p, '.dist-label-text:not(.seg-label)') >= 1, 'the dashed displacement line to the hotel is still drawn, with its own label');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(300);
 ok(await count(p, 'path.route-band') === 0 && await count(p, '.route-chev') === 0 && await count(p, '.route-label') === 0, 'closing the window clears the route');
-await pin(p, 'Alpha').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+await pin(p, 'Alpha').click(); await p.waitForSelector(MW + ' h3'); await p.waitForTimeout(300);
 let s = await segs(p);
 ok(s.length === 2 && s.filter(Boolean).length === 1 && (await count(p, 'path.route-band.overnight')) === 0, 'the first stop of the trip: only the arrow out of it is bold (there is no day before)');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
-await pin(p, 'Charlie').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(250);
+await pin(p, 'Charlie').click(); await p.waitForSelector(MW + ' h3'); await p.waitForTimeout(300);
 s = await segs(p);
 ok(s.length === 3 && s.filter(Boolean).length === 2 && (await count(p, 'path.route-band.overnight')) === 1, 'the last stop of a day: the arrow into it is bold, and so is a dashed one on to the first stop of the next day');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
-await pin(p, 'Hotel').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(250);
+await pin(p, 'Hotel').click(); await p.waitForSelector(MW + ' h3'); await p.waitForTimeout(300);
 s = await segs(p);
 ok(s.length === 4 && s.filter(Boolean).length === 2 && (await count(p, 'path.route-band.overnight')) === 2, 'the hotel is not part of the day\'s chain (it stays thin), but two bold dashed arrows join it to the last stop of its first day and the first stop of the day after it checks out');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
-await pin(p, 'Elsewhere').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(250);
+await pin(p, 'Elsewhere').click(); await p.waitForSelector(MW + ' h3'); await p.waitForTimeout(300);
 ok((await segs(p)).length === 1 && (await segs(p))[0] === true && (await count(p, 'path.route-band.overnight')) === 1 && (await count(p, '.seg-label')) >= 0, 'a day with a single stop has nothing to join inside it, but it is linked from the last stop of the day before');
 await ctx.close();
 
@@ -72,19 +72,33 @@ ok(await popup(p) === 0, 'a click on a marker opens no window');
 ok(/Bravo/.test(await p.textContent('.name-tag')) && await count(p, '.name-tag-info') === 1, 'it shows a name tag with an ⓘ');
 ok((await segs(p)).filter(Boolean).length === 2 && await count(p, '.dist-label-text:not(.seg-label)') >= 1, 'the day\'s route and the displacement line to the hotel are there');
 ok(await count(p, '.poi-pin.focused') === 1, 'and the pin stands out');
-await p.click('.name-tag-info'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
-ok((await p.textContent('.leaflet-popup h3')) === 'Bravo' && await count(p, '.name-tag') === 0, 'the ⓘ opens that marker\'s window (and the tag gives way to it)');
-ok(/Hide/.test(await p.getAttribute('.leaflet-popup .pop-toggle', 'aria-label')) && await p.locator('.leaflet-popup .pop-eye.off').count() === 1, 'with details off the window\'s v button says it hides into the ⓘ, and its eye shows the setting as off');
-await p.click('.leaflet-popup .pop-toggle'); await p.waitForTimeout(500);
-ok(await popup(p) === 0 && await count(p, '.name-tag') === 1 && (await segs(p)).filter(Boolean).length === 2, 'pressing it tucks the window away into the name tag, and the marker stays selected with its routes');
-await p.click('.name-tag-info'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
-await p.click('.leaflet-popup .pop-eye'); await p.waitForTimeout(400);
-ok(await popup(p) === 1 && await p.locator('.details-btn.off').count() === 0 && await p.locator('#poi-details').isChecked() && await p.locator('.leaflet-popup .pop-eye.off').count() === 0, 'the eye in the window turns details back on: the window stays, and the map button and the switch follow');
-ok(/Collapse|Expand/.test(await p.getAttribute('.leaflet-popup .pop-toggle', 'aria-label')), 'and the v button is a collapse/expand button again');
-await p.click('.leaflet-popup .pop-eye'); await p.waitForTimeout(500);
-ok(await popup(p) === 0 && await count(p, '.name-tag') === 1 && await p.locator('.details-btn.off').count() === 1 && !(await p.locator('#poi-details').isChecked()), 'pressing it again turns details off: the window closes into the name tag, and the button and the switch follow');
-await p.click('.name-tag-info'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 }); // reopened for the steps that follow
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(300);
+await p.click('.name-tag-info'); await p.waitForSelector(MW + ' h3', { timeout: 8000 });
+ok((await p.textContent(MW + ' h3')) === 'Bravo' && await count(p, '.name-tag') === 0, 'the ⓘ opens that marker\'s window (and the tag gives way to it)');
+if (!HOST) {
+  ok(/Hide/.test(await p.getAttribute('.leaflet-popup .pop-toggle', 'aria-label')) && await p.locator('.leaflet-popup .pop-eye.off').count() === 1, 'with details off the window\'s v button says it hides into the ⓘ, and its eye shows the setting as off');
+  await p.click('.leaflet-popup .pop-toggle'); await p.waitForTimeout(500);
+  ok(await popup(p) === 0 && await count(p, '.name-tag') === 1 && (await segs(p)).filter(Boolean).length === 2, 'pressing it tucks the window away into the name tag, and the marker stays selected with its routes');
+  await p.click('.name-tag-info'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+  await p.click('.leaflet-popup .pop-eye'); await p.waitForTimeout(400);
+  ok(await popup(p) === 1 && await p.locator('.details-btn.off').count() === 0 && await p.locator('#poi-details').isChecked() && await p.locator('.leaflet-popup .pop-eye.off').count() === 0, 'the eye in the window turns details back on: the window stays, and the map button and the switch follow');
+  ok(/Collapse|Expand/.test(await p.getAttribute('.leaflet-popup .pop-toggle', 'aria-label')), 'and the v button is a collapse/expand button again');
+  await p.click('.leaflet-popup .pop-eye'); await p.waitForTimeout(500);
+  ok(await popup(p) === 0 && await count(p, '.name-tag') === 1 && await p.locator('.details-btn.off').count() === 1 && !(await p.locator('#poi-details').isChecked()), 'pressing it again turns details off: the window closes into the name tag, and the button and the switch follow');
+} else {
+  const moreOpen = async () => { if (await p.locator(MW + ' .pop-overflow').isHidden()) await p.locator(MW + ' .pop-secondary .btn', { hasText: 'More' }).click(); };
+  await moreOpen();
+  ok(await p.locator(MW + ' .pop-eye.off').count() === 1, 'with details off the eye in the window (under More) shows the setting as off');
+  await p.click(MW + ' .pop-toggle.is-tuck'); await p.waitForTimeout(500); // the v button (shown in the host while details are off) tucks the window into the name tag, as in the popup
+  ok(await count(p, MW + ':visible') === 0 && await count(p, '.name-tag') === 1 && (await segs(p)).filter(Boolean).length === 2, 'the v button tucks the window away into the name tag, and the marker stays selected with its routes');
+  if (!(await count(p, '.name-tag-info'))) await pin(p, 'Bravo').click({ force: true }).catch(() => {}); // the assertion above failed: reselect so the later steps still run
+  await p.click('.name-tag-info'); await p.waitForSelector(MW + ' h3', { timeout: 8000 });
+  await moreOpen(); await p.click(MW + ' .pop-eye'); await p.waitForTimeout(400);
+  ok(await count(p, MW + ':visible') === 1 && await p.locator('.details-btn.off').count() === 0 && await p.locator('#poi-details').isChecked() && await p.locator(MW + ' .pop-eye.off').count() === 0, 'the eye in the window turns details back on: the window stays, and the map button and the switch follow');
+  await moreOpen(); await p.click(MW + ' .pop-eye'); await p.waitForTimeout(500);
+  ok(await count(p, MW + ':visible') === 0 && await count(p, '.name-tag') === 1 && await p.locator('.details-btn.off').count() === 1 && !(await p.locator('#poi-details').isChecked()), 'pressing it again turns details off: the window closes into the name tag, and the button and the switch follow');
+}
+await p.click('.name-tag-info'); await p.waitForSelector(MW + ' h3', { timeout: 8000 }); // reopened for the steps that follow
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(300);
 await pin(p, 'Alpha').click(); await p.waitForTimeout(400);
 await p.mouse.click(1000, 800); await p.waitForTimeout(400);
 ok(await count(p, '.name-tag') === 0 && await count(p, 'path.route-band') === 0 && await count(p, '.poi-pin.focused') === 0, 'a click on blank map clears the selection');
@@ -98,7 +112,7 @@ ok(await popup(p) === 0 && /Bravo/.test(await p.textContent('.name-tag')), 'a ta
 ok(!(await p.locator('#poi-details').isChecked()), 'the switch in the Points of Interest tab shows the same setting');
 await p.locator('#poi-details').check(); await p.waitForTimeout(250);
 ok(await count(p, '.details-btn.off') === 0 && await count(p, '.name-tag') === 0, 'turning it back on there updates the map button and drops the tag');
-await pin(p, 'Bravo').click(); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+await pin(p, 'Bravo').click(); await p.waitForSelector(MW + ' h3', { timeout: 8000 });
 ok(true, 'and clicks open the window again');
 await ctx.close();
 
@@ -124,22 +138,22 @@ const P = Object.fromEntries(items.map((x) => [x.id, x]));
 const labels = () => p.$$eval('.route-label.bold', (e) => e.map((x) => x.textContent.replace(/^≈ /, '').replace(/ · straight line$/, '')));
 const dist = (a, b) => fmtDistance(haversineM(a.lat, a.lon, b.lat, b.lon));
 ({ ctx, p } = await open());
-await pin(p, 'Charlie').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+await pin(p, 'Charlie').click(); await p.waitForSelector(MW + ' h3'); await p.waitForTimeout(300);
 let L1 = await labels();
 ok(L1.length === 2 && L1.includes(dist(P.c, P.h)), 'the last stop of a day leads to its night\'s hotel (' + dist(P.c, P.h) + '), and only there: two bold labels, the one into it and this one (' + L1.join(', ') + ')');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
-await pin(p, 'Elsewhere').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(250);
+await pin(p, 'Elsewhere').click(); await p.waitForSelector(MW + ' h3'); await p.waitForTimeout(300);
 L1 = await labels();
 ok(L1.includes(dist(P.h, P.x)) && !L1.includes(dist(P.c, P.x)), 'the first stop of the next day follows the hotel (' + dist(P.h, P.x) + '), not the last stop of the day before');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
-await pin(p, 'Hotel').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(250);
+await pin(p, 'Hotel').click(); await p.waitForSelector(MW + ' h3'); await p.waitForTimeout(300);
 L1 = await labels();
 ok(L1.includes(dist(P.c, P.h)) && L1.includes(dist(P.h, P.x)), 'the hotel shows the arrow in from the last stop and the arrow out to the first stop of the next day');
 await ctx.close();
 
 // no hotel in the trip: the arrows join the days directly, as before
 ({ ctx, p } = await open({}, { width: 1300, height: 900 }, items.filter((x) => x.id !== 'h')));
-await pin(p, 'Charlie').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+await pin(p, 'Charlie').click(); await p.waitForSelector(MW + ' h3'); await p.waitForTimeout(300);
 ok((await labels()).includes(dist(P.c, P.x)) && (await count(p, 'path.route-band.overnight')) === 1, 'with no hotel in the trip, the last stop is joined straight to the first stop of the next day');
 await ctx.close();
 
@@ -147,11 +161,11 @@ await ctx.close();
 const later = { id: 'l', type: 'photo', name: 'Later', note: '', lat: 30.63, lon: 114.35, created: '2026-11-01T00:00:09.000Z', tripId: 't1', date: iso(7), order: 1 };
 const longStay = [...items.filter((x) => x.id !== 'h'), { ...P.h, endDate: iso(7) }, later];
 ({ ctx, p } = await open({}, { width: 1300, height: 900 }, longStay));
-await pin(p, 'Hotel').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+await pin(p, 'Hotel').click(); await p.waitForSelector(MW + ' h3'); await p.waitForTimeout(300);
 L1 = await labels();
 ok(L1.includes(dist(P.c, P.h)) && L1.includes(dist(P.h, later)) && !L1.includes(dist(P.h, P.x)), 'a two-night stay leads out to the first stop on the day it checks out (' + dist(P.h, later) + '), not to the day in between');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(250);
-await pin(p, 'Elsewhere').click(); await p.waitForSelector('.leaflet-popup h3'); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(250);
+await pin(p, 'Elsewhere').click(); await p.waitForSelector(MW + ' h3'); await p.waitForTimeout(300);
 L1 = await labels();
 ok(L1.includes(dist(P.h, P.x)) && L1.length === 2, 'a stop in the middle of the stay has the hotel both before and after it');
 await ctx.close();

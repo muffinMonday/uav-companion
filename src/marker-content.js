@@ -46,6 +46,7 @@ export function createMarkerContent(d) {
       // both arrows are always there and CSS shows one: replacing the clicked element mid-click would make Leaflet close the window
       toggle.innerHTML = '<svg class="ic-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><svg class="ic-down" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
       const paintToggle = () => {
+        if (host.guardEdit) toggle.classList.toggle('is-tuck', !d.detailsOn()); // host only: with details off the button tucks the window into the name tag, so it stays visible in the side panel too
         if (!d.detailsOn()) { // details off: the button tucks the window away into the name tag's ⓘ
           toggle.setAttribute('aria-label', 'Hide the window (back to the name tag)'); toggle.title = 'Hide into the ⓘ'; toggle.setAttribute('aria-expanded', 'true');
           return;

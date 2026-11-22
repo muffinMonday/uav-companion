@@ -1,5 +1,5 @@
 // Press and hold to check a spot, plain clicks only close windows, and the clicked coordinate is centred (with a scrolling window if it is tall).
-import { OUT as SP, CHANNEL } from './lib.mjs';
+import { OUT as SP, CHANNEL, HOST, MW } from './lib.mjs';
 import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
@@ -24,6 +24,16 @@ async function session(viewport, mobile = false, prefs = null) {
   return { ctx, p };
 }
 const popups = (p) => p.locator('.leaflet-popup').count();
+// Host mode: the saved-marker window is #marker-host, so the point-check popup count above stays valid; this closes whichever saved-marker window is open.
+const closeMW = (p) => p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button'))?.click());
+/** Centre of what the host leaves of the map (side panel: left of it; bottom sheet: above it). */
+const freeArea = (p) => p.evaluate(() => {
+  const m = document.getElementById('map').getBoundingClientRect(), h = document.getElementById('marker-host'), pn = document.getElementById('panel');
+  const r = { l: m.left, t: m.top, r: m.right, b: m.bottom };
+  if (pn && !pn.hidden && pn.getBoundingClientRect().height > 0.7 * (r.b - r.t)) r.r = Math.min(r.r, pn.getBoundingClientRect().left);
+  if (h && !h.hidden) { const q = h.getBoundingClientRect(); if (h.dataset.mode === 'side') r.r = Math.min(r.r, q.left); else r.b = Math.min(r.b, q.top); }
+  return { cx: (r.l + r.r) / 2, cy: (r.t + r.b) / 2 };
+});
 const markerPopups = (p) => p.locator('.poi-pop').count();
 const mapRect = (p) => p.evaluate(() => { const r = document.getElementById('map').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
 const pinRect = (p, name = 'Bridge') => p.evaluate((k) => { const r = document.querySelector(`.poi-pin[title="${k}"]`).getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, bottom: r.bottom, top: r.top }; }, name);
@@ -72,7 +82,7 @@ ok((await popups(p)) === 0 && (await p.locator('.hold-ring').count()) === 0, 'le
 const pr0 = await pinRect(p);
 await hold(p, pr0.x, pr0.y);
 ok((await p.locator('.leaflet-popup .check').count()) === 0 && (await p.locator('.hold-ring').count()) === 0, 'holding on a pin does not start a point check');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(400);
+await closeMW(p); await p.waitForTimeout(400);
 
 // ---- right click and Enter
 await p.mouse.click(BLANK.x, BLANK.y, { button: 'right' }); await p.waitForTimeout(600);
@@ -88,7 +98,15 @@ await p.mouse.click(BLANK.x + 300, BLANK.y); await p.waitForTimeout(400);
 const far = await pinRect(p);
 await p.mouse.click(far.x, far.y); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(1200);
 const pinNow = await pinRect(p);
+if (HOST) { const f = await freeArea(p); ok(Math.hypot(pinNow.x - f.cx, pinNow.y - f.cy) < 50, 'clicking a pin centres it in the free part of the map (left by the host): pin at (' + Math.round(pinNow.x) + ',' + Math.round(pinNow.y) + '), free centre (' + Math.round(f.cx) + ',' + Math.round(f.cy) + ')'); } else
 ok(Math.abs(pinNow.x - (mr.x + mr.w / 2)) < 14 && Math.abs(pinNow.bottom - 2 - (mr.y + mr.h / 2)) < 50, 'clicking a pin centres the map on it: pin at (' + Math.round(pinNow.x) + ',' + Math.round(pinNow.y) + '), map centre (' + Math.round(mr.x + mr.w / 2) + ',' + Math.round(mr.y + mr.h / 2) + ')');
+if (HOST) {
+  const hb = await p.evaluate(() => { const h = document.getElementById('marker-host'), b = h.querySelector('.mh-body'); const r = h.getBoundingClientRect(); return { shown: !h.hidden, top: r.top, bottom: r.bottom, vh: innerHeight, scrolls: b.scrollHeight > b.clientHeight + 1 || getComputedStyle(b).overflowY !== 'visible' }; });
+  ok(hb.shown && hb.top >= 0 && hb.bottom <= hb.vh + 1 && hb.scrolls, 'a long note: the host stays on screen and its body scrolls (top ' + Math.round(hb.top) + ', bottom ' + Math.round(hb.bottom) + ')');
+  await p.evaluate(() => document.querySelector('#marker-host .mh-body').scrollTo(0, 9999)); await p.waitForTimeout(200);
+  await p.evaluate(() => document.querySelector('#marker-host .mh-body').scrollTo(0, 0)); await p.waitForTimeout(200);
+  ok((await p.locator('#marker-host .pop-actions').isVisible()), 'scrolling back up reaches the action buttons');
+} else {
 await p.click('.poi-pop .pop-toggle'); await p.waitForTimeout(400); // collapsed: the short window above the pin
 const sc = await p.evaluate(() => { const c = document.querySelector('.leaflet-popup-content'); const w = document.querySelector('.leaflet-popup-content-wrapper').getBoundingClientRect(); const pin = document.querySelector('.poi-pin').getBoundingClientRect(); return { scrolls: c.scrollHeight > c.clientHeight + 1, top: w.top, bottom: w.bottom, pinTop: pin.top }; });
 ok(sc.scrolls && sc.top >= 0 && sc.bottom <= sc.pinTop + 2, 'a window too tall for the space above the pin scrolls inside and stays on screen (top ' + Math.round(sc.top) + ', bottom ' + Math.round(sc.bottom) + ', pin top ' + Math.round(sc.pinTop) + ')');
@@ -96,20 +114,23 @@ const zoomBefore = await p.evaluate(() => document.querySelector('.leaflet-contr
 await p.evaluate(() => document.querySelector('.leaflet-popup-content').scrollTo(0, 9999)); await p.waitForTimeout(200);
 await p.evaluate(() => document.querySelector('.leaflet-popup-content').scrollTo(0, 0)); await p.waitForTimeout(200);
 ok((await p.locator('.poi-pop .pop-tools').isVisible()), 'scrolling back up reaches the Edit and Delete icons');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(400);
+}
+await closeMW(p); await p.waitForTimeout(400);
 const pinB = await pinRect(p, 'Short').catch(() => null);
 if (pinB && pinB.x > 0 && pinB.x < 1200 && pinB.y > 0 && pinB.y < 800) {
   await p.mouse.click(pinB.x, pinB.y); await p.waitForFunction(() => document.querySelector('.poi-pop h3')?.textContent === 'Short', null, { timeout: 8000 }); await p.waitForTimeout(1000);
   const pb = await pinRect(p, 'Short');
+  if (HOST) { const f = await freeArea(p); ok(Math.hypot(pb.x - f.cx, pb.y - f.cy) < 50, 'a second pin is centred the same way (in the free area)'); } else
   ok(Math.abs(pb.x - (mr.x + mr.w / 2)) < 14, 'a second pin is centred the same way');
 }
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
+await closeMW(p); await p.waitForTimeout(300);
 
 // ---- with the side panel open, centred in the visible part of the map
 await p.evaluate(() => document.querySelector('#dock button[data-tab=poi]').click()); await p.waitForTimeout(400);
 await p.click('#poi-list .poi-item:has-text("Bridge")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(1500);
 const side = await p.evaluate(() => ({ panelW: document.getElementById('panel').offsetWidth + 24, w: document.getElementById('map').clientWidth }));
 const pin3 = await pinRect(p);
+if (HOST) { const f = await freeArea(p); ok(Math.hypot(pin3.x - f.cx, pin3.y - f.cy) < 50, 'with the side panel open the pin is centred in the part of the map left free by the panel and the host: pin (' + Math.round(pin3.x) + ',' + Math.round(pin3.y) + ') vs free centre (' + Math.round(f.cx) + ',' + Math.round(f.cy) + ')'); } else
 ok(Math.abs(pin3.x - (side.w - side.panelW) / 2) < 16, 'with the side panel open the pin is centred in the uncovered part of the map: x ' + Math.round(pin3.x) + ' vs ' + Math.round((side.w - side.panelW) / 2));
 await ctx.close();
 
@@ -143,7 +164,8 @@ ok((await popups(p)) === 0, 'phone: moving the finger cancels the hold');
 // marker tap with the sheet open: it closes and the pin is centred
 await p.evaluate(() => document.querySelector('#dock button[data-tab=poi]').click()); await p.waitForTimeout(400);
 await p.click('#poi-list .poi-item:has-text("Bridge")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(1500);
-const ph = await p.evaluate(() => { const pin = document.querySelector('.poi-pin').getBoundingClientRect(); const w = document.querySelector('.leaflet-popup').getBoundingClientRect(); return { px: pin.x + pin.width / 2, py: pin.y + pin.height / 2, top: w.top, bottom: w.bottom, pinTop: pin.top, panelHidden: document.getElementById('panel').hidden }; });
+const ph = await p.evaluate(() => { const pin = document.querySelector('.poi-pin').getBoundingClientRect(); const w = (document.querySelector('#marker-host:not([hidden])') || document.querySelector('.leaflet-popup')).getBoundingClientRect(); return { px: pin.x + pin.width / 2, py: pin.y + pin.height / 2, top: w.top, bottom: w.bottom, pinTop: pin.top, panelHidden: document.getElementById('panel').hidden }; });
+if (HOST) { const f = await freeArea(p), hb = await p.evaluate(() => document.getElementById('marker-host').getBoundingClientRect().top); ok(ph.panelHidden && Math.hypot(ph.px - f.cx, ph.py - f.cy) < 50 && ph.py < hb, 'phone: opening a marker closes the sheet, centres the pin above the host sheet and keeps it visible'); } else
 ok(ph.panelHidden && Math.abs(ph.px - (m2.x + m2.w / 2)) < 16 && ph.top >= 0 && ph.bottom <= ph.pinTop + 2, 'phone: opening a marker closes the sheet, centres the pin and keeps the window on screen');
 await p.screenshot({ path: `${SP}/hold-phone.png` });
 await ctx.close();

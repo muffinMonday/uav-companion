@@ -1,5 +1,5 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium, dashClick } from './lib.mjs';
+import { chromium, dashClick, HOST, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const OFFSET = 28800;
 const errs = [];
@@ -55,7 +55,7 @@ async function session({ seed = items(3), prefs, viewport = { width: 1200, heigh
 const decimals = (list) => list.map((c) => (c.split('.')[1] || '').length);
 const params = (url) => { const u = new URL(url); return { lat: u.searchParams.get('latitude').split(','), lon: u.searchParams.get('longitude').split(',') }; };
 const openMarker = async (p, name) => { await p.click('#tab-poi').catch(() => {}); await p.click(`#poi-list .poi-item:has-text("${name}")`); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(1100); };
-const closePopup = async (p) => { await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForFunction(() => !document.querySelector('.leaflet-popup'), null, { timeout: 3000 }).catch(() => {}); };
+const closePopup = async (p) => { await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host:not([hidden]) .pop-close')?.click()); await p.waitForFunction(() => !document.querySelector('.leaflet-popup, #marker-host:not([hidden])'), null, { timeout: 3000 }).catch(() => {}); };
 const tileVal = (p, k) => p.locator(`.poi-pop .stat[data-k=${k}] .v`).innerText();
 
 // ================= 1. the sub-panel
@@ -139,7 +139,7 @@ await S.page.click('#poi-list .poi-item:has-text("Seed A")'); await S.page.waitF
 if (await S.page.locator('.poi-pop .pop-toggle[aria-expanded=true]').count()) await S.page.evaluate(() => document.querySelector('.poi-pop .pop-toggle').click()); // collapsed, so the pin is not under the window
 let pin = null, still = 0;
 for (let i = 0; i < 40 && still < 4; i++) {
-  const r = await S.page.evaluate(() => { const q = [...document.querySelectorAll('.poi-pin')].map((e) => e.getBoundingClientRect()).sort((a, b) => Math.abs(a.x - 408) - Math.abs(b.x - 408))[0]; return { x: q.x + q.width / 2, y: q.y + q.height / 2 }; });
+  const r = await S.page.evaluate(() => { const q = (document.querySelector('.poi-pin.focused') ? [document.querySelector('.poi-pin.focused')] : [...document.querySelectorAll('.poi-pin')]).map((e) => e.getBoundingClientRect()).sort((a, b) => Math.abs(a.x - 408) - Math.abs(b.x - 408))[0]; return { x: q.x + q.width / 2, y: q.y + q.height / 2 }; });
   still = pin && Math.abs(r.x - pin.x) < 0.5 && Math.abs(r.y - pin.y) < 0.5 ? still + 1 : 0;
   pin = r;
   await S.page.waitForTimeout(150);
@@ -207,7 +207,7 @@ await S.ctx.close();
 S = await session({ prefs: { autoWeather: true, fetchAltitude: true }, colorScheme: 'dark' });
 await S.page.waitForTimeout(1200);
 await openMarker(S.page, 'Seed A');
-const bg = await S.page.evaluate(() => getComputedStyle(document.querySelector('.leaflet-popup-content-wrapper')).backgroundColor);
+const bg = await S.page.evaluate((sel) => getComputedStyle(document.querySelector(sel)).backgroundColor, HOST ? '#marker-host' : '.leaflet-popup-content-wrapper');
 const fg = await S.page.evaluate(() => getComputedStyle(document.querySelector('.poi-pop h3')).color);
 const lum = (c) => { const [r, g, b2] = c.startsWith('color(') ? c.match(/[\d.]+/g).slice(0, 3).map((x) => +x * 255) : c.match(/\d+/g).map(Number); return 0.2126 * r + 0.7152 * g + 0.0722 * b2; };
 ok(lum(bg) < 80 && lum(fg) > 180, `6: dark theme: popup is dark (${bg}) with light text (${fg})`);
@@ -218,7 +218,7 @@ await S.ctx.close();
 S = await session({ prefs: { autoWeather: true, fetchAltitude: true }, viewport: { width: 390, height: 780 } });
 await S.page.waitForTimeout(1200);
 await S.page.click('#dock [data-tab=poi]'); await S.page.click('#poi-list .poi-item:has-text("Seed A")'); await S.page.waitForSelector('.poi-pop h3'); await S.page.waitForTimeout(1500);
-const fits = await S.page.evaluate(() => { const r = document.querySelector('.leaflet-popup').getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth }; });
+const fits = await S.page.evaluate((sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth }; }, MW);
 ok(fits.l >= 0 && fits.r <= fits.w, `6: on a phone the marker window fits the screen (${Math.round(fits.l)}–${Math.round(fits.r)} of ${fits.w})`);
 await S.page.screenshot({ path: SP + '/popup-phone.png' });
 await S.page.click('#dock [data-tab=poi]').catch(() => {});

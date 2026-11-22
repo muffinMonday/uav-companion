@@ -1,5 +1,5 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from './lib.mjs';
+import { chromium, HOST, MW } from './lib.mjs';
 import fs from 'node:fs';
 import { dashClick } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
@@ -55,7 +55,7 @@ const wxText = (p) => p.locator('.poi-pop .stats-wrap').innerText().then((t) => 
 const num = (t, re) => parseFloat(t.match(re)[1]);
 const setAuto = async (p, on) => { await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); await (on ? p.check('#pv-auto') : p.uncheck('#pv-auto')); await p.click('#privacy-back'); };
 const isAuto = async (p) => { await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); const v = await p.isChecked('#pv-auto'); await p.click('#privacy-back'); return v; };
-const closePopup = (p) => p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+const closePopup = (p) => p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host:not([hidden]) .pop-close')?.click());
 const statusMatches = async (p, pattern) => {
   const lines = await p.locator('#pane-config #mw-status, #privacy #pv-mw-status').allTextContents();
   return lines.length === 2 && lines[0] === lines[1] && pattern.test(lines[0]);
@@ -100,6 +100,7 @@ const cache = await lsGet(S.page, 'uavzones.v1.wxcache');
 ok(Object.keys(cache.items).length === 3 && typeof cache.lastBulk === 'number', 'B: cache holds 3 markers and the bulk-refresh time');
 const pois = await lsGet(S.page, 'uavzones.v1.pois');
 ok(pois.items.every((i) => Object.keys(i).sort().join() === 'created,id,lat,lon,name,note,type'), 'B: weather is not stored on the markers themselves');
+if (HOST) { await closePopup(S.page); await S.page.waitForTimeout(300); } // the host's side panel covers the dashboard tab
 const [dl] = await Promise.all([S.page.waitForEvent('download'), dashClick(S.page, '#poi-export')]); await dl.saveAs(SP + '/mw-export.geojson');
 ok(!/temp|wind|gust/i.test(fs.readFileSync(SP + '/mw-export.geojson', 'utf8')), 'B: the GeoJSON export contains no weather');
 await closePopup(S.page);
@@ -207,7 +208,7 @@ await S.page.check('#poi-edit');
 const pin = await S.page.evaluate(() => { const r = document.querySelector('.poi-pin').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
 S.reqs.length = 0;
 await S.page.waitForFunction(() => !document.querySelector('.poi-pop'), null, { timeout: 5000 }).catch(() => {}); // a closed window fades out for 200 ms
-if (await S.page.locator('.poi-pop .pop-toggle[aria-expanded=true]').count()) { await S.page.click('.poi-pop .pop-toggle'); await S.page.waitForTimeout(300); } // collapsed: the pin is not under the window
+if (await S.page.locator('.poi-pop .pop-toggle[aria-expanded=true]:visible').count()) { await S.page.click('.poi-pop .pop-toggle'); await S.page.waitForTimeout(300); } // collapsed: the pin is not under the window
 await S.page.mouse.move(pin.x, pin.y); await S.page.mouse.down(); await S.page.waitForTimeout(650); await S.page.mouse.move(pin.x + 40, pin.y + 120, { steps: 8 }); await S.page.mouse.up(); await S.page.waitForTimeout(1200);
 ok(S.reqs.length === 1 && nLocs(S.reqs[0]) === 1, 'M: dropping a moved marker requests weather for its new position');
 await S.ctx.close();

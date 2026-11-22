@@ -1,5 +1,5 @@
 // Previous / next stop in the marker window: the order, the ends, who gets the bar, and that it stays in view.
-import { OUT as SP, CHANNEL } from './lib.mjs';
+import { OUT as SP, CHANNEL, HOST } from './lib.mjs';
 import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
@@ -34,6 +34,17 @@ async function session({ viewport = { width: 1200, height: 800 }, mobile = false
 }
 const openName = async (p, name) => { await p.click(`#poi-list .poi-item:has-text("${name}")`); await p.waitForFunction((n) => document.querySelector('.poi-pop h3')?.textContent === n, name, { timeout: 8000 }); await p.waitForTimeout(800); };
 const title = (p) => p.locator('.poi-pop h3').textContent();
+// Saved-marker window: the adaptive host (MARKERHOST=1) or the Leaflet popup.
+const closeMW = (p) => p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button'))?.click());
+const SCROLLER = HOST ? '#marker-host .mh-body' : '.leaflet-popup-content';
+/** Centre of the map left free by the host and an open side panel. */
+const freeCentre = (p) => p.evaluate(() => {
+  const m = document.getElementById('map').getBoundingClientRect(), h = document.getElementById('marker-host'), pn = document.getElementById('panel');
+  const r = { l: m.left, t: m.top, r: m.right, b: m.bottom };
+  if (pn && !pn.hidden && pn.getBoundingClientRect().height > 0.7 * (r.b - r.t)) r.r = Math.min(r.r, pn.getBoundingClientRect().left);
+  if (h && !h.hidden) { const q = h.getBoundingClientRect(); if (h.dataset.mode === 'side') r.r = Math.min(r.r, q.left); else r.b = Math.min(r.b, q.top); }
+  return { cx: (r.l + r.r) / 2, cy: (r.t + r.b) / 2 };
+});
 const bar = (p) => p.evaluate(() => { const b = document.querySelector('.pop-seq'); if (!b) return null; const [prev, next] = b.querySelectorAll('button'); return { pos: b.querySelector('.pop-seq-pos').textContent, prevDisabled: prev.disabled, nextDisabled: next.disabled, prevTitle: prev.title, nextTitle: next.title }; });
 const goNext = async (p) => { const before = await title(p); await p.click('.pop-seq-btn:has-text("Next")'); await p.waitForFunction((t) => document.querySelector('.poi-pop h3')?.textContent !== t, before, { timeout: 8000 }); await p.waitForTimeout(900); };
 
@@ -46,54 +57,61 @@ ok(/Previous stop: Hotel/.test(s.prevTitle) && /Next stop: Bravo/.test(s.nextTit
 await goNext(p);
 ok((await title(p)) === 'Bravo' && (await bar(p)).pos === '3 of 5', 'Next opens Bravo, the first stop of the next day');
 const pin = await p.evaluate(() => { const r = document.querySelector('.poi-pin[title="Bravo"]').getBoundingClientRect(); const m = document.getElementById('map').getBoundingClientRect(); const pn = document.getElementById('panel'); const inset = pn.hidden ? 0 : pn.offsetWidth + 24; return { x: r.x + r.width / 2, mx: m.x + (m.width - inset) / 2, bottom: r.bottom, my: m.y + m.height / 2 }; });
+if (HOST) { const f = await freeCentre(p); const q = await p.evaluate(() => { const r = document.querySelector('.poi-pin[title="Bravo"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; }); ok(Math.hypot(q.x - f.cx, q.y - f.cy) < 50, 'and the map moved to centre it in the free area: pin (' + Math.round(q.x) + ',' + Math.round(q.y) + ') free centre (' + Math.round(f.cx) + ',' + Math.round(f.cy) + ')'); } else
 ok(Math.abs(pin.x - pin.mx) < 14 && Math.abs(pin.bottom - 2 - pin.my) < 16, 'and the map moved to centre it: pin (' + Math.round(pin.x) + ',' + Math.round(pin.bottom) + ') map centre (' + Math.round(pin.mx) + ',' + Math.round(pin.my) + ')');
 await goNext(p); await goNext(p);
 s = await bar(p);
 ok((await title(p)) === 'Delta' && s.pos === '5 of 5' && s.nextDisabled && !s.prevDisabled, 'at the last stop (Delta, which has no stop number) Next is disabled');
 await p.click('.pop-seq-btn:has-text("Previous")'); await p.waitForFunction(() => document.querySelector('.poi-pop h3')?.textContent === 'Charlie', null, { timeout: 8000 }); await p.waitForTimeout(600);
 ok((await bar(p)).pos === '4 of 5', 'Previous goes back to Charlie');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(400);
+await closeMW(p); await p.waitForTimeout(400);
 await openName(p, 'Hotel');
 s = await bar(p);
 ok(s.pos === '1 of 5' && s.prevDisabled && !s.nextDisabled, 'the hotel is the first stop: Previous is disabled (hotels are in the sequence)');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(400);
+await closeMW(p); await p.waitForTimeout(400);
 
 // who has no bar
 for (const [name, why] of [['Undated', 'a marker in the trip with no date'], ['Loose', 'a marker in no trip'], ['Solo', 'the only dated marker of its trip']]) {
   await openName(p, name);
   ok((await bar(p)) === null, `no bar for ${why}`);
-  await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(400);
+  await closeMW(p); await p.waitForTimeout(400);
 }
 
 // the form has none
 await openName(p, 'Alpha');
-await p.evaluate(() => document.querySelector('.leaflet-popup-content').scrollTo(0, 9999));
+await p.evaluate((q) => document.querySelector(q).scrollTo(0, 9999), SCROLLER);
 await p.click('.poi-pop .btn:has-text("Edit")'); await p.waitForSelector('.poi-pop form'); await p.waitForTimeout(300);
 ok((await bar(p)) === null, 'the edit form has no previous / next bar');
 await p.click('.poi-pop form button:has-text("Cancel")'); await p.waitForTimeout(500);
 ok((await bar(p)) !== null, 'and it is back when the form is closed');
 
 // the window keeps its size
+if (HOST) { // the side panel has no collapsed state: the host keeps its size from one stop to the next
+  const size = () => p.evaluate(() => { const r = document.getElementById('marker-host').getBoundingClientRect(); return Math.round(r.width) + 'x' + Math.round(r.height); });
+  const s0 = await size(); await goNext(p);
+  ok((await size()) === s0 && (await bar(p)) !== null, '... Next keeps the host at the same size (' + s0 + '), and the bar is there');
+} else {
 await p.click('.pop-toggle'); await p.waitForTimeout(400);
 ok(!/is-expanded/.test(await p.evaluate(() => document.querySelector('.leaflet-popup').className)), 'collapsed...');
 await goNext(p);
 ok(!/is-expanded/.test(await p.evaluate(() => document.querySelector('.leaflet-popup').className)) && (await bar(p)) !== null, '... Next keeps it collapsed, and the bar is there');
 await p.click('.pop-toggle'); await p.waitForTimeout(300);
+}
 await ctx.close();
 
 // ================= a short screen: the bar stays in view while the window scrolls
 ({ ctx, p } = await session({ viewport: { width: 1000, height: 400 } }));
 await openName(p, 'Alpha');
-const vis = await p.evaluate(() => { const c = document.querySelector('.leaflet-popup-content'); const b = document.querySelector('.pop-seq').getBoundingClientRect(); const w = document.querySelector('.leaflet-popup-content-wrapper').getBoundingClientRect(); return { scrolls: c.scrollHeight > c.clientHeight + 1, inside: b.bottom <= w.bottom + 1 && b.top >= w.top }; });
+const vis = await p.evaluate((host) => { const c = document.querySelector(host ? '#marker-host .mh-body' : '.leaflet-popup-content'); const b = document.querySelector('.pop-seq').getBoundingClientRect(); const w = document.querySelector(host ? '#marker-host' : '.leaflet-popup-content-wrapper').getBoundingClientRect(); return { scrolls: c.scrollHeight > c.clientHeight + 1, inside: b.bottom <= w.bottom + 1 && b.top >= w.top }; }, HOST);
 ok(vis.scrolls && vis.inside, 'on a short screen the window scrolls and the bar stays inside it, not scrolled away');
-await p.evaluate(() => document.querySelector('.leaflet-popup-content').scrollTo(0, 0)); await p.waitForTimeout(200);
+await p.evaluate((q) => document.querySelector(q).scrollTo(0, 0), SCROLLER); await p.waitForTimeout(200);
 ok(await p.locator('.pop-seq-btn:has-text("Next")').isVisible(), '... even scrolled to the top');
 await ctx.close();
 
 // ================= phone
 ({ ctx, p } = await session({ viewport: { width: 360, height: 740 }, mobile: true }));
 await openName(p, 'Alpha');
-const fit = await p.evaluate(() => { const w = document.querySelector('.leaflet-popup-content-wrapper').getBoundingClientRect(); const b = document.querySelector('.pop-seq').getBoundingClientRect(); return { l: b.left >= w.left - 1, r: b.right <= w.right + 1, vis: b.bottom <= innerHeight }; });
+const fit = await p.evaluate((host) => { const w = document.querySelector(host ? '#marker-host' : '.leaflet-popup-content-wrapper').getBoundingClientRect(); const b = document.querySelector('.pop-seq').getBoundingClientRect(); return { l: b.left >= w.left - 1, r: b.right <= w.right + 1, vis: b.bottom <= innerHeight }; }, HOST);
 ok(fit.l && fit.r && fit.vis, 'phone: the bar fits inside the window and the screen');
 await p.tap('.pop-seq-btn:has-text("Next")'); await p.waitForFunction(() => document.querySelector('.poi-pop h3')?.textContent === 'Bravo', null, { timeout: 8000 });
 ok(true, 'phone: Next works by touch');

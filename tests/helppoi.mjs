@@ -1,9 +1,11 @@
 // Contextual help for the POI explorer: the reworded poi hint keeps its seen state, the type-picker and trip-visibility hints show once at a first use,
 // nothing shows while placing, editing, selecting or dragging, the older-version notice must be dismissed and waits for a quiet moment,
 // and the dashboard shortcuts and Tips replay them. Screenshots go to tests/out/helppoi/.
-import { chromium, CHANNEL, LATEST_SEEN, OUT } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN, OUT, HOST, MW } from './lib.mjs';
 import fs from 'node:fs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
+// Closes the saved-marker window. The host shows no close button while its edit form is up (Cancel leaves the form first), the popup always has Leaflet's.
+const closeWin = async (p) => { if (HOST && await p.locator('#marker-host form').count()) await p.locator('#marker-host form .btn:not(.primary)').first().click(); await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click()); };
 const errs = [];
 const shots = `${OUT}/helppoi`; fs.mkdirSync(shots, { recursive: true });
 const HELPKEY = 'uavzones.v1.help';
@@ -100,7 +102,7 @@ await p.click('#type-tab-travel');
 await p.click('#poi-types [data-type=food]');
 await p.click('#poi-center'); await p.waitForSelector('.poi-pop form', { timeout: 8000 });
 ok((await hint(p)).length === 0, 'right after creating (the marker window is open) the notice waits');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await closeWin(p);
 await p.waitForSelector('.help-hint[data-hint=newtype-shared]', { timeout: 8000 });
 ok(/older app version/i.test(await p.textContent('.help-hint')), 'when the window is closed it appears and names the older-version risk');
 await p.screenshot({ path: shots + '/newtype-notice.png' });
@@ -114,17 +116,17 @@ await p.evaluate(() => { document.getElementById('poi-add').open = true; });
 await p.selectOption('#poi-trip', 't2');
 await p.click('#poi-types [data-type=food]').catch(async () => { await p.click('#type-tab-travel'); await p.click('#poi-types [data-type=food]'); });
 await p.click('#poi-center'); await p.waitForSelector('.poi-pop form', { timeout: 8000 });
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await closeWin(p);
 await p.waitForSelector('.help-hint[data-hint=newtype-shared]', { timeout: 8000 });
 await got(p); await p.waitForTimeout(150);
 ok((await seenList(p)).includes('newtype-shared'), 'Got it marks it seen');
 await p.click('#poi-center'); await p.waitForSelector('.poi-pop form', { timeout: 8000 });
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(2500);
+await closeWin(p); await p.waitForTimeout(2500);
 ok(!(await hint(p)).includes('newtype-shared'), 'after that it does not return');
 // a private trip, or an older type, gives no notice
 await p.selectOption('#poi-trip', 't1');
 await p.click('#poi-center'); await p.waitForSelector('.poi-pop form', { timeout: 8000 });
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await closeWin(p);
 await p.close(); await ctx.close();
 ({ ctx, p } = await open({ seen: ['poi', 'poi-types', 'trip-visibility', 'trips', 'map-tools', 'point-check'] }));
 await tab(p, 'poi');
@@ -132,12 +134,12 @@ await p.evaluate(() => { document.getElementById('poi-add').open = true; });
 await p.selectOption('#poi-trip', 't1');
 await p.click('#type-tab-travel'); await p.click('#poi-types [data-type=food]');
 await p.click('#poi-center'); await p.waitForSelector('.poi-pop form', { timeout: 8000 });
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(2500);
+await closeWin(p); await p.waitForTimeout(2500);
 ok(!(await hint(p)).includes('newtype-shared'), 'a newer type in a private trip gives no notice');
 await p.selectOption('#poi-trip', 't2');
 await p.click('#type-tab-drone'); await p.click('#poi-types [data-type=photo]');
 await p.click('#poi-center'); await p.waitForSelector('.poi-pop form', { timeout: 8000 });
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(2500);
+await closeWin(p); await p.waitForTimeout(2500);
 ok(!(await hint(p)).includes('newtype-shared'), 'an older type in a shared trip gives no notice');
 await p.close(); await ctx.close();
 

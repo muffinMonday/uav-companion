@@ -1,5 +1,5 @@
 // Side Quests, phase 2: making one (point-check window, edit form), turning a marker into one and back (window, Select mode), and Undo.
-import { OUT as SP, CHANNEL } from './lib.mjs';
+import { OUT as SP, CHANNEL, HOST } from './lib.mjs';
 import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
@@ -29,8 +29,16 @@ async function session({ viewport = { width: 1200, height: 800 }, prefs = null }
 }
 const stored = (p, id) => p.evaluate((i) => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.find((x) => x.id === i), id);
 const openName = async (p, name) => { await p.click(`#poi-list .poi-item:has(b:text-is("${name}"))`); await p.waitForFunction((n) => document.querySelector('.poi-pop h3')?.textContent === n, name, { timeout: 8000 }); await p.waitForTimeout(400); };
-const closeWin = async (p) => { await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForFunction(() => !document.querySelector('.poi-pop'), null, { timeout: 5000 }); };
-const toolTitles = (p) => p.$$eval('.poi-pop .pop-tools button', (bs) => bs.map((x) => x.title));
+const closeWin = async (p) => { await p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button'))?.click()); await p.waitForFunction(() => !document.querySelector('.poi-pop'), null, { timeout: 5000 }); };
+// The popup has icon buttons titled by action; the host has text buttons, some in the More menu (still in the DOM while it is closed).
+const toolTitles = (p) => (HOST ? p.$$eval('#marker-host .pop-actions button', (bs) => bs.map((x) => x.title)) : p.$$eval('.poi-pop .pop-tools button', (bs) => bs.map((x) => x.title)));
+/** Presses a marker-window action by its name; in the host an action in the More menu opens the menu first. */
+const act = async (p, name) => {
+  if (!HOST) { await p.click(`.poi-pop .pop-tools button[title="${name}"]`); return; }
+  const b = p.locator(`#marker-host .pop-actions button[title="${name}"]`);
+  if (!(await b.isVisible())) await p.click('#marker-host .pop-more');
+  await b.click();
+};
 const toastText = (p) => p.textContent('#toast');
 
 let { ctx, p } = await session({ prefs: { currentTrip: 't1' } });
@@ -47,7 +55,7 @@ ok(!(await toolTitles(p)).some((t) => /Side Quest|main stop/.test(t)), 'nor does
 await closeWin(p);
 
 await openName(p, 'Charlie');
-await p.click('.poi-pop .pop-tools button[title="Make Side Quest"]'); await p.waitForTimeout(700);
+await act(p, 'Make Side Quest'); await p.waitForTimeout(700);
 let c = await stored(p, 'C');
 ok(c.isSub === true && c.parentId && !('order' in c) && c.date === '2026-11-13', 'it becomes a Side Quest, loses its stop number, keeps its date: parent ' + c.parentId);
 ok(['B', 'D'].includes(c.parentId), 'and hangs from the nearest main stop (a neighbour on its day, not the hotel)');
@@ -60,15 +68,15 @@ ok(!c.isSub && !c.parentId && c.order === 2, 'Undo restores the marker exactly (
 await closeWin(p);
 
 await openName(p, 'Charlie');
-await p.click('.poi-pop .pop-tools button[title="Make Side Quest"]'); await p.waitForTimeout(600);
-await p.click('.poi-pop .pop-tools button[title="Make main stop"]'); await p.waitForTimeout(600);
+await act(p, 'Make Side Quest'); await p.waitForTimeout(600);
+await act(p, 'Make main stop'); await p.waitForTimeout(600);
 c = await stored(p, 'C');
 ok(!c.isSub && !c.parentId && c.order === 4, 'turning it back makes it the last stop of its day (stop ' + c.order + ')');
 await closeWin(p);
 
 // ================= the edit form
 await openName(p, 'Delta');
-await p.click('.poi-pop .pop-tools button[title="Edit"]'); await p.waitForSelector('.poi-pop form', { timeout: 5000 });
+await act(p, 'Edit'); await p.waitForSelector('.poi-pop form', { timeout: 5000 });
 ok(await p.isVisible('#edit-side') && !(await p.isVisible('.poi-pop .near-lab')), 'the form has a Side Quest box; "Near" appears only once it is ticked');
 await p.check('#edit-side'); await p.waitForTimeout(150);
 ok(await p.isVisible('.poi-pop .near-lab') && !(await p.isVisible('.poi-pop label:has-text("Stop in the day")')), 'ticking it shows "Near" and hides the stop number');
@@ -85,7 +93,7 @@ await closeWin(p);
 ok((await p.locator('#poi-list li', { has: p.locator('b:text-is("Delta")') }).count()) === 0, 'it is now folded under Alpha, so the list no longer shows it on its own');
 await p.locator('#poi-list li', { has: p.locator('b:text-is("Alpha")') }).locator('.side-chip').click(); await p.waitForTimeout(300);
 await openName(p, 'Delta');
-await p.click('.poi-pop .pop-tools button[title="Edit"]'); await p.waitForSelector('.poi-pop form', { timeout: 5000 });
+await act(p, 'Edit'); await p.waitForSelector('.poi-pop form', { timeout: 5000 });
 ok(await p.isChecked('#edit-side') && (await p.inputValue('.poi-pop .near-lab select')) === 'A', 'the form reopens with the box ticked and Alpha chosen');
 await p.uncheck('#edit-side'); await p.waitForTimeout(100);
 await p.click('.poi-pop button[type=submit]'); await p.waitForTimeout(500);
@@ -105,7 +113,7 @@ const all = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.
 const fresh = all.find((x) => !items.some((o) => o.id === x.id));
 ok(fresh && fresh.isSub === true && fresh.type === 'other' && fresh.tripId === 't1' && ['C', 'D'].includes(fresh.parentId) && fresh.date === '2026-11-13', 'it adds a Side Quest of type Other in the current trip, hung from the nearest main stop (' + (fresh && fresh.parentId) + ') on its date, and opens its form');
 ok(await p.isChecked('#edit-side') && await p.isVisible('.poi-pop .near-lab'), 'the form opens with the Side Quest box ticked');
-await p.evaluate(() => { document.querySelector(".leaflet-popup-close-button")?.click(); }); await p.waitForTimeout(500);
+await closeWin(p).catch(() => {}); await p.waitForTimeout(500);
 
 // ================= Select mode
 await p.click('#poi-select'); await p.waitForTimeout(200);

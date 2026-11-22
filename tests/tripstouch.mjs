@@ -1,7 +1,7 @@
 // Trips tab, day card, on a touch screen: a tap on a stop's name or number opens its marker, the Side Quest chip and the check-in button stay independent,
 // hold-and-drag reorders, a tap right after a drag still works, a vertical drag scrolls, a horizontal swipe turns the day. Real touch events (CDP), phone portrait and landscape.
 // Regression: on touch screens the Side Quest chip's ::after tap-target grew to a 316 x 400 px overlay over the card (the chip was not positioned), so taps on other stops hit the chip.
-import { chromium, CHANNEL } from './lib.mjs';
+import { chromium, CHANNEL, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const iso = (o) => { const d = new Date(); d.setDate(d.getDate() + o); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -37,8 +37,8 @@ async function run(name, vp) {
   const D = '#trip-detail ';
   const stop = (id) => `${D}.plan-stop[data-id="${id}"], ${D}[data-id="${id}"] > .plan-stop`;
   const reopen = async () => { if (await p.evaluate(() => document.getElementById('panel').hidden)) { await p.evaluate(() => document.querySelector('#dock button[data-tab=trips]').click()); await p.waitForTimeout(450); } };
-  const popupText = () => p.evaluate(() => document.querySelector('.leaflet-popup')?.innerText ?? '');
-  const closePopup = async () => { await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, .pop-close')?.click()); await p.waitForTimeout(350); };
+  const popupText = () => p.evaluate((q) => document.querySelector(q)?.innerText ?? '', `${MW}:not([hidden])`);
+  const closePopup = async () => { await p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button, .pop-close'))?.click()); await p.waitForTimeout(350); };
   const mains = () => p.$$eval(`${D}.flip-body .plan-stop`, (e) => e.filter((x) => !x.closest('.plan-side')).map((x) => x.querySelector('b').textContent).join(','));
   const rowIds = () => p.$$eval(`${D}.flip-body .plan-stop`, (e) => e.map((x) => x.querySelector('b').textContent).join(','));
   const stored = () => p.evaluate(() => Object.fromEntries(JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.map((i) => [i.id, i])));
@@ -49,7 +49,7 @@ async function run(name, vp) {
   };
   const tap = async (sel) => { await reopen(); const r = await at(sel); await p.touchscreen.tap(r.x, r.y); await p.waitForTimeout(500); };
   // the popup follows the map move, or a 700 ms timer when the map is already there: wait for it
-  const opened = (nm) => p.waitForFunction((n) => new RegExp(n).test(document.querySelector('.leaflet-popup')?.innerText ?? ''), nm, { timeout: 3000 }).then(() => true, () => false);
+  const opened = (nm) => p.waitForFunction(([n, q]) => new RegExp(n).test(document.querySelector(q)?.innerText ?? ''), [nm, `${MW}:not([hidden])`], { timeout: 3000 }).then(() => true, () => false);
 
   // a hit test of every visible part: what is at the centre of the name, the number and the row belongs to that row
   const hits = () => p.evaluate(async (sel) => {

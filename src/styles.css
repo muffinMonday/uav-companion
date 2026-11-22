@@ -1558,7 +1558,7 @@ button.ses-attendee{cursor:pointer}
 .marker-host h3:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 .marker-host .pop{max-width:none;width:auto}
 .marker-host .pop-close{display:grid}
-.marker-host[data-mode=side] .pop-toggle{display:none}
+.marker-host[data-mode=side] .pop-toggle:not(.is-tuck){display:none}
 .marker-host[data-mode=side] .pop-head{padding-right:40px}
 .marker-host[data-mode=bottom] .pop{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 @media (pointer:coarse){.mh-handle{height:44px}.marker-host .pop-close,.marker-host .pop-toggle{width:44px;height:44px;top:2px}.marker-host .pop-toggle{right:46px}}

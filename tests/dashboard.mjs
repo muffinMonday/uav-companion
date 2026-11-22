@@ -1,6 +1,8 @@
 // The dashboard along the bottom of the map: its three states, how it starts, its cards, and how it shares the screen with the side panel.
-import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN, HOST, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
+// Closes the saved-marker window. The host shows no close button while its edit form is up (Cancel leaves the form first), the popup always has Leaflet's.
+const closeWin = async (p) => { if (HOST && await p.locator('#marker-host form').count()) await p.locator('#marker-host form .btn:not(.primary)').first().click(); await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click()); };
 const errs = [];
 const iso = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const TODAY = iso(0);
@@ -51,7 +53,7 @@ ok(JSON.stringify(flyBtns) === JSON.stringify(['China', 'Singapore']) && (await 
 ok((await p.locator('.dash-guide').count()) === 0 && !/What’s new/.test(txt), 'Help is not showing and there is no What\'s new for a visitor who has seen it');
 await p.locator('#dash-body .dash-stop', { hasText: 'Today stop' }).click(); await p.waitForSelector('.poi-pop h3', { timeout: 8000 });
 ok((await p.textContent('.poi-pop h3')) === 'Today stop', 'tapping a stop opens it on the map');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(300);
 await p.locator('#dash-body .btn', { hasText: 'Open trip' }).click(); await p.waitForTimeout(400);
 ok(await p.isVisible('#trip-detail') && /Under way/.test(await p.textContent('#trip-detail .trip-detail-title')), 'Open trip opens that trip\'s detail screen in the Trips tab');
 await p.click('#trip-detail >> text=‹ Trips');
@@ -191,7 +193,7 @@ await p.click('#task-save'); await p.waitForTimeout(500);
 ok(await p.isVisible('#pane-poi') && await p.$eval('#poi-add', (e) => e.open), 'Save a place opens the Points of Interest explorer with Add a marker unfolded');
 await p.click('#poi-center'); await p.waitForTimeout(500);
 ok((await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length)) === count0 + 1, 'At map centre in the explorer adds a marker');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
+await closeWin(p); await p.waitForTimeout(300);
 await p.click('#poi-select'); await p.waitForTimeout(300);
 ok(/Tap pins/.test(await p.textContent('#banner-text')), 'Select markers is still in the explorer');
 await ctx.close();
@@ -264,7 +266,7 @@ const placed = await p.evaluate(() => { const it = JSON.parse(localStorage.getIt
 const [la, lo] = cr.label.split(', ').map(Number);
 ok(Math.abs(placed.lat - la) < 2e-5 && Math.abs(placed.lon - lo) < 2e-5 && (await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.length)) === placedBefore + 1, 'Place at map centre puts the marker exactly where the cross is');
 ok((await cross()).hidden, 'the crosshair steps aside while a window is open');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
+await closeWin(p); await p.waitForTimeout(300);
 ok(!(await cross()).hidden, 'and returns when it closes');
 ok((await p.$eval('.crosshair', (e) => getComputedStyle(e).pointerEvents)) === 'none', 'it never takes a click');
 await p.click('#dash-help'); await p.evaluate(() => { document.querySelector('#dash-body details[data-topic=map]').open = true; });

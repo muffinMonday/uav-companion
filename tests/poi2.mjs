@@ -1,5 +1,9 @@
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from './lib.mjs';
+import { chromium, HOST, MW } from './lib.mjs';
+// HOST: opening a marker window recentres the pin in the 'free' map area, which today is under the side panel (see the report); the suite checks that, then pans the pin back so the rest of it can run.
+const coveredPin = (p) => p.evaluate(() => { const r = document.querySelector('.poi-pin').getBoundingClientRect(); const e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return !e || !e.closest('.poi-pin, #map'); });
+const panPinBack = async (p) => { const r = await rect(p); await p.mouse.move(780, 700); await p.mouse.down(); await p.mouse.move(Math.max(5, 780 + 400 - r.x), Math.max(100, 700 + 400 - r.y), { steps: 8 }); await p.waitForTimeout(300); await p.mouse.up(); await p.waitForTimeout(700); }; // paused before release: no drag inertia
+const closeWin = (p) => p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host:not([hidden]) .pop-close')?.click());
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const seed = { v: 1, items: [
   { id: 'a1', type: 'home', name: 'Seed Home', note: '', lat: 30.5928, lon: 114.3055, created: '2026-11-01T00:00:00.000Z' },
@@ -20,13 +24,14 @@ await p.click('#tab-poi');
 await p.click('#poi-list .poi-item:has-text("Seed Home")');
 await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(900); await p.keyboard.press('Escape');
 
+if (HOST) { await p.waitForTimeout(400); ok(!(await coveredPin(p)), 'host: after opening a marker the pin is not hidden under the side panel'); await panPinBack(p); }
 // enter edit mode
 await p.check('#poi-edit');
 ok(await p.evaluate(() => document.getElementById('map').classList.contains('is-editing')), 'edit mode adds the editing state to the map');
 ok(/Edit mode/.test(await p.textContent('#banner-text')) && (await p.textContent('#banner-action')) === 'Done', 'banner explains edit mode and offers Done');
 
 // map is locked
-const pin0 = await rect(p);
+let pin0 = await rect(p);
 await p.mouse.move(700, 600); await p.mouse.down(); await p.mouse.move(520, 480, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(500);
 const pin1 = await rect(p);
 ok(Math.abs(pin1.x - pin0.x) < 1 && Math.abs(pin1.y - pin0.y) < 1, 'map cannot be dragged in edit mode');
@@ -34,7 +39,8 @@ ok(Math.abs(pin1.x - pin0.x) < 1 && Math.abs(pin1.y - pin0.y) < 1, 'map cannot b
 // plain click on a pin still opens its popup
 await p.mouse.click(pin0.x, pin0.y); await p.waitForSelector('.poi-pop h3', { timeout: 3000 });
 ok((await p.textContent('.poi-pop h3')) === 'Seed Home', 'a quick click on a pin opens its popup in edit mode');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await closeWin(p);
+if (HOST) { await p.waitForTimeout(400); pin0 = await rect(p); if (await coveredPin(p)) { await p.evaluate(() => document.getElementById('banner-action').click()); await panPinBack(p); await p.check('#poi-edit'); pin0 = await rect(p); } } // the window recentred the pin again
 ok(await p.evaluate(() => document.getElementById('map').classList.contains('is-editing')), 'still in edit mode after closing the popup');
 
 // swipe without holding: must not move the pin
@@ -52,7 +58,7 @@ await p.mouse.up(); await p.waitForTimeout(600);
 ok(Math.abs(during.x - (pin0.x + 90)) <= 2 && Math.abs(during.y - (pin0.y + 60)) <= 2, `pin follows the pointer exactly (no jump): dx=${(during.x - pin0.x).toFixed(1)} dy=${(during.y - pin0.y).toFixed(1)}`);
 const moved = (await store(p)).find((i) => i.id === 'a1');
 ok(moved.lon > before.lon + 0.001 && moved.lon < before.lon + 0.01 && moved.lat < before.lat - 0.0005 && moved.lat > before.lat - 0.01, `new position saved: dLon=${(moved.lon - before.lon).toFixed(5)} dLat=${(moved.lat - before.lat).toFixed(5)}`);
-ok((await p.locator('.leaflet-popup').count()) === 0, 'releasing a dragged pin does not open its popup');
+ok((await p.locator(MW + ':visible').count()) === 0, 'releasing a dragged pin does not open its popup');
 ok(!(await p.evaluate(() => document.querySelector('.poi-pin.lifted'))), 'lifted state cleared after release');
 ok(/Marker moved/.test(await p.textContent('#toast')), 'confirmation toast shown');
 ok(/\d+\.\d{5}/.test(await p.textContent('#poi-list .poi-item:has-text("Seed Home") small')), 'list shows the new coordinates');
@@ -70,7 +76,7 @@ const pinNow = await rect(p, '.poi-pin');
 const st0 = (await store(p)).map((i) => i.lat + ',' + i.lon).join('|');
 await p.mouse.move(pinNow.x, pinNow.y); await p.mouse.down(); await p.waitForTimeout(600); await p.mouse.move(pinNow.x + 50, pinNow.y + 50, { steps: 5 }); await p.mouse.up(); await p.waitForTimeout(300);
 ok((await store(p)).map((i) => i.lat + ',' + i.lon).join('|') === st0, 'pins cannot be moved outside edit mode');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await closeWin(p);
 
 // Escape cancels place mode
 await p.click('#poi-place'); ok(await p.isVisible('#banner'), 'place mode shows banner');
@@ -78,7 +84,8 @@ await p.keyboard.press('Escape'); ok(!(await p.isVisible('#banner')), 'Escape ca
 
 // delete with confirmation
 await p.click('#poi-list .poi-item:has-text("Seed Photo")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(500);
-await p.click('.poi-pop .btn:has-text("Delete")');
+if (HOST) await p.click(`${MW} .pop-more`); // the host keeps Delete in the More menu
+await p.click(`${MW} .btn:has-text("Delete")`);
 ok((await p.textContent('.poi-pop .btn.danger')) === 'Confirm delete', 'first Delete press asks to confirm');
 ok((await store(p)).length === 2, 'nothing deleted yet');
 await p.click('.poi-pop .btn.danger');
@@ -108,7 +115,7 @@ await p3.tap('#dock [data-tab=poi]'); await p3.waitForTimeout(300);
 await p3.screenshot({ path: SP + '/ui-phone-poi.png' });
 await p3.tap('#poi-list .poi-item:has-text("Seed Home")'); await p3.waitForTimeout(1500);
 ok(!(await p3.isVisible('#panel')), 'phone: choosing a list item closes the sheet so the map is visible');
-await p3.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await closeWin(p3);
 await p3.tap('#dock [data-tab=poi]'); await p3.check('#poi-edit'); await p3.waitForTimeout(300);
 ok(!(await p3.isVisible('#panel')) && await p3.isVisible('#banner'), 'phone: edit mode closes the sheet and shows the Done banner');
 await p3.screenshot({ path: SP + '/ui-phone-edit.png' });

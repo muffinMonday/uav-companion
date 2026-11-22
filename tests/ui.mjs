@@ -1,6 +1,8 @@
 // Layout and look: tab contents, settings block, modern controls, search/dock on phones, marker window on phones, day and stop labels.
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from './lib.mjs';
+import { chromium, HOST } from './lib.mjs';
+// the saved-marker window's frosted shell: the popup's wrapper, or the adaptive host (MARKERHOST=1)
+const SHELL = HOST ? '#marker-host' : '.leaflet-popup-content-wrapper';
 // the Distances settings live in the privacy settings: open them, act, and come back to the list
 const inPrivacy = async (p, fn) => { const wasHidden = await p.locator('#privacy').isHidden(); if (wasHidden) await p.click('#privacy-btn'); await fn(); if (wasHidden) await p.click('#privacy-back'); };
 const maxRange = (p, v) => inPrivacy(p, async () => { await p.fill('#dist-max', v); await p.press('#dist-max', 'Tab'); });
@@ -102,7 +104,7 @@ await ctx.close();
 ({ ctx, p } = await session(dated, { width: 1200, height: 800 }));
 await open(p, 'config');
 const alphaOf = (c) => { const m = c.match(/\/\s*([\d.]+)\s*\)$/) || c.match(/rgba\([^)]*,\s*([\d.]+)\)$/); return m ? +m[1] : 1; };
-const popLook = () => p.evaluate(() => { const w = document.querySelector('.leaflet-popup-content-wrapper'); const cs = getComputedStyle(w); return { bg: cs.backgroundColor, blur: cs.backdropFilter || cs.webkitBackdropFilter, tile: getComputedStyle(document.querySelector('.pop .status')).backgroundColor, v: getComputedStyle(document.documentElement).getPropertyValue('--pop-alpha').trim() }; });
+const popLook = () => p.evaluate((shell) => { const w = document.querySelector(shell); const cs = getComputedStyle(w); return { bg: cs.backgroundColor, blur: cs.backdropFilter || cs.webkitBackdropFilter, tile: getComputedStyle(document.querySelector('.pop .status')).backgroundColor, v: getComputedStyle(document.documentElement).getPropertyValue('--pop-alpha').trim() }; }, SHELL);
 ok((await p.inputValue('#pop-op')) === '0.8' && (await p.getAttribute('#pop-op', 'min')) === '0.5' && (await p.getAttribute('#pop-op', 'max')) === '1', 'Map Configs has a Marker window opacity slider, default 0.8, from 0.5 to 1');
 await open(p, 'poi');
 await p.click('#poi-list .poi-item:has-text("Bridge")'); await p.waitForFunction(() => document.querySelector('.poi-pop h3')?.textContent === 'Bridge', null, { timeout: 8000 }); await p.waitForTimeout(500);
@@ -145,12 +147,19 @@ await open(p, 'poi'); await p.waitForTimeout(400);
 const ph = await p.evaluate(() => ({ body: document.querySelector('#panel > .sp-body').clientHeight, panel: document.getElementById('panel').clientHeight }));
 ok(ph.body > ph.panel * 0.6, 'on a phone the tab content has most of the panel height (' + ph.body + ' of ' + ph.panel + ' px)');
 await p.click('#poi-list .poi-item:has-text("Bridge")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(1500);
-const pop = await p.evaluate(() => { const r = document.querySelector('.leaflet-popup-content-wrapper').getBoundingClientRect(); const c = document.querySelector('.leaflet-popup-content'); const pin = document.querySelector('.poi-pin').getBoundingClientRect(); return { h: r.height, top: r.top, bottom: r.bottom, vh: innerHeight, scrolls: c.scrollHeight > c.clientHeight + 1, pinTop: pin.top, pinBottom: pin.bottom, panelHidden: document.getElementById('panel').hidden }; });
+const pop = await p.evaluate(([shell, scroller]) => { const r = document.querySelector(shell).getBoundingClientRect(); const c = document.querySelector(scroller); const pin = document.querySelector('.poi-pin').getBoundingClientRect(); return { h: r.height, top: r.top, bottom: r.bottom, vh: innerHeight, scrolls: c.scrollHeight > c.clientHeight + 1, pinTop: pin.top, pinBottom: pin.bottom, panelHidden: document.getElementById('panel').hidden }; }, HOST ? ['#marker-host', '#marker-host .mh-body'] : ['.leaflet-popup-content-wrapper', '.leaflet-popup-content']);
+if (!HOST) {
 ok(pop.h <= pop.vh * 0.5 && pop.top >= 0, 'the marker window takes at most half the screen (' + Math.round(pop.h) + ' of ' + pop.vh + ' px) and is fully on screen');
 ok(pop.scrolls || pop.h < pop.vh * 0.45, 'what does not fit scrolls inside the window');
+} else {
+  // host: a compact bottom sheet, the existing phone limit of 60% of the screen
+  ok(pop.h <= pop.vh * 0.6 && pop.top >= 0 && pop.bottom <= pop.vh, 'the marker sheet takes at most 60% of the screen (' + Math.round(pop.h) + ' of ' + pop.vh + ' px) and is fully on screen');
+  ok(pop.scrolls || pop.h < pop.vh * 0.5, 'what does not fit scrolls inside the sheet');
+}
 ok(pop.pinBottom <= pop.vh && pop.pinTop >= 0, 'the pin itself stays on screen');
+if (HOST) ok(pop.pinBottom <= pop.top, 'the pin is above the sheet, not under it');
 const before = await p.evaluate(() => { const r = document.querySelector('.poi-pin').getBoundingClientRect(); return { x: r.x, y: r.y }; });
-const y0 = Math.min(pop.vh - 60, Math.round(pop.pinBottom + 30));
+const y0 = HOST ? Math.round(pop.top * 0.6) : Math.min(pop.vh - 60, Math.round(pop.pinBottom + 30)); // host: the map ends at the sheet, so drag its free upper part
 await p.mouse.move(40, y0); await p.mouse.down(); await p.mouse.move(40, y0 - 40, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(400);
 const after = await p.evaluate(() => { const r = document.querySelector('.poi-pin')?.getBoundingClientRect(); return r ? { x: r.x, y: r.y } : null; });
 ok(after && Math.abs(after.y - before.y) > 20, 'the map can be dragged with the window open (the pin moved ' + (after ? Math.round(before.y - after.y) : '?') + ' px)');

@@ -3,7 +3,7 @@ import { chromium } from './lib.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { dashClick, pickType } from './lib.mjs';
+import { dashClick, pickType, HOST, MW } from './lib.mjs';
 const dist = await import(pathToFileURL(path.join(ROOT, 'src/distance.js')).href);
 const aiimp = await import(pathToFileURL(path.join(ROOT, 'src/aiimport.js')).href);
 // the Distances settings live in the privacy settings: open them, act, and come back to the list
@@ -64,7 +64,8 @@ async function session({ keys = Object.keys(P), extra, prefs, viewport = { width
 const store = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois') || '{"items":[]}').items);
 const prefsOf = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}'));
 const open = async (p, name) => { await p.click(`#poi-list .poi-item:has-text("${name}")`); await p.waitForFunction((n) => document.querySelector('.poi-pop h3')?.textContent === n, name, { timeout: 8000 }); await p.waitForTimeout(900); };
-const closePopup = async (p) => { await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForFunction(() => !document.querySelector('.leaflet-popup'), null, { timeout: 3000 }).catch(() => {}); await p.waitForTimeout(150); };
+const pressDelete = async (p) => { if (HOST) await p.click(`${MW} .pop-more`); await p.click(`${MW} .btn:has-text("Delete")`); }; // the host keeps Delete in the More menu
+const closePopup = async (p) => { await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host:not([hidden]) .pop-close')?.click()); await p.waitForFunction(() => !document.querySelector('.leaflet-popup, #marker-host:not([hidden])'), null, { timeout: 3000 }).catch(() => {}); await p.waitForTimeout(150); };
 const item = (p, name) => p.locator(`#poi-list .poi-item:has-text("${name}")`);
 const distLine = async (p, name) => (await item(p, name).locator('.dist-line').count()) ? (await item(p, name).locator('.dist-line').innerText()) : null;
 const rowsOf = (p) => p.$$eval('.poi-pop .dist-row', (rs) => rs.map((r) => ({ v: r.querySelector('.dist-v').textContent, s: r.querySelector('small').textContent, over: r.classList.contains('over') })));
@@ -225,17 +226,17 @@ await p.check('#poi-edit');
 await p.click('#poi-list .poi-item:has-text("Launch A")'); await p.waitForTimeout(1500);
 let pin = null, still = 0;
 for (let i = 0; i < 40 && still < 4; i++) {
-  const r = await p.evaluate(() => { const q = [...document.querySelectorAll('.poi-pin')].map((e) => e.getBoundingClientRect()).sort((a, c) => Math.abs(a.x - 408) - Math.abs(c.x - 408))[0]; return { x: q.x + q.width / 2, y: q.y + q.height / 2 }; });
+  const r = await p.evaluate(() => { const q = (document.querySelector('.poi-pin.focused') ? [document.querySelector('.poi-pin.focused')] : [...document.querySelectorAll('.poi-pin')]).map((e) => e.getBoundingClientRect()).sort((a, c) => Math.abs(a.x - 408) - Math.abs(c.x - 408))[0]; return { x: q.x + q.width / 2, y: q.y + q.height / 2 }; });
   still = pin && Math.abs(r.x - pin.x) < 0.5 && Math.abs(r.y - pin.y) < 0.5 ? still + 1 : 0; pin = r; await p.waitForTimeout(150);
 }
-if (await p.locator('.poi-pop .pop-toggle[aria-expanded=true]').count()) { await p.click('.poi-pop .pop-toggle'); await p.waitForTimeout(300); } // collapsed: the pin is not under the window
+if (await p.locator('.poi-pop .pop-toggle[aria-expanded=true]:visible').count()) { await p.click('.poi-pop .pop-toggle'); await p.waitForTimeout(300); } // collapsed: the pin is not under the window
 await p.mouse.move(pin.x, pin.y); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.move(pin.x - 80, pin.y + 100, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(600);
 await p.click('#banner-action');
 const hpNow = (await store(p)).find((i) => i.id === 'hp');
 const after = await distLine(p, 'Tower');
 ok(before !== after && after === `${F(D(P.W1, hpNow))} to home point · ${F(D(P.W1, P.H1))} to accommodation`, `7: moving the home point updates the distances at once: "${before}" -> "${after}"`);
 await open(p, 'Hotel One');
-await p.click('.poi-pop .btn:has-text("Delete")'); await p.click('.poi-pop .btn.danger'); await p.waitForTimeout(500);
+await pressDelete(p); await p.click(`${MW} .btn.danger`); await p.waitForTimeout(500);
 ok((await distLine(p, 'Tower')) === `${F(D(P.W1, hpNow))} to home point`, '7: deleting Hotel One drops it from "Tower" (no other hotel covers 13 Nov)');
 await open(p, 'Tower'); rows = await rowsOf(p);
 ok(rows.length === 1 && !/No (hotel|accommodation)/.test(await p.locator('.poi-pop .dist-wrap').innerText()), '7: and the window has no hotel row');
@@ -396,7 +397,7 @@ await S.ctx.close();
 S = await session({ keys: ['HP', 'H1', 'H2', 'W1', 'W2'], viewport: { width: 390, height: 780 } }); p = S.page;
 await p.click('#dock [data-tab=poi]').catch(() => {});
 await p.click('#poi-list .poi-item:has-text("Tower")'); await p.waitForFunction(() => document.querySelector('.poi-pop h3')?.textContent === 'Tower', null, { timeout: 8000 }); await p.waitForTimeout(1200);
-const fit = await p.evaluate(() => { const r = document.querySelector('.leaflet-popup').getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth }; });
+const fit = await p.evaluate((sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth }; }, MW);
 ok(fit.l >= 0 && fit.r <= fit.w, `14: phone: the window with distance rows fits (${Math.round(fit.l)}–${Math.round(fit.r)} of ${fit.w})`);
 await p.screenshot({ path: SP + '/trip-phone.png' });
 await S.ctx.close();

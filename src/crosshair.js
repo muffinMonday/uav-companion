@@ -2,6 +2,7 @@
 // "Place at map centre" uses. It is on by default; the choice is remembered. It steps aside while a window is open (the window would cover it).
 import L from 'leaflet';
 import { loadPrefs, savePrefs } from './prefs.js';
+import { onOverlay } from './overlay-policy.js';
 
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><path class="slash" d="M4 3l16 18"/></svg>';
 
@@ -15,6 +16,7 @@ export function initCrosshair(map) {
   map.on('move', update); update();
   map.on('popupopen', () => box.classList.add('under'));
   map.on('popupclose', () => box.classList.remove('under'));
+  onOverlay((owner, phase) => { if (owner === 'marker') box.classList.toggle('under', phase === 'open' || !!map._popup); }); // the adaptive marker host steps it aside like a popup does
 
   const listeners = new Set();
   let btn = null;

@@ -1,6 +1,6 @@
 // The same place saved for several dates: the x2 badge, the visit chips, Add visit, the AI import, and one weather request per spot.
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from './lib.mjs';
+import { chromium, HOST, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const OFFSET = 28800;
@@ -61,7 +61,7 @@ const shown = ch.findIndex((c) => c.cur);
 ok(ch.filter((c) => c.cur).length === 1, 'exactly one visit is marked as the one being shown');
 await p.click('.pop-visits .visit-chip:not([aria-current])'); await p.waitForTimeout(900);
 ch = await chips(p);
-ok((await p.locator('.leaflet-popup').count()) === 1 && ch.findIndex((c) => c.cur) === 1 - shown && (await p.textContent('.poi-pop .pop-type')) !== first, 'tapping the other visit switches the window to it (still one window, other day and stop)');
+ok((await p.locator(MW + ':visible').count()) === 1 && ch.findIndex((c) => c.cur) === 1 - shown && (await p.textContent('.poi-pop .pop-type')) !== first, 'tapping the other visit switches the window to it (still one window, other day and stop)');
 ok(new RegExp(shown === 0 ? 'Sat, Nov 14' : 'Thu, Nov 12').test(await p.textContent('.poi-pop .pop-dates')), 'it shows the date of that visit');
 
 // ================= add visit
@@ -78,7 +78,8 @@ ok(bd.filter((x) => x.t === 'Yellow Crane Tower').length === 3 && bd.filter((x) 
 ch = await chips(p);
 ok(ch.length === 3 && /Nov 12/.test(ch[0].t) && /Nov 13/.test(ch[1].t) && /Nov 14/.test(ch[2].t) && ch[1].cur, 'the three visits are listed in date order, the new one marked: ' + ch.map((c) => c.t).join(' | '));
 // delete it again
-await p.click('.poi-pop .btn.danger'); await p.click('.poi-pop .btn.danger'); await p.waitForTimeout(600);
+if (HOST) await p.click(`${MW} .pop-more`); // the host keeps Delete in the More menu
+await p.click(`${MW} .btn.danger`); await p.click(`${MW} .btn.danger`); await p.waitForTimeout(600);
 bd = await badges(p);
 ok((await stored(p)).length === 3 && bd.filter((x) => x.t === 'Yellow Crane Tower').every((x) => x.v === '×2'), 'deleting one visit takes the others back to ×2');
 // a Home marker has no Add visit

@@ -1,6 +1,9 @@
 // Swipe to close the map popups: the marker window (poi-ui.js) and the point-check window (main.js). Left or right anywhere on them, up or down from the border.
 // Touch is simulated with real touch events through the browser protocol, the same way tests/swipe.mjs does it.
-import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN, HOST } from './lib.mjs';
+// the pane that follows the finger: the popup's bubble, or the host's content (the host has no bubble and no tip)
+const PANE = HOST ? '.poi-pop' : '.leaflet-popup-content-wrapper';
+const EDIT = HOST ? '.poi-pop .pop-secondary button:has-text("Edit")' : '.poi-pop .pop-tools button[title="Edit"]';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const b = await chromium.launch({ channel: CHANNEL });
@@ -52,19 +55,19 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
   await openWindow(p, 'Alpha');
   // the whole pane goes with the finger (the bubble, the tip), and comes back when the swipe is too short to dismiss
   const at = (sel) => p.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return r.x; });
-  const bubble0 = await at('.leaflet-popup-content-wrapper');
+  const bubble0 = await at(PANE);
   const tip0 = (await p.isVisible('.leaflet-popup-tip-container')) ? await at('.leaflet-popup-tip-container') : null;
   const hh = await box(p, '.poi-pop h3');
   await touch('touchStart', hh.cx, hh.cy);
   for (let i = 1; i <= 6; i++) { await touch('touchMove', hh.cx - 10 * i, hh.cy + 1); await p.waitForTimeout(12); }
-  const bubble1 = await at('.leaflet-popup-content-wrapper');
+  const bubble1 = await at(PANE);
   const tip1 = tip0 === null ? null : await at('.leaflet-popup-tip-container');
   ok(Math.abs((bubble0 - bubble1) - 60) < 3 && (tip0 === null || Math.abs((tip0 - tip1) - 60) < 3), 'mid-swipe, the bubble and its tip both move with the finger (' + Math.round(bubble0 - bubble1) + ' px)');
   for (let i = 5; i >= 0; i--) { await touch('touchMove', hh.cx - 10 * i, hh.cy + 1); await p.waitForTimeout(12); }
   await touch('touchEnd'); await p.waitForTimeout(300);
   ok(await winOpen(p), 'a swipe too short to dismiss leaves the window open');
-  ok(Math.abs((await at('.leaflet-popup-content-wrapper')) - bubble0) < 3, 'and the pane snaps back into place');
-  const opacity = () => p.$eval('.leaflet-popup-content-wrapper', (e) => parseFloat(getComputedStyle(e).opacity));
+  ok(Math.abs((await at(PANE)) - bubble0) < 3, 'and the pane snaps back into place');
+  const opacity = () => p.$eval(PANE, (e) => parseFloat(getComputedStyle(e).opacity));
   ok((await opacity()) > 0.99, 'and it is fully opaque again');
 
   // the body: the name line, under the top bar
@@ -84,6 +87,7 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
   ok(await winOpen(p), 'a downward swipe on the body (not the border) leaves it open');
   ok((await view(p)) === v0, 'and the map underneath does not move');
 
+  if (!HOST) {
   const top = await box(p, '.poi-pop .pop-type');
   await swipe([top.cx, top.cy], [top.cx, top.cy + 150]);
   ok(!(await winOpen(p)), 'swiping down from the top bar closes it');
@@ -102,14 +106,35 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
   const seq2 = await box(p, '.poi-pop .pop-seq');
   await swipe([seq2.cx, seq2.cy], [seq2.cx, seq2.cy + 150]);
   ok(!(await winOpen(p)), 'and swiping down from it closes it too');
+  } else {
+  // host: the sheet's own gesture (src/marker-host.js): a vertical drag of the top bar resizes the sheet (up expands, down collapses, down from compact closes); the footer takes left / right swipes only
+  const hostOpen = () => p.evaluate(() => { const h = document.getElementById('marker-host'); return !!h && !h.hidden; });
+  const expanded = () => p.getAttribute('#marker-host', 'data-expanded');
+  const top = await box(p, '.poi-pop .pop-type');
+  await swipe([top.cx, top.cy], [top.cx, top.cy + 150]);
+  ok(!(await hostOpen()), 'host: swiping down from the top bar of the compact sheet closes it');
+
+  await openWindow(p, 'Alpha');
+  const top2 = await box(p, '.poi-pop .pop-type');
+  await swipe([top2.cx, top2.cy], [top2.cx, top2.cy - 150]);
+  ok((await hostOpen()) && (await expanded()) === 'true', 'host: swiping up from the top bar expands the sheet (it stays open)');
+  const top3 = await box(p, '.poi-pop .pop-type');
+  await swipe([top3.cx, top3.cy], [top3.cx, top3.cy + 150]);
+  ok((await hostOpen()) && (await expanded()) === 'false', 'host: swiping down from the top bar of the expanded sheet collapses it (it stays open)');
+
+  const seq = await box(p, '.poi-pop .pop-seq');
+  await swipe([seq.cx - 60, seq.cy], [seq.cx + 90, seq.cy + 4]);
+  ok(!(await hostOpen()), 'host: swiping right on the previous / next footer closes it');
+  }
 
   // the edit form: a swipe does not close it
   await openWindow(p, 'Alpha');
-  await p.click('.poi-pop .pop-tools button[title="Edit"]'); await p.waitForSelector('.poi-pop form', { timeout: 5000 });
+  await p.click(EDIT); await p.waitForSelector('.poi-pop form', { timeout: 5000 });
   const f = await box(p, '.poi-pop form');
   await swipe([f.cx, f.cy], [f.cx - 150, f.cy + 4]);
   ok(await winOpen(p) && await p.isVisible('.poi-pop form'), 'in edit mode, a swipe left does not close the window');
-  await openWindow(p, 'Alpha'); // back in view mode, where the top bar (and its close button) is
+  if (HOST) { await p.click('.poi-pop form button:has-text("Cancel")'); await p.waitForSelector('.poi-pop h3', { timeout: 5000 }); } // the sheet covers the list: Cancel returns to the details
+  else await openWindow(p, 'Alpha'); // back in view mode, where the top bar (and its close button) is
   await p.evaluate(() => document.querySelector('.poi-pop .pop-close')?.click()); await p.waitForTimeout(300);
   ok(!(await winOpen(p)), 'the window still closes with its own close button (in the top border)');
   ok(!errs.length, 'no page errors: ' + errs.join(' | '));
@@ -121,15 +146,15 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
   const { ctx, p, touch } = await open(undefined, true, 'no-preference');
   await openWindow(p, 'Alpha');
   const hh = await box(p, '.poi-pop h3');
-  const opacity = () => p.$eval('.leaflet-popup-content-wrapper', (e) => parseFloat(getComputedStyle(e).opacity));
+  const opacity = () => p.$eval(PANE, (e) => parseFloat(getComputedStyle(e).opacity));
   // it gets fainter as the finger moves; once let go it keeps sliding and fading, and is removed, never jumping back towards the middle
   await touch('touchStart', hh.cx, hh.cy);
   for (let i = 1; i <= 10; i++) { await touch('touchMove', hh.cx - 15 * i, hh.cy + 1); await p.waitForTimeout(12); }
   const opMid = await opacity();
   ok(opMid < 0.9 && opMid > 0.05, 'mid-swipe, the pane is partly faded (opacity ' + opMid.toFixed(2) + ')');
-  await p.evaluate(() => {
+  await p.evaluate((pane) => {
     window.__run = [];
-    const w = document.querySelector('.leaflet-popup-content-wrapper');
+    const w = document.querySelector(pane);
     const frame = () => {
       if (!w.isConnected) { window.__run.push('removed'); return; }
       const r = w.getBoundingClientRect();
@@ -137,7 +162,7 @@ const winOpen = (p) => p.$('.poi-pop').then((x) => !!x);
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
-  });
+  }, PANE);
   await touch('touchEnd'); await p.waitForTimeout(400);
   const run = await p.evaluate(() => window.__run);
   const seen = run.filter(Array.isArray);

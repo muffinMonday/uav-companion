@@ -1,6 +1,6 @@
 // Coincident markers (browser): a stack is fanned out by a click, every pin stays its own record and opens its own window, the fan closes on the usual actions,
 // hidden trips do not leak into it, turning the map keeps the hit targets on the pins, edit mode and Side Quests are not disturbed.
-import { chromium, CHANNEL } from './lib.mjs';
+import { chromium, CHANNEL, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const trips = [
@@ -34,7 +34,7 @@ async function open({ list = items, prefs = {}, vp = { width: 1300, height: 900 
 const pins = (p) => p.$$eval('.leaflet-marker-icon.poi-pin', (e) => e.map((x) => { const r = x.getBoundingClientRect(); return { title: x.getAttribute('title'), cx: r.left + r.width / 2, cy: r.top + r.height / 2, spidered: x.classList.contains('spidered') }; }));
 const spidered = async (p) => (await pins(p)).filter((x) => x.spidered);
 const clickPin = (p, title) => p.locator(`.leaflet-marker-icon[title="${title}"]`).first().evaluate((e) => e.click());
-const popupTitle = (p) => p.locator('.leaflet-popup h3').first().textContent().catch(() => null);
+const popupTitle = (p) => p.locator(`${MW} h3`).first().textContent().catch(() => null);
 const stored = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.pois')).items.map((i) => [i.id, i.lat, i.lon].join()).sort());
 const baseline = items.map((i) => [i.id, i.lat, i.lon].join()).sort();
 const apart = (rs) => rs.every((a, i) => rs.every((c, j) => j <= i || Math.hypot(a.cx - c.cx, a.cy - c.cy) >= 28));
@@ -44,7 +44,7 @@ let { ctx, p } = await open();
 ok((await pins(p)).filter((x) => x.title === 'Solo').length === 1, 'the pins are drawn');
 await clickPin(p, 'Alpha'); await p.waitForTimeout(300);
 let fan = await spidered(p);
-ok(fan.length === 4 && await p.locator('.leaflet-popup').count() === 0, 'a click on a stack of four fans all four out and opens no window (' + fan.length + ')');
+ok(fan.length === 4 && await p.locator(`${MW}:not([hidden])`).count() === 0, 'a click on a stack of four fans all four out and opens no window (' + fan.length + ')');
 ok(apart(fan), 'the fanned pins are clear of each other');
 ok(await p.locator('path.spider-stem').count() === 4 && await p.locator('path.spider-hub').count() === 1, 'a stem joins each pin to the stack');
 ok(!fan.some((x) => x.title === 'Solo') && (await pins(p)).find((x) => x.title === 'Solo').spidered === false, 'a pin that is not in the stack stays where it is');
@@ -52,19 +52,19 @@ ok(JSON.stringify(await stored(p)) === JSON.stringify(baseline), 'no marker reco
 const dots = await p.$$eval('.leaflet-marker-icon.spidered .trip-dot', (e) => e.map((x) => x.style.background));
 ok(new Set(dots).size === 3, 'each fanned pin keeps its trip colour (three trips, three colours)');
 // choosing one opens its own window and closes the fan
-await clickPin(p, 'Beta'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+await clickPin(p, 'Beta'); await p.waitForSelector(`${MW} h3`, { timeout: 8000 });
 ok(await popupTitle(p) === 'Beta' && (await spidered(p)).length === 0, 'a click on a fanned pin opens that marker\'s own window and closes the fan');
 ok(JSON.stringify(await stored(p)) === JSON.stringify(baseline), 'still no record changed');
 ok(await p.locator('path.spider-stem').count() === 0, 'the stems are gone');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(200);
+await p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button')).click()); await p.waitForTimeout(200);
 // every marker can be reached
 const reached = [];
 for (const name of ['Alpha', 'Beta', 'Gamma', 'Quiet pin']) {
   await clickPin(p, 'Alpha'); await p.waitForTimeout(250);
   const rs = await pins(p); const target = rs.find((x) => x.title === name && x.spidered);
-  await p.mouse.click(target.cx, target.cy - 6); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+  await p.mouse.click(target.cx, target.cy - 6); await p.waitForSelector(`${MW} h3`, { timeout: 8000 });
   reached.push(await popupTitle(p));
-  await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(200);
+  await p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button')).click()); await p.waitForTimeout(200);
 }
 ok(reached.join() === 'Alpha,Beta,Gamma,Quiet pin', 'a real mouse click on each fanned pin opens that very marker: ' + reached.join(', '));
 // closes on background, Escape, zoom and pan
@@ -87,9 +87,9 @@ ok((await spidered(p)).length === 4 && await p.evaluate(() => document.activeEle
 ok((await p.textContent('[role=status].sr-only')).includes('4 markers at this spot'), 'a screen-reader announcement says how many markers there are and how to choose');
 await p.keyboard.press('Tab'); await p.waitForTimeout(100);
 const focused = await p.evaluate(() => document.activeElement?.getAttribute('title'));
-await p.keyboard.press('Enter'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+await p.keyboard.press('Enter'); await p.waitForSelector(`${MW} h3`, { timeout: 8000 });
 ok(focused && await popupTitle(p) === focused, 'Tab moves between fanned pins and Enter opens the focused marker (' + focused + ')');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(200);
+await p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button')).click()); await p.waitForTimeout(200);
 await p.locator('.leaflet-marker-icon[title="Alpha"]').first().focus(); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
 await p.keyboard.press('Escape'); await p.waitForTimeout(250);
 ok((await spidered(p)).length === 0 && await p.evaluate(() => !!document.activeElement?.classList.contains('poi-pin')), 'Escape closes the fan and keeps focus on a pin');
@@ -109,7 +109,7 @@ for (const name of ['Gamma', 'Beta']) {
 }
 ok(rotReached.join() === 'Gamma,Beta', 'the pin under the pointer at each fanned pin\'s centre is that pin: ' + rotReached.join(', '));
 await p.mouse.click((await pins(p)).find((x) => x.title === 'Gamma' && x.spidered).cx, (await pins(p)).find((x) => x.title === 'Gamma' && x.spidered).cy - 6);
-await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+await p.waitForSelector(`${MW} h3`, { timeout: 8000 });
 ok(await popupTitle(p) === 'Gamma', 'and a click there opens it');
 await ctx.close();
 
@@ -121,17 +121,17 @@ ok(fan.length === 3 && !fan.some((x) => x.title === 'Quiet pin') && (await pins(
 await ctx.close();
 // one visible pin left at the spot: nothing to fan
 ({ ctx, p } = await open({ prefs: { tripHidden: ['t2', 't3'] }, list: items.filter((i) => i.id !== 'm3') }));
-await clickPin(p, 'Alpha'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+await clickPin(p, 'Alpha'); await p.waitForSelector(`${MW} h3`, { timeout: 8000 });
 ok(await popupTitle(p) === 'Alpha' && (await spidered(p)).length === 0, 'a lone visible pin opens its window straight away (hidden pins are not counted as a stack)');
 await ctx.close();
 
 // ================= visits of one place within one trip are not a "stack of trips": the top pin and the visit chips stay as they were
 ({ ctx, p } = await open({ list: [mk('v1', 'First visit', 30.600, 114.310, { tripId: 't1', date: '2026-11-12' }), mk('v2', 'Second visit', 30.600, 114.310, { tripId: 't1', date: '2026-11-14' })] }));
-await clickPin(p, 'Second visit'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+await clickPin(p, 'Second visit'); await p.waitForSelector(`${MW} h3`, { timeout: 8000 });
 ok(await popupTitle(p) === 'Second visit' && (await spidered(p)).length === 0, 'two visits of one place in the same trip: the click opens that marker window as before, no fan');
 await ctx.close();
 ({ ctx, p } = await open({ list: [mk('v1', 'First visit', 30.600, 114.310), mk('v2', 'Second visit', 30.600, 114.310)] }));
-await clickPin(p, 'Second visit'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+await clickPin(p, 'Second visit'); await p.waitForSelector(`${MW} h3`, { timeout: 8000 });
 ok(await popupTitle(p) === 'Second visit' && (await spidered(p)).length === 0, 'markers with no trip at one place: no fan either');
 await ctx.close();
 ({ ctx, p } = await open({ list: [mk('v1', 'In trip', 30.600, 114.310, { tripId: 't1' }), mk('v2', 'No trip', 30.600, 114.310)] }));
@@ -141,7 +141,7 @@ await ctx.close();
 
 // ================= a lone pin behaves as before
 ({ ctx, p } = await open());
-await clickPin(p, 'Solo'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+await clickPin(p, 'Solo'); await p.waitForSelector(`${MW} h3`, { timeout: 8000 });
 ok(await popupTitle(p) === 'Solo' && (await spidered(p)).length === 0, 'a pin that is alone opens its window as before');
 await ctx.close();
 
@@ -150,7 +150,7 @@ await ctx.close();
 await clickPin(p, 'Alpha'); await p.waitForTimeout(300);
 const t = (await pins(p)).find((x) => x.title === 'Gamma' && x.spidered);
 await p.mouse.click(t.cx, t.cy - 6); await p.waitForTimeout(500);
-ok(/Gamma/.test(await p.textContent('.name-tag')) && (await spidered(p)).length === 0 && await p.locator('.leaflet-popup').count() === 0, 'with details off a click on a fanned pin selects it with a name tag and closes the fan');
+ok(/Gamma/.test(await p.textContent('.name-tag')) && (await spidered(p)).length === 0 && await p.locator(`${MW}:not([hidden])`).count() === 0, 'with details off a click on a fanned pin selects it with a name tag and closes the fan');
 await ctx.close();
 
 

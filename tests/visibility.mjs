@@ -1,6 +1,6 @@
 // Remembered map visibility per trip and for Unassigned: pins, routes and links go with a hidden trip, the global switches keep their meaning,
 // creating or opening a hidden marker explains itself, and nothing is written to a record. Starts folded, as a visitor sees it.
-import { OUT as SP, CHANNEL, chromium, LATEST_SEEN } from './lib.mjs';
+import { OUT as SP, CHANNEL, chromium, LATEST_SEEN, HOST, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 
@@ -91,11 +91,11 @@ await p.click(visBtn('none')); await p.waitForTimeout(200);
 
 // routes, Side Quest links and distance lines go with a hidden trip
 await clickPin(p, 'Lake');
-await p.waitForSelector('.leaflet-popup h3', { timeout: 6000 });
+await p.waitForSelector(MW + ' h3', { timeout: 6000 });
 const drawn = await paths(p);
 ok(drawn > 0, 'with a marker open there are route and link lines on the map (' + drawn + ')');
 await p.click(visBtn('t1')); await p.waitForTimeout(400);
-ok((await paths(p)) === 0 && (await p.locator('.leaflet-popup').count()) === 0, 'hiding its trip removes every line and closes its window');
+ok((await paths(p)) === 0 && (await p.locator(HOST ? MW + ':visible' : MW).count()) === 0, 'hiding its trip removes every line and closes its window');
 await p.click(visBtn('t1')); await p.waitForTimeout(300);
 
 // the global switches keep their meaning
@@ -125,16 +125,16 @@ ok((await pinTitles(p)).length === 6, 'the new pin is not drawn, and the rest of
 ok(JSON.stringify((await hiddenPref(p)).tripHidden) === '["t1"]', 'making it did not change the setting');
 await p.click('#toast .toast-action'); await p.waitForTimeout(400);
 ok(!(await hiddenPref(p)).tripHidden && (await pinTitles(p)).length === 13, 'the button shows that trip and nothing else changed');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click());
 
 // a result that is hidden on the map: explained, not silently revealed
 await p.click(visBtn('t1')); await p.waitForTimeout(200);
 await p.fill('#poi-search', 'tower'); await p.waitForTimeout(300);
 await p.click('#poi-list li[data-id="tower"] .poi-item'); await p.waitForTimeout(500);
-ok(/"Tower" is not on the map/.test(await toastText(p)) && (await p.locator('.leaflet-popup').count()) === 0, 'tapping a result that is hidden on the map explains why instead of opening a window');
+ok(/"Tower" is not on the map/.test(await toastText(p)) && (await p.locator(HOST ? MW + ':visible' : MW).count()) === 0, 'tapping a result that is hidden on the map explains why instead of opening a window');
 ok(JSON.stringify((await hiddenPref(p)).tripHidden) === '["t1"]', 'and the setting is untouched');
-await p.click('#toast .toast-action'); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
-ok((await p.textContent('.leaflet-popup h3')).includes('Tower') && !(await hiddenPref(p)).tripHidden, 'Show on map shows the trip and opens the marker');
+await p.click('#toast .toast-action'); await p.waitForSelector(MW + ' h3', { timeout: 8000 });
+ok((await p.textContent(MW + ' h3')).includes('Tower') && !(await hiddenPref(p)).tripHidden, 'Show on map shows the trip and opens the marker');
 await p.fill('#poi-search', '');
 await p.screenshot({ path: SP + '/visibility-desktop.png' });
 await p.close(); await ctx.close();

@@ -22,7 +22,7 @@ async function session({ width, height = 800, host = true, panelOpen = false, ta
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/arcgisonline|Failed to load resource|ERR_FAILED|net::/.test(m.text()) && errs.push(m.text()));
-  await p.goto('http://localhost:5173/' + (host ? '?markerhost=1' : ''), { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  await p.goto('http://localhost:5173/' + (host ? '?markerhost=1' : '?markerhost=0'), { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
   const open = await p.evaluate(() => !document.getElementById('panel').hidden);
   if (open !== panelOpen) await p.click(open ? '#panel-close' : '#dock button >> nth=0');
   await p.waitForTimeout(300);

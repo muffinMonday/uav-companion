@@ -1,6 +1,9 @@
 // The day follows from the date; trips need dates; the start-up fix of old day numbers; the AI import turning days into dates.
 import { OUT as SP, CHANNEL } from './lib.mjs';
-import { chromium } from './lib.mjs';
+import { chromium, HOST } from './lib.mjs';
+// the marker window's scrolling body and close control: the popup's, or the adaptive host's
+const SCROLLER = HOST ? '#marker-host .mh-body' : '.leaflet-popup-content';
+const CLOSE = HOST ? '#marker-host .pop-close' : '.leaflet-popup-close-button';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 
@@ -23,7 +26,7 @@ async function session({ items, tripsData = trips(), viewport = { width: 1200, h
   return { ctx, p };
 }
 const open = async (p, name) => { await p.click(`#poi-list .poi-item:has-text("${name}")`); await p.waitForFunction((n) => document.querySelector('.poi-pop h3')?.textContent === n, name, { timeout: 8000 }); await p.waitForTimeout(700); };
-const edit = async (p) => { await p.evaluate(() => document.querySelector('.leaflet-popup-content').scrollTo(0, 9999)); await p.click('.poi-pop .btn:has-text("Edit")'); await p.waitForSelector('.poi-pop form'); await p.waitForTimeout(250); };
+const edit = async (p) => { await p.evaluate((s) => document.querySelector(s).scrollTo(0, 9999), SCROLLER); await p.click('.poi-pop .btn:has-text("Edit")'); await p.waitForSelector('.poi-pop form'); await p.waitForTimeout(250); };
 
 // ================= worked out from the date: pins, rows, window, form
 const items = [
@@ -57,7 +60,7 @@ await p.click('.poi-pop form button[type=submit]'); await p.waitForTimeout(500);
 let s = await stored(p);
 ok(s.a.date === '2026-11-14' && !('day' in s.a), 'saved with the new date and no stored day');
 ok((await p.locator('.poi-pin[title="Alpha"] .seq').textContent()) === 'D3·3', 'the pin shows D3·3 at once');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await p.evaluate((s) => document.querySelector(s)?.click(), CLOSE);
 await ctx.close();
 
 // ---- editing the trip's dates moves every day

@@ -1,7 +1,7 @@
 // Trip marker view: "Show this trip" shows one trip's pins, routes, Side Quest links and window on the map and nothing else, without touching the saved
 // switches; it clears when the Trips tab is left, the trip is deleted or a global switch is used. Completed trips are off the global map unless
 // "Show completed trips" is on, but a completed trip opened in Trips still shows. The page clock is pinned to 15 Nov 2026.
-import { CHANNEL, chromium, LATEST_SEEN, moreTool } from './lib.mjs';
+import { CHANNEL, chromium, LATEST_SEEN, moreTool, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 
@@ -83,9 +83,9 @@ ok(await p.getAttribute('.leaflet-bar a[data-tool="trips"]', 'aria-pressed') ===
 // a window and its lines
 await clickPin(p, 'Alpha One');
 const drawn = await paths(p);
-ok(drawn > 0 && (await p.locator('.leaflet-popup').count()) === 1, 'an open stop shows its route and links (' + drawn + ')');
+ok(drawn > 0 && (await p.locator(`${MW}:not([hidden])`).count()) === 1, 'an open stop shows its route and links (' + drawn + ')');
 await viewBtn(p, 'Beta upcoming').click(); await p.waitForTimeout(500);
-ok(JSON.stringify(await pinTitles(p)) === JSON.stringify(['Beta One', 'Beta Two', 'My Flat']) && (await p.locator('.leaflet-popup').count()) === 0 && (await paths(p)) === 0, 'switching to another trip swaps the pins and closes the other trip\'s window and lines');
+ok(JSON.stringify(await pinTitles(p)) === JSON.stringify(['Beta One', 'Beta Two', 'My Flat']) && (await p.locator(`${MW}:not([hidden])`).count()) === 0 && (await paths(p)) === 0, 'switching to another trip swaps the pins and closes the other trip\'s window and lines');
 ok(await viewBtn(p, 'Alpha active').getAttribute('aria-pressed') === 'false' && await viewBtn(p, 'Beta upcoming').getAttribute('aria-pressed') === 'true', 'only the new trip is pressed');
 await card(p, 'Beta upcoming').locator('button.btn', { hasText: 'Fit map' }).click(); await p.waitForTimeout(700);
 ok(!/Nothing to show/.test(await toastText(p)), 'Fit map still fits the viewed trip');

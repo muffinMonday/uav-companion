@@ -1,6 +1,6 @@
 // Add a marker: folded on load, the four-group type picker (one choice across all 16), placement while folded or open,
 // the Side Quest type switch, grouped edit form, keyboard use, and the small-screen layout. Starts with the card folded, as a visitor sees it.
-import { OUT as SP, CHANNEL, chromium, pickType } from './lib.mjs';
+import { OUT as SP, CHANNEL, chromium, pickType, HOST, MW } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const GROUPS = { travel: 'hotel,food,attraction,shopping,nature,meeting', transport: 'train,airport,transport', drone: 'home,takeoff,landing,photo,hazard', special: 'residence,other' };
@@ -65,7 +65,7 @@ await p.click('#poi-center'); await p.waitForSelector('.poi-pop form');
 let all = await stored(p);
 const made = all.find((x) => !items.some((o) => o.id === x.id));
 ok(made && made.type === 'attraction' && !('group' in made), 'At map centre saves the chosen type, and no group');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click()); await p.waitForTimeout(300);
 await pickType(p, 'transport'); await p.click('#poi-place');
 ok(/Tap the map to place: Other Transport/.test(await p.textContent('#banner-text')) && await p.isVisible('#banner-action'), 'Place on map names the type in the banner and offers Cancel');
 await pickType(p, 'meeting');
@@ -92,13 +92,13 @@ all = await stored(p);
 const sq = all.find((x) => x.isSub && !items.some((o) => o.id === x.id));
 ok(sq && sq.type === 'other', 'a Side Quest made while Accommodation was chosen is saved as Other');
 ok(await chosen(p) === 'other' && (await p.textContent('#poi-type-now')).includes('Other') && /Side Quests can't be/.test(await p.textContent('#toast')), 'the picker now shows Other, and a message says why');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click()); await p.waitForTimeout(300);
 await goTo(p, '30.5800, 114.3200');
 await p.waitForSelector('.leaflet-popup .pop-tools button[title="Add as Side Quest"]', { timeout: 8000 });
 await p.evaluate(() => { document.getElementById('toast').hidden = true; });
 await p.click('.leaflet-popup .pop-tools button[title="Add as Side Quest"]'); await p.waitForSelector('.poi-pop form', { timeout: 8000 });
 ok(await chosen(p) === 'other' && await p.isHidden('#toast'), 'it stays Other (no second message) until the person changes it');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click()); await p.waitForTimeout(300);
 // the six new types are allowed Side Quests
 await pickType(p, 'food');
 await goTo(p, '30.5900, 114.3300');
@@ -107,15 +107,15 @@ await p.click('.leaflet-popup .pop-tools button[title="Add as Side Quest"]'); aw
 all = await stored(p);
 const foodSq = all.filter((x) => x.isSub && x.type === 'food');
 ok(foodSq.length === 1 && await chosen(p) === 'food', 'a Food & Drink Side Quest keeps its type and the picker stays on it');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click()); await p.waitForTimeout(300);
 
 // ================= the edit form: grouped types, and the Side Quest note
-await p.click('#poi-list .poi-item:has-text("Alpha")'); await p.waitForSelector('.leaflet-popup h3');
-await p.click('.leaflet-popup button[title="Edit"]').catch(() => {}); await p.waitForSelector('.poi-pop form', { timeout: 6000 });
+await p.click('#poi-list .poi-item:has-text("Alpha")'); await p.waitForSelector(MW + ' h3');
+await p.click(HOST ? MW + ' .pop-secondary .btn:has-text("Edit")' : MW + ' button[title="Edit"]').catch(() => {}); await p.waitForSelector('.poi-pop form', { timeout: 6000 });
 const optgroups = await p.evaluate(() => [...[...document.querySelectorAll('.poi-pop form')].at(-1).querySelectorAll('select optgroup')].map((x) => x.label + ':' + [...x.querySelectorAll('option')].map((o) => o.value).join('+')));
 ok(optgroups.join('|') === 'Travel & Places:hotel+food+attraction+shopping+nature+meeting|Transportation:train+airport+transport|Drone & Safety:home+takeoff+landing+photo+hazard|Special:residence+other', 'the edit form lists the 16 types under the four groups: ' + optgroups.join(' | '));
 ok(await p.evaluate(() => [...document.querySelectorAll('.poi-pop form')].at(-1).querySelector('select:has(optgroup)').value) === 'photo', 'and shows the stored type selected');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click()); await p.waitForTimeout(300);
 
 // ================= reload: folded again, markers kept
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(900);

@@ -64,7 +64,7 @@ ok(cell.x > item.x + item.width * 0.4, 'and it sits at the right of the row');
 await p.screenshot({ path: 'tests/out/checkin-poi.png' });
 await row(p, 'Tower').locator('.poi-item').click(); await p.waitForSelector('.poi-pop h3', { timeout: 8000 });
 ok(/Checked in/.test(await p.textContent('.poi-pop .pop-checkin')), 'the marker window says so too');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click());
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host:not([hidden]) .pop-close').click());
 
 // the trip screens
 await p.click('#tab-trips'); await p.waitForTimeout(300);
@@ -82,7 +82,7 @@ await clear.click(); await p.waitForTimeout(150);
 ok(/Clear\?/.test(await clear.textContent()) && (await stored(p, 'tw')).checkin, 'the ✕ asks first');
 await clear.click(); await p.waitForTimeout(400);
 ok(!(await stored(p, 'tw')).checkin && (await p.locator('.poi-pop .pop-checkin').count()) === 0 && await row(p, 'Tower').locator('.checkin-btn').isVisible(), 'the second press clears it in the window and the button is back in the row');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click());
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host:not([hidden]) .pop-close')?.click());
 await row(p, 'Tower').locator('.checkin-btn').click(); await p.waitForTimeout(400);
 
 // a share link leaves it out, the export keeps it

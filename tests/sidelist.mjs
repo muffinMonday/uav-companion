@@ -71,7 +71,7 @@ await p.click('.poi-pop .pop-side-btn'); await p.waitForFunction(() => document.
 ok(/Side Quest/.test(await p.textContent('.poi-pop .pop-type')) && /Side Quest near/.test(await p.textContent('.poi-pop .pop-side')) && (await p.locator('.poi-pop .pop-side-btn').textContent()) === 'Bravo', 'the Side Quest\'s window says it is near Bravo, with a button back');
 ok(await shown(p, 'Lookout'), 'and its pin stays on show while its window is open');
 await p.click('.poi-pop .pop-side-btn'); await p.waitForFunction(() => document.querySelector('.poi-pop h3')?.textContent === 'Bravo', null, { timeout: 5000 });
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(400);
+await p.evaluate(() => (document.querySelector('#marker-host:not([hidden]) .pop-close') || document.querySelector('.leaflet-popup-close-button'))?.click()); await p.waitForTimeout(400);
 
 // ================= fold again
 await p.locator('#poi-list li', { has: p.locator('b:text-is("Bravo")') }).locator('.side-chip').click(); await p.waitForTimeout(300);

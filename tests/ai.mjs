@@ -1,5 +1,5 @@
 import { OUT as SP, ROOT, CHANNEL } from './lib.mjs';
-import { chromium } from './lib.mjs';
+import { chromium, HOST, MW } from './lib.mjs';
 import fs from 'node:fs';
 import { dashClick } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
@@ -47,7 +47,7 @@ const preview = async (p, text) => { await p.click('#tab-trips'); await p.fill('
 const rowsText = (p) => p.$$eval('#ai-preview .prow', (rs) => rs.map((r) => r.innerText.replace(/\s+/g, ' ')));
 const toast = (p) => p.textContent('#toast');
 const setPriv = async (p, id, on) => { await p.click('#privacy-btn'); await p.waitForSelector('#privacy:not([hidden])'); await (on ? p.check(id) : p.uncheck(id)); await p.click('#privacy-back'); };
-const closePopup = async (p) => { await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForFunction(() => !document.querySelector('.leaflet-popup'), null, { timeout: 3000 }).catch(() => {}); };
+const closePopup = async (p) => { await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host:not([hidden]) .pop-close')?.click()); await p.waitForFunction(() => !document.querySelector('.leaflet-popup, #marker-host:not([hidden])'), null, { timeout: 3000 }).catch(() => {}); };
 const feat = (name, props = {}, lon = 114.3, lat = 30.6) => ({ type: 'Feature', geometry: lon === null ? null : { type: 'Point', coordinates: [lon, lat] }, properties: { name, ...props } });
 const fc = (...f) => JSON.stringify({ type: 'FeatureCollection', features: f });
 
@@ -215,7 +215,7 @@ await p.click('#ai-add'); await p.waitForTimeout(600);
 await p.click('#tab-poi'); await p.click('#poi-list .poi-item:has-text("Maybe Here")'); await p.waitForSelector('.poi-pop h3'); await p.waitForTimeout(900);
 ok(await p.locator('.poi-pop .unverified').isVisible() && /Unverified location/.test(await p.locator('.poi-pop .unverified').innerText()), '10: an unverified marker\'s window says so');
 await p.click('.poi-pop .unverified .btn'); await p.waitForTimeout(500);
-ok((await p.locator('.poi-pop .unverified').count()) === 0 && (await p.locator('.leaflet-popup').count()) === 1, '10: "Mark as checked" removes the notice and keeps the window open');
+ok((await p.locator('.poi-pop .unverified').count()) === 0 && (await p.locator(MW + ':visible').count()) === 1, '10: "Mark as checked" removes the notice and keeps the window open');
 ok(!('unverified' in (await pois(p)).find((m) => m.name === 'Maybe Here')), '10: the flag is gone from storage');
 ok(!(await p.locator('#poi-list .poi-item:has-text("Maybe Here") .badge').count()), '10: and from the list');
 await closePopup(p);

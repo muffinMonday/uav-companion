@@ -1,5 +1,5 @@
 // Reordering saved places: press and hold a row for 1 s, drag it between dates, and the date, day and stop follow. Alt + arrows too.
-import { OUT as SP, CHANNEL } from './lib.mjs';
+import { OUT as SP, CHANNEL, MW } from './lib.mjs';
 import { chromium } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
@@ -50,7 +50,7 @@ await p.mouse.move(r0.x, r0.y); await p.mouse.down(); await p.waitForTimeout(500
 ok((await p.locator('.poi-item.holding').count()) === 1 && (await p.locator('.drag-ghost').count()) === 0, 'while holding, the row shows a filling bar, and nothing is lifted yet');
 await p.mouse.up(); await p.waitForTimeout(1500);
 ok((await p.locator('.drag-ghost').count()) === 0 && (await p.locator('.poi-item.holding').count()) === 0, 'letting go early lifts nothing');
-ok((await p.locator('.leaflet-popup').count()) === 1, 'and it was an ordinary click: the marker opened');
+ok((await p.locator(`${MW}:not([hidden])`).count()) === 1, 'and it was an ordinary click: the marker opened');
 await p.mouse.click(120, 700); await p.waitForTimeout(400);
 ok(JSON.stringify(await stored(p)) === JSON.stringify(original), 'nothing was changed');
 
@@ -77,7 +77,7 @@ await drop(p);
 let now = await stored(p);
 ok(f(now.B) === '2026-11-13|-|2' && f(now.C) === '2026-11-13|-|1' && f(now.D) === '2026-11-13|-|3', 'dropped between Charlie and Delta: Bravo is 13 Nov, stop 2; Delta moves to stop 3: ' + f(now.B) + ' / ' + f(now.D));
 ok(f(now.H) === f(original.H) && f(now.A) === f(original.A), 'the markers of the day it left keep their stops');
-ok((await p.locator('.leaflet-popup').count()) === 0, 'the release did not count as a click on the row');
+ok((await p.locator(`${MW}:not([hidden])`).count()) === 0, 'the release did not count as a click on the row');
 let tt = await toastText(p);
 ok(/Moved “Bravo”/.test(tt) && /Undo/.test(tt), 'a message says what moved and offers Undo: "' + tt + '"');
 const order = await p.$$eval('#poi-list li[data-id]', (e) => e.map((x) => x.dataset.id).join(''));

@@ -1,6 +1,6 @@
 // Itinerary routes on the map (browser): broad bands, chevrons fitted inside them, road geometry from the device cache or a mocked route function, a dashed
 // straight-line fallback, segmented overnight legs, labels that never overlap, turning the map, dark theme, a phone, and no request when the view changes.
-import { chromium, CHANNEL, ROOT } from './lib.mjs';
+import { chromium, CHANNEL, ROOT, HOST, MW } from './lib.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 const imp = (f) => import(pathToFileURL(path.join(ROOT, f)).href);
@@ -63,10 +63,10 @@ async function open({ vp = { width: 1300, height: 900 }, cache = true, backend =
 }
 const pin = (p, name) => p.locator(`.leaflet-marker-icon[title="${name}"]`).first();
 async function select(p, name) {
-  await pin(p, name).click(); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 }); await p.waitForTimeout(400);
-  await p.evaluate(() => document.querySelector('.leaflet-popup-close-button')?.click()); await p.waitForTimeout(100); // close the window; the details-off path keeps the selection, this one clears it
+  await pin(p, name).click(); await p.waitForSelector(MW + ' h3', { timeout: 8000 }); await p.waitForTimeout(400);
+  await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click()); await p.waitForTimeout(100); // close the window; the details-off path keeps the selection, this one clears it
 }
-const open1 = async (p, name) => { await pin(p, name).evaluate((e) => e.click()); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 }); await p.waitForTimeout(500); };
+const open1 = async (p, name) => { await pin(p, name).evaluate((e) => e.click()); await p.waitForSelector(MW + ' h3', { timeout: 8000 }); await p.waitForTimeout(500); };
 const count = (p, sel) => p.locator(sel).count();
 // the chevrons of a leg are one compound path (one "M x y L x y L x y" stroke each): how many strokes are on the page
 const chevCount = (p) => p.evaluate(() => [...document.querySelectorAll('path.route-chev')].reduce((n, c) => n + (c.getAttribute('d') || '').split('M').filter((x) => (x.match(/-?\d+\.?\d*/g) || []).length >= 6).length, 0));
@@ -102,13 +102,13 @@ ok(labs.every((l) => l.aria && (l.state !== 'fallback' || /Driving route unavail
 ok(requests.every((u) => !/heigit|openrouteservice/i.test(u)), 'the browser never talks to the routing provider');
 // selected emphasis
 ok(widths.every((w) => w === 12), 'both legs touch the selected stop, so both bands are emphasised (12 px)');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(300);
 ok(await count(p, 'path.route-band') === 0 && await count(p, 'path.route-chev') === 0 && await count(p, '.route-label') === 0 && await count(p, 'path.route-case') === 0, 'closing the window removes every route layer');
 // thin legs for an unselected leg of the day: select the first stop
 await open1(p, 'Alpha');
 const w2 = await p.$$eval('path.route-band', (e) => e.map((x) => [x.classList.contains('road'), Number(x.getAttribute('stroke-width'))]));
 ok(w2.length === 2 && w2.find((x) => x[0])[1] === 12 && w2.find((x) => !x[0])[1] === 9, 'the first stop: its own leg is emphasised (12 px), the rest of the day is normal (9 px)');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(200);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(200);
 
 // ================= overnight: segmented band
 await open1(p, 'Charlie');
@@ -118,7 +118,7 @@ labs = await labelRects(p);
 ok(labs.some((l) => /straight line/.test(l.text)) && await count(p, '.route-label.overnight') === 1, 'an overnight fallback is told apart by its label, not by dashes alone');
 ci = await chevronsInside(p);
 ok(ci.n > 0 && ci.inside === ci.n, 'the overnight leg has chevrons inside its band too');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(200);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(200);
 
 // ================= turning the map
 await open1(p, 'Bravo');
@@ -229,7 +229,7 @@ await ctx.close();
   ({ ctx, p } = await open({ list: day, cache: false, backend: true, delay: 30, spy: true, zoom: 14 }));
   const t0 = Date.now();
   await p.evaluate(() => { window.__draws = 0; window.__casings = 0; });
-  await pin(p, 'Stop 3').evaluate((e) => e.click()); await p.waitForSelector('.leaflet-popup h3', { timeout: 8000 });
+  await pin(p, 'Stop 3').evaluate((e) => e.click()); await p.waitForSelector(MW + ' h3', { timeout: 8000 });
   ok(await count(p, 'path.route-band') >= 1 && Date.now() - t0 < 2500, 'selecting a stop draws its day at once, before any road has arrived');
   await p.waitForFunction(() => document.querySelectorAll('path.route-band.road').length === 6, null, { timeout: 8000 });
   await p.waitForTimeout(600);
@@ -253,7 +253,7 @@ const credit = () => p.$eval('.leaflet-control-attribution', (e) => e.textConten
 await open1(p, 'Bravo');
 ok(/openrouteservice.org by HeiGIT/.test(await credit()) && /OpenStreetMap/.test(await credit()), 'while a road route is drawn the credit names openrouteservice.org by HeiGIT beside the OpenStreetMap credit');
 ok(await p.$eval('.leaflet-control-attribution a[href*="openrouteservice"]', (e) => e.rel.includes('noopener') && e.target === '_blank'), 'and links out safely');
-await p.evaluate(() => document.querySelector('.leaflet-popup-close-button').click()); await p.waitForTimeout(300);
+await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close').click()); await p.waitForTimeout(300);
 ok(!/openrouteservice/.test(await credit()) && /OpenStreetMap/.test(await credit()), 'with no road route on show the routing credit is gone and the existing credits remain');
 await p.evaluate(() => document.getElementById('privacy-btn')?.click()); await p.waitForTimeout(300);
 ok(await count(p, '#route-privacy-card') === 1 && /two coordinate pairs/.test(await p.textContent('#route-privacy-card')) && /Home marker is never sent/.test(await p.textContent('#route-privacy-card')), 'the privacy panel explains what is sent for routes, and that the Home marker never is');
