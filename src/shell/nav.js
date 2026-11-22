@@ -11,6 +11,8 @@ import { el } from '../cards.js';
 import { watchTier, navPlacement, railLabelsShown, touchTarget, isShort } from './tier.js';
 import { SHELL_NAV_ID } from './nav-id.js';
 import { createHistoryStack } from './history.js';
+import { initSettingsUI } from './settings.js';
+import { initActivityUI } from './activity.js';
 
 const ICONS = {
   map: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 3 5.5v15L9 18l6 2.5 6-2.5v-15L15 5.5 9 3Zm0 2.2 6 2.5v12.1l-6-2.5V5.2ZM3.9 6.3 8 4.6v12.1l-4.1 1.7V6.3Zm16.2 11.4-4.1 1.7V6.3l4.1-1.7v13.1Z"/></svg>',
@@ -32,6 +34,15 @@ const MAP_ACTION_ICONS = {
 const MAP_ACTIONS = [
   { key: 'layers', label: 'Layers', tab: 'config' },
   { key: 'places', label: 'Saved Places', tab: 'poi' },
+];
+const GLOBAL_ICONS = {
+  settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13a7.7 7.7 0 0 0 0-2l2-1.6-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.7 7.7 0 0 0 0 2l-2 1.6 2 3.4 2.3-.9c.5.4 1.1.8 1.7 1L10 21h4l.4-2.9c.6-.2 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.6Z"/></svg>',
+  activity: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17v-6a6 6 0 1 1 12 0v6l1.5 2h-15L6 17Z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>',
+};
+/** Review 01 S10.7 (NAV-05/ACT-01): Settings and the Activity bell are app-wide, not tied to one destination - shown on every tier, every destination. */
+const GLOBAL_ACTIONS = [
+  { key: 'settings', label: 'Settings' },
+  { key: 'activity', label: 'Activity' },
 ];
 
 function buildNav() {
@@ -55,20 +66,43 @@ function buildNav() {
     root.append(b);
     return b;
   });
+  const globalActions = GLOBAL_ACTIONS.map(({ key, label }) => {
+    const b = el('button', 'shell-nav-item shell-nav-action shell-nav-global'); b.type = 'button'; b.dataset.action = key;
+    b.setAttribute('aria-label', label);
+    b.innerHTML = GLOBAL_ICONS[key] + '<span class="shell-nav-label" aria-hidden="true"></span><span class="tab-badge" hidden></span>';
+    b.querySelector('.shell-nav-label').textContent = label;
+    b.title = label;
+    root.append(b);
+    return b;
+  });
   document.body.append(root);
-  return { root, buttons, mapActions };
+  return { root, buttons, mapActions, globalActions };
 }
 
 /**
- * `deps`: { map, panel, getSessionsHub() -> hub|null, getAccount() -> account|null, toast, trips?, accountBtnId = 'account-btn' }.
+ * `deps`: { map, panel, getSessionsHub() -> hub|null, getAccount() -> account|null, toast, trips?, cloud?, getDash?, accountBtnId = 'account-btn' }.
  * `trips`: the object `initTripsUI` returns (S10.4, TRIP-02/NAV-07) - optional so this still works if Trips has not been wired up yet.
  * `getAccount`: a lazy getter for what `initAccountUI` returns (S10.6, PROF-01..06) - optional for the same reason.
+ * `cloud`/`getDash`: the same mutable holder and dashboard instance `main.js` already builds (S10.7, SET-01..08/ACT-01..04) - optional,
+ * read-only here, never written; the Settings/Activity sections simply have nothing real to adapt onto until they exist.
  * Returns { destination(), setDestination(key), destroy() }, or null if the flag is off (nothing was built).
  */
-function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, accountBtnId = 'account-btn' }) {
-  const { root, buttons, mapActions } = buildNav();
+function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud, getDash, accountBtnId = 'account-btn' }) {
+  const { root, buttons, mapActions, globalActions } = buildNav();
   let current = 'map';
   let stopTier = null;
+
+  // S10.7 (SET-01..08/ACT-01..04): built once, unconditionally - both are additive panel tabs that hold no preference/notification
+  // state of their own (they read `cloud`/`panel`/`getDash` live on every open), so there is nothing to defer the way the Explore hub
+  // and the account popover are deferred below (those are async-loaded modules this file does not own).
+  const settings = initSettingsUI({ panel, openData: () => cloud?.openData?.(), getDash, accountBtnId });
+  const activity = initActivityUI({ panel, cloud: cloud ?? {} });
+  let sessionsWired = false, partyWired = false;
+  function wireActivitySources() {
+    const hub = getSessionsHub?.();
+    if (hub && !sessionsWired) { sessionsWired = true; hub.onSummary(() => activity.refresh()); }
+    if (cloud?.party && !partyWired) { partyWired = true; cloud.party.onChange(() => activity.refresh()); }
+  }
 
   // NAV-07/TRIP-02: a trip's full-screen detail gets one history entry (Back returns to the trip list instead of leaving the app),
   // and expands the phone sheet to nearly full height while it is open (a no-op above the phone breakpoint, where "tall" has no CSS effect).
@@ -113,9 +147,16 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, accou
     acct.onClose(() => { if (current === 'profile') go('map'); });
   }
 
+  const bellButton = globalActions.find((b) => b.dataset.action === 'activity');
+  const bellBadge = bellButton.querySelector('.tab-badge');
   function paint() {
     for (const b of buttons) b.setAttribute('aria-current', String(b.dataset.dest === current));
     for (const b of mapActions) b.hidden = current !== 'map'; // the Layers/Saved Places quick actions only make sense while viewing the map
+    wireActivitySources();
+    activity.refresh();
+    const n = activity.pendingCount();
+    bellBadge.hidden = !n;
+    bellBadge.textContent = n > 9 ? '9+' : String(n || '');
   }
 
   function go(key) {
@@ -140,11 +181,14 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, accou
     const { tab } = MAP_ACTIONS.find((a) => a.key === b.dataset.action);
     b.addEventListener('click', () => panel.open(tab)); // reuses the existing pane verbatim (MAP-02: Layers = the Map Configs tab; MAP-06: Saved Places = the POI tab)
   }
+  for (const b of globalActions) {
+    b.addEventListener('click', () => (b.dataset.action === 'settings' ? settings.open() : activity.open()));
+  }
 
   // The panel can close by other means (Escape, a map click, swipe-to-dismiss); reflect that as "Map" being current again,
   // but only when it was Trips that closed (Layers/Saved Places already leave current as 'map') - Explore/Profile use their own,
   // separate surfaces and are not affected by the panel.
-  panel.onChange(() => { if (current === 'trips' && !panel.isOpen()) go('map'); });
+  panel.onChange(() => { if (current === 'trips' && !panel.isOpen()) go('map'); paint(); });
 
   paint(); // establish the initial state (Map current, its actions visible) without calling go('map') and closing a panel the real app may have opened by default
 

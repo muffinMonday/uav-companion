@@ -142,6 +142,27 @@ try {
     await ctx.close();
   }
 
+  // ---- S10.7: Settings (SET-01..08) and the Activity bell (ACT-01..04) are global - always visible, on every destination, as adapters onto real, unmodified surfaces
+  {
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    ok(await p.locator('#shell-nav [data-action=settings]').isVisible(), 'the Settings action is visible on Map');
+    ok(await p.locator('#shell-nav [data-action=activity]').isVisible(), 'the Activity bell is visible on Map');
+    await p.click('#shell-nav [data-dest=trips]');
+    ok(await p.locator('#shell-nav [data-action=settings]').isVisible(), 'Settings stays visible on Trips (global, unlike the Map quick actions)');
+    ok(await p.locator('#shell-nav [data-action=activity]').isVisible(), 'Activity stays visible on Trips too');
+    await p.click('#shell-nav [data-dest=map]');
+    await p.click('#shell-nav [data-action=settings]');
+    ok(await p.isVisible('#panel') && await p.isVisible('#pane-settings'), 'SET-01: Settings opens its own panel tab');
+    const headings = await p.locator('#pane-settings h3').allTextContents();
+    ok(headings.join('|') === 'Map & display|Units & navigation|Privacy & location|Account & synchronization|Data management|Help & about', 'SET-01: the six named sections, in order');
+    await p.click('#pane-settings .set-row:has-text("Privacy & location") button');
+    ok(await p.isVisible('#privacy'), 'SET-04: the Privacy section opens the existing Privacy sub-panel unchanged');
+    await p.click('#shell-nav [data-action=activity]');
+    ok(await p.isVisible('#pane-activity'), 'ACT-01: the Activity bell opens its own panel tab (the same adaptive-sheet host)');
+    ok(await p.locator('#pane-activity').getByText('Nothing waiting').count() === 1, 'ACT-02/ACT-03: with no pending items from any real source, the inbox says so rather than showing a fabricated row');
+    await ctx.close();
+  }
+
   // ---- free-area integration: the rail is a cover, so a saved marker's host does not sit under it (NAV-09 cross-cutting rule)
   {
     const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });

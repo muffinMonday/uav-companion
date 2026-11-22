@@ -116,7 +116,7 @@ const cross = initCrosshair(map); // a crosshair at the centre of the map (the b
 // the zone verdict for where I am now (the position is read once, when the button is pressed)
 const checkHere = () => locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ });
 const cloud = { handle: null, refresh: null }; // the optional cloud copy: filled in once its code has loaded (only when this build has a project address)
-initShellNav({ panel, getSessionsHub: () => cloud.sessions, getAccount: () => cloud.account, toast, trips }); // new shell chrome, experimental (VITE_NEW_SHELL); adapts onto the panel/sessions-hub/account popover below, none of which this changes
+initShellNav({ panel, getSessionsHub: () => cloud.sessions, getAccount: () => cloud.account, toast, trips, cloud, getDash: () => dash }); // new shell chrome, experimental (VITE_NEW_SHELL); adapts onto the panel/sessions-hub/account popover/dashboard below, none of which this changes
 addCompassControl(map, { rotation, onPress: () => locate.northUp() }); // after the other left-hand buttons, so their places do not move
 const helpRef = { h: null }; // the contextual hints (help-wire.js), created just below; the toolbar reports to them
 const toolbar = initMapMoreTools(map, { onOpen: () => helpRef.h?.moreToolsOpened(), onUse: () => helpRef.h?.mapToolUsed() }); // the More tools button under Zoom, Locate and Compass: the other map tools in one menu

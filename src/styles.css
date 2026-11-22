@@ -1622,3 +1622,19 @@ body[data-mh=bottom] .leaflet-bottom{margin-bottom:var(--mh-off)}
 .shell-nav-item[aria-current="true"]{color:var(--accent)}
 .shell-nav[data-placement="rail"][data-labels="false"] .shell-nav-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* the compact touch-only rail (U-16): icon-only, name kept for screen readers via aria-label */
 .shell-nav[data-short="true"] .shell-nav-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* short/landscape viewports collapse to icon-only too */
+.shell-nav-global{position:relative} /* Settings/Activity (S10.7): app-wide, always shown, so their badge needs an anchor */
+
+/* Settings page (S10.7, SET-01..08): grouped adapter rows, each a real link onto the existing control surface it names */
+.set-row{display:flex;align-items:center;gap:var(--sp-3);justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.set-row:last-child{border-bottom:0}
+.set-row-body h3{margin:0 0 2px;font-size:var(--fs-body)}
+.set-row-body p{margin:0}
+
+/* Activity inbox (S10.7, ACT-01..04): pending vs unread rows get a distinct dot colour (ACT-03) */
+.act-row{display:flex;align-items:center;gap:var(--sp-3);justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.act-row:last-child{border-bottom:0}
+.act-row-body h3{margin:0 0 2px;font-size:var(--fs-body)}
+.act-row-body p{margin:0}
+.act-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.act-dot-pending{background:var(--danger-solid)}
+.act-dot-unread{background:var(--accent)}

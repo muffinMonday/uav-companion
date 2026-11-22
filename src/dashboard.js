@@ -510,6 +510,8 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     open: (opts) => setState('expanded', opts),
     /** Fold to the one-line strip. */
     fold: () => setState('peek'),
+    /** Review 01 S10.7 (SET-07): opens this same drawer straight to its existing Help subview (What's New lives inside it), for the new Settings page's "Help & about" adapter. No new help content. */
+    showHelp() { setState('expanded'); showView('help'); },
     /** True on a first visit that the splash should greet (the dashboard waits as its strip). */
     splashFirst,
     onQuickSetup(fn) { quickSetup = fn; },
