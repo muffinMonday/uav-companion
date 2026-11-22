@@ -209,6 +209,71 @@ try {
     ok(hostBox.x >= navBox.x + navBox.width - 1, 'the marker host does not overlap the rail: free-area.js subtracts it as a cover');
     await ctx.close();
   }
+  // ---- MAP-01: full-screen search (new shell only). search.js's own state (parsing, online lookup, selection) is untouched - this only
+  // checks the shell-only presentation: it covers the viewport while open, has its own close affordance, and leaves map state untouched.
+  {
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const mapTransformBefore = await p.locator('.leaflet-map-pane').evaluate((e) => e.style.transform);
+    ok(await p.locator('.search').evaluate((e) => e.classList.contains('collapsed')), 'search starts collapsed, as always');
+    await p.click('#search-toggle');
+    const box = await p.locator('.search').boundingBox();
+    ok(box.width >= 388 && box.height >= 800, 'MAP-01: open search covers the viewport in the new shell');
+    ok(await p.locator('#search-close').isVisible(), 'MAP-01: its own close button is reachable');
+    ok(await p.locator('.search').evaluate((e) => !e.classList.contains('collapsed')), 'search.js\'s own open/collapsed state is unchanged - just presented full-screen');
+    await p.fill('#q', '30.59, 114.30');
+    ok((await p.locator('#results li[role=option]').count()) >= 1, 'coordinate parsing still works exactly as the compact box (no second search engine)');
+    await p.click('#search-close');
+    ok(await p.locator('.search').evaluate((e) => e.classList.contains('collapsed')), 'the close button collapses it (the same state the toggle/Escape already use)');
+    const mapTransformAfter = await p.locator('.leaflet-map-pane').evaluate((e) => e.style.transform);
+    ok(mapTransformAfter === mapTransformBefore, 'opening and closing search left the map view exactly where it was');
+    await ctx.close();
+  }
+  {
+    const { ctx, p } = await openApp('http://127.0.0.1:5193/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }); // flag off
+    await p.click('#search-toggle');
+    const box = await p.locator('.search').boundingBox();
+    ok(box.width < 388, 'flag off: search stays the compact floating box, never full-screen');
+    ok(await p.locator('#search-close').isHidden(), 'flag off: the close button stays hidden (CSS-only, no behavior change)');
+    await ctx.close();
+  }
+
+  // ---- MAP-10: the contextual route summary (presentation only - poi.routeSummary()/onRouteSummaryChange(), src/shell/route-summary.js).
+  // Hidden with no route drawn; shown with the exact distance/status route/render.js already draws; hides again once the window closes.
+  {
+    const iso = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+    const D = iso(5);
+    const seededTrips = [{ id: 't1', name: 'Hubei', startDate: D, endDate: D, description: '', color: '#e91e63', created: '2026-01-01T00:00:00.000Z' }];
+    const seededItems = [
+      { id: 'a', type: 'photo', name: 'Alpha', note: '', lat: 30.590, lon: 114.300, created: '2026-11-01T00:00:01.000Z', tripId: 't1', date: D, order: 1 },
+      { id: 'b', type: 'photo', name: 'Bravo', note: '', lat: 30.600, lon: 114.310, created: '2026-11-01T00:00:02.000Z', tripId: 't1', date: D, order: 2 },
+    ];
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    await ctx.addInitScript(([po, tr]) => {
+      localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po }));
+      localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr }));
+      localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.595, lon: 114.305, zoom: 14 }, basemap: 'osm' }));
+    }, [seededItems, seededTrips]);
+    await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
+    ok(await p.locator('.route-summary').count() === 1 && await p.locator('.route-summary').isHidden(), 'MAP-10: the sheet exists but stays hidden with no route drawn yet');
+    await p.locator('.leaflet-marker-icon[title="Alpha"]').first().click();
+    await p.waitForSelector('.pop h3, #marker-host h3', { timeout: 8000 }); await p.waitForTimeout(400);
+    ok(await p.locator('.route-summary').isVisible(), 'MAP-10: selecting a stop draws its day\'s route, and the summary appears to match (shown contextually, not invented)');
+    const text = await p.locator('.route-summary-status').textContent();
+    ok(/1 leg/.test(text) && /(km|mi)/.test(text), 'MAP-10: the compact status names the real leg count and distance: ' + text);
+    ok(await p.locator('.route-summary-detail').isHidden(), 'starts collapsed - only the compact status shows');
+    await p.click('.route-summary-status');
+    ok(await p.locator('.route-summary-detail').isVisible() && (await p.locator('.route-summary-leg').count()) === 1, 'expanding shows the one leg, worded with the map\'s own route/geometry.js labelText()');
+    ok(/Alpha.*Bravo/.test(await p.locator('.route-summary-leg').first().textContent()), 'the leg names its real stops: ' + await p.locator('.route-summary-leg').first().textContent());
+    await p.evaluate(() => document.querySelector('.leaflet-popup-close-button, #marker-host .pop-close')?.click());
+    await p.waitForTimeout(400);
+    ok(await p.locator('.route-summary').isHidden(), 'closing the window clears the route, and the summary hides again (contextual, not a standing panel)');
+    await ctx.close();
+  }
+  {
+    const { ctx, p } = await openApp('http://127.0.0.1:5193/'); // flag off
+    ok(await p.locator('.route-summary').count() === 0, 'flag off: the route summary element does not exist at all (tree-shaken, same as the rest of the new shell)');
+    await ctx.close();
+  }
 } finally {
   await b.close();
   on.kill(); off.kill();

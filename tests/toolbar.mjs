@@ -1,4 +1,4 @@
-// The More tools menu: Zoom, Locate and the (conditional) Compass stay on the map; Marker details, Side Quests, Trip markers, Crosshair and Flight Sessions are rows of one menu
+// The More tools menu: Zoom, Locate and the (conditional) Compass stay on the map; Marker details, Side Quests, Trip markers, Crosshair, Inspect and Flight Sessions are rows of one menu
 // that press the tools' own controls (no clones, one handler each). Closed on start, states follow the tools, outside press / Escape / placing close it, POI visibility preferences
 // are never touched, and the popover / phone sheet fit at phone, unfolded, tablet, desktop and short-landscape sizes. Screenshots go to tests/out/toolbar/.
 import { chromium, CHANNEL, LATEST_SEEN, OUT, moreTool } from './lib.mjs';
@@ -49,7 +49,7 @@ ok((await p.getAttribute('.more-btn', 'aria-expanded')) === 'false' && (await p.
 ok(await p.locator('.leaflet-control-zoom a').first().isVisible() && await p.locator('.locate-btn').isVisible(), 'Zoom and Locate are still direct');
 const direct = t0.filter((x) => x.shown).map((x) => x.tool);
 ok(direct.join() === 'locate,more', 'the only visible tool buttons are Locate and More tools while the map is north-up (no Compass): ' + direct.join());
-ok(['details', 'side-quests', 'trips', 'crosshair'].every((k) => t0.filter((x) => x.tool === k).length === 1 && !t0.find((x) => x.tool === k).shown), 'each folded tool has exactly one control (no clones), taken off the map');
+ok(['details', 'side-quests', 'trips', 'crosshair', 'inspect'].every((k) => t0.filter((x) => x.tool === k).length === 1 && !t0.find((x) => x.tool === k).shown), 'each folded tool has exactly one control (no clones), taken off the map');
 ok(await p.evaluate(() => !document.querySelector('a[data-tool=compass]')?.closest('.leaflet-control')?.classList.contains('tool-folded') && !document.querySelector('a[data-tool=locate]').closest('.leaflet-control').classList.contains('tool-folded')), 'Locate and Compass are never folded');
 ok(t0.at(-1).tool === 'more', 'More tools is the last button in the column');
 ok(await p.locator('#map-tool-labels, .labels-btn').count() === 0, 'the old tag button and label layer are gone');
@@ -60,9 +60,9 @@ await p.click('.more-btn'); await p.waitForTimeout(150);
 ok(await menuOpen(p) && (await p.getAttribute('.more-btn', 'aria-expanded')) === 'true', 'pressing it opens the menu and sets aria-expanded');
 let r = await rows(p);
 const hasSessions = r.some((x) => x.tool === 'sessions');
-ok(r.map((x) => x.tool).filter((x) => x !== 'sessions').join() === 'details,side-quests,trips,crosshair', 'rows: Marker details, Side Quests, Trip markers, Crosshair' + (hasSessions ? ', Flight Sessions' : ''));
+ok(r.map((x) => x.tool).filter((x) => x !== 'sessions').join() === 'details,side-quests,trips,crosshair,inspect', 'rows: Marker details, Side Quests, Trip markers, Crosshair, Inspect' + (hasSessions ? ', Flight Sessions' : ''));
 ok(r.every((x) => x.tool === 'sessions' || x.pressed === t0.find((y) => y.tool === x.tool).pressed), 'each row reads its tool\'s own aria-pressed');
-ok(/Marker details\s*On/.test(r[0].text) && /Trip markers\s*Shown/.test(r.find((x) => x.tool === 'trips').text) && /Side Quests\s*Open stop only/.test(r.find((x) => x.tool === 'side-quests').text) && /Crosshair\s*On/.test(r.find((x) => x.tool === 'crosshair').text), 'rows show the label and the current state: ' + r.map((x) => x.text).join(' | '));
+ok(/Marker details\s*On/.test(r[0].text) && /Trip markers\s*Shown/.test(r.find((x) => x.tool === 'trips').text) && /Side Quests\s*Open stop only/.test(r.find((x) => x.tool === 'side-quests').text) && /Crosshair\s*On/.test(r.find((x) => x.tool === 'crosshair').text) && r.find((x) => x.tool === 'inspect').text === 'Inspect a spot', 'rows show the label and the current state: ' + r.map((x) => x.text).join(' | '));
 ok(await p.evaluate(() => document.activeElement?.classList.contains('more-row')), 'opening by button moves focus to the first row');
 ok(!!(await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.help') ?? '{}').seen?.includes('map-tools'))), 'opening More tools counts as the visitor having found the toolbar (map-tools hint used up)');
 
@@ -79,6 +79,19 @@ for (const [tool, isOff] of toggles) {
   void isOff;
 }
 ok(await p.evaluate(() => document.querySelectorAll('.cross-btn, .details-btn, .map-toggle').length === 4), 'still one control per tool after all that (no duplicates)');
+
+// ================= Inspect (MAP-05): a one-shot "Inspect here" armed from its own row, not a persisted preference
+await p.click(`${MENU} .more-row[data-tool=inspect]`); await p.waitForTimeout(200);
+ok((await tools(p)).find((x) => x.tool === 'inspect').pressed === 'true' && !(await menuOpen(p)), 'pressing Inspect arms it and steps the menu out of the way (like Flight Sessions)');
+ok(await p.evaluate(() => document.querySelector('.leaflet-container').classList.contains('inspecting') && !document.getElementById('inspect-banner').hidden), 'the map shows a clear cursor/banner indication while armed');
+await p.evaluate(() => document.getElementById('inspect-banner').querySelector('.btn').click()); await p.waitForTimeout(150);
+ok((await tools(p)).find((x) => x.tool === 'inspect').pressed === 'false' && await p.evaluate(() => !document.querySelector('.leaflet-container').classList.contains('inspecting') && document.getElementById('inspect-banner').hidden), 'Cancel disarms it with no side effects (no point check ran)');
+await p.click('.more-btn'); await p.click(`${MENU} .more-row[data-tool=inspect]`); await p.waitForTimeout(200);
+await p.mouse.click(700, 500); await p.waitForTimeout(400);
+ok((await tools(p)).find((x) => x.tool === 'inspect').pressed === 'false', 'a tap on the map while armed performs the check and disarms (one-shot)');
+ok(await p.locator('.pop, .marker-host').first().isVisible().catch(() => false), 'the same point-check window the 2-second hold opens also opens from Inspect');
+await p.keyboard.press('Escape'); await p.waitForTimeout(150); // closes the point-check window opened just above
+await p.click('.more-btn'); await p.waitForTimeout(150); // back to the open menu, for the rest of this section
 // a change made elsewhere shows in the open menu
 await p.evaluate(() => { const c = document.getElementById('poi-details'); c.checked = false; c.dispatchEvent(new Event('change')); }); await p.waitForTimeout(200);
 ok((await rows(p)).find((x) => x.tool === 'details').pressed === 'false' && /Off/.test((await rows(p)).find((x) => x.tool === 'details').text), 'a change made in Points of Interest shows in the open menu');

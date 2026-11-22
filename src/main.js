@@ -14,6 +14,7 @@ import { initAppearanceSettings, initMapSettings, initWeatherSettings } from './
 import { initPanel } from './panel.js';
 import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
+import { initInspect } from './inspect.js';
 import { initDashboard } from './dashboard.js';
 import { initSplash } from './splash.js';
 import { initMapMoreTools } from './map-more-tools.js';
@@ -39,6 +40,7 @@ import { initTheme } from './theme.js';
 import { log, applyDebugParam } from './log.js';
 import { installErrorHandlers } from './errors.js';
 import { initShellNav } from './shell/nav.js'; // Review 01 S10.2 (NAV-01..09): a constant no-op unless the build has VITE_NEW_SHELL=1
+import { initRouteSummaryUI } from './shell/route-summary.js'; // Review 01 MAP-10: a constant no-op unless the build has VITE_NEW_SHELL=1
 
 applyDebugParam(location.search); // ?debug=1 keeps DEBUG notes in the local log, ?debug=0 stops (log.js)
 installErrorHandlers({ log }); // uncaught errors and rejected promises leave a note in the local log; the browser still reports them as before
@@ -117,6 +119,7 @@ const cross = initCrosshair(map); // a crosshair at the centre of the map (the b
 const checkHere = () => locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ });
 const cloud = { handle: null, refresh: null }; // the optional cloud copy: filled in once its code has loaded (only when this build has a project address)
 initShellNav({ panel, getSessionsHub: () => cloud.sessions, getAccount: () => cloud.account, toast, trips, cloud, getDash: () => dash }); // new shell chrome, experimental (VITE_NEW_SHELL); adapts onto the panel/sessions-hub/account popover/dashboard below, none of which this changes
+initRouteSummaryUI({ poi }); // the contextual route summary sheet (MAP-10), experimental (VITE_NEW_SHELL); reads poi.routeSummary() only
 addCompassControl(map, { rotation, onPress: () => locate.northUp() }); // after the other left-hand buttons, so their places do not move
 const helpRef = { h: null }; // the contextual hints (help-wire.js), created just below; the toolbar reports to them
 const toolbar = initMapMoreTools(map, { onOpen: () => helpRef.h?.moreToolsOpened(), onUse: () => helpRef.h?.mapToolUsed() }); // the More tools button under Zoom, Locate and Compass: the other map tools in one menu
@@ -139,6 +142,8 @@ initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h;
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch((e) => { log.warn('map', 'point check failed', e); toast('Point check failed. Check your connection and try again.'); });
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.
 const hold = initHoldCheck({ map, isBusy: () => poi.isBusy(), onCheck: checkAt, holdMs: HOLD_MS });
+// An explicit alternative to the hold (MAP-05): arm it, then tap the map once; the same checkAt runs either way.
+initInspect({ map, isBusy: () => poi.isBusy(), onCheck: (latlng) => { if (!loadPrefs().holdHint) savePrefs({ holdHint: true }); checkAt(latlng); } });
 // (windows are opened with closeOnClick off: Leaflet would close them on the release that ends a hold, before this runs)
 map.on('click', (e) => {
   if (hold.consumeClick()) return;   // the release after a hold is not a click

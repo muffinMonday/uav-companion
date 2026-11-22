@@ -720,6 +720,36 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   const renderer = createRouteRenderer({ L, map, el, fmt: (m) => fmtDistance(m, getDistanceSettings().units), pins: () => [...markers].filter(([id]) => shownOnMap(store.get(id))).map(([, m]) => m.getLatLng()) });
   const legEntries = (layer, legs, color) => legs.map((l) => { const r = router.resolve(l); return { layer, leg: l, result: r.result, pending: r.pending, color, bold: l.bold, overnight: l.overnight }; });
   let rotHooked = false;
+  // MAP-10's contextual route summary sheet is presentation only: it reads the same entries redrawRoutes() just built for the renderer,
+  // never a second computation of distance/status/source. `lastSummary` is null exactly when nothing is drawn (the sheet then hides).
+  let lastSummary = null;
+  const summaryListeners = new Set();
+  const notifySummary = () => { for (const fn of summaryListeners) fn(lastSummary); };
+  function buildSummary(entries) {
+    if (!entries.length) return null;
+    const legs = entries.map((e) => {
+      const r = e.result;
+      return {
+        from: store.get(e.leg.from.id)?.name ?? '?',
+        to: store.get(e.leg.to.id)?.name ?? '?',
+        state: r.state, // 'road' | 'fallback' (route/result.js) - never relabeled
+        distanceM: r.distanceM,
+        durationS: r.durationS,
+        source: r.state === 'road' ? r.source : r.reason, // 'cache'|'provider', or the fallback reason - as route/result.js already states it
+        pending: e.pending,
+        overnight: e.overnight,
+        bold: e.bold,
+      };
+    });
+    return {
+      legs,
+      totalM: legs.reduce((s, l) => s + l.distanceM, 0),
+      units: getDistanceSettings().units,
+      anyRoad: legs.some((l) => l.state === 'road'),
+      allRoad: legs.every((l) => l.state === 'road'),
+      anyPending: legs.some((l) => l.pending),
+    };
+  }
   function redrawRoutes() {
     clearTimeout(redrawTimer); redrawTimer = 0; lastRedraw = performance.now();
     routes.clearLayers(); dayLayer.clearLayers();
@@ -729,10 +759,12 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     const entries = [];
     if (shownDay && day.length) entries.push(...legEntries(dayLayer, day, tripColour(shownDay.tripId)));
     if (it?.tripId && selected.length) entries.push(...legEntries(routes, selected, tripColour(it.tripId)));
-    if (!entries.length) { routeCredit(false); return; }
+    if (!entries.length) { routeCredit(false); lastSummary = null; notifySummary(); return; }
     router.ensure(entries.map((e) => e.leg));
     renderer.draw(entries);
     routeCredit(entries.some((e) => e.result.state === 'road'));
+    lastSummary = buildSummary(entries);
+    notifySummary();
   }
   // the routing credit shows while a road route is drawn, beside (never instead of) the map's own credits
   const ROUTE_CREDIT = 'Routes: <a href="https://openrouteservice.org/" target="_blank" rel="noopener">openrouteservice.org</a> by HeiGIT';
@@ -1500,6 +1532,9 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     openMarker: (id) => flyToItem(id),
     /** Draws the route of one day of a trip (thin) while the trip screen shows it; showDay(null) clears it. */
     showDay(tripId, date) { shownDay = tripId ? { tripId, date } : null; redrawRoutes(); },
+    /** MAP-10: the read-only summary of the routes currently drawn (null when none are) - presentation only, see buildSummary above. */
+    routeSummary: () => lastSummary,
+    onRouteSummaryChange: (fn) => { summaryListeners.add(fn); return () => summaryListeners.delete(fn); },
     /** Zooms the map to these markers (a day of a trip). */
     fitItems(ids) { const list = ids.map((id) => store.get(id)).filter(Boolean); if (!list.length) { toast('Nothing to show on the map for this page.'); return false; } return fitShown(list); },
     getCurrentTrip: () => currentTripId,

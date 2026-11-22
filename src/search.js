@@ -9,13 +9,15 @@ import { log } from './log.js';
 export function initSearch(map, { show }) {
   const qEl = document.getElementById('q');
   const resEl = document.getElementById('results');
-  const box = document.getElementById('search'), toggle = document.getElementById('search-toggle');
+  const box = document.getElementById('search'), toggle = document.getElementById('search-toggle'), closeBtn = document.getElementById('search-close');
   let items = [], sel = -1, marker = null;
+  const openListeners = new Set(), closeListeners = new Set();
 
   // collapsed to a magnifying glass until it is needed
-  const expand = () => { box.classList.remove('collapsed'); toggle.setAttribute('aria-expanded', 'true'); qEl.tabIndex = 0; qEl.focus(); };
+  const expand = () => { box.classList.remove('collapsed'); toggle.setAttribute('aria-expanded', 'true'); qEl.tabIndex = 0; qEl.focus(); for (const fn of openListeners) fn(); };
   qEl.tabIndex = -1; // folded: out of the tab order
-  const collapse = () => { box.classList.add('collapsed'); qEl.tabIndex = -1; toggle.setAttribute('aria-expanded', 'false'); resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); if (document.activeElement === qEl) qEl.blur(); };
+  const collapse = () => { const was = !box.classList.contains('collapsed'); box.classList.add('collapsed'); qEl.tabIndex = -1; toggle.setAttribute('aria-expanded', 'false'); resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); if (document.activeElement === qEl) qEl.blur(); if (was) for (const fn of closeListeners) fn(); };
+  closeBtn?.addEventListener('click', () => collapse()); // the full-screen close affordance (new shell only; CSS-hidden otherwise)
   /** Out of use: nothing typed and no list showing. */
   const idle = () => !qEl.value.trim() && resEl.hidden;
   toggle.addEventListener('click', () => { if (box.classList.contains('collapsed')) expand(); else if (idle()) collapse(); else qEl.focus(); });
@@ -135,4 +137,13 @@ export function initSearch(map, { show }) {
   });
   qEl.addEventListener('blur', () => setTimeout(() => { resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); if (idle() && document.activeElement !== toggle) collapse(); }, 150));
   qEl.addEventListener('focus', () => { if (qEl.value.trim()) refresh(); });
+
+  // Minimal additive hooks for the new shell's full-screen presentation (Review 01 MAP-01): this module's own state and behavior
+  // (expand/collapse, parsing, online search, selection) are unchanged; a shell layer only needs to know when the box opens or closes.
+  return {
+    isOpen: () => !box.classList.contains('collapsed'),
+    close: () => collapse(),
+    onOpen: (fn) => openListeners.add(fn),
+    onClose: (fn) => closeListeners.add(fn),
+  };
 }

@@ -75,7 +75,7 @@ export function initMapMoreTools(map, { onOpen = null, onUse = null } = {}) {
   }
   /** Presses the tool's own control: its handler runs once and it repaints its own state; the menu then follows through the observer. */
   function press(a, tool) {
-    if (tool === 'sessions') { toggle?.focus({ preventScroll: true }); set(false, { focus: false }); } // the hub opens a dialog: the menu steps out of its way first, and the hub returns focus to this button
+    if (tool === 'sessions' || tool === 'inspect') { toggle?.focus({ preventScroll: true }); set(false, { focus: false }); } // the hub opens a dialog, Inspect arms a mode over the map: the menu steps out of the way first either way
     onUse?.(tool);
     a.click();
   }

@@ -233,10 +233,11 @@ textarea{resize:vertical;min-height:60px}
 .leaflet-bar{border:0!important;border-radius:var(--radius-sm)!important;box-shadow:var(--shadow-1)!important;overflow:hidden}
 .leaflet-bar a{background:var(--surface)!important;color:var(--fg)!important;border-bottom-color:var(--line)!important}
 @media (hover:hover){.leaflet-bar a:hover{background:var(--surface-2)!important}}
-.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn,.leaflet-bar a.sessions-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
+.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn,.leaflet-bar a.sessions-btn,.leaflet-bar a.inspect-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
 .leaflet-bar a.locate-btn.active{color:var(--accent)!important}
 .leaflet-bar a.locate-btn .locate-icon{display:flex;align-items:center;justify-content:center}
-.leaflet-bar a.locate-btn svg,.leaflet-bar a.details-btn svg,.leaflet-bar a.map-toggle svg,.leaflet-bar a.cross-btn svg,.leaflet-bar a.sessions-btn svg{width:18px;height:18px}
+.leaflet-bar a.locate-btn svg,.leaflet-bar a.details-btn svg,.leaflet-bar a.map-toggle svg,.leaflet-bar a.cross-btn svg,.leaflet-bar a.sessions-btn svg,.leaflet-bar a.inspect-btn svg{width:18px;height:18px}
+.leaflet-bar a.inspect-btn.armed{color:var(--accent)!important}
 /* the More tools button and its menu (map-more-tools.js). The tools it holds keep their own Leaflet controls, taken off the map with .tool-folded; a row presses the control. */
 .leaflet-bar a.more-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;cursor:pointer}
 .leaflet-bar a.more-btn svg{width:18px;height:18px}
@@ -694,6 +695,8 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .search.collapsed input{width:0;padding:0;opacity:0;pointer-events:none}
 .search.collapsed .search-btn{background:var(--surface);box-shadow:var(--shadow-1);color:var(--fg)}
 @media (hover:hover){.search.collapsed .search-btn:hover{color:var(--accent)}}
+.search-close{display:none} /* MAP-01: only the full-screen new-shell search shows this; the compact box still closes via its own toggle/Escape */
+.search-close svg{width:var(--icon);height:var(--icon);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 
 /* ---------- the dashboard ---------- */
 .dash{position:absolute;z-index:var(--z-dash);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:36px;width:min(780px,calc(100% - 24px - var(--panel-w,0px)));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);overflow:hidden;animation:dash-up .22s ease-out}
@@ -909,6 +912,11 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .cross-label{position:absolute;top:32px;left:50%;transform:translateX(-50%);padding:1px 8px;border-radius:var(--radius-pill);background:var(--surface);color:var(--fg);box-shadow:var(--shadow-1);font:var(--fw-semibold) var(--fs-micro)/1.6 var(--font);white-space:nowrap;font-variant-numeric:tabular-nums}
 .cross-btn .slash{display:none}
 .cross-btn.off .slash{display:inline}
+
+/* ---------- explicit map inspection (MAP-05): a deliberate alternative to the 2-second hold, armed/cancelled from its own button ---------- */
+.leaflet-container.inspecting{cursor:crosshair}
+/* #inspect-banner reuses the shared .banner look (poi-ui.js uses the same class for place/edit/select mode) at its own, separate element,
+   so marker placement/edit/select state is never touched by this file - no positioning override needed, same spot as every other banner. */
 
 /* optional cloud copy (privacy settings card, the question dialog, the dashboard line) */
 .cloud-form{display:flex;flex-direction:column;gap:8px;margin-top:8px}
@@ -1172,7 +1180,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
   .flip-dot{width:28px;height:28px}
   input[type=range]{height:28px}
   /* the map's own buttons: 36 px (Leaflet's touch size is 30). Not 40: the stack must stay mostly above the phone sheet, and its left edge (6 px margin) must not hide the start of a marker window's title */
-  .leaflet-touch .leaflet-bar a,.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn,.leaflet-bar a.sessions-btn,.leaflet-bar a.more-btn{width:36px;height:36px;line-height:36px}
+  .leaflet-touch .leaflet-bar a,.leaflet-bar a.locate-btn,.leaflet-bar a.compass-btn,.leaflet-bar a.details-btn,.leaflet-bar a.map-toggle,.leaflet-bar a.cross-btn,.leaflet-bar a.sessions-btn,.leaflet-bar a.more-btn,.leaflet-bar a.inspect-btn{width:36px;height:36px;line-height:36px}
   .more-row,.more-close{min-height:44px}
   .more-close{width:44px}
   .help-hint .help-ok{min-height:36px}
@@ -1651,3 +1659,29 @@ body[data-shell="new"] .sidepanel .tabs{display:none}
 .trip-acts .pop-overflow{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);position:absolute;top:100%;right:0;z-index:1;min-width:180px}
 .trip-acts .pop-overflow[hidden]{display:none}
 .trip-acts .pop-overflow .btn{width:100%;justify-content:flex-start}
+
+/* MAP-01: full-screen search (new shell only). search.js's own state, parsing, online lookup and selection are unchanged - only the
+   box's presentation grows to cover the screen while it is open, and its own close button (hidden otherwise) becomes reachable. */
+body[data-shell="new"] .search:not(.collapsed){position:fixed;inset:0;z-index:var(--z-sheet);display:flex;flex-flow:row wrap;align-content:flex-start;gap:10px;width:auto;padding:max(var(--sp-3),env(safe-area-inset-top)) max(var(--sp-3),env(safe-area-inset-right)) max(var(--sp-3),env(safe-area-inset-bottom)) max(var(--sp-3),env(safe-area-inset-left));background:var(--surface);border-radius:0;box-shadow:none}
+body[data-shell="new"] .search:not(.collapsed) .search-btn{display:none} /* already open: the magnifying-glass toggle has nothing left to do */
+body[data-shell="new"] .search:not(.collapsed) .search-close{display:grid;position:static;place-items:center;width:40px;height:40px;flex:0 0 auto;border:0;border-radius:50%;background:var(--surface-2);color:var(--fg);cursor:pointer}
+body[data-shell="new"] .search:not(.collapsed) input{position:static;flex:1 1 auto;min-width:0;width:auto;padding:10px 14px}
+body[data-shell="new"] .search:not(.collapsed) .results{position:static;flex:1 1 100%;min-height:0;max-height:none;margin:0;box-shadow:none;overflow-y:auto}
+
+/* MAP-10: contextual route summary (presentation only - poi.js's routeSummary()/onRouteSummaryChange() read the same entries route/render.js
+   already draws; no routing algorithm, cache key or distance is computed here). A compact status chip, expandable into a short per-leg list. */
+/* left/right + margin-inline:auto, not left:50%+transform, so a side-docked marker host/panel (--panel-w, marker-host.js/styles.css:704)
+   shifts this centered the same way .dash and .dash-peek already move aside for it - the two are shown together whenever a selected
+   stop's day has a route, so this must never sit under the host that triggered it. */
+.route-summary{position:fixed;z-index:calc(var(--z-sheet) + 1);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:fit-content;max-width:min(420px,calc(100% - 24px - var(--panel-w,0px)));display:flex;flex-direction:column;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2);overflow:hidden}
+.route-summary[hidden]{display:none}
+.route-summary-status{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.route-summary-status svg{width:var(--icon);height:var(--icon);flex:0 0 auto;transition:transform var(--dur-fast) var(--ease)}
+.route-summary[data-open="true"] .route-summary-status svg{transform:rotate(180deg)}
+.route-summary-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.route-summary-detail{max-height:min(44vh,320px);overflow-y:auto;border-top:1px solid var(--line);padding:4px 12px}
+.route-summary-detail[hidden]{display:none}
+.route-summary-leg{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:var(--fs-small)}
+.route-summary-leg:last-child{border-bottom:0}
+.route-summary-leg small{display:block;color:var(--muted)}
+@media (max-width:520px){.route-summary{width:auto;max-width:none}} /* --panel-w is already 0 at this width (styles.css:755): the marker host/panel dock bottom, not side */
