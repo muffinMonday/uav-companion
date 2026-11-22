@@ -10,6 +10,7 @@
 import { el } from '../cards.js';
 import { watchTier, navPlacement, railLabelsShown, touchTarget, isShort } from './tier.js';
 import { SHELL_NAV_ID } from './nav-id.js';
+import { createHistoryStack } from './history.js';
 
 const ICONS = {
   map: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 3 5.5v15L9 18l6 2.5 6-2.5v-15L15 5.5 9 3Zm0 2.2 6 2.5v12.1l-6-2.5V5.2ZM3.9 6.3 8 4.6v12.1l-4.1 1.7V6.3Zm16.2 11.4-4.1 1.7V6.3l4.1-1.7v13.1Z"/></svg>',
@@ -59,13 +60,24 @@ function buildNav() {
 }
 
 /**
- * `deps`: { map, panel, getSessionsHub() -> hub|null, toast, accountBtnId = 'account-btn' }.
+ * `deps`: { map, panel, getSessionsHub() -> hub|null, toast, trips?, accountBtnId = 'account-btn' }.
+ * `trips`: the object `initTripsUI` returns (S10.4, TRIP-02/NAV-07) - optional so this still works if Trips has not been wired up yet.
  * Returns { destination(), setDestination(key), destroy() }, or null if the flag is off (nothing was built).
  */
-function createShellNav({ panel, getSessionsHub, toast, accountBtnId = 'account-btn' }) {
+function createShellNav({ panel, getSessionsHub, toast, trips, accountBtnId = 'account-btn' }) {
   const { root, buttons, mapActions } = buildNav();
   let current = 'map';
   let stopTier = null;
+
+  // NAV-07/TRIP-02: a trip's full-screen detail gets one history entry (Back returns to the trip list instead of leaving the app),
+  // and expands the phone sheet to nearly full height while it is open (a no-op above the phone breakpoint, where "tall" has no CSS effect).
+  const tripHistory = createHistoryStack();
+  let tripEntry = null;
+  trips?.onDetailChange((open) => {
+    panel.setExpanded?.(open);
+    if (open && !tripEntry) tripEntry = tripHistory.push(() => trips.closeDetail());
+    else if (!open && tripEntry) { tripEntry.pop(); tripEntry = null; }
+  });
 
   function paint() {
     for (const b of buttons) b.setAttribute('aria-current', String(b.dataset.dest === current));
@@ -110,7 +122,7 @@ function createShellNav({ panel, getSessionsHub, toast, accountBtnId = 'account-
     el: root,
     destination: () => current,
     setDestination: go,
-    destroy() { stopTier?.(); root.remove(); },
+    destroy() { stopTier?.(); tripHistory.destroy(); root.remove(); },
   };
 }
 

@@ -170,5 +170,7 @@ export function initPanel() {
     closeIfPhone() { if (isPhone() && !panel.hidden) { setOpen(false); } },
     /** Hides the panel for a while without touching the saved choice (the sessions map explorer needs the room). Returns a function that brings it back if it is still hidden. */
     suspend() { if (panel.hidden) return () => {}; setOpen(false); return () => { if (panel.hidden) setOpen(true); }; },
+    /** Programmatic version of the phone "expand" toggle (Review 01 S10.4, TRIP-02): never saved as the visitor's own preference, and a no-op above the phone breakpoint, where "tall" has no CSS effect. */
+    setExpanded(on) { setTall(on, { save: false }); },
   };
 }

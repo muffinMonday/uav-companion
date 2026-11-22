@@ -1,7 +1,7 @@
 // The Trips tab: create, edit and delete trips, see what is in each, and jump to its markers.
 // A trip groups markers; distances from a waypoint to a hotel or home point stay inside its trip. Data is in poi.js.
 import { COUNTRIES, countryCode, countryName } from './countries.js';
-import { sortTrips, tripSummary, tripLength, tripStatus, countdownLabel, todayISO, isPastTrip, planDays, tripWarnings, warningsLine, dayInfo, dayText, sideQuestMap } from './trips.js';
+import { sortTrips, tripSummary, tripLength, tripStatus, countdownLabel, todayISO, isPastTrip, planDays, tripWarnings, warningsLine, dayInfo, dayText, sideQuestMap, comingTrips } from './trips.js';
 import { formatDate, typeOf, MAX_NOTES, MAX_CHECKLIST } from './poi.js';
 import { getDistanceSettings } from './units.js';
 import { fmtDistance } from './distance.js';
@@ -20,11 +20,14 @@ import { initReorder } from './reorder-ui.js';
 import { mascotEl } from './mascot-ui.js';
 
 const $ = (id) => document.getElementById(id);
+/** Review 01 S10.4 (TRIP-01, the upcoming-trip hero): this module backs both the legacy side panel and the new shell's Trips destination,
+ * so the hero (and the full-screen expansion wired in shell/nav.js) stays out of the production interface unless the new shell is built in. */
+const NEW_SHELL = import.meta.env.VITE_NEW_SHELL === '1';
 
 export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   const store = poi.store;
   const cin = poi.checkin;
-  const list = $('trips-list'), empty = $('trips-empty'), count = $('trips-count');
+  const list = $('trips-list'), empty = $('trips-empty'), count = $('trips-count'), hero = $('trips-hero');
   empty.classList.add('has-mascot'); empty.prepend(mascotEl('thinking', 56));
   const card = $('trip-form-card'), form = $('trip-form'), title = $('trip-form-title');
   const fName = $('trip-name'), fCountry = $('trip-country'), fStart = $('trip-start'), fEnd = $('trip-end'), fDesc = $('trip-desc');
@@ -42,6 +45,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   panel.onChange?.(syncDay);
   let openId = null;      // the trip whose detail screen is showing, or null for the list
   const forecastListeners = new Set();
+  const detailListeners = new Set(); // fn(open: boolean), on every render(); see onDetailChange below
   const tw = createTripWeather({ onChange: () => { render(); for (const fn of forecastListeners) fn(); } }); // per-day forecasts, only while automatic weather is on
   const pageOf = new Map();       // tripId -> the page (day) of its flip card, kept while the page is open
   let revealStop = null;          // while a trip's detail is drawn: brings one stop's row into view, turning to its day first
@@ -51,10 +55,10 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   const listCard = list.closest('.card'), detail = $('trip-detail'), aiCard = $('ai-card');
   const pastBox = $('trips-past'), pastList = $('trips-past-list');
 
-  function tripCard(t, items, today) {
+  function tripCard(t, items, today, isHero = false) {
     const n = items.filter((i) => i.tripId === t.id).length;
     const isCurrent = poi.getCurrentTrip() === t.id;
-    const li = el('li', 'trip-card clickable');
+    const li = el('li', 'trip-card clickable' + (isHero ? ' trip-hero-card' : ''));
     const head = el('div', 'trip-card-head');
     const dot = el('i', 'trip-dot-sm'); dot.style.background = t.color;
     const name = el('b', '', t.name);
@@ -144,6 +148,13 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     empty.hidden = trips.length > 0;
     list.replaceChildren(); pastList.replaceChildren();
     const past = trips.filter((t) => isPastTrip(t, today));
+    if (NEW_SHELL && hero) {
+      // TRIP-01: the trip under way, else the soonest upcoming one, highlighted above the full list - same source (comingTrips/tripCard), not a second trip list.
+      hero.replaceChildren();
+      const [top] = comingTrips(trips, today);
+      hero.hidden = !top;
+      if (top) hero.append(tripCard(top.trip, items, today, true));
+    }
     for (const t of trips) (past.includes(t) ? pastList : list).append(tripCard(t, items, today));
     pastBox.hidden = !past.length;
     if (getPrivacy().autoWeather) {
@@ -154,6 +165,7 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     const open = openId && store.getTrip(openId);
     if (!open) openId = null;
     listCard.hidden = !!open; aiCard.hidden = !!open; detail.hidden = !open;
+    for (const fn of detailListeners) fn(!!open); // Review 01 S10.4 (TRIP-02/NAV-07): the new shell's full-screen expand and Back handling, wired in shell/nav.js; a no-op without a listener
     revealStop = null;
     if (open) renderDetail(open, items, today);
   }
@@ -464,8 +476,11 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
   onPrivacyChange(render); // check-in switched on or off changes the rows
   render();
   return {
-    openForm, openDetail,
+    openForm, openDetail, closeDetail,
     refresh: render,
+    /** Fires with `true`/`false` whenever a trip's full-screen detail opens or closes (list, delete, Back, Escape - every path goes through render()).
+     * Used only by shell/nav.js (Review 01 S10.4, TRIP-02/NAV-07) to expand the phone sheet and register a Back entry; harmless if never called. */
+    onDetailChange(fn) { detailListeners.add(fn); },
     /** Shared trips: the Party Members section and the Leave button appear once this is set. */
     setParty(p) { party = p; p.attach({ refresh: render }); render(); },
     /** The first day of a trip that has a forecast: { date, text }, or null (weather off, no forecast yet, or the trip is out of range). */

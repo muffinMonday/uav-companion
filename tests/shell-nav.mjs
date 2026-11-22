@@ -121,6 +121,27 @@ try {
     await ctx.close();
   }
 
+  // ---- S10.4: Trips hero (TRIP-01), full-screen trip detail on a phone (TRIP-02), Back closes the detail instead of leaving the app (NAV-07)
+  {
+    const iso = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+    const seededTrips = [{ id: 't1', name: 'Hubei spring', startDate: iso(2), endDate: iso(5), description: '', color: '#e91e63', created: '2026-01-01T00:00:00.000Z' }];
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    await ctx.addInitScript(([tr]) => { localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr })); }, [seededTrips]);
+    await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
+    await p.click('#shell-nav [data-dest=trips]');
+    ok(await p.isVisible('#trips-hero .trip-card'), 'TRIP-01: the upcoming trip shows as a hero above the list');
+    ok(await p.isVisible('#trips-list .trip-card'), 'TRIP-01: the same trip still shows in the full list (no duplication, one source)');
+    ok(!(await p.locator('.sidepanel').evaluate((el) => el.classList.contains('tall'))), 'the sheet is not expanded while only the list shows');
+    await p.click('#trips-hero .trip-card button:has-text("Open")');
+    ok(await p.locator('.sidepanel').evaluate((el) => el.classList.contains('tall')), 'TRIP-02: opening a trip detail expands the phone sheet to full screen');
+    await p.goBack();
+    await p.waitForTimeout(300);
+    ok(await p.isVisible('#trips-list') && (await p.isHidden('#trip-detail')), 'NAV-07: the browser Back button closes the trip detail and returns to the list');
+    ok(!(await p.locator('.sidepanel').evaluate((el) => el.classList.contains('tall'))), 'the sheet collapses again once the detail closes');
+    ok(await p.isVisible('#shell-nav'), 'NAV-07: Back closed the trip detail only - the app itself is still open');
+    await ctx.close();
+  }
+
   // ---- free-area integration: the rail is a cover, so a saved marker's host does not sit under it (NAV-09 cross-cutting rule)
   {
     const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });

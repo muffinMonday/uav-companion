@@ -375,6 +375,9 @@ textarea{resize:vertical;min-height:60px}
 .trip-card-count{margin-top:6px;color:var(--muted);font-size:var(--fs-meta)}
 .trip-acts{margin:10px 0 0;gap:6px}
 .trip-acts .btn{flex:0 1 auto}
+/* the upcoming-trip hero (Review 01 S10.4, TRIP-01): new-shell only, same .trip-card markup as the list, so nothing here duplicates trip-card's own rules */
+.trips-hero{margin:8px 0 0}
+.trips-hero .trip-card.trip-hero-card{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--surface))}
 .badge.ok{background:var(--ok-bg);color:var(--ok)}
 .trip-form{display:grid;gap:2px}
 .trip-form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
