@@ -19,6 +19,9 @@ import { motorDiagCard } from './motor-diag-entry.js';
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 const isPhone = () => window.matchMedia('(max-width: 520px)').matches;
+/** Review 01 S10.8 (I01): branches the Help subview's own navigation copy onto the new shell's Map/Trips/Explore/Profile model when it
+ * is built in. Off by default, same pattern as splash.js's NEW_SHELL. */
+const NEW_SHELL = import.meta.env?.VITE_NEW_SHELL === '1';
 
 export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, splash = false, actions = {} }) {
   const dash = $('dash'), body = $('dash-body'), peek = $('dash-peek'), tab = $('dash-tab');
@@ -339,6 +342,7 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
           ['See the conditions.', 'Open a marker for its zone verdict and its distance to your accommodation and Home. Open a trip for a plan of each day and, if you turn weather on, a forecast.'],
           ['Your data stays yours.', 'Markers and trips are saved only in this browser. Weather, elevation and name lookups are off until you allow them (shield button). Export a backup now and then.'],
         ]) { const li = el('li'); li.append(el('b', '', s[0] + ' '), s[1]); ol.append(li); }
+        if (NEW_SHELL) { const li = el('li'); li.append(el('b', '', 'Find your way around. '), 'Map, Trips, Explore and Profile are along the bottom (a side rail on a larger screen). Settings and Activity sit beside them on every one.'); ol.append(li); }
         inner.append(ol);
         buttons.append(act('Run the quick setup again', () => quickSetup?.(), 'dash-setup', true));
         // hints that belong to no topic (a future feature adds one declaratively) still show up here
@@ -347,7 +351,9 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
       if (t.id === 'map') {
         if (actions.checkHere) buttons.append(act('Check where I am', () => actions.checkHere()));
         if (actions.crosshair) buttons.append(act(actions.crosshair.on ? 'Hide crosshair' : 'Show crosshair', () => actions.crosshair.toggle(), 'help-crosshair', true));
-        inner.append(el('p', 'hint', 'Zoom, My location and More tools are on the left of the map. More tools holds marker details, Side Quests, trip markers, the crosshair and Flight Sessions.'));
+        inner.append(el('p', 'hint', NEW_SHELL
+          ? 'Zoom, My location and More tools are on the left of the map. More tools holds marker details, Side Quests, trip markers, the crosshair and Flight Sessions. Map, Trips, Explore and Profile are along the bottom (or the side rail); Layers and Saved Places are quick actions on Map.'
+          : 'Zoom, My location and More tools are on the left of the map. More tools holds marker details, Side Quests, trip markers, the crosshair and Flight Sessions.'));
         const key = el('details', 'dash-subtopic'); key.append(el('summary', '', 'What the colours and lines mean'));
         const kb = el('div', 'key-body'); kb.append(keyNodes[1], routeLinesKey()); key.append(kb);
         inner.append(key);

@@ -1,6 +1,19 @@
 // What's new: the entries the dashboard shows once, newest first. To announce a change, add an entry at the top with a new id
 // (the date is a good id): visitors who have not seen it get the dashboard opened with it, once. Keep each entry to a few short lines.
+/** Review 01 S10.8 (I01): this build-time entry only exists in a VITE_NEW_SHELL=1 build - it describes chrome that is not in the
+ * default build, so a flag-off visitor must never see it announced. `tests/lib.mjs` imports WHATS_NEW under plain Node (no Vite,
+ * no import.meta.env), so this guards the same way shell/nav-id.js was split out for marker-host-unit's sake. */
+const NEW_SHELL = import.meta.env?.VITE_NEW_SHELL === '1';
 export const WHATS_NEW = [
+  ...(NEW_SHELL ? [{
+    id: '2026-11-22-shell-nav',
+    date: '2026-11-22',
+    title: 'A new way to get around',
+    items: [
+      'Map, Trips, Explore and Profile are now along the bottom of the screen (a side rail on a larger screen).',
+      'Layers and Saved Places are quick actions on Map. Settings and Activity (friend requests, trip and session invitations) are on every screen.',
+    ],
+  }] : []),
   {
     id: '2026-11-14-progression',
     date: '2026-11-14',

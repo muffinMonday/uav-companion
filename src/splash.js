@@ -72,7 +72,9 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
   const ORIENT = [
     { title: 'Official information, not permission', text: 'The coloured zones come from official sources where data exists. A zone colour is information, not permission to fly: check the official platform before every flight.' },
     { title: 'Check a location', text: 'Press and hold the map for 2 seconds, or right-click, to check a spot. A check is not saved: use Add as marker in the check window to keep the place. Search also takes places and coordinates.' },
-    { title: 'Find your tools', text: 'Zoom and your location are on the left of the map. More tools under them holds marker details, Side Quests, trip markers, the crosshair and Flight Sessions. Trips, Points of Interest (save, search and sort places, and show or hide a trip) and Flight Sessions are in the side panel and on the map.' },
+    { title: 'Find your tools', text: NEW_SHELL
+      ? 'Zoom and your location are on the left of the map. More tools under them holds marker details, Side Quests, trip markers, the crosshair and Flight Sessions. Map, Trips, Explore and Profile are along the bottom (a side rail on a larger screen); Layers and Saved Places are quick actions on Map, and Settings and Activity sit beside them.'
+      : 'Zoom and your location are on the left of the map. More tools under them holds marker details, Side Quests, trip markers, the crosshair and Flight Sessions. Trips, Points of Interest (save, search and sort places, and show or hide a trip) and Flight Sessions are in the side panel and on the map.' },
   ];
   function orient(i) {
     const step = ORIENT[i];

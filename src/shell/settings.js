@@ -56,7 +56,7 @@ export function initSettingsUI({ panel, openData, getDash, accountBtnId = 'accou
     ),
     row(
       'Help & about',
-      'Guides, what changed, and app version.',
+      'Guides and what changed.',
       'Open Help', () => getDash?.()?.showHelp(),
     ),
   );
