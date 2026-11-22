@@ -1,11 +1,12 @@
-// The new four-destination shell navigation (Review 01 S10.2, NAV-01 to NAV-09; G1 spec section 28). Behind VITE_NEW_SHELL (default off,
-// the production build has none of this): with the flag off `initShellNav` is a constant no-op and everything it imports is tree-shaken
-// out of the bundle, the same build-flag-gated-constant pattern already used elsewhere in this app for another experimental feature.
+// The new four-destination shell navigation (Review 01 S10.2/S10.3, NAV-01 to NAV-09, MAP-02/MAP-06; G1 spec sections 14 and 28). Behind
+// VITE_NEW_SHELL (default off, the production build has none of this): with the flag off `initShellNav` is a constant no-op and
+// everything it imports is tree-shaken out of the bundle, the same build-flag-gated-constant pattern already used elsewhere in this app
+// for another experimental feature.
 //
-// Scope (NAV-01 to NAV-09 only, per the approved S10.2 authorization): the chrome and its adapters. Destination *content* (Map/Trips/
-// Explore/Profile redesign) is S10.3 to S10.6 and is explicitly out of scope here. Each destination below is a temporary adapter onto
-// the existing, unchanged panel/account/sessions-hub code - nothing in those modules is modified by this file, so every control they
-// already offer stays reachable exactly as the G1 spec section 28.3 entry-point inventory requires.
+// Scope: the chrome, its destination adapters (S10.2), and - as of S10.3 - the Map destination's two quick-access actions (Layers,
+// Saved Places), themselves adapters onto the existing, unmodified Map Configs and POI panes. Trips/Explore/Profile *content*
+// (S10.4-S10.6) is still explicitly out of scope. Nothing in panel.js/poi-ui.js/app/map-settings.js is modified by this file, so every
+// control those modules already offer stays reachable exactly as the G1 spec section 28.3 entry-point inventory requires.
 import { el } from '../cards.js';
 import { watchTier, navPlacement, railLabelsShown, touchTarget, isShort } from './tier.js';
 import { SHELL_NAV_ID } from './nav-id.js';
@@ -22,6 +23,15 @@ const DESTS = [
   { key: 'explore', label: 'Explore' },
   { key: 'profile', label: 'Profile' },
 ];
+const MAP_ACTION_ICONS = {
+  layers: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5m-18 5 9 5 9-5"/></svg>',
+  places: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v15l-7-3-7 3V4Z"/></svg>',
+};
+/** The Map destination's quick-access actions (S10.3, MAP-02/MAP-06): adapters onto the existing Map Configs ('config') and POI ('poi') panel tabs. */
+const MAP_ACTIONS = [
+  { key: 'layers', label: 'Layers', tab: 'config' },
+  { key: 'places', label: 'Saved Places', tab: 'poi' },
+];
 
 function buildNav() {
   const root = el('nav', 'shell-nav'); root.id = SHELL_NAV_ID; root.setAttribute('aria-label', 'Primary');
@@ -35,8 +45,17 @@ function buildNav() {
     root.append(b);
     return b;
   });
+  const mapActions = MAP_ACTIONS.map(({ key, label }) => {
+    const b = el('button', 'shell-nav-item shell-nav-action'); b.type = 'button'; b.dataset.action = key; b.hidden = true;
+    b.setAttribute('aria-label', label);
+    b.innerHTML = MAP_ACTION_ICONS[key] + '<span class="shell-nav-label" aria-hidden="true"></span>';
+    b.querySelector('.shell-nav-label').textContent = label;
+    b.title = label;
+    root.append(b);
+    return b;
+  });
   document.body.append(root);
-  return { root, buttons };
+  return { root, buttons, mapActions };
 }
 
 /**
@@ -44,12 +63,13 @@ function buildNav() {
  * Returns { destination(), setDestination(key), destroy() }, or null if the flag is off (nothing was built).
  */
 function createShellNav({ panel, getSessionsHub, toast, accountBtnId = 'account-btn' }) {
-  const { root, buttons } = buildNav();
+  const { root, buttons, mapActions } = buildNav();
   let current = 'map';
   let stopTier = null;
 
   function paint() {
     for (const b of buttons) b.setAttribute('aria-current', String(b.dataset.dest === current));
+    for (const b of mapActions) b.hidden = current !== 'map'; // the Layers/Saved Places quick actions only make sense while viewing the map
   }
 
   function go(key) {
@@ -66,10 +86,17 @@ function createShellNav({ panel, getSessionsHub, toast, accountBtnId = 'account-
   }
 
   for (const b of buttons) b.addEventListener('click', () => go(b.dataset.dest));
+  for (const b of mapActions) {
+    const { tab } = MAP_ACTIONS.find((a) => a.key === b.dataset.action);
+    b.addEventListener('click', () => panel.open(tab)); // reuses the existing pane verbatim (MAP-02: Layers = the Map Configs tab; MAP-06: Saved Places = the POI tab)
+  }
 
   // The panel can close by other means (Escape, a map click, swipe-to-dismiss); reflect that as "Map" being current again,
-  // but only when it was Trips that closed - Explore/Profile use their own, separate surfaces and are not affected by the panel.
+  // but only when it was Trips that closed (Layers/Saved Places already leave current as 'map') - Explore/Profile use their own,
+  // separate surfaces and are not affected by the panel.
   panel.onChange(() => { if (current === 'trips' && !panel.isOpen()) go('map'); });
+
+  paint(); // establish the initial state (Map current, its actions visible) without calling go('map') and closing a panel the real app may have opened by default
 
   stopTier = watchTier(({ tier, short, coarse }) => {
     root.dataset.tier = tier;

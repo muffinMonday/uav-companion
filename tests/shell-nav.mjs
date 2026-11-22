@@ -50,7 +50,7 @@ try {
     ok((await nav.count()) === 1, 'flag on: #shell-nav exists');
     ok((await nav.getAttribute('data-placement')) === 'rail', 'desktop: rail placement');
     ok((await nav.getAttribute('data-labels')) === 'true', 'desktop: labels shown on the rail');
-    const items = await nav.locator('.shell-nav-item').all();
+    const items = await nav.locator('[data-dest]').all();
     ok(items.length === 4, 'four destinations (Map, Trips, Explore, Profile)');
     const names = await Promise.all(items.map((i) => i.getAttribute('aria-label')));
     ok(names.join('|') === 'Map|Trips|Explore|Profile', 'named in order, each with an accessible aria-label');
@@ -103,6 +103,21 @@ try {
     ok((await p.getAttribute('#shell-nav [data-dest=trips]', 'aria-current')) === 'true', 'Trips shows as the current destination');
     await p.click('#shell-nav [data-dest=map]');
     ok(!(await p.isVisible('#panel')), 'Map destination closes the panel (the map is the default view)');
+    await ctx.close();
+  }
+
+  // ---- S10.3: Map's quick actions (Layers, Saved Places) are adapters onto the existing panel tabs, hidden on every other destination
+  {
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    ok(await p.locator('#shell-nav [data-action=layers]').isHidden() === false, 'Layers action is visible while Map is the current destination (the default)');
+    ok(await p.locator('#shell-nav [data-action=places]').isHidden() === false, 'Saved Places action is visible while Map is current');
+    await p.click('#shell-nav [data-action=layers]');
+    ok(await p.isVisible('#panel') && await p.isVisible('#pane-config'), 'Layers opens the existing Map Configs pane unchanged');
+    await p.click('#shell-nav [data-dest=trips]');
+    ok(await p.locator('#shell-nav [data-action=layers]').isHidden(), 'Map actions hide once Trips becomes the current destination');
+    await p.click('#shell-nav [data-dest=map]');
+    await p.click('#shell-nav [data-action=places]');
+    ok(await p.isVisible('#pane-poi'), 'Saved Places opens the existing POI pane unchanged');
     await ctx.close();
   }
 

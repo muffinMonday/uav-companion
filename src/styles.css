@@ -1610,6 +1610,8 @@ body[data-mh=bottom] .leaflet-bottom{margin-bottom:var(--mh-off)}
 .shell-nav[data-placement="bottom"]{left:0;right:0;bottom:0;flex-direction:row;justify-content:space-around;align-items:stretch;border-top:1px solid var(--line);padding:var(--sp-1) max(var(--sp-2),env(safe-area-inset-left)) max(var(--sp-1),env(safe-area-inset-bottom)) max(var(--sp-2),env(safe-area-inset-right))}
 .shell-nav[data-placement="rail"]{top:0;left:0;bottom:0;flex-direction:column;align-items:center;gap:var(--sp-2);padding:var(--sp-4) var(--sp-1);border-right:1px solid var(--line)}
 .shell-nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:var(--shell-nav-target,44px);min-height:var(--shell-nav-target,44px);border:0;background:none;border-radius:var(--radius-sm);color:var(--muted);cursor:pointer}
+.shell-nav-item[hidden]{display:none} /* the Map destination's Layers/Saved Places actions (S10.3), hidden on every other destination */
+.shell-nav-action{color:var(--accent)} /* a quick action, not a primary destination: never takes aria-current */
 @media (hover:hover){.shell-nav-item:hover{background:var(--surface-2)}} /* no hover-dependent affordance on a touch-only device (U-16): this rule simply does not exist there */
 .shell-nav-item:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .shell-nav-item svg{width:var(--icon);height:var(--icon);fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
