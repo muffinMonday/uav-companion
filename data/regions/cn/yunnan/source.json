@@ -27,30 +27,41 @@
     "publishedMonth": null,
     "snapshotAt": null,
     "acquiredOn": "2026-11-17",
-    "contentSha256": "6e6d37af8a49f62195a914e4eebdd907efff977686bd401bfd98a0a02956ce4a",
+    "contentSha256": "783fedf8e433ce4427c8a1aa784db0c1b07f5cb93bc69a8e5ae2da27a5329aad",
     "extraction": {
-      "method": "colour segmentation of the published map image, owner-supplied corrections for label and artefact areas, linear georeferencing to the published Yunnan extent, vectorization",
-      "sourceImageSha256": "f5eb13252a7200471775ee88bb72eefe29d2f2902943358b45bfac7470e06820",
-      "metadataSha256": "46b762e98010977e19446438e95f5bed07f89ede871dcc4604dc8db74352ad1c",
-      "imageSize": [1080, 942],
-      "cyanPixelsInitial": 319441,
+      "method": "colour segmentation of the published map image, owner purple/orange corrections for label and artefact areas, Web Mercator georeferencing from visible city control points, vectorization",
+      "sourceImageSha256": null,
+      "metadataSha256": "da6f26e293d447ca2c237e4bfa8b292ab151e0b6bb98139c5e6e3053dc99e9f4",
+      "imageSize": [
+        1080,
+        942
+      ],
+      "cyanPixelsInitial": 260733,
       "purpleAnnotationPixels": 29714,
       "orangeAnnotationPixels": 1522,
-      "correctedFlyablePixels": 327420,
-      "purpleComponents": 16,
-      "orangeComponents": 13,
-      "vectorPolygons": 11,
-      "pixelGeorefExtent": [97.5275, 21.142222222222223, 106.19638888888889, 29.252222222222223],
-      "caveats": [
-        "Purple annotation footprints are treated as flyable restoration.",
-        "Orange annotation footprints are forced non-flyable/unknown.",
-        "Unmarked obscured areas remain conservative.",
-        "Linear extent georeferencing is approximate; boundary-to-boundary registration remains recommended."
+      "correctedFlyablePixels": 291336,
+      "retainedPixelComponents": 9,
+      "vectorPolygons": 14,
+      "boundsWGS84": [
+        97.707731,
+        21.260711,
+        106.195137,
+        29.131439
       ],
-      "geojsonNote": "Approximate image-derived Yunnan fly-zone geometry; purple user annotations restored as flyable; orange annotations preserved as no-fly/unknown. Not suitable for precise boundary decisions.",
+      "georeference": "web-mercator-city-control-v2",
+      "controlRmseKm": 1.381,
+      "controlMaxErrorKm": 1.907,
+      "caveats": [
+        "Geometry is extracted from a rendered official-map image, not original GIS vectors.",
+        "Purple owner annotations restore areas obscured by labels; orange owner annotations remain excluded.",
+        "Unmarked obscured areas remain conservative.",
+        "Calibration is based on visible city markers and a Web Mercator model; local boundary error can exceed control-point residuals."
+      ],
+      "geojsonNote": "Approximate image-derived Yunnan fly-zone geometry (corrected v2, 14 polygons); purple owner annotations restored as flyable; orange annotations kept no-fly/unknown. Not suitable for precise boundary decisions.",
       "approximate": true,
       "originalGis": false
-    }
+    },
+    "geometryVersion": "corrected-v2"
   },
   "license": "LicenseRef-OwnerApproved-ImageDerived-Yunnan",
   "officialMap": {
