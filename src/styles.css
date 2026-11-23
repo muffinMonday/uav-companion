@@ -1693,12 +1693,15 @@ body[data-shell="new"] .search:not(.collapsed) .results{position:static;flex:1 1
 /* left/right + margin-inline:auto, not left:50%+transform, so a side-docked marker host/panel (--panel-w, marker-host.js/styles.css:704)
    shifts this centered the same way .dash and .dash-peek already move aside for it - the two are shown together whenever a selected
    stop's day has a route, so this must never sit under the host that triggered it. */
-.route-summary{position:fixed;z-index:calc(var(--z-sheet) + 1);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:fit-content;max-width:min(420px,calc(100% - 24px - var(--panel-w,0px)));display:flex;flex-direction:column;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2);overflow:hidden}
+.route-summary{position:fixed;z-index:calc(var(--z-sheet) + 1);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:calc(16px + var(--shell-nav-bottom-h,0px) + env(safe-area-inset-bottom,0px));width:fit-content;max-width:min(420px,calc(100% - 24px - var(--panel-w,0px)));display:flex;flex-direction:column;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2);overflow:hidden}
 /* Production hotfix, Issue 3: a selected marker's bottom sheet (--mh-off, marker-host.js's own reserved vertical space, already used by
    Leaflet's bottom controls at styles.css:1617) was never accounted for here, so the chip sat on top of the sheet - specifically over
    the previous/next waypoint bar (.pop-seq), which is pinned to the sheet's own bottom edge. The side-docked case needs no equivalent
-   fix: --panel-w (used above) already keeps this clear of a side host, which is why only data-mh=bottom is gated here. */
-body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + env(safe-area-inset-bottom,0px))}
+   fix: --panel-w (used above) already keeps this clear of a side host, which is why only data-mh=bottom is gated here.
+   Second hotfix: the base rule above now also clears the persistent bottom-nav bar (--shell-nav-bottom-h) on every destination,
+   not just the marker-host one below - the chip is a global singleton (shell/route-summary.js appends it to document.body) shown
+   on Trips/Explore/Profile too, where there is no marker-host sheet but the four-item bottom nav is still there. */
+body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + var(--shell-nav-bottom-h,0px) + env(safe-area-inset-bottom,0px))}
 .route-summary[hidden]{display:none}
 .route-summary-status{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .route-summary-status svg{width:var(--icon);height:var(--icon);flex:0 0 auto;transition:transform var(--dur-fast) var(--ease)}

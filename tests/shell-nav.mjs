@@ -159,13 +159,20 @@ try {
   // ---- S10.4: Trips hero (TRIP-01), full-screen trip detail on a phone (TRIP-02), Back closes the detail instead of leaving the app (NAV-07)
   {
     const iso = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-    const seededTrips = [{ id: 't1', name: 'Hubei spring', startDate: iso(2), endDate: iso(5), description: '', color: '#e91e63', created: '2026-01-01T00:00:00.000Z' }];
+    const seededTrips = [
+      { id: 't1', name: 'Hubei spring', startDate: iso(2), endDate: iso(5), description: '', color: '#e91e63', created: '2026-01-01T00:00:00.000Z' },
+      { id: 't2', name: 'A later trip', startDate: iso(20), endDate: iso(25), description: '', color: '#2196f3', created: '2026-01-02T00:00:00.000Z' },
+    ];
     const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     await ctx.addInitScript(([tr]) => { localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr })); }, [seededTrips]);
     await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
     await p.click('#shell-nav [data-dest=trips]');
     ok(await p.isVisible('#trips-hero .trip-card'), 'TRIP-01: the upcoming trip shows as a hero above the list');
-    ok(await p.isVisible('#trips-list .trip-card'), 'TRIP-01: the same trip still shows in the full list (no duplication, one source)');
+    // Production hotfix: the hero already shows the soonest trip in full; repeating the exact same card as the list's own first entry
+    // read as an outright duplicate (reported live with a single trip, where the list had nothing else to show but that one repeat).
+    ok((await p.locator('#trips-list .trip-card').count()) === 1, 'the hero trip is not repeated in the list below it - only the other trip shows');
+    const listText = await p.locator('#trips-list .trip-card').first().innerText();
+    ok(!listText.includes('Hubei spring'), "the one list card left is the OTHER trip, not the hero's");
     ok(!(await p.locator('.sidepanel').evaluate((el) => el.classList.contains('tall'))), 'the sheet is not expanded while only the list shows');
     await p.click('#trips-hero .trip-card button:has-text("Open")');
     ok(await p.locator('.sidepanel').evaluate((el) => el.classList.contains('tall')), 'TRIP-02: opening a trip detail expands the phone sheet to full screen');
@@ -352,6 +359,13 @@ try {
       p.locator('.pop-seq').boundingBox(),
     ]);
     ok(summaryBox.y + summaryBox.height <= hostBox.y + 1, `Issue 3: the route summary sits above the marker sheet, not on top of it (summary bottom ${summaryBox.y + summaryBox.height}, sheet top ${hostBox.y})`);
+    // Second production hotfix: the chip is a document.body-level singleton (shell/route-summary.js) shown on every destination, not
+    // just while a marker is open - its original bottom offset never accounted for the persistent bottom nav bar underneath it either,
+    // only the marker-host sheet. --shell-nav-bottom-h (nav.js, measured from the rendered bar, same pattern as --shell-nav-rail-w)
+    // now clears it too.
+    const navBox = await p.locator('#shell-nav').boundingBox();
+    ok(navBox !== null, 'the bottom nav bar is present at this phone width');
+    ok(summaryBox.y + summaryBox.height <= navBox.y + 1, `the route summary also clears the bottom nav bar, not just the marker sheet (summary bottom ${summaryBox.y + summaryBox.height}, nav top ${navBox.y})`);
     ok(seqBox !== null, 'the previous/next waypoint bar (.pop-seq) is present for this two-stop trip');
     ok(seqBox.y >= summaryBox.y + summaryBox.height - 1, 'Issue 3: the previous/next waypoint bar is not covered by the route summary');
     const nextBtn = p.locator('.pop-seq-btn').last();

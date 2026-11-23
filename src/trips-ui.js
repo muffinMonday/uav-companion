@@ -174,14 +174,17 @@ export function initTripsUI({ poi, panel, toast, checkPoint, zoneSummary }) {
     empty.hidden = trips.length > 0;
     list.replaceChildren(); pastList.replaceChildren();
     const past = trips.filter((t) => isPastTrip(t, today));
+    let heroId = null;
     if (NEW_SHELL && hero) {
       // TRIP-01: the trip under way, else the soonest upcoming one, highlighted above the full list - same source (comingTrips/tripCard), not a second trip list.
       hero.replaceChildren();
       const [top] = comingTrips(trips, today);
       hero.hidden = !top;
-      if (top) hero.append(tripCard(top.trip, items, today, true));
+      if (top) { hero.append(tripCard(top.trip, items, today, true)); heroId = top.trip.id; }
     }
-    for (const t of trips) (past.includes(t) ? pastList : list).append(tripCard(t, items, today));
+    // Production hotfix: the hero already shows this trip in full; repeating it as the list's own first (and, with one trip total,
+    // only) card read as an exact duplicate with no visual distinction a user could point to - so the list below the hero omits it.
+    for (const t of trips) { if (t.id === heroId) continue; (past.includes(t) ? pastList : list).append(tripCard(t, items, today)); }
     pastBox.hidden = !past.length;
     if (getPrivacy().autoWeather) {
       tw.prune(trips.map((t) => t.id));

@@ -243,8 +243,13 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
     root.dataset.short = String(short);
     root.style.setProperty('--shell-nav-target', `${touchTarget(coarse)}px`);
     const rail = navPlacement(tier) === 'rail';
+    const bottom = navPlacement(tier) === 'bottom';
     document.documentElement.dataset.shellNavRail = String(rail);
     document.documentElement.style.setProperty('--shell-nav-rail-w', rail ? `${root.offsetWidth}px` : '0px');
+    // Production hotfix: a bottom-anchored overlay (the Trips/Map route summary) had nothing to tell it a bottom nav bar
+    // was also claiming that same screen edge, so it sat flush with the viewport bottom and visually overlapped the bar -
+    // same pattern as --shell-nav-rail-w above, measured from the rendered bar, 0px whenever it isn't a bottom bar.
+    document.documentElement.style.setProperty('--shell-nav-bottom-h', bottom ? `${root.offsetHeight}px` : '0px');
     // Issue 2: relocate the map/global actions between the rail (where there is vertical room for eight items, unaffected by this
     // fix) and the top bar (where the bottom nav bar needs to stay at exactly four items). Re-running this on every tier change is
     // cheap and idempotent - `append` on an already-correctly-parented node is a no-op in the DOM.
@@ -262,6 +267,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
       delete document.body.dataset.shell;
       delete document.documentElement.dataset.shellNavRail;
       document.documentElement.style.removeProperty('--shell-nav-rail-w');
+      document.documentElement.style.removeProperty('--shell-nav-bottom-h');
     },
   };
 }
