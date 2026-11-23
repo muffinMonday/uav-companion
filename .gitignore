@@ -17,6 +17,10 @@ data/regions/*/*/*
 !data/regions/my/my-enr51/layers/
 !data/regions/my/my-enr51/layers/*.geojson
 !data/regions/my/my-enr51/exceptions.json
+!data/regions/my/my-enr51/references.json
+!data/regions/my/my-enr51/approx-provenance.json
+!data/regions/my/my-enr51/approx-sources/
+!data/regions/my/my-enr51/approx-sources/osm-extract.json
 
 # Test output (screenshots, downloads)
 tests/out/

@@ -1,0 +1,142 @@
+{
+ "edition": "2026-11-03",
+ "note": "Named points that ENR 5.1 area descriptions use as arc centres or vertices; official CAAM AIP coordinates.",
+ "sources": {
+  "VKB": "ENR 4.1 Kota Bharu DVOR/DME",
+  "VKG": "ENR 4.1 Kuching DVOR/DME",
+  "VLB": "ENR 4.1 Labuan DVOR/DME",
+  "ADLEX": "ENR 4.4 designated point ADLEX",
+  "LABUAN-ARP": "AD 2 WBKL 2.2 ARP coordinates"
+ },
+ "points": {
+  "VKB": [
+   102.314167,
+   6.163333
+  ],
+  "VKG": [
+   110.311667,
+   1.473333
+  ],
+  "VLB": [
+   115.258056,
+   5.289722
+  ],
+  "ADLEX": [
+   115.253461,
+   5.925458
+  ],
+  "LABUAN-ARP": [
+   115.252222,
+   5.296389
+  ]
+ },
+ "boundaries": {
+  "KUANTAN CTR": {
+   "source": "AD 2 WMKD 2.17",
+   "text": "Kuantan CTR: Circle of 20 NM centred on ARP (034611N 1031234E).",
+   "path": [
+    {
+     "circle": {
+      "c": "034611N 1031234E",
+      "rNM": 20
+     }
+    }
+   ]
+  },
+  "KUALA TERENGGANU CTR": {
+   "source": "AD 2 WMKN 2.17",
+   "text": "Commencing from 045350N 1030804E, clockwise along an arc of a circle 28 NM radius centered on VKR DVOR/DME 052138.4N 1030454.2E, to 050708N 1024104E, thence straight line to 055737N 1030656E, thence along the arc of a circle 36 NM radius centered on VKR DVOR/DME to 054331N 1033337E, thence a straight line to 045350N 1030804E.",
+   "path": [
+    {
+     "start": "045350N 1030804E"
+    },
+    {
+     "arc": {
+      "c": "052138.4N 1030454.2E",
+      "rNM": 28,
+      "to": "050708N 1024104E",
+      "cw": true
+     }
+    },
+    {
+     "line": "055737N 1030656E"
+    },
+    {
+     "arc": {
+      "c": "052138.4N 1030454.2E",
+      "rNM": 36,
+      "to": "054331N 1033337E",
+      "cw": true
+     }
+    }
+   ]
+  },
+  "BUTTERWORTH TMA": {
+   "source": "ENR 2.1 Butterworth Terminal Area",
+   "text": "Major arc of a circle of 40 NM radius centred VBT (052836N 1002342E) FM 055800N 1005030E clockwise to 060030N 1000000E thence a straight line to 061000N 1000000E to 061000N 1000400E to 055800N 1001700E to 055800N 1005030E",
+   "path": [
+    {
+     "start": "055800N 1005030E"
+    },
+    {
+     "arc": {
+      "c": "052836N 1002342E",
+      "rNM": 40,
+      "to": "060030N 1000000E",
+      "cw": true
+     }
+    },
+    {
+     "line": "061000N 1000000E"
+    },
+    {
+     "line": "061000N 1000400E"
+    },
+    {
+     "line": "055800N 1001700E"
+    }
+   ]
+  },
+  "KERTEH CTR": {
+   "source": "AD 2 WMKE 2.17",
+   "text": "Commencing clockwise from 042736N 1033746E thence an arc of a circle 13 NM radius centered on the Kerteh ARP 043218N 1032536E to 044450N 1032804E, thence a straight line to 051133N 1033246E, thence an arc of a circle 40 NM radius centered on the Kerteh ARP 043218N 1032536E to 042501N 1040500E, thence a straight line to 042736N 1033746E.",
+   "path": [
+    {
+     "start": "042736N 1033746E"
+    },
+    {
+     "arc": {
+      "c": "043218N 1032536E",
+      "rNM": 13,
+      "to": "044450N 1032804E",
+      "cw": true
+     }
+    },
+    {
+     "line": "051133N 1033246E"
+    },
+    {
+     "arc": {
+      "c": "043218N 1032536E",
+      "rNM": 40,
+      "to": "042501N 1040500E",
+      "cw": true
+     }
+    }
+   ]
+  },
+  "KK FIR WEST": {
+   "source": "ENR 2.1 Kota Kinabalu FIR (western boundary, last leg)",
+   "open": true,
+   "text": "... 0100N 10830E, 0215N 10830E to 0825N 11630E.",
+   "path": [
+    {
+     "start": "0215N 10830E"
+    },
+    {
+     "line": "0825N 11630E"
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,994 @@
+{
+ "note": "Approximate (conservatively reconstructed) ENR 5.1 areas. Not official CAAM polygons.",
+ "features": [
+  {
+   "id": "WMR239A",
+   "class": "R",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMR239A",
+   "caamText": " Area bounded by coordinates 020900N 1022100E to 021715.30N 1022913.30E to 020900N 1024612E to 015500N 1023900E then along the coastline to 020900N 1022100E",
+   "anchors": [
+    {
+     "caam": "020900N 1022100E",
+     "role": "start",
+     "lonlat": [
+      102.35,
+      2.15
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "021715.30N 1022913.30E",
+     "role": "vertex",
+     "lonlat": [
+      102.487028,
+      2.287583
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "020900N 1024612E",
+     "role": "vertex",
+     "lonlat": [
+      102.77,
+      2.15
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "015500N 1023900E",
+     "role": "vertex",
+     "lonlat": [
+      102.65,
+      1.916667
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "020900N 1022100E",
+     "role": "coast anchor",
+     "lonlat": [
+      102.35,
+      2.15
+     ],
+     "inPolygon": true
+    }
+   ],
+   "referencedFeatureTypes": [
+    "coastline"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap natural=coastline (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 500,
+   "bufferBasis": "1.25 x the largest distance (437 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 873,
+   "straightLineAreaRatio": 0.9,
+   "notes": [],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WMR239B",
+   "class": "R",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMR239B",
+   "caamText": " Area bounded by coordinates 020900N 1022100E then along the coastline to 015500N 1023900E, 014700N 1023500E, 020000N 1021700E, 020700N 1022000E to 020900N 1022100E.",
+   "anchors": [
+    {
+     "caam": "020900N 1022100E",
+     "role": "start",
+     "lonlat": [
+      102.35,
+      2.15
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "015500N 1023900E",
+     "role": "coast anchor",
+     "lonlat": [
+      102.65,
+      1.916667
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "014700N 1023500E",
+     "role": "vertex",
+     "lonlat": [
+      102.583333,
+      1.783333
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "020000N 1021700E",
+     "role": "vertex",
+     "lonlat": [
+      102.283333,
+      2
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "020700N 1022000E",
+     "role": "vertex",
+     "lonlat": [
+      102.333333,
+      2.116667
+     ],
+     "inPolygon": true
+    }
+   ],
+   "referencedFeatureTypes": [
+    "coastline"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap natural=coastline (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 500,
+   "bufferBasis": "1.25 x the largest distance (437 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 848.6,
+   "straightLineAreaRatio": 1.19,
+   "notes": [],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WMR240A",
+   "class": "R",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMR240A",
+   "caamText": " Area bounded by coordinates 014409N 1030026E thence along the coastline to 013202N 1032147E thence along an arc radius 35 DME SJ to 011721N 1031628E to 012442N 1025342E thence 014409N 1030026E .",
+   "anchors": [
+    {
+     "caam": "014409N 1030026E",
+     "role": "start",
+     "lonlat": [
+      103.007222,
+      1.735833
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "013202N 1032147E",
+     "role": "coast anchor",
+     "lonlat": [
+      103.363056,
+      1.533889
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "011721N 1031628E",
+     "role": "arc end",
+     "lonlat": [
+      103.274444,
+      1.289167
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "011322N 1035116E",
+     "role": "arc centre",
+     "lonlat": [
+      103.854444,
+      1.222778
+     ],
+     "inPolygon": false
+    },
+    {
+     "caam": "012442N 1025342E",
+     "role": "vertex",
+     "lonlat": [
+      102.895,
+      1.411667
+     ],
+     "inPolygon": true
+    }
+   ],
+   "referencedFeatureTypes": [
+    "coastline",
+    "arc centred on SJ DVOR/DME"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap natural=coastline (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 500,
+   "bufferBasis": "1.25 x the largest distance (13 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 1479.4,
+   "straightLineAreaRatio": 1.01,
+   "notes": [
+    "arc direction not published for the 35 NM arc: the shorter arc (26 degrees) was taken"
+   ],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WMR240B",
+   "class": "R",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMR240B",
+   "caamText": " Area bounded by coordinates 015514N 1023907E thence along the coastline to 014409N 1030026E to 012442N 1025342E to 013309N 1022758E thence 015514N 1023907E",
+   "anchors": [
+    {
+     "caam": "015514N 1023907E",
+     "role": "start",
+     "lonlat": [
+      102.651944,
+      1.920556
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "014409N 1030026E",
+     "role": "coast anchor",
+     "lonlat": [
+      103.007222,
+      1.735833
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "012442N 1025342E",
+     "role": "vertex",
+     "lonlat": [
+      102.895,
+      1.411667
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "013309N 1022758E",
+     "role": "vertex",
+     "lonlat": [
+      102.466111,
+      1.5525
+     ],
+     "inPolygon": true
+    }
+   ],
+   "referencedFeatureTypes": [
+    "coastline"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap natural=coastline (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 500,
+   "bufferBasis": "1.25 x the largest distance (13 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 1986.3,
+   "straightLineAreaRatio": 1,
+   "notes": [],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WMR416A",
+   "class": "R",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMR416A",
+   "caamText": " Area bounded by a straight line joining LUMUT WMR416 BDRY at 041614N 1003900E (bearing 042° FM Helipad reference point 041358N 1003704E ), to a point at 042247N 1004543E , then to 042747N 1004325E , then an arc of 15 NM radius centred on helipad reference point anti-clockwise to a point 042857N 1003715E , then following the coastline to LUMUT WMR416 BDRY at 041624N 1003523E.",
+   "anchors": [
+    {
+     "caam": "041614N 1003900E",
+     "role": "start",
+     "lonlat": [
+      100.65,
+      4.270556
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "042247N 1004543E",
+     "role": "vertex",
+     "lonlat": [
+      100.761944,
+      4.379722
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "042747N 1004325E",
+     "role": "vertex",
+     "lonlat": [
+      100.723611,
+      4.463056
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "042857N 1003715E",
+     "role": "arc end",
+     "lonlat": [
+      100.620833,
+      4.4825
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "041358N 1003704E",
+     "role": "arc centre",
+     "lonlat": [
+      100.617778,
+      4.232778
+     ],
+     "inPolygon": false
+    },
+    {
+     "caam": "041624N 1003523E",
+     "role": "coast anchor",
+     "lonlat": [
+      100.589722,
+      4.273333
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "041614N 1003900E",
+     "role": "boundary anchor",
+     "lonlat": [
+      100.65,
+      4.270556
+     ],
+     "inPolygon": true
+    }
+   ],
+   "referencedFeatureTypes": [
+    "coastline",
+    "WMR416 boundary"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap natural=coastline (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 500,
+   "bufferBasis": "1.25 x the largest distance (233 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 348.2,
+   "straightLineAreaRatio": 1.19,
+   "notes": [
+    "follows the verified WMR416 boundary"
+   ],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WMR416B",
+   "class": "R",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMR416B",
+   "caamText": " Area bounded by a straight line joining WMR416 BDRY at 041357N 1003357E (bearing 270° FM Helipad reference point 041358N 1003704E ), and a point at 041357N 1002157E , then an arc 15 NM radius centred on helipad reference point clockwise to a point 042857N 1003715E , then following the coastline to LUMUT WMR416 BDRY at 041624N 1003524E.",
+   "anchors": [
+    {
+     "caam": "041357N 1003357E",
+     "role": "start",
+     "lonlat": [
+      100.565833,
+      4.2325
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "041357N 1002157E",
+     "role": "vertex",
+     "lonlat": [
+      100.365833,
+      4.2325
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "042857N 1003715E",
+     "role": "arc end",
+     "lonlat": [
+      100.620833,
+      4.4825
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "041358N 1003704E",
+     "role": "arc centre",
+     "lonlat": [
+      100.617778,
+      4.232778
+     ],
+     "inPolygon": false
+    },
+    {
+     "caam": "041624N 1003524E",
+     "role": "coast anchor",
+     "lonlat": [
+      100.59,
+      4.273333
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "041357N 1003357E",
+     "role": "boundary anchor",
+     "lonlat": [
+      100.565833,
+      4.2325
+     ],
+     "inPolygon": true
+    }
+   ],
+   "referencedFeatureTypes": [
+    "coastline",
+    "WMR416 boundary"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap natural=coastline (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 500,
+   "bufferBasis": "1.25 x the largest distance (233 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 528.4,
+   "straightLineAreaRatio": 0.95,
+   "notes": [
+    "follows the verified WMR416 boundary"
+   ],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WMR416C",
+   "class": "R",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMR416C",
+   "caamText": " Area bounded by a straight line joining Lumut WMR 416 BDRY at 041357N 1003357E (bearing 270° FM Helipad reference point 041357N 1003657E), then an arc of 15NM radius centred on helipad reference point anticlockwise to a point 040157N 1004455E, then following the coastline to Lumut Restricted Area BDRY at 041057N 1003653E, then clockwise around the BDRY of Lumut WMR 416 to 041357N 1003357E.",
+   "anchors": [
+    {
+     "caam": "041357N 1003357E",
+     "role": "start",
+     "lonlat": [
+      100.565833,
+      4.2325
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "041357N 1003657E",
+     "role": "arc centre (helipad reference point)",
+     "lonlat": [
+      100.615833,
+      4.2325
+     ],
+     "inPolygon": false
+    },
+    {
+     "caam": "040157N 1004455E",
+     "role": "arc end",
+     "lonlat": [
+      100.748611,
+      4.0325
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "041357N 1003657E",
+     "role": "arc centre",
+     "lonlat": [
+      100.615833,
+      4.2325
+     ],
+     "inPolygon": false
+    },
+    {
+     "caam": "041057N 1003653E",
+     "role": "coast anchor",
+     "lonlat": [
+      100.614722,
+      4.1825
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "041357N 1003357E",
+     "role": "boundary anchor",
+     "lonlat": [
+      100.565833,
+      4.2325
+     ],
+     "inPolygon": true
+    }
+   ],
+   "referencedFeatureTypes": [
+    "coastline",
+    "WMR416 boundary"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap natural=coastline (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 1900,
+   "bufferBasis": "1.25 x the largest distance (1556 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 905.2,
+   "straightLineAreaRatio": 1.17,
+   "notes": [
+    "follows the verified WMR416 boundary",
+    "the straight line along bearing 270 from the WMR416 boundary to the 15 NM arc is implied (as in WMR416B)"
+   ],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WMR419",
+   "class": "R",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMR419",
+   "caamText": " From 041103N 1002216E along the western boundary of WMR 416C to 040135N 1004531E then along the coast line to 034840N 1004623E to 032400N 1001705E (PUGER) to 041705N 0992000E (GOTLA) TO 041103N 1002216E.",
+   "anchors": [
+    {
+     "caam": "041103N 1002216E",
+     "role": "start",
+     "lonlat": [
+      100.371111,
+      4.184167
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "040135N 1004531E",
+     "role": "arc end",
+     "lonlat": [
+      100.758611,
+      4.026389
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "041357N 1003657E",
+     "role": "arc centre",
+     "lonlat": [
+      100.615833,
+      4.2325
+     ],
+     "inPolygon": false
+    },
+    {
+     "caam": "034840N 1004623E",
+     "role": "coast anchor",
+     "lonlat": [
+      100.773056,
+      3.811111
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "032400N 1001705E",
+     "role": "vertex",
+     "lonlat": [
+      100.284722,
+      3.4
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "041705N 0992000E",
+     "role": "vertex",
+     "lonlat": [
+      99.333333,
+      4.284722
+     ],
+     "inPolygon": true
+    }
+   ],
+   "referencedFeatureTypes": [
+    "coastline",
+    "western boundary of WMR416C (15 NM arc)"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap natural=coastline (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 2500,
+   "bufferBasis": "1.25 x the largest distance (3865 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 7258.2,
+   "straightLineAreaRatio": 0.99,
+   "notes": [],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WBR524",
+   "class": "R",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WBR524",
+   "caamText": " An arc of a circle radius 40NM, centered at 055400N 1160200E ( VJN / DVOR ) from 063400N 1160200E to 062742N 1162524E then an arc of a circle radius 20NM centered at 055400N 1160200E ( VJN / DVOR ) from 061400N 1160200E to 061230N 1161030E then straight line joining 061400N 1160200E to 063400N 1160200E and coastline joining 061230N 1161030E to 062742N 1162524E.",
+   "anchors": [
+    {
+     "caam": "063400N 1160200E",
+     "role": "start",
+     "lonlat": [
+      116.033333,
+      6.566667
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "062742N 1162524E",
+     "role": "arc end",
+     "lonlat": [
+      116.423333,
+      6.461667
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "055400N 1160200E",
+     "role": "arc centre",
+     "lonlat": [
+      116.033333,
+      5.9
+     ],
+     "inPolygon": false
+    },
+    {
+     "caam": "061230N 1161030E",
+     "role": "coast anchor",
+     "lonlat": [
+      116.175,
+      6.208333
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "061400N 1160200E",
+     "role": "arc end",
+     "lonlat": [
+      116.033333,
+      6.233333
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "055400N 1160200E",
+     "role": "arc centre",
+     "lonlat": [
+      116.033333,
+      5.9
+     ],
+     "inPolygon": false
+    }
+   ],
+   "referencedFeatureTypes": [
+    "coastline"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap natural=coastline (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 2500,
+   "bufferBasis": "1.25 x the largest distance (2284 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 1243.8,
+   "straightLineAreaRatio": 1.1,
+   "notes": [],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WMR407",
+   "class": "R",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMR407",
+   "caamText": " Area contained within 061538N 005220E, then along the Malaysia / Thai border to PSN 055759N 1010705E, then a straight line joining PSN 055759N 1010155E, then a straight line joining PSN 061538N 1005220E.",
+   "anchors": [
+    {
+     "caam": "061538N 1005220E",
+     "role": "start",
+     "lonlat": [
+      100.872222,
+      6.260556
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "055759N 1010705E",
+     "role": "border anchor",
+     "lonlat": [
+      101.118056,
+      5.966389
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "055759N 1010155E",
+     "role": "vertex",
+     "lonlat": [
+      101.031944,
+      5.966389
+     ],
+     "inPolygon": true
+    }
+   ],
+   "referencedFeatureTypes": [
+    "Malaysia/Thailand border"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap boundary=administrative admin_level=2 (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 500,
+   "bufferBasis": "1.25 x the largest distance (285 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 588,
+   "straightLineAreaRatio": 3.77,
+   "notes": [
+    "the published start \"061538N 005220E\" is read as 1005220E (as in WMR406)"
+   ],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WMD419",
+   "class": "D",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMD419",
+   "caamText": " Commencing from 055800N 1010659E a straight line to 055800N 1005700E, 054530N 1004820E, 053750N 1005100E, 052600N 1010730E, 052700N 1011240E, 053040N 1012030E, 053910N 1015254E then clockwise along an arc 40 NM centred from VKB VOR/DME to 054450N 1014729E then along Malaysia/Thai border to 055800N 1010659E.",
+   "anchors": [
+    {
+     "caam": "055800N 1010659E",
+     "role": "start",
+     "lonlat": [
+      101.116389,
+      5.966667
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "055800N 1005700E",
+     "role": "vertex",
+     "lonlat": [
+      100.95,
+      5.966667
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "054530N 1004820E",
+     "role": "vertex",
+     "lonlat": [
+      100.805556,
+      5.758333
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "053750N 1005100E",
+     "role": "vertex",
+     "lonlat": [
+      100.85,
+      5.630556
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "052600N 1010730E",
+     "role": "vertex",
+     "lonlat": [
+      101.125,
+      5.433333
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "052700N 1011240E",
+     "role": "vertex",
+     "lonlat": [
+      101.211111,
+      5.45
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "053040N 1012030E",
+     "role": "vertex",
+     "lonlat": [
+      101.341667,
+      5.511111
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "053910N 1015254E",
+     "role": "vertex",
+     "lonlat": [
+      101.881667,
+      5.652778
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "054450N 1014729E",
+     "role": "arc end",
+     "lonlat": [
+      101.791389,
+      5.747222
+     ],
+     "inPolygon": true
+    },
+    {
+     "caam": "VKB DVOR/DME (ENR 4.1)",
+     "role": "arc centre",
+     "lonlat": [
+      102.314167,
+      6.163333
+     ],
+     "inPolygon": false
+    },
+    {
+     "caam": "055800N 1010659E",
+     "role": "border anchor",
+     "lonlat": [
+      101.116389,
+      5.966667
+     ],
+     "inPolygon": true
+    }
+   ],
+   "referencedFeatureTypes": [
+    "Malaysia/Thailand border",
+    "arc centred on VKB"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap boundary=administrative admin_level=2 (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 500,
+   "bufferBasis": "1.25 x the largest distance (421 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 3532.1,
+   "straightLineAreaRatio": 0.86,
+   "notes": [],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  },
+  {
+   "id": "WMP228",
+   "class": "P",
+   "approximate": true,
+   "confidence": "approximate",
+   "caamEdition": {
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03"
+   },
+   "caamSource": "ENR 5.1 WMP228",
+   "caamText": "BUKIT SERENE Area within 2 NM centred on 012845N 1034433E with the southern border of the Prohibited Area coinciding with the coastline of South Johor.",
+   "anchors": [
+    {
+     "caam": "012845N 1034433E",
+     "role": "circle centre",
+     "lonlat": [
+      103.7425,
+      1.479167
+     ],
+     "inPolygon": false
+    }
+   ],
+   "referencedFeatureTypes": [
+    "coastline"
+   ],
+   "secondaryDataset": {
+    "name": "OpenStreetMap contributors",
+    "licence": "ODbL 1.0",
+    "extract": "approx-sources/osm-extract.json",
+    "used": [
+     "OpenStreetMap natural=coastline (ODbL), simplified to 3 m"
+    ]
+   },
+   "method": "CAAM anchor points and stated arcs are kept exactly; each coastline/border edge between two anchors follows the OpenStreetMap line and is then offset outward from the area by the buffer.",
+   "bufferM": 500,
+   "bufferBasis": "1.25 x the largest distance (0 m) between a CAAM coastline/border anchor and the OpenStreetMap line, within 500-2500 m",
+   "areaKm2": 43.5,
+   "straightLineAreaRatio": 1,
+   "notes": [
+    "the circle is limited by the coast on the side of its centre"
+   ],
+   "limitations": "Not an official CAAM polygon. The referenced coastline/border is reproduced from OpenStreetMap, not from CAAM GIS data, and the edge is deliberately widened. Treat as potentially restricted and verify with current CAAM information."
+  }
+ ],
+ "notReconstructed": []
+}
