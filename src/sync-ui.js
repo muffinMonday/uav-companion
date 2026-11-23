@@ -78,7 +78,7 @@ export async function initSyncUI({ store, toast }) {
   /** Google and email sign-in with one status line; the account popover shows it. Starting either disables both while the page leaves. */
   function signInForm() {
     const box = el('div', 'cloud-signin');
-    const g = el('button', 'btn cloud-google', 'Continue with Google'); g.type = 'button';
+    const g = el('button', 'btn primary cloud-google', 'Continue with Google'); g.type = 'button';
     const or = el('p', 'hint cloud-or', 'or use email');
     const f = el('form', 'cloud-form');
     const input = el('input'); input.type = 'email'; input.required = true; input.placeholder = 'you@example.com'; input.autocomplete = 'email'; input.setAttribute('aria-label', 'Email address');
