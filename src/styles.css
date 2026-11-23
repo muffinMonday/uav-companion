@@ -1656,15 +1656,18 @@ html[data-shell-nav-rail="true"] .leaflet-left .leaflet-control{margin-left:calc
 body[data-shell="new"] #dock{display:none}
 body[data-shell="new"] .sidepanel .tabs{display:none}
 
-/* Settings page (S10.7, SET-01..08): grouped adapter rows, each a real link onto the existing control surface it names */
-.set-row{display:flex;align-items:center;gap:var(--sp-3);justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
-.set-row:last-child{border-bottom:0}
+/* Settings page (S10.7, SET-01..08; G02 coherence pass 2026-11-23): grouped adapter rows, each a real link onto the existing control
+   surface it names. Styled as the app's own standard .card (surface/radius/shadow-1), the same visual unit every other pane already
+   uses, instead of a flat divided list - a presentation-only change, no control relocated or duplicated. */
+.set-row{display:flex;align-items:center;gap:var(--sp-3);justify-content:space-between;padding:var(--sp-3) var(--sp-4);margin-bottom:var(--sp-2);background:var(--surface);border-radius:var(--radius-sm);box-shadow:var(--shadow-1)}
+.set-row:last-child{margin-bottom:0}
 .set-row-body h3{margin:0 0 2px;font-size:var(--fs-body)}
 .set-row-body p{margin:0}
 
-/* Activity inbox (S10.7, ACT-01..04): pending vs unread rows get a distinct dot colour (ACT-03) */
-.act-row{display:flex;align-items:center;gap:var(--sp-3);justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
-.act-row:last-child{border-bottom:0}
+/* Activity inbox (S10.7, ACT-01..04; G04 coherence pass 2026-11-23): same card treatment as Settings rows, for one consistent list
+   pattern across both destinations. Pending vs unread rows keep their distinct dot colour (ACT-03). */
+.act-row{display:flex;align-items:center;gap:var(--sp-3);justify-content:space-between;padding:var(--sp-3) var(--sp-4);margin-bottom:var(--sp-2);background:var(--surface);border-radius:var(--radius-sm);box-shadow:var(--shadow-1)}
+.act-row:last-child{margin-bottom:0}
 .act-row-body h3{margin:0 0 2px;font-size:var(--fs-body)}
 .act-row-body p{margin:0}
 .act-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}

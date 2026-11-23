@@ -44,9 +44,13 @@ export function initSettingsUI({ panel, openData, getDash, accountBtnId = 'accou
       'Every consent toggle (location, attendance, live sharing) and the local diagnostics log, unchanged.',
       'Open Privacy', () => panel.openPrivacy(),
     ),
+    // SET-05's "identity/social (Profile) vs technical/sync (Settings)" split is drawn here, once: there is no second
+    // controls surface to split into - account-ui.js's popover is the only place sign-in, friend code, cloud sync status
+    // (sync-ui.js's cloud card) and Steam are implemented, so both Profile and this row intentionally open that same
+    // popover rather than Settings re-hosting a duplicate sync panel. Documented here per SET-05's AC, not left ambiguous.
     row(
       'Account & synchronization',
-      'Sign-in, friend code, cloud sync status and Steam.',
+      'Sign-in, friend code, cloud sync status and Steam - opens the same account panel as Profile.',
       'Open Account', () => document.getElementById(accountBtnId)?.click(),
     ),
     row(
