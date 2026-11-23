@@ -934,6 +934,9 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .splash-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
 .splash-links{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px}
 .splash-orient-text{margin:8px 0 14px;font-size:var(--fs-body);line-height:var(--lh-body)}
+.splash-brand{margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.splash-brand .splash-name{margin:0;font-size:var(--fs-title);font-weight:var(--fw-semibold);color:var(--accent)}
+.splash-brand .splash-desc{margin:4px 0 0;color:var(--muted);font-size:var(--fs-small);line-height:var(--lh-body)}
 .splash-choice{display:grid;gap:4px;align-content:start;padding:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);color:var(--fg);font:inherit;text-align:left;cursor:pointer}
 .splash-choice:focus-visible{border-color:var(--focus);background:var(--accent-soft)}
 @media (hover:hover){.splash-choice:hover{border-color:var(--accent);background:var(--accent-soft)}}

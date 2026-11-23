@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UAV Companion privacy policy</title>
+<meta name="description" content="How the UAV Companion map app handles your data: what stays in your browser, what is sent to services, and what an optional account stores.">
+<meta name="theme-color" content="#ffffff">
+<style>
+:root{--bg:#ffffff;--fg:#1d232b;--muted:#5b6672;--accent:#1f5fae;--line:#d8dee6;--surface:#f5f7fa}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14181d;--fg:#e8ecf1;--muted:#a3adb8;--accent:#7fb2ff;--line:#2d3640;--surface:#1c222a}}
+:root[data-theme="dark"]{--bg:#14181d;--fg:#e8ecf1;--muted:#a3adb8;--accent:#7fb2ff;--line:#2d3640;--surface:#1c222a}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.6rem;line-height:1.25;margin:0 0 4px}
+h2{font-size:1.15rem;margin:28px 0 8px}
+p,li{margin:0 0 10px}
+ul{padding-left:20px}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:.9rem}
+.summary{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+table{width:100%;border-collapse:collapse;font-size:.95rem;margin:8px 0 12px}
+th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:8px 6px}
+th{color:var(--muted);font-weight:600}
+.back{display:inline-block;margin-top:24px}
+</style>
+</head>
+<body>
+<main>
+<p class="meta"><a href="./">UAV Companion</a> · Privacy policy · Last updated 23 November 2026</p>
+<h1>UAV Companion privacy policy</h1>
+
+<div class="summary">
+<p><strong>In short:</strong> the map works without an account. Your markers, trips and settings stay in your browser unless you sign in or turn on a feature that asks a service for information. Signing in is optional; it adds a cloud copy and social features that you control. Google sign-in only confirms who you are. We do not sell your data, and the app contains no advertising or analytics code.</p>
+</div>
+
+<p>UAV Companion is an open-source map app for drone pilots, published at uavcompanion.com and operated by muffinMonday. It shows suitable-flight zones for most mainland Chinese provinces and no-fly zones for Singapore, and lets you check a spot, save places and trips, and (if you choose) sign in to sync them. The app is reference information, not flight advice.</p>
+
+<h2>1. Data that stays in your browser</h2>
+<p>Without an account, the following is stored only in your browser's local storage, on the device you use: saved places (markers), trips and their notes, map and display settings, privacy choices, a cache of weather, elevation and road routes, and a local diagnostics log. This data is not uploaded automatically. Browsers can clear it, and private browsing may lose it, so you can export a backup from the app at any time.</p>
+<p>Your position is read by your browser only when you use a location feature. The launch-time centring uses your position on the device and is not sent anywhere. Check-in tracking and live location sharing are off until you turn them on.</p>
+
+<h2>2. Services that receive requests</h2>
+<p>The app sends a request to a service only in the situations below. Each request carries only what is listed.</p>
+<table>
+<tr><th>Service</th><th>When</th><th>What is sent</th></tr>
+<tr><td>Map tile servers (OpenStreetMap, OpenStreetMap France, OpenTopoMap)</td><td>Whenever the map is shown</td><td>Requested map tile coordinates, and your IP address as any web request includes</td></tr>
+<tr><td>Open-Meteo (weather and ground elevation)</td><td>Only when you ask for weather or elevation, or turn on automatic marker weather</td><td>Coordinates: rounded to about 1 km unless you choose "precise"; elevation requests use 4 decimal places</td></tr>
+<tr><td>Photon, then Nominatim (place search)</td><td>Only when you search online, or use place-name lookup during AI import (off until you enable it)</td><td>The text you searched for</td></tr>
+<tr><td>HeiGIT routing service</td><td>Only when you are signed in and a shared trip has a leg with no stored road route</td><td>The two coordinates of that leg, with no names, notes or user or trip identifiers</td></tr>
+<tr><td>Google Maps or Amap</td><td>Only when you open a link to a place or route</td><td>The coordinates in that link</td></tr>
+<tr><td>Steam (sign-in and playtime)</td><td>Only when you link a Steam account, and when the app syncs your playtime</td><td>To Steam: your browser is sent to Steam's sign-in page, and the app asks Steam for your playtime in the approved games, using the app's own key. Your Steam ID is stored, as section 3 describes</td></tr>
+<tr><td>Supabase (accounts and cloud copy)</td><td>Only when you sign in or use a cloud feature</td><td>See section 3</td></tr>
+</table>
+<p>The app itself is served by GitHub Pages, which receives the standard request information that any web host receives. Those services handle requests under their own privacy policies.</p>
+
+<h2>3. Optional account</h2>
+<p>You can sign in with an email link or with Google. The account is held by Supabase, which the app talks to directly. Signing in is never required for the map, the zone check, search or local places and trips.</p>
+<ul>
+<li><strong>Sign-in record:</strong> the email address used for the sign-in link or your Google account, and the sign-in provider.</li>
+<li><strong>Cloud copy:</strong> one copy of your markers and trips, plus some settings. Check-in records are included only if you turn that on. Privacy choices and weather caches are not included. Up to 20 earlier versions are kept for 30 days so you can restore them.</li>
+<li><strong>Profile:</strong> a display name you type, an optional preset avatar, and optionally a short bio, a location you type, and interests. A friend code, whether you accept friend requests, whether your online status is shown, and the time you were last seen. The app does not show your email address to others.</li>
+<li><strong>Friends and blocks:</strong> friend requests and friendships, and the people you block. People add friends only with a friend code; there is no search of users.</li>
+<li><strong>Shared trips:</strong> the trip, its markers and notes, and the member list. Everyone who joins a shared trip can see and edit its contents, and sees the display names of its members and of whoever last changed it. The owner can delete the trip. Home markers are never shared.</li>
+<li><strong>Live location and online status:</strong> off by default. When you turn on live location for a trip, your latest position is sent to that trip's members and replaced with each update. A position older than about 2 minutes is no longer shown, and it is deleted after about 10 minutes. Automatic location sharing with friends works the same way and is off until you choose it. Online status sends a heartbeat every 30 seconds while you are signed in and the page is visible, unless you hide it.</li>
+<li><strong>Flight sessions:</strong> sessions you create or join, with the details you enter, your display name, your RSVP and attendance. A public session is visible to everyone using the app and shows its exact meeting coordinates, so only publish a place you are happy to share.</li>
+<li><strong>Progression:</strong> experience points, rank, achievements and counts of attendance, shown to you, to your friends and to members of trips you join, if you leave your profile visible.</li>
+<li><strong>Steam (optional):</strong> you can link a Steam account to earn experience points from playtime in a short list of approved simulator games. Linking signs you in with Steam's own sign-in page, and the app stores your 17-digit Steam ID. The app then asks Steam for your total playtime in those approved games only, and stores each game's last total and the minutes counted from it. Nothing else from your Steam account is read. The app never sends your playtime anywhere else.</li>
+<li><strong>Administrative record:</strong> a short record of certain account events, such as attendance, settings and deletions. It holds no free text. References to a deleted person are cleared when the account is deleted.</li>
+</ul>
+
+<h2>4. Google sign-in</h2>
+<p>When you choose Google, you are sent to Google, which asks you to approve sharing the basic identity information the app requests: your Google account identifier, your email address and your basic profile (openid, email and profile scopes). The app does not request access to Gmail, Google Drive, Google Calendar, contacts or any other Google service, and does not import anything from them.</p>
+<p>The app uses this information only to sign you in and to link you to your account. Supabase keeps the account record for your sign-in, which can include the email address and the basic profile fields Google returns, such as a name and picture. The app does not display or use those Google name or picture fields. Google's own privacy policy applies to what Google does with your sign-in.</p>
+
+<h2>5. Sharing and sale</h2>
+<p>We do not sell your data and do not use it for advertising. The app contains no analytics or tracking code. Data leaves your browser only as described in sections 2 and 3, and otherwise only when you share it yourself: a backup or share link you create, a trip you share with its members, a friend connection, or a public flight session.</p>
+
+<h2>6. How long data is kept</h2>
+<ul>
+<li>Browser data stays until you delete it, clear site data or export and remove it.</li>
+<li>Cloud copy versions: up to 20, kept for 30 days. Shared trip versions: up to 20, kept for 30 days.</li>
+<li>Live positions: see section 3. They end a day after the trip.</li>
+<li>Road routes for a shared trip are kept until the markers on that leg change or the trip is deleted.</li>
+<li>Your profile, friends, sessions and progression are kept until you delete your profile or account.</li>
+<li>Steam: unlinking removes your Steam ID but keeps the playtime already counted, so it is not counted twice if you link again. Deleting your profile removes the Steam link and its stored totals.</li>
+</ul>
+
+<h2>7. Your choices and deletion</h2>
+<ul>
+<li><strong>Turn off a feature:</strong> weather, elevation, search, live location, automatic sharing, check-in and online status can each be turned off in the Privacy settings.</li>
+<li><strong>Export:</strong> you can download a backup file of your markers and trips at any time.</li>
+<li><strong>Sign out:</strong> you can sign out. Signing out can also remove this device's markers and trips after they are synced to your cloud copy.</li>
+<li><strong>Unlink Steam:</strong> available in the Steam section of your account (the account button's popover). It removes your Steam ID; the playtime already counted stays.</li>
+<li><strong>Delete your cloud copy:</strong> removes the cloud copy and its earlier versions. Markers and trips on the device stay.</li>
+<li><strong>Delete your profile and friends:</strong> removes your profile, friendships, blocks, session RSVPs and your progression.</li>
+<li><strong>Delete your account:</strong> removes your profile, friends, cloud copy and its versions. You leave every shared trip: a trip you own that others have joined passes to the member who joined first, and a trip nobody else joined is deleted. Your sign-in record is then deleted. Markers and trips on this device are not removed.</li>
+</ul>
+<p>To ask about your data or to request something the app cannot do for you, use the project's GitHub Issues page: <a href="https://github.com/muffinMonday/uav-companion/issues">github.com/muffinMonday/uav-companion/issues</a>.</p>
+
+<h2>8. Changes to this policy</h2>
+<p>This page is updated when the way the app handles data changes. The date at the top shows the latest update.</p>
+
+<p class="back"><a href="./">Back to the map</a></p>
+</main>
+</body>
+</html>
