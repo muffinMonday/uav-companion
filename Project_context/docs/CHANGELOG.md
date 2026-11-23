@@ -1,3 +1,6 @@
+## 2026-11-24 - Malaysia CAAM ENR 5.1 prohibited, restricted and danger areas
+- `my-enr51` (61 of 108 numbered areas, AIP AMDT 04/26) released in `8c18781`, gh-pages `bc81bfab`; P/R/D worded separately, disclaimer extended for all countries. Backlog: `docs/backlogs/completed/MALAYSIA_AIRSPACE_ENR51_BACKLOG.md`.
+
 ## 2026-11-15 (Mascot and personality integration, Phases 0 to 2)
 
 ## 2026-11-15 ? Sichuan coverage replacement
