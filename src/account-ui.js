@@ -6,6 +6,7 @@ import { createSocial, formatCode } from './social.js';
 import { statusLine } from './sync-ui.js';
 import { avatarEl } from './avatars.js';
 import { profileBits } from './profile-ui.js';
+import { mascotEl } from './mascot-ui.js';
 import { getProgression } from './progression-api.js';
 import { mountProgression } from './progression-ui.js';
 import { createSteamCard, announceSteamReturn } from './steam-ui.js';
@@ -71,6 +72,9 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     // ---- overview: who you are (the email is never shown here)
     const sec = (key, title, open) => { const d = el('details', 'pane-sec'); d.id = 'pane-' + key; d.open = openState[key] ?? open; d.addEventListener('toggle', () => { openState[key] = d.open; }); d.append(el('summary', '', title)); const body = el('div', 'pane-body'); d.append(body); return { d, body }; };
     const head = el('div', 'account-who');
+    // PROF-02: compact existing mascot beside pilot identity (G1 spec section 18) - the one mascot this screen shows; the dashboard's own
+    // greeting mascot is already folded out of view by acct.onShow()'s dash.fold() call (shell/nav.js) whenever this popover is open.
+    head.append(mascotEl('waving', 48));
     head.append(avatarEl(profile?.avatar, name(), 56));
     const who = el('div'); who.append(el('b', 'account-name', name() || '…'));
     if (profile) who.append(...profileBits(profile));

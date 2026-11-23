@@ -1508,12 +1508,16 @@ button.ses-attendee{cursor:pointer}
 .hint.has-mascot[hidden]{display:none}
 .hint.has-mascot .mascot{width:128px;height:128px;margin-block:-6px 0}
 .ses-empty.has-mascot .mascot{width:104px;height:104px;margin-block:-4px 0}
+/* PROF-02: compact, beside the pilot identity in the account popover's own header - the smallest placement, deliberately scaled to sit
+   level with the 56px avatar rather than dominate it (DESIGN.md section 24). */
+.account-who .mascot{width:48px;height:48px}
 @media (max-width:520px){
   .dash-welcome>.mascot{width:92px;height:92px;margin-block:-6px 0}
   .dash-help-head .mascot{width:84px;height:84px}
   .splash-head .mascot{width:96px;height:96px;margin-block:-12px 0}
   .hint.has-mascot .mascot{width:112px;height:112px}
   .ses-empty.has-mascot .mascot{width:92px;height:92px}
+  .account-who .mascot{width:40px;height:40px}
 }
 /* a short screen (a phone on its side, a keyboard open) keeps room for the controls */
 @media (max-height:520px){
