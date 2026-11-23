@@ -11,6 +11,9 @@ export const MEANINGS = {
 };
 export const SELECTED_SOURCE_MEANING = 'Teal: suitable-flight polygons in the selected source. Gaps and areas outside these polygons have unknown coverage; current flight permission is unverified. Check UOM before flying.';
 
+/** Shown with every zone explanation, for every country: what the data cannot know. */
+export const AIRSPACE_DISCLAIMER = 'UAV Companion displays published baseline airspace boundaries for planning reference only. Temporary restricted areas, NOTAMs, temporary activations and short-notice changes are not tracked. Some permanent zones may apply only under specific conditions. Always consult current official aviation publications and announcements before flying.';
+
 const day = (iso) => iso?.slice(0, 10) || null;
 const isThirdParty = (r) => r.sourceConfidence?.type === 'third-party-uom-snapshot';
 /** A region's source-confidence notice (e.g. Yunnan's image-derived approximation), or ''. Shown beside its verdicts and in the coverage and map-key notes. */
@@ -40,6 +43,7 @@ export function zoneExplanation(res) {
   box.append(body);
   if (!res || res.status === 'nodata' || !res.region) {
     body.append(el('p', '', 'No zone data covers this spot, so the map says nothing about it. Unknown is not permission: check the official platform for the place you are flying before every flight.'));
+    body.append(el('p', 'hint', AIRSPACE_DISCLAIMER));
     return box;
   }
   const r = res.region, m = MEANINGS[r.semantics];
@@ -47,15 +51,19 @@ export function zoneExplanation(res) {
     body.append(row('var(--zone)', SELECTED_SOURCE_MEANING));
     body.append(el('p', '', `${r.name} data: ${r.source.authority}${isThirdParty(r) ? ' (a third-party reference snapshot, not a government-published release)' : ''}; ${snapshotText(day(r.source.snapshotAt) ? [day(r.source.snapshotAt)] : [])}; effective date ${r.source.effective || 'unknown'}.`));
     body.append(el('p', '', 'Only the captured polygons are mapped. A spot outside them is unknown: that is neither restricted nor permitted airspace. Coordinate alignment, completeness and currency are unverified, and temporary restrictions may be missing. Verify current official UOM information (uom.caac.gov.cn) before flying.'));
+    body.append(el('p', 'hint', AIRSPACE_DISCLAIMER));
     return box;
   }
   if (r.classes) { // named classes (Singapore): one row per kind of zone, with the colour it has on the map
-    body.append(el('p', '', 'Red areas on the map are no-fly zones of the kinds below. Not being inside one does not mean flying is allowed.'));
+    body.append(el('p', '', r.classes.some((c) => c.verdict)
+      ? 'Coloured areas are the published airspace designations below; they are not all bans (a restricted area has conditions, a danger area is a warning). Not being inside one does not mean flying is allowed.'
+      : 'Red areas on the map are no-fly zones of the kinds below. Not being inside one does not mean flying is allowed.'));
     for (const c of r.classes) body.append(row(c.color, c.points ? `${c.label}: where flying is allowed (a pin on the map).` : `${c.label}${c.summary ? ': ' + c.summary : '.'}`));
   } else if (m) body.append(row(`var(${m.colour})`, m.text));
   body.append(el('p', '', res.status === 'outside'
     ? `This spot is inside the ${r.name} data's coverage but not inside a zone. Outside the coverage, or near its edge, the data says nothing.`
     : `Zones shown here come from the ${r.name} data (${r.source.authority}, effective ${r.source.effective}). Outside its coverage the data says nothing.`));
   body.append(el('p', 'hint', 'Approximate and for planning only. Official source: ' + (r.officialMap?.label ?? r.source.authority) + '.'));
+  body.append(el('p', 'hint', AIRSPACE_DISCLAIMER));
   return box;
 }

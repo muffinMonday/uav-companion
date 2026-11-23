@@ -40,11 +40,12 @@ const bytes = (log) => log.reduce((s, e) => s + e.bytes, 0);
 
 // ================= 1. a fresh visit opens on Singapore and downloads only its archive
 let { ctx, p, log } = await open();
-const sgOnly = JSON.stringify(ids(log)) === JSON.stringify(['sg-nofly']);
+// Malaysia's ENR 5.1 archive (0.6 MB) covers the sea and Johor around Singapore, so its bounding box meets the opening view and it loads with Singapore's; no China archive does.
+const sgOnly = JSON.stringify([...ids(log)].sort()) === JSON.stringify(['my-enr51', 'sg-nofly']) && bytes(log) < 2e6;
 ok(sgOnly, 'fresh visit: archives downloaded = ' + JSON.stringify(ids(log)) + ' (' + log.length + ' response(s), ' + mb(bytes(log)) + ')');
 info(`fresh Singapore view: ${ids(log).length} archive(s) downloaded, ${mb(bytes(log))} transferred`);
 const flyBtns = await p.$$eval('.dash-fly .country-btn', (bs) => bs.map((b) => b.textContent));
-ok(JSON.stringify(flyBtns) === JSON.stringify(['China', 'Singapore']), 'Fly in shows one button per country: ' + flyBtns.join(', '));
+ok(JSON.stringify(flyBtns) === JSON.stringify(['China', 'Malaysia', 'Singapore']), 'Fly in shows one button per country: ' + flyBtns.join(', '));
 ok(await p.locator('.dash-fly .country-menu').isHidden(), 'the China menu is closed until its button is pressed');
 
 // ================= 2. choosing a China region focuses it and downloads its archive (and only the ones its view touches)

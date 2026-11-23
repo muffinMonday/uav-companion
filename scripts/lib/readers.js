@@ -23,6 +23,19 @@ async function* geojsonGeoms(file) {
 
 const READERS = { shapefile: shapefileGeoms, geojson: geojsonGeoms };
 
+/** A layer given as a GeoJSON FeatureCollection (layer "geojson": true): properties name and description, Polygon or MultiPolygon in WGS84. */
+function parseGeojsonLayer(gj, meta, layer) {
+  if (gj.type !== 'FeatureCollection') throw new Error(`${meta.id}: layer ${layer.id} is not a FeatureCollection`);
+  const features = [];
+  for (const f of gj.features) {
+    const g = f.geometry;
+    const polygons = g?.type === 'Polygon' ? [g.coordinates] : g?.type === 'MultiPolygon' ? g.coordinates : null;
+    if (polygons) features.push({ name: String(f.properties?.name ?? '').trim(), description: String(f.properties?.description ?? '').trim(), polygons });
+  }
+  const day = (v) => (typeof v === 'string' ? v.slice(0, 10) : '');
+  return { meta: { updated: day(meta.source.effective), owner: meta.source.authority, published: day(meta.source.published) }, features };
+}
+
 /**
  * A region made of several classed layers (format "onemap-themes"): each layer is a OneMap theme file, and becomes one class of zones.
  * Polygon features carry their class (c), name (n) and, when a layer's rule text differs between its zones, the text (d).
@@ -32,13 +45,14 @@ function readLayers(dir, meta) {
   const features = [], points = [], classes = [];
   let minX = 180, minY = 90, maxX = -180, maxY = -90, effective = '';
   for (const layer of meta.layers) {
-    const { meta: m, features: items } = parseTheme(JSON.parse(fs.readFileSync(path.join(dir, layer.file), 'utf8')));
+    const raw = JSON.parse(fs.readFileSync(path.join(dir, layer.file), 'utf8'));
+    const { meta: m, features: items } = layer.geojson ? parseGeojsonLayer(raw, meta, layer) : parseTheme(raw);
     if (m.updated > effective) effective = m.updated;
     const texts = new Set(items.map((x) => x.description));
     const perZoneText = !layer.points && texts.size > 1; // e.g. restricted areas, each with its own height limit
     classes.push({
       id: layer.id, label: layer.label, color: layer.color, severity: layer.severity ?? 9, points: !!layer.points, summary: layer.summary ?? '',
-      owner: m.owner, updated: m.updated, published: m.published, count: items.length,
+      owner: m.owner, updated: m.updated, published: m.published, count: items.length, ...(layer.verdict && { verdict: layer.verdict }),
       ...(!perZoneText && texts.size === 1 && { description: [...texts][0] }),
     });
     for (const x of items) {

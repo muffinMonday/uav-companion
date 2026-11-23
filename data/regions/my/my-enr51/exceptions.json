@@ -1,0 +1,269 @@
+{
+  "source": {
+    "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-ENR-5.1-en-MS.html",
+    "edition": "2026-11-03",
+    "htmlSha256": "aba82af4d88b096cb0aa81767fb0212f1d856eea9e784343fd68974dda5d840a",
+    "htmlBytes": 241764,
+    "extractedAt": "2026-11-23T16:16:22.525Z"
+  },
+  "applicable": 108,
+  "converted": 61,
+  "unresolved": 47,
+  "counts": {
+    "prohibited": {
+      "applicable": 7,
+      "converted": 5
+    },
+    "restricted": {
+      "applicable": 65,
+      "converted": 25
+    },
+    "danger": {
+      "applicable": 36,
+      "converted": 31
+    }
+  },
+  "notAreas": [
+    "LINK CORRIDOR Area bounded by coordinates: 053702N 1030004E,",
+    "AIR CORRIDOR ASSOCIATED WITH WBR 517 Area bounded by line jo",
+    "LINK ROUTE ECHO 1 TRANSITING CORRIDOR FOR WBD505 Bounded by ",
+    "LINK ROUTE ECHO 2 TRANSITING CORRIDOR WBD505 Bounded by stra"
+  ],
+  "exceptions": [
+    {
+      "id": "WMP228",
+      "class": "P",
+      "reason": "circle combined with a coastline, border or other boundary reference"
+    },
+    {
+      "id": "WBP503",
+      "class": "P",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR102B",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR103B",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR105",
+      "class": "R",
+      "reason": "arc centred on a navaid with no stated coordinates"
+    },
+    {
+      "id": "WMR106",
+      "class": "R",
+      "reason": "arc without stated centre coordinates, radius or direction"
+    },
+    {
+      "id": "WMR107",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WMR108",
+      "class": "R",
+      "reason": "arc centred on a navaid with no stated coordinates"
+    },
+    {
+      "id": "WMR225",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WMR225A",
+      "class": "R",
+      "reason": "arc without stated centre coordinates, radius or direction"
+    },
+    {
+      "id": "WMR225B",
+      "class": "R",
+      "reason": "arc without stated centre coordinates, radius or direction"
+    },
+    {
+      "id": "WMR226",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WMR239A",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR239B",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR240A",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WMR240B",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR302A",
+      "class": "R",
+      "reason": "open path of three points (shape not defined)"
+    },
+    {
+      "id": "WMR403",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR404",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WMR405",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR406",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR407",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR408",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMR416A",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WMR416B",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WMR416C",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WMR418",
+      "class": "R",
+      "reason": "self-intersecting ring"
+    },
+    {
+      "id": "WMR419",
+      "class": "R",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WSR2",
+      "class": "R",
+      "reason": "circle combined with a coastline, border or other boundary reference"
+    },
+    {
+      "id": "WBR508",
+      "class": "R",
+      "reason": "arc without stated centre coordinates, radius or direction"
+    },
+    {
+      "id": "WBR509",
+      "class": "R",
+      "reason": "arc without stated centre coordinates, radius or direction"
+    },
+    {
+      "id": "WBR510",
+      "class": "R",
+      "reason": "arc without stated centre coordinates, radius or direction"
+    },
+    {
+      "id": "WBR511",
+      "class": "R",
+      "reason": "arc without stated centre coordinates, radius or direction"
+    },
+    {
+      "id": "WBR518",
+      "class": "R",
+      "reason": "arc without stated centre coordinates, radius or direction"
+    },
+    {
+      "id": "WBR519",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WBR520",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WBR523",
+      "class": "R",
+      "reason": "arc without stated centre coordinates, radius or direction"
+    },
+    {
+      "id": "WBR524",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WBR525",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WBR601",
+      "class": "R",
+      "reason": "self-intersecting ring"
+    },
+    {
+      "id": "WBR603",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WBR604",
+      "class": "R",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WMD412A",
+      "class": "D",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMD419",
+      "class": "D",
+      "reason": "arc area with a coastline, border or airspace-boundary reference"
+    },
+    {
+      "id": "WMD420",
+      "class": "D",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+    },
+    {
+      "id": "WMD421",
+      "class": "D",
+      "reason": "open path of three points (shape not defined)"
+    },
+    {
+      "id": "WBD513",
+      "class": "D",
+      "reason": "self-intersecting ring"
+    }
+  ]
+}

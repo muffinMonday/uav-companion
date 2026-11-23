@@ -50,9 +50,10 @@ export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS
   const { features, bounds, classes, points, effective } = await readRegion(dir, meta);
   console.log(`[${id}] ${features.length} polygons, bounds ${bounds.map((v) => v.toFixed(4)).join(', ')}`);
   const source = { ...meta.source, effective: meta.source.effective === 'auto' ? effective : meta.source.effective };
-  const tiles = buildTiles(features, bounds, (m) => console.log(`[${id}]   ${m}`), meta.tilePrecision);
+  const maxZ = meta.maxZoom ?? MAX_Z; // a sparse, large-area region (Malaysia ENR 5.1) can stop at a lower zoom: deeper map zooms overzoom its tiles
+  const tiles = buildTiles(features, bounds, (m) => console.log(`[${id}]   ${m}`), meta.tilePrecision, maxZ);
   const buf = writePMTiles({
-    tiles, bounds, minZoom: MIN_Z, maxZoom: MAX_Z,
+    tiles, bounds, minZoom: MIN_Z, maxZoom: maxZ,
     metadata: { name: meta.name, attribution: `${source.authority}, effective ${source.effective ?? 'unknown'}`, vector_layers: [{ id: 'zones', fields: classes ? { c: 'String', n: 'String', d: 'String' } : {} }] },
   });
   // Tiles live under tiles/ (not <country>/): the CDN in front of the site has cached stale Range responses for the old paths, so a new path is the fix.
@@ -85,10 +86,10 @@ export async function buildRegion(countryId, dirName, OUT, regionsRoot = REGIONS
   }
   return {
     id, country: countryId, name: meta.name, nameZh: meta.nameZh, file, boundary, bounds, coverageBounds,
-    cells: features.length, minZoom: MIN_Z, maxZoom: MAX_Z,
+    cells: features.length, minZoom: MIN_Z, maxZoom: maxZ,
     semantics: meta.semantics, maxHeightM: meta.maxHeightM ?? null,
     source, license: meta.license, crs: meta.crs, crsVerified: !!meta.crsVerified,
-    ...(meta.coverageMode && { coverageMode: meta.coverageMode }), ...(meta.sourceConfidence && { sourceConfidence: meta.sourceConfidence }),
+    ...(meta.partialCoverage && { partialCoverage: true }), ...(meta.coverageMode && { coverageMode: meta.coverageMode }), ...(meta.sourceConfidence && { sourceConfidence: meta.sourceConfidence }),
     ...(classes && { classes }), ...(pointsFile && { points: pointsFile }),
     ...(meta.officialMap && { officialMap: meta.officialMap }), ...(meta.coverageMarginM && { coverageMarginM: meta.coverageMarginM }),
     ...(meta.publish ? {} : { local: true }),

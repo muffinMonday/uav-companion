@@ -21,3 +21,4 @@
 | protomaps-leaflet, pmtiles | Vector tile rendering and reading | BSD-3-Clause |
 | @mapbox/vector-tile, pbf | Tile decoding for the point check | BSD-3-Clause |
 | geojson-vt, vt-pbf, shapefile | Build-time tooling | ISC / MIT / BSD-3-Clause |
+| Civil Aviation Authority of Malaysia, AIP Malaysia ENR 5.1 (edition AIP AMDT 04/26, effective 2026-11-03) | Prohibited, restricted and danger areas (`data/regions/my/my-enr51`, `docs/regions/my-enr51.md`), geometry reconstructed from the published text | No reuse terms found on the eAIP; published as planning reference on the owner's authorization (2026-11-24). Remove on request. |

@@ -30,6 +30,7 @@ function metresToPolygons(polys, lat, lon) {
 
 /** Is the point inside the region's coverage boundary (or within its margin)? Regions without a boundary fall back to their bounding box. */
 async function inCoverage(r, lat, lon) {
+  if (r.partialCoverage) return false; // a published list of areas that is not complete (Malaysia ENR 5.1): the gaps between its polygons are unknown, never "checked and clear"
   if (!r.boundary) return true; // caller has already tested the bounding box
   if (!boundaries.has(r.id)) {
     boundaries.set(r.id, fetch(regionUrl(r, r.boundary)).then((res) => {
@@ -114,6 +115,10 @@ function wording(res) {
       const zs = sortedZones(res);
       const worst = classOf(r, zs[0]);
       const kinds = [...new Set(zs.map((z) => classOf(r, z)?.label ?? z.c))];
+      const verdict = worst?.verdict; // ICAO P / R / D areas (Malaysia): prohibited, restricted (conditions) and danger (caution) are not the same thing
+      if (verdict === 'prohibited') return ['no', `Prohibited area: ${zs[0].n || worst.label}`, `Flight is not permitted here, per ${r.source.authority}. ${kinds.length > 1 ? `Also inside: ${kinds.slice(1).join('; ')}. ` : ''}Check the current official publication before flying.`];
+      if (verdict === 'restricted') return ['no', `Restricted area: ${zs[0].n || worst.label}`, `Flight is allowed only if the published conditions are met (times, permission or purpose; see the rule below). ${kinds.length > 1 ? `Also inside: ${kinds.slice(1).join('; ')}. ` : ''}Check the current official publication before flying.`];
+      if (verdict === 'danger') return ['unk', `Danger area: ${zs[0].n || worst.label}`, `Activities dangerous to aircraft may take place here at the published times. Caution: this is a warning area, not a ban. Check the current official publication and NOTAMs before flying.`];
       return ['no', `No-fly zone: ${worst?.label ?? 'restricted'}${kinds.length > 1 ? ` and ${kinds.length - 1} more` : ''}`,
         `${kinds.join('; ')}. Flying here needs permission, or is not allowed. Check the official map before flying.`];
     }

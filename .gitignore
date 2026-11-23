@@ -13,6 +13,10 @@ data/regions/*/*/*
 !data/regions/*/*/boundary.geojson
 !data/regions/*/*/README.md
 !data/regions/cn/yunnan/zones.geojson
+# Malaysia ENR 5.1: the converted layers and the exception report are the reviewable source of the archive
+!data/regions/my/my-enr51/layers/
+!data/regions/my/my-enr51/layers/*.geojson
+!data/regions/my/my-enr51/exceptions.json
 
 # Test output (screenshots, downloads)
 tests/out/

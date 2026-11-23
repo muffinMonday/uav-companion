@@ -49,7 +49,7 @@ ok(/Today/.test(txt) && /Today stop/.test(txt) && /Second stop/.test(txt), 'a tr
 ok(/1 of 2/.test(txt), 'with ‹ 1 of 2 › to move through the coming trips');
 ok(/Back up your markers/.test(txt) && /45 days ago/.test(txt), 'a backup 45 days old gets a reminder');
 const flyBtns = await p.$$eval('.dash-fly .country-btn', (bs) => bs.map((b) => b.textContent));
-ok(JSON.stringify(flyBtns) === JSON.stringify(['China', 'Singapore']) && (await p.locator('.dash-fly .country-menu').isHidden()), 'Fly in has one button per country (China, Singapore), with its menu closed: ' + flyBtns.join(', '));
+ok(JSON.stringify(flyBtns) === JSON.stringify(['China', 'Malaysia', 'Singapore']) && (await p.locator('.dash-fly .country-menu').isHidden()), 'Fly in has one button per country (China, Malaysia, Singapore), with its menu closed: ' + flyBtns.join(', '));
 ok((await p.locator('.dash-guide').count()) === 0 && !/What’s new/.test(txt), 'Help is not showing and there is no What\'s new for a visitor who has seen it');
 await p.locator('#dash-body .dash-stop', { hasText: 'Today stop' }).click(); await p.waitForSelector('.poi-pop h3', { timeout: 8000 });
 ok((await p.textContent('.poi-pop h3')) === 'Today stop', 'tapping a stop opens it on the map');

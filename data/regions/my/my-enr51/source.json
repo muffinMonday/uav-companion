@@ -1,0 +1,35 @@
+{
+  "id": "my-enr51",
+  "country": "my",
+  "name": "Malaysia prohibited, restricted and danger areas",
+  "nameZh": "马来西亚禁区、限制区和危险区",
+  "format": "geojson",
+  "crs": "wgs84",
+  "crsVerified": true,
+  "semantics": "restrict",
+  "publish": true,
+  "partialCoverage": true,
+  "maxZoom": 12,
+  "officialMap": {
+    "label": "CAAM eAIP Malaysia, ENR 5.1",
+    "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-ENR-5.1-en-MS.html"
+  },
+  "layers": [
+    { "id": "prohibited", "file": "layers/prohibited.geojson", "geojson": true, "verdict": "prohibited", "label": "Prohibited area (P)", "color": "#b71c1c", "severity": 1,
+      "summary": "Prohibited area (ENR 5.1): flight of aircraft is not permitted at any time." },
+    { "id": "restricted", "file": "layers/restricted.geojson", "geojson": true, "verdict": "restricted", "label": "Restricted area (R)", "color": "#e53935", "severity": 2,
+      "summary": "Restricted area (ENR 5.1): flight is allowed only if the published conditions are met. Read the times and conditions." },
+    { "id": "danger", "file": "layers/danger.geojson", "geojson": true, "verdict": "danger", "label": "Danger area (D)", "color": "#ef6c00", "severity": 3,
+      "summary": "Danger area (ENR 5.1): activities dangerous to aircraft may exist at the published times. Caution; check the conditions." }
+  ],
+  "source": {
+    "authority": "Civil Aviation Authority of Malaysia (CAAM), AIP Malaysia ENR 5.1",
+    "edition": "AIP AMDT 04/26",
+    "effective": "2026-11-03",
+    "published": "2026-11-03",
+    "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-ENR-5.1-en-MS.html",
+    "extraction": "scripts/airspace/my-enr51.mjs (parses the published tabulation; see exceptions.json for what was not converted)"
+  },
+  "license": "unknown",
+  "licenseNote": "Derived from the public CAAM eAIP. No copyright or reuse terms were found on the eAIP site (checked GEN 0.1, the edition index and the cover pages on 2026-11-24); published on the owner's authorization of 2026-11-24 as planning reference, with the geometry reconstructed independently from the published coordinates. Partial coverage: unconverted areas are listed in exceptions.json. Remove this region (or set publish to false) if CAAM asks."
+}
