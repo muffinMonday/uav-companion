@@ -1,3 +1,6 @@
+## 2026-11-24 - Malaysia ENR 5.1 second pass
+- 15 more areas recovered from navaid/ARP/waypoint references; Singapore (8) and Brunei (14) administered areas excluded; now 57 of 86 Malaysian-administered areas. Commit `551da2c`, gh-pages `ad75cc95`. Details: `docs/regions/my-enr51.md`.
+
 ## 2026-11-24 - Malaysia CAAM ENR 5.1 prohibited, restricted and danger areas
 - `my-enr51` (61 of 108 numbered areas, AIP AMDT 04/26) released in `8c18781`, gh-pages `bc81bfab`; P/R/D worded separately, disclaimer extended for all countries. Backlog: `docs/backlogs/completed/MALAYSIA_AIRSPACE_ENR51_BACKLOG.md`.
 
