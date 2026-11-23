@@ -11,7 +11,7 @@ import { ROOT } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const url = (p) => pathToFileURL(path.join(ROOT, p)).href;
 const { zonesInArchive } = await import(url('src/zones.js'));
-const { geometryOf, inverse, administration } = await import(url('scripts/airspace/my-enr51.mjs'));
+const { geometryOf, inverse, administration, subtractPolygon, boundaryRing } = await import(url('scripts/airspace/my-enr51.mjs'));
 globalThis.document ??= { baseURI: 'http://localhost/' };
 const vite = await createServer({ configFile: false, root: ROOT, logLevel: 'error', server: { middlewareMode: true, watch: null }, appType: 'custom', cacheDir: path.join(os.tmpdir(), 'my-enr51-vite') });
 const { zoneSummary } = await vite.ssrLoadModule('/src/pointcheck.js');
@@ -38,6 +38,17 @@ ok(geometryOf('Straight line fm 030459N 1004139E, 024405N 1012847E, 022206N 1012
 ok(!!geometryOf('045211.00N 1000622.00E , 042938.61N 0994510.12E to 041553.85N 1001716.29E').reason, 'three points with no closing statement stay unresolved');
 ok(geometryOf('Straight line fm 034705N 1011331E to 033437N 1012825E to 032159N 1013613E to 032459N 1012619E to 032429N 1012007E to 034706N 1011336E to start.').note?.includes('closes at the first vertex'), 'a self-intersecting ring whose last vertex restates the start is closed at the first vertex');
 ok(!geometryOf('Straight line fm 030635N 1014643E to 030959N 1015055E to 030959N 1020555E to 025559N 1020455E to 025659N 1015041E to 030417N 1014619E to 030636N 1014648E.').note, 'a valid ring with a near-duplicate last vertex is left as published');
+const refsDoc = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/regions/my/my-enr51/references.json'), 'utf8'));
+const tmaText = 'From 054846N 0994912E thence along the Butterworth TMA boundary to 050515N 0995100E then 050000N 0990000E then 054846N 0990000E';
+const tma = geometryOf(tmaText);
+const bt = refsDoc.points && refsDoc.boundaries['BUTTERWORTH TMA'], vbt = [100 + 23 / 60 + 42 / 3600, 5 + 28 / 60 + 36 / 3600];
+ok(tma.kind === 'polygon' && tma.ring.length > 40 && tma.ring.slice(1, -3).every((p) => Math.abs(inverse(vbt[0], vbt[1], p[0], p[1]).s - 40 * 1852) < 1200), 'a boundary named in ENR 5.1 (Butterworth TMA) is replaced by the arc published in ENR 2.1, the shorter way between the two points');
+ok(!!bt && !!geometryOf(tmaText, {}).ring, 'the boundary rule needs no navaid references');
+const sq = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]];
+const cut = subtractPolygon(sq(0, 0, 4, 4), sq(3, 1, 6, 3).slice(0, -1));
+const cutArea = cut.reduce((a, p, i) => (i ? a + (cut[i - 1][0] * p[1] - p[0] * cut[i - 1][1]) : a), 0) / 2;
+ok(cut && Math.abs(Math.abs(cutArea) - 14) < 1e-9, 'subtracting a rectangle that overlaps one side removes exactly the overlap (16 - 2 = 14)');
+ok(boundaryRing(refsDoc.boundaries['KERTEH CTR']).length > 100, 'the Kerteh CTR boundary builds from its published arcs and lines');
 const arc = geometryOf('Commencing from 023719.63N 1022641.96E, clockwise along an arc of a circle 10NM radius centered on 022833.00N 1023146.00E to 021900.61N 1023438.10E, then along a straight line to 022419.10N 1022841.24E, then a straight line to 023719.63N 1022641.96E');
 ok(arc.kind === 'arc-polygon' && arc.ring.length > 60, 'an arc with stated centre, radius and direction is reconstructed');
 
@@ -49,10 +60,11 @@ const all = Object.entries(layers).flatMap(([k, list]) => list.map((f) => ({ k, 
 const ids = all.map((x) => x.f.properties.id);
 ok(new Set(ids).size === ids.length, 'every area ID is unique');
 ok(all.every(({ k, f }) => ({ prohibited: 'P', restricted: 'R', danger: 'D' })[k] === f.properties.class && f.properties.id[2] === f.properties.class), 'the P/R/D class matches the layer and the identifier letter');
-ok(layers.prohibited.length === 3 && layers.restricted.length === 39 && layers.danger.length === 15, '3 prohibited, 39 restricted, 15 danger Malaysian areas converted');
+ok(layers.prohibited.length === 3 && layers.restricted.length === 44 && layers.danger.length === 17, '3 prohibited, 44 restricted, 17 danger Malaysian areas converted');
 ok(report.parsed === 108 && report.excludedSingapore === 8 && report.excludedBrunei === 14 && report.applicable === 86 && report.parsed === report.applicable + report.excludedSingapore + report.excludedBrunei, 'parsed 108 = 86 Malaysian + 8 Singapore + 14 Brunei');
-ok(report.converted === 57 && report.unresolved === 29 && report.converted + report.unresolved === report.applicable, 'Malaysian applicable = converted + unresolved (86 = 57 + 29)');
-ok(report.exceptions.every((e) => !ids.includes(e.id) && e.reason) && new Set(report.exceptions.map((e) => e.id)).size === 29, 'no area is both converted and unresolved; each unresolved area has a reason');
+ok(report.converted === 64 && report.unresolved === 22 && report.converted + report.unresolved === report.applicable, 'Malaysian applicable = converted + unresolved (86 = 64 + 22)');
+ok(report.exceptions.every((e) => ['external-reference', 'ambiguous'].includes(e.category)) && report.exceptions.filter((e) => e.category === 'ambiguous').map((e) => e.id).sort().join() === 'WBR523,WMD421,WMR225,WMR226', 'every unresolved area is classed external-reference (18) or ambiguous (4: WMR225, WMR226, WBR523, WMD421)');
+ok(report.exceptions.every((e) => !ids.includes(e.id) && e.reason) && new Set(report.exceptions.map((e) => e.id)).size === 22, 'no area is both converted and unresolved; each unresolved area has a reason');
 
 // Country scope: Singapore- and Brunei-administered areas stay in the report, not in the Malaysia layers
 const exclIds = report.excluded.map((e) => e.id);
@@ -69,8 +81,8 @@ const nowHash = Object.fromEntries(all.map(({ f }) => [f.properties.id, hashOf(f
 const changed = Object.keys(baseline).filter((id) => nowHash[id] && nowHash[id] !== baseline[id]);
 const gone = Object.keys(baseline).filter((id) => !nowHash[id] && !exclIds.includes(id));
 ok(Object.keys(baseline).length === 61 && changed.length === 0 && gone.length === 0, 'all 42 baseline Malaysian geometries are byte-identical and none was dropped (' + changed.concat(gone).join(',') + ')');
-const recovered = ['WMR105', 'WMR106', 'WMR108', 'WMR225A', 'WMR225B', 'WMR302A', 'WMR418', 'WBR508', 'WBR509', 'WBR510', 'WBR511', 'WBR518', 'WBR601', 'WBR603', 'WBR604'];
-ok(recovered.every((id) => nowHash[id] && !baseline[id]), 'the 15 newly recovered areas are present');
+const recovered = ['WMR105', 'WMR106', 'WMR108', 'WMR225A', 'WMR225B', 'WMR302A', 'WMR418', 'WBR508', 'WBR509', 'WBR510', 'WBR511', 'WBR518', 'WBR601', 'WBR603', 'WBR604', 'WMR102B', 'WMR103B', 'WMR107', 'WBR519', 'WBR520', 'WMD412A', 'WMD420'];
+ok(recovered.every((id) => nowHash[id] && !baseline[id]), 'the 22 newly recovered areas are present');
 ok(all.every(({ f }) => f.properties.vertical && f.properties.upper && f.properties.lower && f.properties.description.includes('Upper')), 'every area keeps its published vertical limits');
 const rings = all.map(({ f }) => f.geometry.coordinates[0]);
 ok(rings.every((r) => r.length >= 4 && r[0][0] === r.at(-1)[0] && r[0][1] === r.at(-1)[1]), 'every ring is closed');
@@ -80,7 +92,7 @@ ok(rings.every((r) => r.reduce((s, p, i) => (i ? s + (r[i - 1][0] * p[1] - p[0] 
 // Archive
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/my/manifest.json'), 'utf8'));
 const region = manifest.regions.find((r) => r.id === 'my-enr51');
-ok(!!region && region.cells === 57 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'prohibited,restricted,danger', 'the manifest registers my-enr51 with 57 areas and the three classes');
+ok(!!region && region.cells === 64 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'prohibited,restricted,danger', 'the manifest registers my-enr51 with 64 areas and the three classes');
 ok(region.classes.map((c) => c.verdict).join() === 'prohibited,restricted,danger' && region.source.effective === '2026-11-03', 'classes carry their P/R/D verdict; the edition date is recorded');
 const bytes = fs.readFileSync(path.join(ROOT, 'public/data', region.file));
 const arch = new PMTiles({ getKey: () => region.file, getBytes: async (o, n) => ({ data: Uint8Array.from(bytes.subarray(o, o + n)).buffer }) });
@@ -102,7 +114,7 @@ for (const { k, f } of all) {
   const zs = w ? await zonesInArchive(arch, region.maxZoom, w[1], w[0]) : [];
   if (!zs.length) { lost++; console.log('  lost ' + f.properties.id); } else if (!zs.some((z) => z.c === k)) { wrong++; console.log('  wrong class ' + f.properties.id); }
 }
-ok(lost === 0 && wrong === 0, 'every one of the 57 converted areas is present in the archive at its max zoom with its own class');
+ok(lost === 0 && wrong === 0, 'every one of the 64 converted areas is present in the archive at its max zoom with its own class');
 ok((await zonesInArchive(arch, region.maxZoom, 3.139, 101.687)).length === 0, 'central Kuala Lumpur, outside every converted polygon, has no zone (unknown, not permitted)');
 ok((await zonesInArchive(arch, region.maxZoom, 4.8889, 114.8342)).length === 0, 'the Brunei-administered Jerudong area (WBP504) is absent from the Malaysia archive');
 ok((await zonesInArchive(arch, region.maxZoom, 1.38, 103.67)).length === 0, 'the Singapore-administered Pasir Laba area (WSD11) is absent from the Malaysia archive');

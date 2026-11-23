@@ -4,14 +4,14 @@
     "edition": "2026-11-03",
     "htmlSha256": "aba82af4d88b096cb0aa81767fb0212f1d856eea9e784343fd68974dda5d840a",
     "htmlBytes": 241764,
-    "extractedAt": "2026-11-23T16:42:52.170Z"
+    "extractedAt": "2026-11-23T16:58:53.076Z"
   },
   "parsed": 108,
   "excludedSingapore": 8,
   "excludedBrunei": 14,
   "applicable": 86,
-  "converted": 57,
-  "unresolved": 29,
+  "converted": 64,
+  "unresolved": 22,
   "counts": {
     "prohibited": {
       "applicable": 4,
@@ -19,11 +19,11 @@
     },
     "restricted": {
       "applicable": 63,
-      "converted": 39
+      "converted": 44
     },
     "danger": {
       "applicable": 19,
-      "converted": 15
+      "converted": 17
     }
   },
   "notAreas": [
@@ -170,147 +170,134 @@
     {
       "id": "WMP228",
       "class": "P",
-      "reason": "circle combined with a coastline, border or other boundary reference"
-    },
-    {
-      "id": "WMR102B",
-      "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
-    },
-    {
-      "id": "WMR103B",
-      "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
-    },
-    {
-      "id": "WMR107",
-      "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
+      "category": "external-reference",
+      "reason": "circle combined with a coastline, border or other boundary reference [southern border coincides with the coastline of South Johor]"
     },
     {
       "id": "WMR225",
       "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
+      "category": "ambiguous",
+      "reason": "arc area with a coastline, border or airspace-boundary reference [the straight-line coordinates contradict the arc endpoints (020200N 1031224E vs 1032224E; 020730N 1032224E vs 1032154E) and the 6 NM arc endpoint is not on 6 NM]"
     },
     {
       "id": "WMR226",
       "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
+      "category": "ambiguous",
+      "reason": "arc area with a coastline, border or airspace-boundary reference [two arcs with no stated connecting lines or closure]"
     },
     {
       "id": "WMR239A",
       "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+      "category": "external-reference",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction [boundary follows the coastline]"
     },
     {
       "id": "WMR239B",
       "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+      "category": "external-reference",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction [boundary follows the coastline]"
     },
     {
       "id": "WMR240A",
       "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
+      "category": "external-reference",
+      "reason": "arc area with a coastline, border or airspace-boundary reference [boundary follows the coastline]"
     },
     {
       "id": "WMR240B",
       "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+      "category": "external-reference",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction [boundary follows the coastline]"
     },
     {
       "id": "WMR403",
       "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+      "category": "external-reference",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction [coastline (and Alor Star / Butterworth control-zone boundaries) between published points]"
     },
     {
       "id": "WMR404",
       "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
+      "category": "external-reference",
+      "reason": "arc area with a coastline, border or airspace-boundary reference [coastline, railway line, canal and the Malaysia/Thailand border]"
     },
     {
       "id": "WMR405",
       "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+      "category": "external-reference",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction [Malaysia/Thailand border and the border danger area]"
     },
     {
       "id": "WMR406",
       "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+      "category": "external-reference",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction [Malaysia/Thailand border and the border danger area]"
     },
     {
       "id": "WMR407",
       "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+      "category": "external-reference",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction [Malaysia/Thailand border between published points]"
     },
     {
       "id": "WMR408",
       "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+      "category": "external-reference",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction [roads, the Malaysia/Thailand border and the border danger area]"
     },
     {
       "id": "WMR416A",
       "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
+      "category": "external-reference",
+      "reason": "arc area with a coastline, border or airspace-boundary reference [coastline]"
     },
     {
       "id": "WMR416B",
       "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
+      "category": "external-reference",
+      "reason": "arc area with a coastline, border or airspace-boundary reference [coastline]"
     },
     {
       "id": "WMR416C",
       "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
+      "category": "external-reference",
+      "reason": "arc area with a coastline, border or airspace-boundary reference [coastline]"
     },
     {
       "id": "WMR419",
       "class": "R",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
-    },
-    {
-      "id": "WBR519",
-      "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
-    },
-    {
-      "id": "WBR520",
-      "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
+      "category": "external-reference",
+      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction [coastline and the western boundary of WMR416C (itself coastline-bounded)]"
     },
     {
       "id": "WBR523",
       "class": "R",
-      "reason": "arc endpoints are not on the stated radius"
+      "category": "ambiguous",
+      "reason": "arc endpoints are not on the stated radius [the 40 NM arc starts at 055400N 1152200E, 37.9 NM from the stated centre; closing lines not fully stated]"
     },
     {
       "id": "WBR524",
       "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
+      "category": "external-reference",
+      "reason": "arc area with a coastline, border or airspace-boundary reference [coastline joining two published points]"
     },
     {
       "id": "WBR525",
       "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
-    },
-    {
-      "id": "WMD412A",
-      "class": "D",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+      "category": "external-reference",
+      "reason": "arc area with a coastline, border or airspace-boundary reference [coastline joining two published points]"
     },
     {
       "id": "WMD419",
       "class": "D",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
-    },
-    {
-      "id": "WMD420",
-      "class": "D",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
+      "category": "external-reference",
+      "reason": "arc area with a coastline, border or airspace-boundary reference [Malaysia/Thailand border]"
     },
     {
       "id": "WMD421",
       "class": "D",
-      "reason": "open path of three points (shape not defined)"
+      "category": "ambiguous",
+      "reason": "open path of three points (shape not defined) [three points with no closing statement or shape]"
     }
   ]
 }

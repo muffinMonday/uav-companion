@@ -69,7 +69,9 @@ const BAD_CIRCLE = /\b(arc|arcs|coast|coastline|border|bdry|boundary|boundaries|
 
 // ---- named references defined elsewhere in the CAAM AIP (references.json, written by --fetch-refs from ENR 4.1, ENR 4.4 and AD 2 WBKL) ----
 const REFS_FILE = path.join(OUT, 'references.json');
-let REFS = fs.existsSync(REFS_FILE) ? JSON.parse(fs.readFileSync(REFS_FILE, 'utf8')).points : {};
+const REFS_DOC = fs.existsSync(REFS_FILE) ? JSON.parse(fs.readFileSync(REFS_FILE, 'utf8')) : {};
+let REFS = REFS_DOC.points ?? {};
+const BOUNDS = REFS_DOC.boundaries ?? {}; // CTR/TMA/FIR boundaries that ENR 5.1 refers to, transcribed from AD 2 / ENR 2.1 (quoted text kept alongside)
 const fmtCoord = ([lon, lat]) => {
   const f = (v, w, h) => { const a = Math.abs(v), d = Math.floor(a), m = Math.floor((a - d) * 60), sec = ((a - d) * 60 - m) * 60; return String(d).padStart(w, '0') + String(m).padStart(2, '0') + sec.toFixed(2).padStart(5, '0') + h; };
   return f(lat, 2, lat < 0 ? 'S' : 'N') + ' ' + f(lon, 3, lon < 0 ? 'W' : 'E');
@@ -82,6 +84,105 @@ const REF_PATTERNS = [
   ['LABUAN-ARP', /(?:(?:centred|centered)\s*(?:on|at|from)?\s*)?\bLabuan\s+ARP\b/gi, true],
   ['ADLEX', /\bADLEX\b/g, false],
 ];
+const P1 = (s) => coords(s)[0].p;
+/** Vertex list (implicitly closed unless def.open) of a boundary transcribed from the AIP: start, line and arc steps; arc endpoints must lie within 3% of the stated radius. */
+function boundaryRing(def) {
+  const pts = []; let cur;
+  for (const op of def.path) {
+    if (op.start) { cur = P1(op.start); pts.push(cur); }
+    else if (op.line) { cur = P1(op.line); pts.push(cur); }
+    else if (op.circle) pts.push(...circleRing(P1(op.circle.c), op.circle.rNM * 1852, 720).slice(0, -1));
+    else if (op.arc) {
+      const c = P1(op.arc.c), to = P1(op.arc.to), rM = op.arc.rNM * 1852;
+      for (const e of [cur, to]) if (Math.abs(inverse(c[0], c[1], e[0], e[1]).s - rM) / rM > 0.03) throw new Error('boundary arc endpoint off radius: ' + def.source);
+      pts.push(...arcPoints(c, rM, cur, to, op.arc.cw, 0.5), to); cur = to;
+    }
+  }
+  return pts;
+}
+const pathLen = (pts) => pts.reduce((s, p, i) => (i ? s + inverse(pts[i - 1][0], pts[i - 1][1], p[0], p[1]).s : s), 0);
+/** Intermediate vertices of the boundary between published points A and B (both within tolM of it). A closed boundary takes the clearly shorter way round; null if not decidable. */
+function alongBoundary(def, A, B, tolM) {
+  const r = boundaryRing(def), n = r.length, segs = def.open ? n - 1 : n, k = Math.cos(rad(A[1]));
+  const proj = (p) => {
+    let best = null;
+    for (let i = 0; i < segs; i++) {
+      const a = r[i], b = r[(i + 1) % n], ax = a[0] * k, dx = b[0] * k - ax, dy = b[1] - a[1], l = dx * dx + dy * dy;
+      const t = l ? Math.max(0, Math.min(1, ((p[0] * k - ax) * dx + (p[1] - a[1]) * dy) / l)) : 0, q = [a[0] + t * (b[0] - a[0]), a[1] + t * dy], d = inverse(p[0], p[1], q[0], q[1]).s;
+      if (!best || d < best.d - 1e-6) best = { d, s: i + t };
+    }
+    return best;
+  };
+  const pa = proj(A), pb = proj(B);
+  if (pa.d > tolM || pb.d > tolM) return null;
+  const fwd = [], back = [];
+  if (def.open) { // single polyline: vertices strictly between the two positions, in travel order
+    const lo = Math.min(pa.s, pb.s), hi = Math.max(pa.s, pb.s), mid = [];
+    for (let m = Math.floor(lo) + 1; m < hi; m++) mid.push(r[m]);
+    return pa.s <= pb.s ? mid : mid.reverse();
+  }
+  const df = (pb.s - pa.s + n) % n, db = (pa.s - pb.s + n) % n;
+  for (let m = Math.floor(pa.s) + 1; m - pa.s < df; m++) fwd.push(r[m % n]);
+  for (let m = Math.ceil(pa.s) - 1; pa.s - m < db; m--) back.push(r[((m % n) + n) % n]);
+  const lf = pathLen([A, ...fwd, B]), lb = pathLen([A, ...back, B]);
+  if (Math.min(lf, lb) / Math.max(lf, lb) > 0.8) return null;
+  return lf < lb ? fwd : back;
+}
+const BOUNDARY_PATTERNS = [
+  ['KUANTAN CTR', /(?:thence\s+)?(?:along|following)\s+(?:the\s+)?KUANTAN\s+CONTROL\s*(?:Boundary|Bdry)?/gi, 2000],
+  ['KUALA TERENGGANU CTR', /(?:thence\s+)?(?:along|following)\s+(?:the\s+)?KUALA\s+TERENGGANU\s+CTR\s*(?:Boundary|Bdry)?/gi, 2000],
+  ['BUTTERWORTH TMA', /(?:thence\s+)?(?:along|following)\s+(?:the\s+)?Butterworth\s+TMA\s*(?:Boundary|Bdry)?/gi, 2000],
+  ['KK FIR WEST', /(?:thence\s+)?(?:along|following)\s+(?:the\s+)?Singapore\s*\/\s*Kota\s+Kinabalu\s+FIR\s*(?:Boundary|Bdry)?/gi, 5000],
+];
+/** "along <named boundary>" between two published vertices becomes the boundary's own vertices, taken from references.json. */
+function resolveBoundaries(text, defs = BOUNDS) {
+  for (const [name, re, tol] of BOUNDARY_PATTERNS) {
+    if (!defs[name]) continue;
+    const orig = text;
+    text = orig.replace(re, (m, off) => {
+      const cs = coords(orig), A = cs.filter((c) => c.end <= off).at(-1), B = cs.find((c) => c.i >= off + m.length);
+      const mid = A && B ? alongBoundary(defs[name], A.p, B.p, tol) : null;
+      return mid ? ' ' + mid.map(fmtCoord).join(' ') + ' ' : m;
+    });
+  }
+  return text;
+}
+
+/** Polygon minus a simple polygon (single result piece); null when not supported. a is closed, b open. */
+function subtractPolygon(a, b) {
+  const A = a.slice(0, -1), B = b, nA = A.length, nB = B.length;
+  const cross = (p, q, r, s) => { const d = (q[0] - p[0]) * (s[1] - r[1]) - (q[1] - p[1]) * (s[0] - r[0]); if (!d) return null; const t = ((r[0] - p[0]) * (s[1] - r[1]) - (r[1] - p[1]) * (s[0] - r[0])) / d, u = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / d; return t > 0 && t < 1 && u > 0 && u < 1 ? [t, u] : null; };
+  const inPoly = (pt, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) if ((poly[i][1] > pt[1]) !== (poly[j][1] > pt[1]) && pt[0] < ((poly[j][0] - poly[i][0]) * (pt[1] - poly[i][1])) / (poly[j][1] - poly[i][1]) + poly[i][0]) c = !c; return c; };
+  const ea = A.map(() => []), eb = B.map(() => []); let id = 0;
+  for (let i = 0; i < nA; i++) for (let j = 0; j < nB; j++) {
+    const x = cross(A[i], A[(i + 1) % nA], B[j], B[(j + 1) % nB]); if (!x) continue;
+    const pt = [A[i][0] + x[0] * (A[(i + 1) % nA][0] - A[i][0]), A[i][1] + x[0] * (A[(i + 1) % nA][1] - A[i][1])];
+    ea[i].push({ t: x[0], id, pt }); eb[j].push({ t: x[1], id, pt }); id++;
+  }
+  if (!id) return null;
+  const build = (V, E) => V.flatMap((v, i) => [{ pt: v, x: -1 }, ...E[i].sort((p, q) => p.t - q.t).map((e) => ({ pt: e.pt, x: e.id }))]);
+  const RA = build(A, ea), RB = build(B, eb), mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+  const idxA = (x) => RA.findIndex((n) => n.x === x), idxB = (x) => RB.findIndex((n) => n.x === x);
+  const outsideNext = (k) => !inPoly(mid(RA[k].pt, RA[(k + 1) % RA.length].pt), B); // the A segment after node k lies outside B
+  const out = [], used = new Set(); let guard = 0;
+  for (let s = 0; s < RA.length; s++) {
+    if (RA[s].x < 0 || used.has(RA[s].x) || !outsideNext(s)) continue;
+    const piece = []; let k = s;
+    do {
+      used.add(RA[k].x); piece.push(RA[k].pt);
+      k = (k + 1) % RA.length; // walk A outside B until it enters B at the next crossing
+      while (RA[k].x < 0) { piece.push(RA[k].pt); k = (k + 1) % RA.length; }
+      const j0 = idxB(RA[k].x); // follow B's boundary on the side that stays inside A, to its next crossing
+      const step = inPoly(mid(RB[j0].pt, RB[(j0 + 1) % RB.length].pt), A) ? 1 : -1;
+      let j = j0; piece.push(RA[k].pt);
+      do { j = (j + step + RB.length) % RB.length; piece.push(RB[j].pt); } while (RB[j].x < 0 && ++guard < 100000);
+      k = idxA(RB[j].x); used.add(RA[k].x);
+    } while (k !== s && ++guard < 100000);
+    out.push(ring(piece));
+  }
+  return out.length === 1 ? out[0] : null;
+}
+
 function resolveRefs(text, refs = REFS) {
   let t = text.replace(/\((?:RDL|bearing)[^)]*\)/gi, '');
   for (const [code, re, centre] of REF_PATTERNS) if (refs[code]) t = t.replace(re, () => (centre ? 'centred on ' : '') + fmtCoord(refs[code]) + ' ');
@@ -125,7 +226,8 @@ function arcPoints(c, rM, from, to, clockwise, step = 2) {
 
 // ---- geometry from one description; returns { ring } or { reason } ----
 function geometryOf(rawText, refs = REFS) {
-  const text = resolveRefs(rawText, refs);
+  let exclude = null;
+  const text = resolveBoundaries(resolveRefs(rawText, refs)).replace(/\(\s*Excluding\s+KERTEH\s+CTR\s*\)/i, () => { if (BOUNDS['KERTEH CTR']) exclude = boundaryRing(BOUNDS['KERTEH CTR']); return ''; });
   const cs = coords(text);
   if (/\bBTN\s+LAT\b/i.test(text)) {
     const lats = [...text.matchAll(/\b(\d{2})(\d{2})(\d{2})([NS])\b/g)].map((m) => (+m[1] + +m[2] / 60 + +m[3] / 3600) * (m[4] === 'S' ? -1 : 1));
@@ -146,7 +248,7 @@ function geometryOf(rawText, refs = REFS) {
   const pts = dropNearStart(cs.map((c) => c.p)), closed = pts.length > 3 && pts[0][0] === pts.at(-1)[0] && pts[0][1] === pts.at(-1)[1];
   const distinct = closed ? pts.length - 1 : pts.length;
   if (!closed && distinct < 4 && !/\b(bounded|bounding|within|contained)\b|\bto start\b/i.test(text)) return { reason: 'open path of three points (shape not defined)' };
-  return { ring: ring(pts), kind: 'polygon', ...(pts.length !== cs.length ? { note: 'last vertex restated the start within 300 m; the ring closes at the first vertex' } : {}) };
+  return { ring: ring(pts), kind: 'polygon', ...(exclude ? { exclude } : {}), ...(pts.length !== cs.length ? { note: 'last vertex restated the start within 300 m; the ring closes at the first vertex' } : {}) };
 }
 
 /** A polygon with arcs: each arc needs a stated centre, radius, direction and endpoint coordinates; otherwise the area is unresolved. */
@@ -215,6 +317,27 @@ function parseRows(html) {
   return { rows, skipped };
 }
 
+// Curated classification of the areas still unresolved after the CAAM-only recovery passes (checked against the published text, 2026-11-24).
+// external-reference: the description needs a coastline or the Malaysia/Thailand border (or a road/railway/canal) that CAAM does not publish as coordinates.
+// ambiguous: the CAAM text itself is inconsistent or incomplete.
+const UNRESOLVED_NOTES = {
+  WMP228: ['external-reference', 'southern border coincides with the coastline of South Johor'],
+  WMR239A: ['external-reference', 'boundary follows the coastline'], WMR239B: ['external-reference', 'boundary follows the coastline'],
+  WMR240A: ['external-reference', 'boundary follows the coastline'], WMR240B: ['external-reference', 'boundary follows the coastline'],
+  WMR403: ['external-reference', 'coastline (and Alor Star / Butterworth control-zone boundaries) between published points'],
+  WMR404: ['external-reference', 'coastline, railway line, canal and the Malaysia/Thailand border'],
+  WMR405: ['external-reference', 'Malaysia/Thailand border and the border danger area'], WMR406: ['external-reference', 'Malaysia/Thailand border and the border danger area'],
+  WMR407: ['external-reference', 'Malaysia/Thailand border between published points'], WMR408: ['external-reference', 'roads, the Malaysia/Thailand border and the border danger area'],
+  WMR416A: ['external-reference', 'coastline'], WMR416B: ['external-reference', 'coastline'], WMR416C: ['external-reference', 'coastline'],
+  WMR419: ['external-reference', 'coastline and the western boundary of WMR416C (itself coastline-bounded)'],
+  WBR524: ['external-reference', 'coastline joining two published points'], WBR525: ['external-reference', 'coastline joining two published points'],
+  WMD419: ['external-reference', 'Malaysia/Thailand border'],
+  WMR225: ['ambiguous', 'the straight-line coordinates contradict the arc endpoints (020200N 1031224E vs 1032224E; 020730N 1032224E vs 1032154E) and the 6 NM arc endpoint is not on 6 NM'],
+  WMR226: ['ambiguous', 'two arcs with no stated connecting lines or closure'],
+  WBR523: ['ambiguous', 'the 40 NM arc starts at 055400N 1152200E, 37.9 NM from the stated centre; closing lines not fully stated'],
+  WMD421: ['ambiguous', 'three points with no closing statement or shape'],
+};
+
 const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
 
 /** Point coordinates the ENR 5.1 text refers to by name, read from the official pages (ENR 4.1 navaids, ENR 4.4 waypoints, AD 2 WBKL ARP). */
@@ -228,7 +351,7 @@ async function fetchRefs() {
     ADLEX: after(e44, 'ADLEX TDESIGNATED_POINT;CODE_ID'), 'LABUAN-ARP': after(wbkl, 'ARP coordinates and site at AD'),
   };
   const sources = { VKB: 'ENR 4.1 Kota Bharu DVOR/DME', VKG: 'ENR 4.1 Kuching DVOR/DME', VLB: 'ENR 4.1 Labuan DVOR/DME', ADLEX: 'ENR 4.4 designated point ADLEX', 'LABUAN-ARP': 'AD 2 WBKL 2.2 ARP coordinates' };
-  fs.writeFileSync(REFS_FILE, JSON.stringify({ edition: EDITION, note: 'Named points that ENR 5.1 area descriptions use as arc centres or vertices; official CAAM AIP coordinates.', sources, points }, null, 1) + '\n');
+  fs.writeFileSync(REFS_FILE, JSON.stringify({ edition: EDITION, note: 'Named points that ENR 5.1 area descriptions use as arc centres or vertices; official CAAM AIP coordinates.', sources, points, boundaries: BOUNDS }, null, 1) + '\n');
   REFS = points; return points;
 }
 
@@ -264,8 +387,12 @@ async function main() {
   for (const r of rows) {
     const adm = administration(r);
     if (adm.state !== 'MY') { excluded.push({ id: r.id, class: r.designation, administeredBy: adm.state === 'SG' ? 'Singapore' : 'Brunei', evidence: adm.evidence }); continue; }
-    const g = geometryOf(r.text);
-    if (!g.ring) { exceptions.push({ id: r.id, class: r.designation, reason: g.reason }); continue; }
+    const g = geometryOf(r.name && r.text.startsWith(r.name) ? r.text.slice(r.name.length) : r.text);
+    if (g.exclude && g.ring) {
+      const cut = subtractPolygon(g.ring, g.exclude);
+      if (cut) { g.ring = cut; g.note = 'the published Kerteh CTR is subtracted (ENR 5.1 "excluding KERTEH CTR"; CTR from AD 2 WMKE 2.17)'; } else { g.ring = null; g.reason = 'excluded CTR could not be subtracted'; }
+    }
+    if (!g.ring) { const [category, detail] = UNRESOLVED_NOTES[r.id] ?? ['unclassified', '']; exceptions.push({ id: r.id, class: r.designation, category, reason: detail ? g.reason + ' [' + detail + ']' : g.reason }); continue; }
     const outer = ccw(g.ring);
     const fail = [];
     if (Math.abs(signedArea(outer)) < 1e-9) fail.push('zero area');
@@ -300,4 +427,4 @@ async function main() {
   console.log(JSON.stringify({ parsed, excludedSingapore: report.excludedSingapore, excludedBrunei: report.excludedBrunei, applicable: report.applicable, converted: report.converted, unresolved: report.unresolved, counts: report.counts, layersSha256: outHash.slice(0, 16), notAreas: skipped }, null, 1));
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
-export { administration, resolveRefs, geometryOf, parseRows, circleRing, direct, inverse };
+export { subtractPolygon, boundaryRing, administration, resolveRefs, geometryOf, parseRows, circleRing, direct, inverse };
