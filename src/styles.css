@@ -24,6 +24,8 @@
   --shadow-2:0 6px 24px rgba(15,30,45,.18), 0 1px 3px rgba(15,30,45,.12);
   --shadow-1:0 2px 8px rgba(15,30,45,.18);
   --shadow:var(--shadow-2); --shadow-sm:var(--shadow-1); /* the old names */
+  --shadow-pin:0 2px 2px rgba(0,0,0,.4); /* DESIGN.md S10.1: the resting pin drop-shadow (not themed: identical over both basemaps) */
+  --focus:var(--accent); /* DESIGN.md S10.1: semantic alias for the focus-visible ring/border colour, so components never reference --accent for this role directly */
   --font:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans SC",sans-serif;
 }
 /* dark: theme.js (and a script at the top of index.html) sets data-theme to the resolved theme, "system" included */
@@ -38,7 +40,7 @@ html,body{height:100%;margin:0}
 body{font:var(--fs-body)/var(--lh-body) var(--font);color:var(--fg);background:var(--bg);-webkit-text-size-adjust:100%}
 #map{position:absolute;inset:0}
 button,input,select,textarea{font:inherit;color:inherit}
-:is(button,input,select,textarea,summary,a,[tabindex]):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+:is(button,input,select,textarea,summary,a,[tabindex]):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .tabs button,.dock button{-webkit-tap-highlight-color:transparent} /* no blue tap rectangle on the panel tabs and the collapsed rail (keyboard focus keeps its ring) */
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 
@@ -162,7 +164,7 @@ textarea{resize:vertical;min-height:60px}
 
 /* map markers */
 .poi-pin{background:none;border:0}
-.poi-pin svg{width:30px;height:40px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));display:block;transition:transform .12s;transform-origin:50% 100%}
+.poi-pin svg{width:30px;height:40px;filter:drop-shadow(var(--shadow-pin));display:block;transition:transform .12s;transform-origin:50% 100%}
 .is-editing .poi-pin{cursor:grab;touch-action:none;-webkit-touch-callout:none;user-select:none}
 .is-editing .poi-pin svg{outline:2px dashed color-mix(in srgb,var(--accent) 80%,#fff);outline-offset:3px;border-radius:50%/40%}
 .poi-pin.lifted svg{transform:scale(1.35) translateY(-4px);filter:drop-shadow(0 8px 6px rgba(0,0,0,.45))}
@@ -668,7 +670,7 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 
 /* ---------- the days of a trip as a flip card ---------- */
 .flip{margin-top:12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);perspective:900px}
-.flip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.flip:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .flip-nav{display:flex;align-items:center;gap:4px;padding:6px;border-bottom:1px solid var(--line)}
 .flip-title{flex:1;min-width:0;text-align:center;font-weight:var(--fw-bold);font-size:var(--fs-body)}
 .flip-btn:disabled{opacity:var(--disabled-opacity);cursor:not-allowed}
@@ -933,7 +935,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .splash-links{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px}
 .splash-orient-text{margin:8px 0 14px;font-size:var(--fs-body);line-height:var(--lh-body)}
 .splash-choice{display:grid;gap:4px;align-content:start;padding:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);color:var(--fg);font:inherit;text-align:left;cursor:pointer}
-.splash-choice:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
+.splash-choice:focus-visible{border-color:var(--focus);background:var(--accent-soft)}
 @media (hover:hover){.splash-choice:hover{border-color:var(--accent);background:var(--accent-soft)}}
 .splash-choice b{font-size:var(--fs-title);color:var(--accent)}
 .splash-choice span{font-size:var(--fs-small);color:var(--muted)}
@@ -1077,7 +1079,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .fr-me{display:flex;align-items:center;gap:10px;margin:4px 0 10px}.fr-me b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pv-trigger{display:inline-flex;align-items:center;margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:var(--radius-xs);vertical-align:middle}
 @media (hover:hover){.pv-trigger:hover b{text-decoration:underline}}
-.pv-trigger:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pv-trigger:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .fr-row>.pv-trigger{flex:none}
 .profile-pop{padding-top:34px}.pv-sub{display:block;margin-top:4px;color:var(--muted)}
 .pv{display:flex;flex-direction:column;gap:6px;margin:8px 0}
@@ -1145,7 +1147,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .ses-row-open{display:block;min-width:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .ses-row-open::after{content:"";position:absolute;inset:0;border-radius:inherit}
 .ses-row-open:focus-visible{outline:none}
-.ses-row:has(.ses-row-open:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.ses-row:has(.ses-row-open:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
 @media (hover:hover){.ses-hub .ses-row:has(.ses-row-open):hover{background:var(--surface-2)}}
 .ses-row .btn-row,.ses-row .ses-host{position:relative;z-index:1}
 .ses-manage{margin-top:6px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--surface-2)}
@@ -1457,7 +1459,7 @@ body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}
 .ses-row.has-prev>.ses-top{padding-right:44px}
 .ses-chev{position:absolute;top:0;right:0;z-index:2;inline-size:44px;block-size:44px;display:grid;place-items:center;padding:0;border:0;border-radius:var(--radius-sm);background:none;color:var(--muted);cursor:pointer}
 .ses-chev svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.ses-chev:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ses-chev:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 @media (hover:hover){.ses-chev:hover{color:var(--text);background:var(--surface-2)}}
 .ses-prev{display:grid;grid-template-rows:0fr;transition:grid-template-rows .18s ease;position:relative;z-index:1}
 .ses-prev[data-open=true]{grid-template-rows:1fr;margin-top:var(--sp-2)}
@@ -1468,7 +1470,7 @@ body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}
 .ses-prev-map img{position:absolute;inline-size:256px;block-size:256px;max-inline-size:none;margin:0;left:calc(50% - var(--px) + var(--tx,0px));top:calc(80px - var(--py) + var(--ty,0px))}
 .ses-prev-pin{position:absolute;left:50%;top:80px;inline-size:14px;block-size:14px;margin:-14px 0 0 -7px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .ses-prev-open{position:absolute;inset:0;inline-size:100%;block-size:100%;padding:0;border:0;background:none;cursor:pointer}
-.ses-prev-open:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ses-prev-open:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .ses-prev-credit{position:absolute;right:0;bottom:0;z-index:1;max-inline-size:100%;padding:1px 4px;font-size:var(--fs-micro);line-height:1.3;background:rgba(255,255,255,.85);color:#333;pointer-events:none}
 .ses-prev-credit a{color:inherit;pointer-events:auto}
 .ses-prev-note{display:block;margin-top:4px;color:var(--muted)}
@@ -1476,7 +1478,7 @@ body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}
 /* Flight sessions: XP badge, host and attendee buttons, Add friend (src/sessions-xp.js, sessions-hub.js) */
 .badge.xp{background:var(--accent-soft,var(--surface-2));color:var(--accent-text,var(--text));border-color:var(--accent)}
 button.ses-host{display:inline-flex;align-items:center;gap:6px;min-block-size:32px;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;text-align:left}
-button.ses-host:focus-visible,.ses-attendee:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--radius-sm)}
+button.ses-host:focus-visible,.ses-attendee:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--radius-sm)}
 @media (pointer:coarse){button.ses-host{min-block-size:44px}}
 .ses-people-list{list-style:none;margin:var(--sp-2) 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
 .ses-attendee{display:flex;align-items:center;gap:var(--sp-2);inline-size:100%;min-block-size:44px;padding:0 var(--sp-2);border:0;border-radius:var(--radius-sm);background:none;color:inherit;font:inherit;text-align:left}
@@ -1566,7 +1568,7 @@ button.ses-attendee{cursor:pointer}
 .mh-grip{width:40px;height:4px;border-radius:2px;background:var(--line)}
 .mh-body{flex:1;min-height:0;touch-action:pan-y;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .marker-host h3:focus{outline:none}
-.marker-host h3:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.marker-host h3:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
 .marker-host .pop{max-width:none;width:auto}
 .marker-host .pop-close{display:grid}
 .marker-host[data-mode=side] .pop-toggle:not(.is-tuck){display:none}
@@ -1604,7 +1606,7 @@ button.ses-attendee{cursor:pointer}
 .mv-bar{position:fixed;z-index:var(--z-sheet);left:50%;bottom:calc(56px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);box-sizing:border-box;width:min(420px,calc(100% - 24px));display:flex;flex-direction:column;gap:6px;padding:12px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2)}
 .mv-bar[hidden]{display:none}
 .mv-bar:focus{outline:none}
-.mv-bar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mv-bar:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .mv-text{font-size:var(--fs-small);line-height:1.35}
 .mv-coords{font-variant-numeric:tabular-nums;font-weight:var(--fw-semibold);font-size:var(--fs-small)}
 .mv-row{display:flex;gap:8px}
@@ -1625,7 +1627,7 @@ body[data-mh=bottom] .leaflet-bottom{margin-bottom:var(--mh-off)}
 .shell-nav-item[hidden]{display:none} /* the Map destination's Layers/Saved Places actions (S10.3), hidden on every other destination */
 .shell-nav-action{color:var(--accent)} /* a quick action, not a primary destination: never takes aria-current */
 @media (hover:hover){.shell-nav-item:hover{background:var(--surface-2)}} /* no hover-dependent affordance on a touch-only device (U-16): this rule simply does not exist there */
-.shell-nav-item:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.shell-nav-item:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .shell-nav-item svg{width:var(--icon);height:var(--icon);fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .shell-nav-item .shell-nav-label{font-size:var(--fs-micro);line-height:1}
 .shell-nav-item[aria-current="true"]{color:var(--accent)}
