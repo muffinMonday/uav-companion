@@ -67,6 +67,27 @@ const toM = (v, u) => v * ({ NM: 1852, KM: 1000, M: 1, FT: 0.3048 })[u.toUpperCa
 const BAD_POLY = /\b(arc|arcs|coast|coastline|border|bdry|boundary|boundaries|railway|road|canal|ctr|ctl|tma|tangents?|racetrack|excluding|along|dme|vor|rdl|circles?|radius|centred|centered)\b/i;
 const BAD_CIRCLE = /\b(arc|arcs|coast|coastline|border|bdry|boundary|boundaries|along|tangents?|racetrack|excluding|joined|joining|from|thence|dme|vor|rdl)\b/i;
 
+// ---- named references defined elsewhere in the CAAM AIP (references.json, written by --fetch-refs from ENR 4.1, ENR 4.4 and AD 2 WBKL) ----
+const REFS_FILE = path.join(OUT, 'references.json');
+let REFS = fs.existsSync(REFS_FILE) ? JSON.parse(fs.readFileSync(REFS_FILE, 'utf8')).points : {};
+const fmtCoord = ([lon, lat]) => {
+  const f = (v, w, h) => { const a = Math.abs(v), d = Math.floor(a), m = Math.floor((a - d) * 60), sec = ((a - d) * 60 - m) * 60; return String(d).padStart(w, '0') + String(m).padStart(2, '0') + sec.toFixed(2).padStart(5, '0') + h; };
+  return f(lat, 2, lat < 0 ? 'S' : 'N') + ' ' + f(lon, 3, lon < 0 ? 'W' : 'E');
+};
+// [code, pattern, isArcCentre]; an arc centre becomes "centred on <coordinates>" so the arc reader sees a stated centre
+const REF_PATTERNS = [
+  ['VKB', /(?:(?:centred|centered)\s*(?:on|at|from)?\s*|from\s+)?\bVKB\s+(?:DVOR\/DME|VOR\/DME|VOR)\b/gi, true],
+  ['VKG', /(?:(?:centred|centered)\s*(?:on|at|from)?\s*)?\bVKG\s+DVOR\/DME\b/gi, true],
+  ['VLB', /(?:(?:centred|centered)\s*(?:on|at|from)?\s*)?\bLABUAN\s+DVOR\/DME\b/gi, true],
+  ['LABUAN-ARP', /(?:(?:centred|centered)\s*(?:on|at|from)?\s*)?\bLabuan\s+ARP\b/gi, true],
+  ['ADLEX', /\bADLEX\b/g, false],
+];
+function resolveRefs(text, refs = REFS) {
+  let t = text.replace(/\((?:RDL|bearing)[^)]*\)/gi, '');
+  for (const [code, re, centre] of REF_PATTERNS) if (refs[code]) t = t.replace(re, () => (centre ? 'centred on ' : '') + fmtCoord(refs[code]) + ' ');
+  return t;
+}
+
 const ring = (pts) => { const r = pts.map((p) => [...p]); if (r[0][0] !== r.at(-1)[0] || r[0][1] !== r.at(-1)[1]) r.push([...r[0]]); return r; };
 const signedArea = (r) => r.reduce((s, p, i) => (i ? s + (r[i - 1][0] * p[1] - p[0] * r[i - 1][1]) : s), 0) / 2;
 const ccw = (r) => (signedArea(r) < 0 ? [...r].reverse() : r);
@@ -79,6 +100,14 @@ function selfIntersects(r) {
     if (o(a, b, c) !== o(a, b, d) && o(c, d, a) !== o(c, d, b)) return true;
   }
   return false;
+}
+
+/** Fallback for a ring that self-intersects as published: a trailing vertex within 300 m of the first (but not equal to it) restates the start
+ *  with a typo, so the ring closes at the first vertex. Used only when that removes the self-intersection; valid rings are never touched. */
+function dropNearStart(pts) {
+  if (pts.length < 5 || !selfIntersects(ring(pts))) return pts;
+  const d = inverse(pts[0][0], pts[0][1], pts.at(-1)[0], pts.at(-1)[1]).s, cut = pts.slice(0, -1);
+  return d > 0 && d < 300 && !selfIntersects(ring(cut)) ? cut : pts;
 }
 
 function circleRing(c, rM, n = 144) {
@@ -95,7 +124,8 @@ function arcPoints(c, rM, from, to, clockwise, step = 2) {
 }
 
 // ---- geometry from one description; returns { ring } or { reason } ----
-function geometryOf(text) {
+function geometryOf(rawText, refs = REFS) {
+  const text = resolveRefs(rawText, refs);
   const cs = coords(text);
   if (/\bBTN\s+LAT\b/i.test(text)) {
     const lats = [...text.matchAll(/\b(\d{2})(\d{2})(\d{2})([NS])\b/g)].map((m) => (+m[1] + +m[2] / 60 + +m[3] / 3600) * (m[4] === 'S' ? -1 : 1));
@@ -113,19 +143,19 @@ function geometryOf(text) {
   if (/\barc\b/i.test(text)) return arcPolygon(text, cs);
   if (BAD_POLY.test(text)) return { reason: 'boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction' };
   if (cs.length < 3) return { reason: 'fewer than three coordinates' };
-  const pts = cs.map((c) => c.p), closed = pts.length > 3 && pts[0][0] === pts.at(-1)[0] && pts[0][1] === pts.at(-1)[1];
+  const pts = dropNearStart(cs.map((c) => c.p)), closed = pts.length > 3 && pts[0][0] === pts.at(-1)[0] && pts[0][1] === pts.at(-1)[1];
   const distinct = closed ? pts.length - 1 : pts.length;
-  if (!closed && distinct < 4 && !/\b(bounded|bounding|within|contained)\b/i.test(text)) return { reason: 'open path of three points (shape not defined)' };
-  return { ring: ring(pts), kind: 'polygon' };
+  if (!closed && distinct < 4 && !/\b(bounded|bounding|within|contained)\b|\bto start\b/i.test(text)) return { reason: 'open path of three points (shape not defined)' };
+  return { ring: ring(pts), kind: 'polygon', ...(pts.length !== cs.length ? { note: 'last vertex restated the start within 300 m; the ring closes at the first vertex' } : {}) };
 }
 
 /** A polygon with arcs: each arc needs a stated centre, radius, direction and endpoint coordinates; otherwise the area is unresolved. */
 function arcPolygon(text, cs) {
   if (BAD_POLY.test(text.replace(/\b(arc|arcs|radius|circle|circles|centred|centered|along|dme|vor)\b/gi, ''))) return { reason: 'arc area with a coastline, border or airspace-boundary reference' };
   if (/\b(dme|vor)\b/i.test(text.replace(/\([^)]*\)/g, '')) && !/centred|centered/i.test(text)) return { reason: 'arc centred on a navaid with no stated coordinates' };
-  const centres = cs.filter((c) => /(centred|centered)\s*(on|at|from)?\s*(\([^)]*\)|[A-Za-z .\/]*)?\s*$/i.test(text.slice(Math.max(0, c.i - 60), c.i)));
+  const centres = cs.filter((c) => /(centred|centered)\s*(on|at|from)?\s*(\([^)]*\)|[A-Za-z .\/]*)?\s*\(?$/i.test(text.slice(Math.max(0, c.i - 60), c.i)));
   const verts = cs.filter((c) => !centres.includes(c));
-  const pts = [];
+  const pts = []; let inferred = false;
   for (let i = 0; i < verts.length; i++) {
     pts.push(verts[i].p);
     if (i === verts.length - 1) break;
@@ -133,15 +163,20 @@ function arcPolygon(text, cs) {
     if (!/\barc\b/i.test(between)) continue;
     const ctr = centres.find((c) => c.i > verts[i].end && c.end <= verts[i + 1].i);
     const rm = between.match(/(\d+(?:\.\d+)?)\s*(NM|KM)\b/i);
-    const dir = /anti-?\s?clockwise|counter/i.test(between) ? false : /clockwise/i.test(between) ? true : null;
-    if (!ctr || !rm || dir === null) return { reason: 'arc without stated centre coordinates, radius or direction' };
+    let dir = /anti-?\s?clockwise|counter/i.test(between) ? false : /clockwise/i.test(between) ? true : null;
+    if (!ctr || !rm) return { reason: 'arc without stated centre coordinates, radius or direction' };
     const rM = toM(+rm[1], rm[2]);
+    if (dir === null) { // direction not published: take the shorter arc, only when it is clearly shorter (<= 170 degrees)
+      const sw = (inverse(ctr.p[0], ctr.p[1], verts[i + 1].p[0], verts[i + 1].p[1]).az - inverse(ctr.p[0], ctr.p[1], verts[i].p[0], verts[i].p[1]).az + 360) % 360;
+      if (sw > 170 && sw < 190) return { reason: 'arc direction not stated and the sweep is about 180 degrees' };
+      dir = sw <= 170; inferred = true;
+    }
     const d0 = inverse(ctr.p[0], ctr.p[1], verts[i].p[0], verts[i].p[1]).s, d1 = inverse(ctr.p[0], ctr.p[1], verts[i + 1].p[0], verts[i + 1].p[1]).s;
     if (Math.abs(d0 - rM) / rM > 0.03 || Math.abs(d1 - rM) / rM > 0.03) return { reason: 'arc endpoints are not on the stated radius' };
     pts.push(...arcPoints(ctr.p, rM, verts[i].p, verts[i + 1].p, dir));
   }
   if (!pts.length || !/\barc\b/i.test(text)) return { reason: 'arc area not reconstructable' };
-  return { ring: ring(pts), kind: 'arc-polygon' };
+  return { ring: ring(pts), kind: 'arc-polygon', ...(inferred ? { note: 'arc direction not published: the shorter arc (<= 170 degrees) was taken' } : {}) };
 }
 
 // ---- table parsing ----
@@ -182,7 +217,37 @@ function parseRows(html) {
 
 const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
 
+/** Point coordinates the ENR 5.1 text refers to by name, read from the official pages (ENR 4.1 navaids, ENR 4.4 waypoints, AD 2 WBKL ARP). */
+async function fetchRefs() {
+  const base = URL_ENR51.replace(/[^/]+$/, '');
+  const text = async (f) => { const res = await fetch(base + f); if (!res.ok) throw new Error('fetch ' + f + ': ' + res.status); return (await res.text()).replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' '); };
+  const after = (t, marker) => { const i = t.indexOf(marker); if (i < 0) throw new Error('reference not found: ' + marker); const c = coords(t.slice(i, i + 400).replace(/\bT[A-Z_]+;[^\s;]+;\d+/g, ' '))[0]; if (!c) throw new Error('no coordinates after ' + marker); return c.p; };
+  const [e41, e44, wbkl] = await Promise.all([text('WM-ENR-4.1-en-MS.html'), text('WM-ENR-4.4-en-MS.html'), text('WM-AD-2.WBKL-en-MS.html')]);
+  const points = {
+    VKB: after(e41, ' VKB TVOR;CODE_ID'), VKG: after(e41, ' VKG TVOR;CODE_ID'), VLB: after(e41, ' VLB TVOR;CODE_ID'),
+    ADLEX: after(e44, 'ADLEX TDESIGNATED_POINT;CODE_ID'), 'LABUAN-ARP': after(wbkl, 'ARP coordinates and site at AD'),
+  };
+  const sources = { VKB: 'ENR 4.1 Kota Bharu DVOR/DME', VKG: 'ENR 4.1 Kuching DVOR/DME', VLB: 'ENR 4.1 Labuan DVOR/DME', ADLEX: 'ENR 4.4 designated point ADLEX', 'LABUAN-ARP': 'AD 2 WBKL 2.2 ARP coordinates' };
+  fs.writeFileSync(REFS_FILE, JSON.stringify({ edition: EDITION, note: 'Named points that ENR 5.1 area descriptions use as arc centres or vertices; official CAAM AIP coordinates.', sources, points }, null, 1) + '\n');
+  REFS = points; return points;
+}
+
+/** Administering state, from the published ENR 5.1 text. Returns { state, evidence }. */
+const BRUNEI_BY_LOCATION = { WBD508: 'Brunei Temburong district', WBD514: 'Brunei Temburong district', WBD515: 'Brunei Tutong/Belait districts' };
+function administration(r) {
+  const t = r.text + ' ' + r.restriction + ' ' + r.remarks + ' ' + r.name;
+  if (/\bDCA Brunei\b/i.test(t)) return { state: 'BN', evidence: 'Controlling Authority: DCA Brunei' };
+  if (/\bBrunei Shell Petroleum\b/i.test(t)) return { state: 'BN', evidence: 'Controlling Authority: Brunei Shell Petroleum Co Sdn. Bhd.' };
+  if (/\bHM Sultan['’]s Flight\b/i.test(t)) return { state: 'BN', evidence: "Controlling Authority: HM Sultan's Flight (Brunei), Sultan's Palace" };
+  const place = t.match(/\b(JERUDONG|BERAKAS|TUTONG|BINTURAN|BUKIT AGOK|LUMUT RANGE)\b/);
+  if (/^WB/.test(r.id) && place) return { state: 'BN', evidence: 'named Brunei site: ' + place[1] };
+  if (BRUNEI_BY_LOCATION[r.id]) return { state: 'BN', evidence: 'published coordinates lie in ' + BRUNEI_BY_LOCATION[r.id] };
+  if (/^WS/.test(r.id)) return { state: 'SG', evidence: 'WS-series Singapore designator' + (/Singapore ATCC|TENGAH/i.test(t) ? '; Tengah Approach / Singapore ATCC' : '') };
+  return { state: 'MY', evidence: '' };
+}
+
 async function main() {
+  if (process.argv.includes('--fetch-refs')) await fetchRefs();
   if (process.argv.includes('--fetch') || !fs.existsSync(CACHE)) {
     const res = await fetch(URL_ENR51);
     if (!res.ok) throw new Error(`fetch ${URL_ENR51}: ${res.status}`);
@@ -194,8 +259,11 @@ async function main() {
   const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
   if (dup.length) throw new Error(`duplicate IDs in source: ${dup.join(', ')}`);
 
-  const layers = { prohibited: [], restricted: [], danger: [] }, exceptions = [], checks = [];
+  const layers = { prohibited: [], restricted: [], danger: [] }, exceptions = [], checks = [], excluded = [];
+  const parsed = rows.length;
   for (const r of rows) {
+    const adm = administration(r);
+    if (adm.state !== 'MY') { excluded.push({ id: r.id, class: r.designation, administeredBy: adm.state === 'SG' ? 'Singapore' : 'Brunei', evidence: adm.evidence }); continue; }
     const g = geometryOf(r.text);
     if (!g.ring) { exceptions.push({ id: r.id, class: r.designation, reason: g.reason }); continue; }
     const outer = ccw(g.ring);
@@ -211,7 +279,7 @@ async function main() {
     const description = [`Upper ${r.upper}`, `lower ${r.lower || 'n/a'}`].join(', ') + `. ${r.restriction ? r.restriction + '. ' : ''}${r.remarks}`.replace(/\.\s*\./g, '.');
     layers[r.cls].push({
       type: 'Feature',
-      properties: { id: r.id, name: `${r.id}${r.name !== r.id ? ' ' + r.name : ''}`, class: r.designation, upper: r.upper, lower: r.lower, vertical: r.vertical, restriction: r.restriction, remarks: r.remarks, description: description.trim().slice(0, 500), geometryKind: g.kind },
+      properties: { id: r.id, name: `${r.id}${r.name !== r.id ? ' ' + r.name : ''}`, class: r.designation, upper: r.upper, lower: r.lower, vertical: r.vertical, restriction: r.restriction, remarks: r.remarks, description: description.trim().slice(0, 500), geometryKind: g.kind, ...(g.note ? { geometryNote: g.note } : {}) },
       geometry: { type: 'Polygon', coordinates: [outer] },
     });
     checks.push({ id: r.id, kind: g.kind });
@@ -219,15 +287,17 @@ async function main() {
   fs.mkdirSync(path.join(OUT, 'layers'), { recursive: true });
   for (const [k, features] of Object.entries(layers)) fs.writeFileSync(path.join(OUT, 'layers', `${k}.geojson`), JSON.stringify({ type: 'FeatureCollection', features }) + '\n');
   const emitted = Object.values(layers).flat();
+  const malaysian = rows.filter((r) => !excluded.some((e) => e.id === r.id));
   const report = {
     source: { url: URL_ENR51, edition: EDITION, htmlSha256: sha(buf), htmlBytes: buf.length, extractedAt: new Date().toISOString() },
-    applicable: rows.length, converted: emitted.length, unresolved: exceptions.length,
-    counts: Object.fromEntries(Object.entries(layers).map(([k, v]) => [k, { applicable: rows.filter((r) => r.cls === k).length, converted: v.length }])),
-    notAreas: skipped, exceptions,
+    parsed, excludedSingapore: excluded.filter((e) => e.administeredBy === 'Singapore').length, excludedBrunei: excluded.filter((e) => e.administeredBy === 'Brunei').length,
+    applicable: malaysian.length, converted: emitted.length, unresolved: exceptions.length,
+    counts: Object.fromEntries(Object.entries(layers).map(([k, v]) => [k, { applicable: malaysian.filter((r) => r.cls === k).length, converted: v.length }])),
+    notAreas: skipped, excluded, exceptions,
   };
   fs.writeFileSync(path.join(OUT, 'exceptions.json'), JSON.stringify(report, null, 2) + '\n');
   const outHash = sha(Buffer.from(Object.values(layers).map((f) => JSON.stringify(f)).join('')));
-  console.log(JSON.stringify({ applicable: report.applicable, converted: report.converted, unresolved: report.unresolved, counts: report.counts, layersSha256: outHash.slice(0, 16), notAreas: skipped }, null, 1));
+  console.log(JSON.stringify({ parsed, excludedSingapore: report.excludedSingapore, excludedBrunei: report.excludedBrunei, applicable: report.applicable, converted: report.converted, unresolved: report.unresolved, counts: report.counts, layersSha256: outHash.slice(0, 16), notAreas: skipped }, null, 1));
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
-export { geometryOf, parseRows, circleRing, direct, inverse };
+export { administration, resolveRefs, geometryOf, parseRows, circleRing, direct, inverse };

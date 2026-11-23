@@ -1,6 +1,7 @@
 // Malaysia (my-enr51): CAAM ENR 5.1 prohibited / restricted / danger areas. Checks the extractor rules, the converted layers, the exception report,
 // the built archive (every converted area present with its class, gaps unknown) and the P/R/D wording. Reads public/data (run `node scripts/build-data.js my-enr51` first).
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -10,7 +11,7 @@ import { ROOT } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const url = (p) => pathToFileURL(path.join(ROOT, p)).href;
 const { zonesInArchive } = await import(url('src/zones.js'));
-const { geometryOf, inverse } = await import(url('scripts/airspace/my-enr51.mjs'));
+const { geometryOf, inverse, administration } = await import(url('scripts/airspace/my-enr51.mjs'));
 globalThis.document ??= { baseURI: 'http://localhost/' };
 const vite = await createServer({ configFile: false, root: ROOT, logLevel: 'error', server: { middlewareMode: true, watch: null }, appType: 'custom', cacheDir: path.join(os.tmpdir(), 'my-enr51-vite') });
 const { zoneSummary } = await vite.ssrLoadModule('/src/pointcheck.js');
@@ -25,10 +26,20 @@ ok(Math.abs(geometryOf('Circle of 3000FT ( 915 M ) radius centred on 045320N 114
 const box = geometryOf('BTN LAT 013000N, 020000N, and LONG 1042000E, 1043500E.');
 ok(box.kind === 'box' && Math.abs(box.ring[0][0] - 104.333333) < 1e-6 && box.ring[2][1] === 2, 'a LAT/LONG box becomes a rectangle');
 ok(!!geometryOf('Area within 2 NM centred on 012845N 1034433E with the southern border coinciding with the coastline of South Johor.').reason, 'a circle clipped by a coastline is not converted');
-ok(!!geometryOf('A straight line to 053308N 1020235E then along 40 NM arc from VKB VOR to 052956N 1022349E then to 051048N 1023100E').reason, 'an arc centred on a navaid without coordinates is not converted');
+const navArc = 'From 053308N 1020235E then along 40 NM arc from VKB VOR to 052956N 1022349E then to 051048N 1023100E then along 60 NM arc VKB VOR to 051254N 1015900E then to 053308N 1020235E';
+ok(!!geometryOf(navArc, {}).reason, 'an arc centred on a navaid is not converted when the navaid coordinates are unknown');
+const navRef = geometryOf(navArc);
+const vkb = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/regions/my/my-enr51/references.json'), 'utf8')).points.VKB;
+ok(navRef.kind === 'arc-polygon' && navRef.ring.some((p) => Math.abs(inverse(vkb[0], vkb[1], p[0], p[1]).s - 40 * 1852) < 400), 'a navaid-centred arc is resolved from the published navaid coordinates (VKB, ENR 4.1) and lies on its radius');
+const sector = geometryOf('A straight line from 055152N 1181921E to 055017N 1182916E then an arc radius 25NM centered at VSN VOR(055413.62N 1180429.55E) to 053255N 1181747E then a straight line to 054127N 1181228E, then an arc radius 15NM centered at VSN VOR (055413.62N 1180429.55E) to 055152N 1181921E');
+ok(sector.kind === 'arc-polygon' && /shorter arc/.test(sector.note), 'an arc with no stated direction takes the shorter arc and records that in the feature');
+ok(!!geometryOf('From 020000N 1025839E an arc of a circle radius 10 NM centred on 020230N 1031824E to 021830N 1032954E then 022000N 1030000E then 020000N 1025839E').reason, 'an arc whose endpoints are not on the stated radius is not converted');
+ok(geometryOf('Straight line fm 030459N 1004139E, 024405N 1012847E, 022206N 1012834E to start.').kind === 'polygon', 'a three-point path that says "to start" is a triangle');
+ok(!!geometryOf('045211.00N 1000622.00E , 042938.61N 0994510.12E to 041553.85N 1001716.29E').reason, 'three points with no closing statement stay unresolved');
+ok(geometryOf('Straight line fm 034705N 1011331E to 033437N 1012825E to 032159N 1013613E to 032459N 1012619E to 032429N 1012007E to 034706N 1011336E to start.').note?.includes('closes at the first vertex'), 'a self-intersecting ring whose last vertex restates the start is closed at the first vertex');
+ok(!geometryOf('Straight line fm 030635N 1014643E to 030959N 1015055E to 030959N 1020555E to 025559N 1020455E to 025659N 1015041E to 030417N 1014619E to 030636N 1014648E.').note, 'a valid ring with a near-duplicate last vertex is left as published');
 const arc = geometryOf('Commencing from 023719.63N 1022641.96E, clockwise along an arc of a circle 10NM radius centered on 022833.00N 1023146.00E to 021900.61N 1023438.10E, then along a straight line to 022419.10N 1022841.24E, then a straight line to 023719.63N 1022641.96E');
 ok(arc.kind === 'arc-polygon' && arc.ring.length > 60, 'an arc with stated centre, radius and direction is reconstructed');
-ok(!!geometryOf('From 020000N 1025839E an arc of a circle radius 20 NM centred on 020230N 1031824E to 021830N 1032954E then straight lines').reason, 'an arc without a direction is not converted');
 
 // Converted layers and exception report
 const dir = path.join(ROOT, 'data/regions/my/my-enr51');
@@ -38,9 +49,28 @@ const all = Object.entries(layers).flatMap(([k, list]) => list.map((f) => ({ k, 
 const ids = all.map((x) => x.f.properties.id);
 ok(new Set(ids).size === ids.length, 'every area ID is unique');
 ok(all.every(({ k, f }) => ({ prohibited: 'P', restricted: 'R', danger: 'D' })[k] === f.properties.class && f.properties.id[2] === f.properties.class), 'the P/R/D class matches the layer and the identifier letter');
-ok(layers.prohibited.length === 5 && layers.restricted.length === 25 && layers.danger.length === 31, '5 prohibited, 25 restricted, 31 danger areas converted');
-ok(report.applicable === 108 && report.converted === 61 && report.unresolved === 47 && report.converted + report.unresolved === report.applicable, 'applicable = converted + unresolved (108 = 61 + 47)');
-ok(report.exceptions.every((e) => !ids.includes(e.id) && e.reason) && new Set(report.exceptions.map((e) => e.id)).size === 47, 'no area is both converted and unresolved; each unresolved area has a reason');
+ok(layers.prohibited.length === 3 && layers.restricted.length === 39 && layers.danger.length === 15, '3 prohibited, 39 restricted, 15 danger Malaysian areas converted');
+ok(report.parsed === 108 && report.excludedSingapore === 8 && report.excludedBrunei === 14 && report.applicable === 86 && report.parsed === report.applicable + report.excludedSingapore + report.excludedBrunei, 'parsed 108 = 86 Malaysian + 8 Singapore + 14 Brunei');
+ok(report.converted === 57 && report.unresolved === 29 && report.converted + report.unresolved === report.applicable, 'Malaysian applicable = converted + unresolved (86 = 57 + 29)');
+ok(report.exceptions.every((e) => !ids.includes(e.id) && e.reason) && new Set(report.exceptions.map((e) => e.id)).size === 29, 'no area is both converted and unresolved; each unresolved area has a reason');
+
+// Country scope: Singapore- and Brunei-administered areas stay in the report, not in the Malaysia layers
+const exclIds = report.excluded.map((e) => e.id);
+ok(report.excluded.length === 22 && report.excluded.every((e) => e.evidence && ['Singapore', 'Brunei'].includes(e.administeredBy)), '22 excluded areas, each with its administering state and the evidence');
+ok(exclIds.every((id) => !ids.includes(id) && !report.exceptions.some((e) => e.id === id)), 'no excluded area is in a Malaysia layer or in the Malaysian unresolved list');
+ok(report.excluded.filter((e) => e.administeredBy === 'Singapore').every((e) => /^WS/.test(e.id)) && report.excluded.filter((e) => e.administeredBy === 'Brunei').every((e) => /^WB/.test(e.id)), 'Singapore exclusions are WS-series, Brunei exclusions WB-series');
+ok(administration({ id: 'WBD507', text: 'x', restriction: '', remarks: 'Controlling Authority: DCA Brunei.', name: '' }).state === 'BN' && administration({ id: 'WBR601', text: 'KUCHING', restriction: '', remarks: 'Controlling Authority: KUCHING RADAR', name: 'KUCHING' }).state === 'MY', 'an explicit Brunei controlling authority excludes; a WB-prefixed Malaysian area (Kuching) is kept');
+ok(['WBR508', 'WBR518', 'WBD505', 'WBR501'].every((id) => !exclIds.includes(id)) && ['WSD11', 'WSR2', 'WBP504', 'WBD507', 'WBR560/520'].every((id) => exclIds.includes(id)), 'Sabah/Sarawak WB areas are Malaysian; Singapore and Brunei examples are excluded');
+
+// Regression: the 61 first-pass geometries must not change (a new parser rule that moves one fails here)
+const baseline = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests/fixtures/my-enr51-baseline-geometry.json'), 'utf8')).geometry;
+const hashOf = (g) => crypto.createHash('sha256').update(JSON.stringify(g)).digest('hex').slice(0, 16);
+const nowHash = Object.fromEntries(all.map(({ f }) => [f.properties.id, hashOf(f.geometry)]));
+const changed = Object.keys(baseline).filter((id) => nowHash[id] && nowHash[id] !== baseline[id]);
+const gone = Object.keys(baseline).filter((id) => !nowHash[id] && !exclIds.includes(id));
+ok(Object.keys(baseline).length === 61 && changed.length === 0 && gone.length === 0, 'all 42 baseline Malaysian geometries are byte-identical and none was dropped (' + changed.concat(gone).join(',') + ')');
+const recovered = ['WMR105', 'WMR106', 'WMR108', 'WMR225A', 'WMR225B', 'WMR302A', 'WMR418', 'WBR508', 'WBR509', 'WBR510', 'WBR511', 'WBR518', 'WBR601', 'WBR603', 'WBR604'];
+ok(recovered.every((id) => nowHash[id] && !baseline[id]), 'the 15 newly recovered areas are present');
 ok(all.every(({ f }) => f.properties.vertical && f.properties.upper && f.properties.lower && f.properties.description.includes('Upper')), 'every area keeps its published vertical limits');
 const rings = all.map(({ f }) => f.geometry.coordinates[0]);
 ok(rings.every((r) => r.length >= 4 && r[0][0] === r.at(-1)[0] && r[0][1] === r.at(-1)[1]), 'every ring is closed');
@@ -50,7 +80,7 @@ ok(rings.every((r) => r.reduce((s, p, i) => (i ? s + (r[i - 1][0] * p[1] - p[0] 
 // Archive
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/my/manifest.json'), 'utf8'));
 const region = manifest.regions.find((r) => r.id === 'my-enr51');
-ok(!!region && region.cells === 61 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'prohibited,restricted,danger', 'the manifest registers my-enr51 with 61 areas and the three classes');
+ok(!!region && region.cells === 57 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'prohibited,restricted,danger', 'the manifest registers my-enr51 with 57 areas and the three classes');
 ok(region.classes.map((c) => c.verdict).join() === 'prohibited,restricted,danger' && region.source.effective === '2026-11-03', 'classes carry their P/R/D verdict; the edition date is recorded');
 const bytes = fs.readFileSync(path.join(ROOT, 'public/data', region.file));
 const arch = new PMTiles({ getKey: () => region.file, getBytes: async (o, n) => ({ data: Uint8Array.from(bytes.subarray(o, o + n)).buffer }) });
@@ -72,8 +102,10 @@ for (const { k, f } of all) {
   const zs = w ? await zonesInArchive(arch, region.maxZoom, w[1], w[0]) : [];
   if (!zs.length) { lost++; console.log('  lost ' + f.properties.id); } else if (!zs.some((z) => z.c === k)) { wrong++; console.log('  wrong class ' + f.properties.id); }
 }
-ok(lost === 0 && wrong === 0, 'every one of the 61 converted areas is present in the archive at its max zoom with its own class');
+ok(lost === 0 && wrong === 0, 'every one of the 57 converted areas is present in the archive at its max zoom with its own class');
 ok((await zonesInArchive(arch, region.maxZoom, 3.139, 101.687)).length === 0, 'central Kuala Lumpur, outside every converted polygon, has no zone (unknown, not permitted)');
+ok((await zonesInArchive(arch, region.maxZoom, 4.8889, 114.8342)).length === 0, 'the Brunei-administered Jerudong area (WBP504) is absent from the Malaysia archive');
+ok((await zonesInArchive(arch, region.maxZoom, 1.38, 103.67)).length === 0, 'the Singapore-administered Pasir Laba area (WSD11) is absent from the Malaysia archive');
 ok(!region.boundary && region.partialCoverage === true, 'no coverage boundary and marked partial: outside the polygons nothing is claimed');
 
 // Wording

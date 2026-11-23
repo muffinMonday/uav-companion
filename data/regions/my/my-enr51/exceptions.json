@@ -4,23 +4,26 @@
     "edition": "2026-11-03",
     "htmlSha256": "aba82af4d88b096cb0aa81767fb0212f1d856eea9e784343fd68974dda5d840a",
     "htmlBytes": 241764,
-    "extractedAt": "2026-11-23T16:16:22.525Z"
+    "extractedAt": "2026-11-23T16:42:52.170Z"
   },
-  "applicable": 108,
-  "converted": 61,
-  "unresolved": 47,
+  "parsed": 108,
+  "excludedSingapore": 8,
+  "excludedBrunei": 14,
+  "applicable": 86,
+  "converted": 57,
+  "unresolved": 29,
   "counts": {
     "prohibited": {
-      "applicable": 7,
-      "converted": 5
+      "applicable": 4,
+      "converted": 3
     },
     "restricted": {
-      "applicable": 65,
-      "converted": 25
+      "applicable": 63,
+      "converted": 39
     },
     "danger": {
-      "applicable": 36,
-      "converted": 31
+      "applicable": 19,
+      "converted": 15
     }
   },
   "notAreas": [
@@ -29,16 +32,145 @@
     "LINK ROUTE ECHO 1 TRANSITING CORRIDOR FOR WBD505 Bounded by ",
     "LINK ROUTE ECHO 2 TRANSITING CORRIDOR WBD505 Bounded by stra"
   ],
+  "excluded": [
+    {
+      "id": "WBP503",
+      "class": "P",
+      "administeredBy": "Brunei",
+      "evidence": "Controlling Authority: HM Sultan's Flight (Brunei), Sultan's Palace"
+    },
+    {
+      "id": "WBP504",
+      "class": "P",
+      "administeredBy": "Brunei",
+      "evidence": "named Brunei site: JERUDONG"
+    },
+    {
+      "id": "WBP506",
+      "class": "P",
+      "administeredBy": "Brunei",
+      "evidence": "Controlling Authority: HM Sultan's Flight (Brunei), Sultan's Palace"
+    },
+    {
+      "id": "WSR2",
+      "class": "R",
+      "administeredBy": "Singapore",
+      "evidence": "WS-series Singapore designator; Tengah Approach / Singapore ATCC"
+    },
+    {
+      "id": "WBR560/520",
+      "class": "R",
+      "administeredBy": "Brunei",
+      "evidence": "Controlling Authority: Brunei Shell Petroleum Co Sdn. Bhd."
+    },
+    {
+      "id": "WSD11",
+      "class": "D",
+      "administeredBy": "Singapore",
+      "evidence": "WS-series Singapore designator"
+    },
+    {
+      "id": "WSD13",
+      "class": "D",
+      "administeredBy": "Singapore",
+      "evidence": "WS-series Singapore designator"
+    },
+    {
+      "id": "WSD14",
+      "class": "D",
+      "administeredBy": "Singapore",
+      "evidence": "WS-series Singapore designator"
+    },
+    {
+      "id": "WSD15",
+      "class": "D",
+      "administeredBy": "Singapore",
+      "evidence": "WS-series Singapore designator"
+    },
+    {
+      "id": "WSD20",
+      "class": "D",
+      "administeredBy": "Singapore",
+      "evidence": "WS-series Singapore designator"
+    },
+    {
+      "id": "WSD44",
+      "class": "D",
+      "administeredBy": "Singapore",
+      "evidence": "WS-series Singapore designator"
+    },
+    {
+      "id": "WSD45",
+      "class": "D",
+      "administeredBy": "Singapore",
+      "evidence": "WS-series Singapore designator"
+    },
+    {
+      "id": "WBD507",
+      "class": "D",
+      "administeredBy": "Brunei",
+      "evidence": "Controlling Authority: DCA Brunei"
+    },
+    {
+      "id": "WBD508",
+      "class": "D",
+      "administeredBy": "Brunei",
+      "evidence": "published coordinates lie in Brunei Temburong district"
+    },
+    {
+      "id": "WBD509",
+      "class": "D",
+      "administeredBy": "Brunei",
+      "evidence": "named Brunei site: BINTURAN"
+    },
+    {
+      "id": "WBD509A",
+      "class": "D",
+      "administeredBy": "Brunei",
+      "evidence": "named Brunei site: BUKIT AGOK"
+    },
+    {
+      "id": "WBD510",
+      "class": "D",
+      "administeredBy": "Brunei",
+      "evidence": "named Brunei site: LUMUT RANGE"
+    },
+    {
+      "id": "WBD511",
+      "class": "D",
+      "administeredBy": "Brunei",
+      "evidence": "named Brunei site: BERAKAS"
+    },
+    {
+      "id": "WBD512",
+      "class": "D",
+      "administeredBy": "Brunei",
+      "evidence": "named Brunei site: BERAKAS"
+    },
+    {
+      "id": "WBD513",
+      "class": "D",
+      "administeredBy": "Brunei",
+      "evidence": "named Brunei site: TUTONG"
+    },
+    {
+      "id": "WBD514",
+      "class": "D",
+      "administeredBy": "Brunei",
+      "evidence": "published coordinates lie in Brunei Temburong district"
+    },
+    {
+      "id": "WBD515",
+      "class": "D",
+      "administeredBy": "Brunei",
+      "evidence": "published coordinates lie in Brunei Tutong/Belait districts"
+    }
+  ],
   "exceptions": [
     {
       "id": "WMP228",
       "class": "P",
       "reason": "circle combined with a coastline, border or other boundary reference"
-    },
-    {
-      "id": "WBP503",
-      "class": "P",
-      "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
     },
     {
       "id": "WMR102B",
@@ -51,39 +183,14 @@
       "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
     },
     {
-      "id": "WMR105",
-      "class": "R",
-      "reason": "arc centred on a navaid with no stated coordinates"
-    },
-    {
-      "id": "WMR106",
-      "class": "R",
-      "reason": "arc without stated centre coordinates, radius or direction"
-    },
-    {
       "id": "WMR107",
       "class": "R",
       "reason": "arc area with a coastline, border or airspace-boundary reference"
     },
     {
-      "id": "WMR108",
-      "class": "R",
-      "reason": "arc centred on a navaid with no stated coordinates"
-    },
-    {
       "id": "WMR225",
       "class": "R",
       "reason": "arc area with a coastline, border or airspace-boundary reference"
-    },
-    {
-      "id": "WMR225A",
-      "class": "R",
-      "reason": "arc without stated centre coordinates, radius or direction"
-    },
-    {
-      "id": "WMR225B",
-      "class": "R",
-      "reason": "arc without stated centre coordinates, radius or direction"
     },
     {
       "id": "WMR226",
@@ -109,11 +216,6 @@
       "id": "WMR240B",
       "class": "R",
       "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
-    },
-    {
-      "id": "WMR302A",
-      "class": "R",
-      "reason": "open path of three points (shape not defined)"
     },
     {
       "id": "WMR403",
@@ -161,44 +263,9 @@
       "reason": "arc area with a coastline, border or airspace-boundary reference"
     },
     {
-      "id": "WMR418",
-      "class": "R",
-      "reason": "self-intersecting ring"
-    },
-    {
       "id": "WMR419",
       "class": "R",
       "reason": "boundary refers to a coastline, border, navaid, airspace boundary or arc without stated centre/direction"
-    },
-    {
-      "id": "WSR2",
-      "class": "R",
-      "reason": "circle combined with a coastline, border or other boundary reference"
-    },
-    {
-      "id": "WBR508",
-      "class": "R",
-      "reason": "arc without stated centre coordinates, radius or direction"
-    },
-    {
-      "id": "WBR509",
-      "class": "R",
-      "reason": "arc without stated centre coordinates, radius or direction"
-    },
-    {
-      "id": "WBR510",
-      "class": "R",
-      "reason": "arc without stated centre coordinates, radius or direction"
-    },
-    {
-      "id": "WBR511",
-      "class": "R",
-      "reason": "arc without stated centre coordinates, radius or direction"
-    },
-    {
-      "id": "WBR518",
-      "class": "R",
-      "reason": "arc without stated centre coordinates, radius or direction"
     },
     {
       "id": "WBR519",
@@ -213,7 +280,7 @@
     {
       "id": "WBR523",
       "class": "R",
-      "reason": "arc without stated centre coordinates, radius or direction"
+      "reason": "arc endpoints are not on the stated radius"
     },
     {
       "id": "WBR524",
@@ -222,21 +289,6 @@
     },
     {
       "id": "WBR525",
-      "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
-    },
-    {
-      "id": "WBR601",
-      "class": "R",
-      "reason": "self-intersecting ring"
-    },
-    {
-      "id": "WBR603",
-      "class": "R",
-      "reason": "arc area with a coastline, border or airspace-boundary reference"
-    },
-    {
-      "id": "WBR604",
       "class": "R",
       "reason": "arc area with a coastline, border or airspace-boundary reference"
     },
@@ -259,11 +311,6 @@
       "id": "WMD421",
       "class": "D",
       "reason": "open path of three points (shape not defined)"
-    },
-    {
-      "id": "WBD513",
-      "class": "D",
-      "reason": "self-intersecting ring"
     }
   ]
 }
