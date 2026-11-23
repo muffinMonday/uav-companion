@@ -36,7 +36,7 @@ w = await check('1.3875, 103.7090');
 ok(/No-fly zone/.test(w.text) && / more/.test(w.text), 'Tengah: several overlapping zones are all listed');
 w = await check('1.2800, 103.8600');
 ok(/Not inside a mapped no-fly zone/.test(w.text) && w.official, 'Marina Bay: outside the mapped zones, official map still offered');
-w = await check('1.4927, 103.7414');
+w = await check('1.5600, 103.7800'); // north Johor Bahru (the centre, 1.4927 103.7414, lies inside the Malaysia WMP228 prohibited area, approximate layer)
 ok(/No data for this area/i.test(w.text) && !w.official, 'Johor Bahru: no data, and no Singapore map button');
 w = await check('30.5928, 114.3055');
 ok(/zone/i.test(w.text) && !w.official, 'Wuhan still gets the Hubei check, without the OneMap button');

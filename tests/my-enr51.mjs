@@ -27,10 +27,20 @@ for (const [label, vp] of [['desktop', { width: 1300, height: 850 }], ['phone', 
   ok(/Danger area: WMD224/.test(t) && /Caution/.test(t) && !/No-fly zone/.test(t), `${label}: inside WMD224 shows a danger area as a caution`);
   t = await check('3.3000, 102.2000'); // outside every polygon, in Malaysia
   ok(/No data for this area/i.test(t), `${label}: a Malaysian point outside every polygon is unknown, not clear`);
-  t = await check('1.4850, 103.7600'); // Johor Bahru
-  ok(/No data for this area/i.test(t), `${label}: Johor Bahru is unchanged (no data)`);
+  t = await check('1.4850, 103.7600'); // central Johor Bahru, inside the 2 NM Bukit Serene prohibited area WMP228 (its southern edge follows the coast: approximate)
+  ok(/Potential prohibited airspace — approximate boundary/.test(t) && /WMP228/.test(t), `${label}: Johor Bahru centre is potentially prohibited (WMP228, approximate boundary)`);
+  t = await check('1.5600, 103.7800'); // north Johor Bahru, outside every polygon
+  ok(/No data for this area/i.test(t), `${label}: a Johor Bahru point outside every polygon is unchanged (no data)`);
   t = await check('1.2800, 103.8600'); // Marina Bay
   ok(/Not inside a mapped no-fly zone/.test(t), `${label}: Singapore verdicts are unchanged`);
+  t = await check('1.6661, 102.7367'); // inside WMR240B only: an approximate (reconstructed) restricted boundary
+  ok(/Potential restricted airspace — approximate boundary/.test(t) && /conservatively reconstructed from CAAM ENR 5.1/.test(t) && /verify with current CAAM information/.test(t) && !/^Restricted area/m.test(t), `${label}: inside an approximate R boundary shows the uncertainty warning, not an exact verdict`);
+  t = await check('5.7000, 101.3436'); // inside WMD419 only: approximate danger
+  ok(/Potential danger airspace — approximate boundary/.test(t) && !/Danger area: WMD419/.test(t), `${label}: inside an approximate D boundary is worded as potential danger airspace`);
+  const line = (theme) => p.evaluate((th) => { document.documentElement.setAttribute('data-theme', th); return getComputedStyle(document.documentElement).getPropertyValue('--zone-approx-line').trim(); }, theme);
+  const [lt, dk] = [await line('light'), await line('dark')];
+  ok(!!lt && !!dk && lt !== dk, `${label}: the approximate-zone outline token differs between the light and dark themes (${lt} / ${dk})`);
+  await p.evaluate(() => document.documentElement.removeAttribute('data-theme'));
   await ctx.close();
 }
 ok(errs.length === 0, 'no console or page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));

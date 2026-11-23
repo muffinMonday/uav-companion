@@ -52,7 +52,7 @@ function readLayers(dir, meta) {
     const perZoneText = !layer.points && texts.size > 1; // e.g. restricted areas, each with its own height limit
     classes.push({
       id: layer.id, label: layer.label, color: layer.color, severity: layer.severity ?? 9, points: !!layer.points, summary: layer.summary ?? '',
-      owner: m.owner, updated: m.updated, published: m.published, count: items.length, ...(layer.verdict && { verdict: layer.verdict }),
+      owner: m.owner, updated: m.updated, published: m.published, count: items.length, ...(layer.verdict && { verdict: layer.verdict }), ...(layer.approximate && { approximate: true }),
       ...(!perZoneText && texts.size === 1 && { description: [...texts][0] }),
     });
     for (const x of items) {

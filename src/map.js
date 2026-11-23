@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import { leafletLayer, PolygonSymbolizer } from 'protomaps-leaflet';
 import { regionUrl, MAX_VIEW_BOUNDS } from './config.js';
+import { zonePaintSpec, approxOutline, hatchTile } from './zone-style.js';
 import { retainArchive, releaseArchive } from './pmtiles-source.js';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -70,6 +71,12 @@ export function createMap(initial = {}) {
   return { map, switchBase, setScaleUnits };
 }
 
+/** Verified classes are a flat fill; an approximate class is stripes in its colour with an uncertainty outline (zone-style.js). */
+const classSymbolizer = (c) => {
+  const spec = zonePaintSpec(c, approxOutline());
+  return spec.kind === 'hatch' ? new PolygonSymbolizer({ pattern: hatchTile(spec.stripe), fill: spec.stripe, stroke: spec.outline, width: 1.6 }) : new PolygonSymbolizer({ fill: spec.fill });
+};
+
 /** A region's rendering layer exists only while the region meets the viewport. Its archive is held in memory meanwhile and released
  *  (evicted after a grace period; the Cache API copy stays) once the region has left the view. */
 export function createZones(map, regions) {
@@ -84,7 +91,7 @@ export function createZones(map, regions) {
     // Opaque fill; transparency is applied to the whole layer so adjacent cells do not darken at shared edges.
     // A region with named classes (Singapore) is drawn class by class, in the order of its classes, each in its own colour.
     paintRules: r.classes
-      ? r.classes.filter((c) => !c.points).map((c) => ({ dataLayer: 'zones', filter: (zoom, f) => f.props.c === c.id, symbolizer: new PolygonSymbolizer({ fill: c.color }) }))
+      ? r.classes.filter((c) => !c.points).map((c) => ({ dataLayer: 'zones', filter: (zoom, f) => f.props.c === c.id, symbolizer: classSymbolizer(c) }))
       : [{ dataLayer: 'zones', symbolizer: new PolygonSymbolizer({ fill: zoneFill(r.semantics) }) }],
     labelRules: [],
     attribution: `Zones: ${r.source.authority}`,

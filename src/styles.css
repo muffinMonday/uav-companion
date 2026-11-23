@@ -3,6 +3,7 @@
   --bg:#ffffff; --surface:#ffffff; --surface-2:#f2f5f8; --fg:#14202b; --muted:#5b6b79; --line:#e0e7ee;
   --accent:#0e7c8f; --accent-fg:#ffffff; --accent-soft:color-mix(in srgb,var(--accent) 12%,transparent);
   --danger:#c62828; --zone:#2aa6b8; --zone-restrict:#d64545; /* the two zone fills: map.js and the legend read them from here */
+  --zone-approx-line:#6a1b9a; /* outline of an approximate (reconstructed) zone; never green. zone-style.js */
   --info:#1a73e8; /* the "you are here" blue: the dot below and the accuracy ring in locate.js */
   --danger-solid:#c62828; --on-danger:#ffffff; /* a fill behind white text; --danger is for text and outlines */
   --control-border:#7b8b99; /* the visible edge of a field or switch (3:1 on --surface-2); --line is for dividers */
@@ -592,6 +593,7 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .pop .zone-list li{background-color:color-mix(in srgb,var(--surface-2) calc(var(--pop-alpha) * 100%),transparent)}
 .zone-name{font-size:var(--fs-small)}
 .zone-dot{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:50%;vertical-align:-1px}
+.zone-dot.approx,.mean-swatch.approx,.legend i.approx{outline:1.5px solid var(--zone-approx-line);outline-offset:-1px}
 .zone-rule,.zone-src{display:block;margin-top:2px;font-size:var(--fs-meta);color:var(--muted)}
 .check-note{margin:8px 0 0;padding:6px 10px;border-radius:10px;background:var(--accent-soft);font-size:var(--fs-small)}
 .official-link{display:block;margin-top:8px;text-align:center}
@@ -1099,6 +1101,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
   --rar-common:#8a97a3; --rar-rare:#3b82c4; --rar-epic:#8a54c9; --rar-legendary:#d99a16;
 }
 :root[data-theme="dark"] .base-tiles{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9)} /* dark basemap: the light tiles, inverted; only the base layer carries .base-tiles (zones are another layer) */
+:root[data-theme="dark"]{--zone-approx-line:#d2a8ff}
 :root[data-theme="dark"]{--rank-9:#9a70dc} /* the only rank colour under 3:1 against the dark surface (2.8 to 4.4). On the light surface ranks 1, 2, 4, 5, 6 and 10 are 2.4 to 3.0: the thin --rank-edge outline carries the 3:1 there, the hues stay */
 .rank-badge{--rb:22px;display:inline-flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box;width:var(--rb);height:var(--rb);border-radius:50%;border:max(2px,calc(var(--rb)/10)) solid var(--rank,var(--rank-1));background:var(--surface);color:var(--fg);font-weight:var(--fw-bold);font-size:calc(var(--rb)*.42);line-height:1}
 .rank-badge{box-shadow:0 0 0 1px var(--rank-edge)}

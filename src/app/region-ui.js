@@ -1,4 +1,5 @@
 import { zoneFill } from '../map.js';
+import { swatchBackground } from '../zone-style.js';
 import { MEANINGS, SELECTED_SOURCE_MEANING, selectedProviders, snapshotText, regionNotice } from '../legends.js';
 import { regionLabel } from './region-labels.js';
 import { countryGroups, countryPicker } from './country-menu.js';
@@ -28,9 +29,9 @@ export function initRegionUI({ map, panel, dash, index, regions }) {
 export function renderRegionInfo({ index, regions }) {
   const legend = $('legend');
   const meanings = { allow: [zoneFill('allow'), MEANINGS.allow.text], restrict: [zoneFill('restrict'), MEANINGS.restrict.text] }; // the wording is shared with the explanation beside each verdict (legends.js)
-  const addLegend = (colour, text) => { const row = document.createElement('div'); const sw = document.createElement('i'); sw.style.background = colour; row.append(sw, text); legend.append(row); };
+  const addLegend = (colour, text, approx = false) => { const row = document.createElement('div'); const sw = document.createElement('i'); sw.style.background = colour; if (approx) sw.className = 'approx'; row.append(sw, text); legend.append(row); };
   for (const r of regions.filter((x) => x.classes)) {
-    for (const c of r.classes) addLegend(c.color, c.points ? `${c.label}: where flying is allowed (a pin on the map).` : `${c.label}.`);
+    for (const c of r.classes) addLegend(swatchBackground(c), c.points ? `${c.label}: where flying is allowed (a pin on the map).` : `${c.label}.`, !!c.approximate);
     const p = document.createElement('div'); p.className = 'legend-note'; p.textContent = `${r.name}: ${r.source.authority}, updated ${r.source.effective}. Approximate: not in a zone here does not mean flying is allowed. Check the official map.`; legend.append(p);
   }
   const selected = regions.filter(r => r.sourceConfidence?.mode === 'selected-source');

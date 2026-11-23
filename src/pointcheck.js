@@ -3,7 +3,8 @@ import { zonesInArchive } from './zones.js';
 import { regionUrl } from './config.js';
 import { withArchive } from './pmtiles-source.js';
 import { el, statusEl, disclaimer } from './cards.js';
-import { zoneExplanation, regionNotice } from './legends.js';
+import { zoneExplanation, regionNotice, approximateNotice } from './legends.js';
+import { swatchBackground } from './zone-style.js';
 
 const boundaries = new Map();
 let regions = [];
@@ -115,7 +116,12 @@ function wording(res) {
       const zs = sortedZones(res);
       const worst = classOf(r, zs[0]);
       const kinds = [...new Set(zs.map((z) => classOf(r, z)?.label ?? z.c))];
-      const verdict = worst?.verdict; // ICAO P / R / D areas (Malaysia): prohibited, restricted (conditions) and danger (caution) are not the same thing
+      const verdict = worst?.verdict;
+      if (worst?.approximate) { // reconstructed boundary: potential P/R/D, never the exact verdict (verified zones sort first, so an overlapping verified zone has already won)
+        const noun = { prohibited: 'prohibited', restricted: 'restricted', danger: 'danger' }[verdict] ?? 'restricted';
+        return [verdict === 'danger' ? 'unk' : 'no', `Potential ${noun} airspace — approximate boundary: ${zs[0].n || worst.label}`, `${approximateNotice(verdict)} ${kinds.length > 1 ? `Also inside: ${kinds.slice(1).join('; ')}. ` : ''}`.trim()];
+      }
+      // ICAO P / R / D areas (Malaysia): prohibited, restricted (conditions) and danger (caution) are not the same thing
       if (verdict === 'prohibited') return ['no', `Prohibited area: ${zs[0].n || worst.label}`, `Flight is not permitted here, per ${r.source.authority}. ${kinds.length > 1 ? `Also inside: ${kinds.slice(1).join('; ')}. ` : ''}Check the current official publication before flying.`];
       if (verdict === 'restricted') return ['no', `Restricted area: ${zs[0].n || worst.label}`, `Flight is allowed only if the published conditions are met (times, permission or purpose; see the rule below). ${kinds.length > 1 ? `Also inside: ${kinds.slice(1).join('; ')}. ` : ''}Check the current official publication before flying.`];
       if (verdict === 'danger') return ['unk', `Danger area: ${zs[0].n || worst.label}`, `Activities dangerous to aircraft may take place here at the published times. Caution: this is a warning area, not a ban. Check the current official publication and NOTAMs before flying.`];
@@ -144,7 +150,7 @@ function zoneList(res) {
   for (const z of sortedZones(res)) {
     const c = classOf(r, z);
     const li = el('li');
-    const dot = el('i', 'zone-dot'); dot.style.background = c?.color ?? '#999';
+    const dot = el('i', 'zone-dot' + (c?.approximate ? ' approx' : '')); dot.style.background = swatchBackground(c);
     const head = el('div', 'zone-name'); head.append(dot, el('strong', '', z.n || c?.label || 'Zone'), ` · ${c?.label ?? z.c}`);
     li.append(head, el('small', 'zone-rule', z.d || c?.description || c?.summary || ''));
     if (c) li.append(el('small', 'zone-src', `${c.owner} · updated ${dmy(c.updated)}`));

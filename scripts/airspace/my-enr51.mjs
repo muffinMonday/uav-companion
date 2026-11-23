@@ -1,7 +1,9 @@
 // Malaysia CAAM eAIP ENR 5.1 (Prohibited, Restricted, Danger areas) -> data/regions/my/my-enr51/layers/*.geojson.
 // Usage: node scripts/airspace/my-enr51.mjs [--fetch] [--html <file>] [--edition 2026-11-03]
-// Only geometry that the published text defines deterministically is emitted: coordinate polygons, circles (geodesic), lat/long boxes and
-// arcs with a stated centre, radius and direction. Everything else is listed in exceptions.json with a one-line reason; nothing is guessed.
+// Verified geometry is what the published text defines deterministically: coordinate polygons, circles (geodesic), lat/long boxes and arcs with a stated
+// centre and radius. An arc whose direction is not stated is read as the shorter arc, and that reading is emitted only for areas listed in ARC_VERIFIED, i.e.
+// checked against the official CAAM chart; any other such area is unresolved. Everything else is listed in exceptions.json with a one-line reason.
+// Areas that need a coastline or border are not verified geometry: scripts/airspace/my-enr51-approx.mjs builds them as a separate, flagged approximate layer.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -278,7 +280,7 @@ function arcPolygon(text, cs) {
     pts.push(...arcPoints(ctr.p, rM, verts[i].p, verts[i + 1].p, dir));
   }
   if (!pts.length || !/\barc\b/i.test(text)) return { reason: 'arc area not reconstructable' };
-  return { ring: ring(pts), kind: 'arc-polygon', ...(inferred ? { note: 'arc direction not published: the shorter arc (<= 170 degrees) was taken' } : {}) };
+  return { ring: ring(pts), kind: 'arc-polygon', ...(inferred ? { inferredArc: true, note: 'arc direction not published: the shorter arc (<= 170 degrees) was taken' } : {}) };
 }
 
 // ---- table parsing ----
@@ -324,19 +326,28 @@ const UNRESOLVED_NOTES = {
   WMP228: ['external-reference', 'southern border coincides with the coastline of South Johor'],
   WMR239A: ['external-reference', 'boundary follows the coastline'], WMR239B: ['external-reference', 'boundary follows the coastline'],
   WMR240A: ['external-reference', 'boundary follows the coastline'], WMR240B: ['external-reference', 'boundary follows the coastline'],
-  WMR403: ['external-reference', 'coastline (and Alor Star / Butterworth control-zone boundaries) between published points'],
-  WMR404: ['external-reference', 'coastline, railway line, canal and the Malaysia/Thailand border'],
-  WMR405: ['external-reference', 'Malaysia/Thailand border and the border danger area'], WMR406: ['external-reference', 'Malaysia/Thailand border and the border danger area'],
-  WMR407: ['external-reference', 'Malaysia/Thailand border between published points'], WMR408: ['external-reference', 'roads, the Malaysia/Thailand border and the border danger area'],
+  WMR403: ['external-reference', 'coastline plus the Alor Star and Butterworth control-zone boundaries, which CAAM does not publish as coordinates here (not reconstructed)'],
+  WMR404: ['external-reference', 'railway line, a canal, a runway-centred arc and the coastline between published points (not reconstructed: no defensible conservative shape)'],
+  WMR405: ['external-reference', 'the permanent border danger area, whose boundary is not defined in ENR 5.1 (not reconstructed)'], WMR406: ['external-reference', 'the permanent border danger area (not defined in ENR 5.1) and the Butterworth TMA boundary (not reconstructed)'],
+  WMR407: ['external-reference', 'Malaysia/Thailand border between published points (approximate layer)'], WMR408: ['external-reference', 'two public roads, the Butterworth/Alor Star boundaries and the border danger area (not reconstructed)'],
   WMR416A: ['external-reference', 'coastline'], WMR416B: ['external-reference', 'coastline'], WMR416C: ['external-reference', 'coastline'],
   WMR419: ['external-reference', 'coastline and the western boundary of WMR416C (itself coastline-bounded)'],
-  WBR524: ['external-reference', 'coastline joining two published points'], WBR525: ['external-reference', 'coastline joining two published points'],
+  WBR524: ['external-reference', 'coastline joining two published points'], WBR525: ['external-reference', 'coastline joining two published points; the closing line at 055400N 1163200E does not meet the 20 NM arc end at 1162159E (not reconstructed)'],
   WMD419: ['external-reference', 'Malaysia/Thailand border'],
   WMR225: ['ambiguous', 'the straight-line coordinates contradict the arc endpoints (020200N 1031224E vs 1032224E; 020730N 1032224E vs 1032154E) and the 6 NM arc endpoint is not on 6 NM'],
   WMR226: ['ambiguous', 'two arcs with no stated connecting lines or closure'],
   WBR523: ['ambiguous', 'the 40 NM arc starts at 055400N 1152200E, 37.9 NM from the stated centre; closing lines not fully stated'],
   WMD421: ['ambiguous', 'three points with no closing statement or shape'],
 };
+
+// Arc direction not published (shorter arc taken): each area below was overlaid on the official CAAM chart (the AIP's "Prohibited, Restricted and Danger Areas" charts,
+// vector PDFs georeferenced from the chart's graticule ticks; checked 2026-11-24) and the shorter arc matches the depicted hatched area.
+const CHART_KL = 'CAAM AIP ENR 6 chart "Prohibited, Restricted and Danger Areas - Kuala Lumpur" (ENR 6-7, AMDT 03/2024; graphics/265779.pdf)';
+const CHART_SS = 'CAAM AIP ENR 6 chart "Prohibited, Restricted and Danger Areas - Sabah/Sarawak" (ENR 6-9, AMDT 03/25; graphics/288679.pdf)';
+const ARC_VERIFIED = Object.fromEntries([
+  ...['WMR105', 'WMR106', 'WMR107', 'WMR108', 'WMR225A', 'WMR225B'].map((id) => [id, CHART_KL]),
+  ...['WBR508', 'WBR509', 'WBR510', 'WBR511', 'WBR518', 'WBR519', 'WBR520'].map((id) => [id, CHART_SS]),
+]);
 
 const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
 
@@ -392,6 +403,7 @@ async function main() {
       const cut = subtractPolygon(g.ring, g.exclude);
       if (cut) { g.ring = cut; g.note = 'the published Kerteh CTR is subtracted (ENR 5.1 "excluding KERTEH CTR"; CTR from AD 2 WMKE 2.17)'; } else { g.ring = null; g.reason = 'excluded CTR could not be subtracted'; }
     }
+    if (g.ring && g.inferredArc && !ARC_VERIFIED[r.id]) { g.ring = null; g.reason = 'arc direction not published and not verified against an official CAAM chart'; }
     if (!g.ring) { const [category, detail] = UNRESOLVED_NOTES[r.id] ?? ['unclassified', '']; exceptions.push({ id: r.id, class: r.designation, category, reason: detail ? g.reason + ' [' + detail + ']' : g.reason }); continue; }
     const outer = ccw(g.ring);
     const fail = [];
@@ -406,7 +418,7 @@ async function main() {
     const description = [`Upper ${r.upper}`, `lower ${r.lower || 'n/a'}`].join(', ') + `. ${r.restriction ? r.restriction + '. ' : ''}${r.remarks}`.replace(/\.\s*\./g, '.');
     layers[r.cls].push({
       type: 'Feature',
-      properties: { id: r.id, name: `${r.id}${r.name !== r.id ? ' ' + r.name : ''}`, class: r.designation, upper: r.upper, lower: r.lower, vertical: r.vertical, restriction: r.restriction, remarks: r.remarks, description: description.trim().slice(0, 500), geometryKind: g.kind, ...(g.note ? { geometryNote: g.note } : {}) },
+      properties: { id: r.id, name: `${r.id}${r.name !== r.id ? ' ' + r.name : ''}`, class: r.designation, upper: r.upper, lower: r.lower, vertical: r.vertical, restriction: r.restriction, remarks: r.remarks, description: description.trim().slice(0, 500), geometryKind: g.kind, ...(g.note ? { geometryNote: g.note } : {}), ...(g.inferredArc ? { arcVerifiedAgainst: ARC_VERIFIED[r.id] } : {}) },
       geometry: { type: 'Polygon', coordinates: [outer] },
     });
     checks.push({ id: r.id, kind: g.kind });
@@ -427,4 +439,4 @@ async function main() {
   console.log(JSON.stringify({ parsed, excludedSingapore: report.excludedSingapore, excludedBrunei: report.excludedBrunei, applicable: report.applicable, converted: report.converted, unresolved: report.unresolved, counts: report.counts, layersSha256: outHash.slice(0, 16), notAreas: skipped }, null, 1));
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
-export { subtractPolygon, boundaryRing, administration, resolveRefs, geometryOf, parseRows, circleRing, direct, inverse };
+export { subtractPolygon, boundaryRing, administration, resolveRefs, geometryOf, parseRows, circleRing, direct, inverse, coords, arcPoints, ring, ccw, signedArea, selfIntersects, ARC_VERIFIED, REFS_DOC, EDITION, CACHE };

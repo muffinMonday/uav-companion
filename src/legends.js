@@ -3,6 +3,7 @@
 // Region semantics are never mixed: `allow` regions (China suitable-flight grids) and `restrict` regions (Singapore) mean opposite things for a coloured area, and a point
 // outside the data's coverage says nothing at all. The wording for the two meanings lives here and is also what the map key in Help uses (app/region-ui.js).
 import { el } from './cards.js';
+import { swatchBackground } from './zone-style.js';
 
 /** The two meanings of a coloured zone. `colour` is the CSS variable the map and the key both draw from (styles.css), so the swatch and the map cannot drift apart. */
 export const MEANINGS = {
@@ -13,6 +14,9 @@ export const SELECTED_SOURCE_MEANING = 'Teal: suitable-flight polygons in the se
 
 /** Shown with every zone explanation, for every country: what the data cannot know. */
 export const AIRSPACE_DISCLAIMER = 'UAV Companion displays published baseline airspace boundaries for planning reference only. Temporary restricted areas, NOTAMs, temporary activations and short-notice changes are not tracked. Some permanent zones may apply only under specific conditions. Always consult current official aviation publications and announcements before flying.';
+
+/** Shown when the point is inside an approximate (reconstructed) P/R/D boundary. `verdict`: prohibited | restricted | danger. */
+export const approximateNotice = (verdict) => `This boundary was conservatively reconstructed from CAAM ENR 5.1 because part of the published definition references geographic features for which exact source geometry was unavailable. Treat this location as potentially ${verdict === 'danger' ? 'a danger area' : verdict} and verify with current CAAM information before flying.`;
 
 const day = (iso) => iso?.slice(0, 10) || null;
 const isThirdParty = (r) => r.sourceConfidence?.type === 'third-party-uom-snapshot';
@@ -32,8 +36,8 @@ export function selectedProviders(regions) {
 /** "snapshot 2026-09-22", "snapshots 2026-09-22 to 2026-09-23" or "snapshot date unknown". */
 export const snapshotText = (dates) => !dates.length ? 'snapshot date unknown' : dates.length === 1 ? `snapshot ${dates[0]}` : `snapshots ${dates[0]} to ${dates[dates.length - 1]}`;
 
-const swatch = (colour) => { const i = el('i', 'mean-swatch'); i.style.background = colour; i.setAttribute('aria-hidden', 'true'); return i; };
-const row = (colour, text) => { const r = el('div', 'mean-row'); r.append(swatch(colour), el('span', '', text)); return r; };
+const swatch = (colour, approx) => { const i = el('i', 'mean-swatch' + (approx ? ' approx' : '')); i.style.background = colour; i.setAttribute('aria-hidden', 'true'); return i; };
+const row = (colour, text, approx = false) => { const r = el('div', 'mean-row'); r.append(swatch(colour, approx), el('span', '', text)); return r; };
 
 /** The folded explanation for a check result ({ status, region, zones }), or null when there is nothing region-specific to add. */
 export function zoneExplanation(res) {
@@ -58,7 +62,7 @@ export function zoneExplanation(res) {
     body.append(el('p', '', r.classes.some((c) => c.verdict)
       ? 'Coloured areas are the published airspace designations below; they are not all bans (a restricted area has conditions, a danger area is a warning). Not being inside one does not mean flying is allowed.'
       : 'Red areas on the map are no-fly zones of the kinds below. Not being inside one does not mean flying is allowed.'));
-    for (const c of r.classes) body.append(row(c.color, c.points ? `${c.label}: where flying is allowed (a pin on the map).` : `${c.label}${c.summary ? ': ' + c.summary : '.'}`));
+    for (const c of r.classes) body.append(row(swatchBackground(c), c.points ? `${c.label}: where flying is allowed (a pin on the map).` : `${c.label}${c.summary ? ': ' + c.summary : '.'}`, !!c.approximate));
   } else if (m) body.append(row(`var(${m.colour})`, m.text));
   body.append(el('p', '', res.status === 'outside'
     ? `This spot is inside the ${r.name} data's coverage but not inside a zone. Outside the coverage, or near its edge, the data says nothing.`

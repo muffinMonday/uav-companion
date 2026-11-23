@@ -92,8 +92,10 @@ ok(rings.every((r) => r.reduce((s, p, i) => (i ? s + (r[i - 1][0] * p[1] - p[0] 
 // Archive
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/my/manifest.json'), 'utf8'));
 const region = manifest.regions.find((r) => r.id === 'my-enr51');
-ok(!!region && region.cells === 64 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'prohibited,restricted,danger', 'the manifest registers my-enr51 with 64 areas and the three classes');
-ok(region.classes.map((c) => c.verdict).join() === 'prohibited,restricted,danger' && region.source.effective === '2026-11-03', 'classes carry their P/R/D verdict; the edition date is recorded');
+ok(!!region && region.cells === 76 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'approx-prohibited,approx-restricted,approx-danger,prohibited,restricted,danger', 'the manifest registers my-enr51 with 64 verified + 12 approximate areas and its six classes');
+ok(region.classes.map((c) => c.verdict).join() === 'prohibited,restricted,danger,prohibited,restricted,danger' && region.source.effective === '2026-11-03', 'classes carry their P/R/D verdict; the edition date is recorded');
+ok(region.classes.filter((c) => c.approximate).map((c) => c.id).join() === 'approx-prohibited,approx-restricted,approx-danger' && region.classes.filter((c) => !c.approximate).every((c) => !('approximate' in c)), 'only the three approx-* classes are flagged approximate; verified classes are not');
+ok(region.classes.filter((c) => c.approximate).every((c) => c.severity > Math.max(...region.classes.filter((v) => !v.approximate).map((v) => v.severity))), 'approximate classes sort after every verified class (verified geometry takes precedence)');
 const bytes = fs.readFileSync(path.join(ROOT, 'public/data', region.file));
 const arch = new PMTiles({ getKey: () => region.file, getBytes: async (o, n) => ({ data: Uint8Array.from(bytes.subarray(o, o + n)).buffer }) });
 const inRing = (r, x, y) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) if ((r[i][1] > y) !== (r[j][1] > y) && x < (r[j][0] - r[i][0]) * (y - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) c = !c; return c; };
@@ -119,6 +121,59 @@ ok((await zonesInArchive(arch, region.maxZoom, 3.139, 101.687)).length === 0, 'c
 ok((await zonesInArchive(arch, region.maxZoom, 4.8889, 114.8342)).length === 0, 'the Brunei-administered Jerudong area (WBP504) is absent from the Malaysia archive');
 ok((await zonesInArchive(arch, region.maxZoom, 1.38, 103.67)).length === 0, 'the Singapore-administered Pasir Laba area (WSD11) is absent from the Malaysia archive');
 ok(!region.boundary && region.partialCoverage === true, 'no coverage boundary and marked partial: outside the polygons nothing is claimed');
+
+// Approximate layer: separate from the verified geometry, with provenance
+const approxFiles = ['prohibited', 'restricted', 'danger'].map((k) => [k, JSON.parse(fs.readFileSync(path.join(dir, 'layers', 'approx-' + k + '.geojson'), 'utf8')).features]);
+const approx = approxFiles.flatMap(([k, list]) => list.map((f) => ({ k, f })));
+const prov = JSON.parse(fs.readFileSync(path.join(dir, 'approx-provenance.json'), 'utf8'));
+const APPROX_IDS = ['WBR524', 'WMD419', 'WMP228', 'WMR239A', 'WMR239B', 'WMR240A', 'WMR240B', 'WMR407', 'WMR416A', 'WMR416B', 'WMR416C', 'WMR419'];
+ok(approx.map((x) => x.f.properties.id).sort().join() === APPROX_IDS.join(), '12 approximate areas: ' + APPROX_IDS.join(' '));
+ok(approx.every(({ k, f }) => f.properties.approximate === true && f.properties.geometryKind === 'approximate' && ({ prohibited: 'P', restricted: 'R', danger: 'D' })[k] === f.properties.class), 'approximate features are flagged approximate and keep their P/R/D class');
+ok(approx.every(({ f }) => !ids.includes(f.properties.id)) && all.every(({ f }) => !f.properties.approximate), 'verified and approximate geometry are in separate layers: no area is in both and no verified feature is flagged approximate');
+ok(report.converted === 64 && report.approximation.approximateCount === 12 && report.approximation.approximate.length === 12 && report.approximation.unresolvedAfterApproximation.length === 10 && report.unresolved - 12 === 10, 'counts: 64 verified, 12 approximate, 10 unresolved');
+ok(prov.features.length === 12 && prov.features.every((p) => p.approximate === true && p.confidence === 'approximate' && p.id && p.class && p.caamEdition?.effective === '2026-11-03' && p.anchors?.length >= 1 && p.referencedFeatureTypes?.length && p.secondaryDataset?.name && p.secondaryDataset?.licence && p.method && p.bufferM >= 250 && /Not an official CAAM polygon/.test(p.limitations)), 'every approximate feature carries provenance: id, class, edition, anchors, referenced feature type, secondary dataset, method, flag, limitations');
+const near = (a, b) => Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6;
+ok(prov.features.every((p) => { const ringOf = approx.find((x) => x.f.properties.id === p.id).f.geometry.coordinates[0]; return p.anchors.filter((a) => a.inPolygon).every((a) => ringOf.some((q) => near(q, a.lonlat))); }), 'every CAAM anchor point is preserved exactly in its approximate polygon');
+const kmArea = (r) => { const k = Math.cos((r[0][1] * Math.PI) / 180) * 111.32; return Math.abs(r.reduce((s, p, i) => (i ? s + (r[i - 1][0] * k * p[1] * 110.57 - p[0] * k * r[i - 1][1] * 110.57) : s), 0) / 2); };
+const crosses = (r) => { const n = r.length - 1, o = (a, b, c) => Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])); for (let i = 0; i < n; i++) for (let j = i + 2; j < n; j++) { if (i === 0 && j === n - 1) continue; if (o(r[i], r[i + 1], r[j]) !== o(r[i], r[i + 1], r[j + 1]) && o(r[j], r[j + 1], r[i]) !== o(r[j], r[j + 1], r[i + 1])) return true; } return false; };
+ok(approx.every(({ f }) => { const r = f.geometry.coordinates[0]; return r.length >= 4 && r[0][0] === r.at(-1)[0] && r[0][1] === r.at(-1)[1] && r.flat().every((v) => typeof v === 'number') && r.every(([x, y]) => x > 95 && x < 120 && y > 0 && y < 10) && !crosses(r) && kmArea(r) > 1 && kmArea(r) < 20000; }), 'approximate rings are closed, WGS84 lon/lat, simple (no self-intersection) and neither tiny nor enormous');
+ok(prov.features.every((p) => p.straightLineAreaRatio === null || (p.straightLineAreaRatio >= 0.5 && p.straightLineAreaRatio <= 5)), 'no approximate polygon departs wildly from the straight-line polygon through its CAAM anchors');
+const ambiguous = ['WMR225', 'WMR226', 'WBR523', 'WMD421'];
+ok(ambiguous.every((id) => !ids.includes(id) && !approx.some((x) => x.f.properties.id === id) && report.exceptions.some((e) => e.id === id && e.category === 'ambiguous')), 'the four ambiguous areas (WMR225, WMR226, WBR523, WMD421) stay unresolved: in no layer');
+ok(approx.every(({ f }) => !exclIds.includes(f.properties.id) && !/^WS/.test(f.properties.id)), 'Singapore and Brunei areas are not in the approximate layer');
+ok(['WMR302A', 'WMR302B', 'WBR519', 'WBR520', 'WBR606'].every((id) => ids.includes(id)) && ['WMR239B', 'WMR419', 'WBR524'].every((id) => approx.some((x) => x.f.properties.id === id)), 'Malaysian-administered offshore areas stay included (verified and approximate)');
+let approxLost = 0;
+for (const { k, f } of approx) { const w = witness(f.geometry.coordinates[0]), zs = w ? await zonesInArchive(arch, region.maxZoom, w[1], w[0]) : []; if (!zs.some((x) => x.c === 'approx-' + k)) { approxLost++; console.log('  lost approx ' + f.properties.id); } }
+ok(approxLost === 0, 'every approximate area is in the archive under its approx-* class');
+// the ENR 5.1 arcs whose direction is not published: only areas verified against the official CAAM chart are emitted
+const inferred = all.filter(({ f }) => /arc direction not published/.test(f.properties.geometryNote ?? ''));
+ok(inferred.length === 13 && inferred.every(({ f }) => /CAAM AIP ENR 6 chart/.test(f.properties.arcVerifiedAgainst ?? '')), '13 inferred-direction arcs, each recorded as verified against an official CAAM chart');
+const { ARC_VERIFIED } = await import(url('scripts/airspace/my-enr51.mjs'));
+ok(Object.keys(ARC_VERIFIED).length === 13 && report.exceptions.every((e) => !/not verified against an official CAAM chart/.test(e.reason)), 'all inferred arcs verified; none dropped for lack of verification');
+
+// Styling: verified stays solid; approximate is hatched with an uncertainty outline, in both themes, and never green
+const { zonePaintSpec, swatchBackground } = await import(url('src/zone-style.js'));
+const css = fs.readFileSync(path.join(ROOT, 'src/styles.css'), 'utf8');
+const lightLine = css.match(/:root\{[^}]*--zone-approx-line:(#[0-9a-f]{6})/i)?.[1], darkLine = css.match(/:root\[data-theme="dark"\]\{--zone-approx-line:(#[0-9a-f]{6})/i)?.[1];
+const hue = (h) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b); if (mx === mn) return 0; const d = mx - mn; return ((mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60 + 360) % 360; };
+const notGreen = (h) => hue(h) < 80 || hue(h) > 175;
+const approxClass = region.classes.find((c) => c.id === 'approx-restricted'), verifiedClass = region.classes.find((c) => c.id === 'restricted');
+ok(zonePaintSpec(verifiedClass).kind === 'solid' && zonePaintSpec(verifiedClass).fill === verifiedClass.color, 'a verified class is still a flat fill in its colour');
+ok(zonePaintSpec(approxClass, lightLine).kind === 'hatch' && zonePaintSpec(approxClass, lightLine).stripe === approxClass.color && zonePaintSpec(approxClass, darkLine).outline === darkLine, 'an approximate class is stripes in its P/R/D colour with an outline');
+ok(!!lightLine && !!darkLine && lightLine !== darkLine && notGreen(lightLine) && notGreen(darkLine), 'the uncertainty outline is defined for light and dark themes (different values) and neither is green');
+ok(region.classes.every((c) => notGreen(c.color)), 'no Malaysia class colour is green');
+ok(/repeating-linear-gradient/.test(swatchBackground(approxClass)) && swatchBackground(verifiedClass) === verifiedClass.color, 'the key swatch is striped for approximate classes and flat for verified ones');
+
+// Point-check wording for approximate boundaries
+const za = (c, n) => ({ status: 'inside', region, zones: [{ c, n }] });
+const ar = zoneSummary(za('approx-restricted', 'WMR239A')), ap = zoneSummary(za('approx-prohibited', 'WMR419')), ad = zoneSummary(za('approx-danger', 'WMD419'));
+ok(ar.cls === 'no' && /^Potential restricted airspace — approximate boundary/.test(ar.title) && /conservatively reconstructed from CAAM ENR 5\.1/.test(ar.detail) && /Treat this location as potentially restricted and verify with current CAAM information before flying/.test(ar.detail), 'a point in an approximate R boundary says: potential restricted airspace, approximate boundary, with the reconstruction warning');
+ok(/^Potential prohibited airspace — approximate boundary/.test(ap.title) && /potentially prohibited/.test(ap.detail) && ad.cls === 'unk' && /^Potential danger airspace — approximate boundary/.test(ad.title) && /potentially a danger area/.test(ad.detail), 'the warning is adapted for P and D');
+ok(![ar, ap, ad].some((s) => /^(Prohibited|Restricted|Danger) area/.test(s.title) || /per Civil Aviation/.test(s.detail)), 'an approximate boundary is never reported as an exact CAAM verdict');
+const both = zoneSummary({ status: 'inside', region, zones: [{ c: 'approx-prohibited', n: 'WMR419' }, { c: 'restricted', n: 'WMR101A' }] });
+ok(/^Restricted area: WMR101A/.test(both.title) && /Also inside: Prohibited area \(P\), approximate boundary/.test(both.detail), 'where verified and approximate zones overlap, the verified zone decides, and the approximate one is listed');
+const flat = zoneSummary({ status: 'inside', region: { ...region, classes: region.classes.map(({ approximate, ...c }) => c) }, zones: [{ c: 'approx-restricted', n: 'X' }] });
+ok(!/approximate boundary/.test(flat.title), 'only classes flagged approximate get the approximate wording');
 
 // Wording
 const z = (c, n) => ({ status: 'inside', region, zones: [{ c, n }] });
