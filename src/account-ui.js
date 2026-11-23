@@ -26,7 +26,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   const closeListeners = new Set(); // Review 01 S10.6 (NAV-07): fired whenever hide() runs; see onClose below
   const showListeners = new Set(); // Review 01 S10.9 (outer NAV-07): fired whenever show() runs, from any entry point; see onShow below
   const progression = getProgression(handle.adapter.client); // the one shared instance (also feeds other people's cards, see friends-ui.js)
-  const steam = createSteamCard({ client: handle.adapter.client, onChange: () => { progression.forget(); if (!pop.hidden) render(); } });
+  const steam = createSteamCard({ client: handle.adapter.client, onChange: () => { progression.forget(); if (!pop.hidden) renderAndPlace(); } });
   const steamSlot = el('div'); steam.mount(steamSlot); // kept between redraws so an open form is not lost
   announceSteamReturn(toast); // Steam's sign-in sends the person back here with ?steam=...
 
@@ -143,7 +143,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     let decided = false;
     const finish = async (name) => {
       if (decided) return; decided = true;
-      try { profile = await social.chooseName(name); profileFor = session()?.email ?? profileFor; paintButtons(); if (!pop.hidden) render(); cloud.friends?.reload?.(); if (name) toast('Welcome, ' + name + '.'); }
+      try { profile = await social.chooseName(name); profileFor = session()?.email ?? profileFor; paintButtons(); if (!pop.hidden) renderAndPlace(); cloud.friends?.reload?.(); if (name) toast('Welcome, ' + name + '.'); }
       catch (e) { decided = false; msg.textContent = e.message; msg.hidden = false; return; }
       asking = false; nameDlg.close();
     };
@@ -171,20 +171,38 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     const email = session()?.email;
     if (!email) { profile = null; profileFor = null; paintButtons(); return; }
     if (!force && profileFor === email && profile) return;
-    loading = !profile; if (loading && !pop.hidden) render();
+    loading = !profile; if (loading && !pop.hidden) renderAndPlace();
     try { profile = await social.profile(); profileFor = email; } catch { profile = null; }
     loading = false;
-    paintButtons(); if (!pop.hidden) render();
+    paintButtons(); if (!pop.hidden) renderAndPlace();
     askName();
   }
 
   function place() {
     if (isPhone() || !trigger) { pop.style.top = pop.style.right = pop.style.left = ''; return; }
     const r = trigger.getBoundingClientRect(), inDock = trigger === dockBtn;
+    // Review 01 production hotfix: a third kind of trigger - the new shell's own Profile nav button (rail or bottom bar), passed in by
+    // shell/nav.js via open(from) - is neither headBtn (anchored top-right, inside the panel header) nor dockBtn (anchored bottom-right,
+    // inside the legacy mobile dock); both of those live inside chrome the new shell hides when Profile isn't opened through them, so their
+    // getBoundingClientRect() was zero and the two branches below pushed the popover off-screen. A real, currently-visible trigger can sit
+    // anywhere (left rail, bottom bar), so anchor from its own rect and clamp to the viewport instead of assuming a top-right/bottom-right dock.
+    if (trigger !== headBtn && trigger !== dockBtn) {
+      const w = pop.offsetWidth || 380, h = pop.offsetHeight || 0;
+      pop.style.right = 'auto';
+      pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+      let top = r.bottom + 6;
+      if (top + h > innerHeight - 8) top = Math.max(8, r.top - h - 6); // no room below (e.g. a bottom-nav trigger): open upward instead
+      pop.style.top = top + 'px';
+      return;
+    }
     pop.style.left = 'auto';
     pop.style.right = Math.max(8, inDock ? innerWidth - r.left + 8 : innerWidth - r.right) + 'px';
     pop.style.top = Math.max(8, inDock ? r.top : r.bottom + 6) + 'px';
   }
+  // Production hotfix: a re-render while the popover is already open (profile data finishing its async load, a chosen display name, a
+  // Steam-card change) can change its content height - re-placing afterward keeps it correctly positioned instead of using the shorter
+  // loading-skeleton height captured by the one `place()` call in show(). Harmless no-op for headBtn/dockBtn, whose math never read height.
+  function renderAndPlace() { render(); if (!pop.hidden) place(); }
   function show(from) {
     trigger = from && !from.hidden && from.offsetParent !== null ? from : (panel.isOpen() ? headBtn : dockBtn);
     if (session()) steam.reload();
@@ -213,7 +231,7 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
     if (!session()) { profile = null; profileFor = null; steam.reset(); }
     paintButtons();
     if (session()) loadProfile();
-    if (!pop.hidden) render();
+    if (!pop.hidden) renderAndPlace();
   });
   handle.account = { open: () => show(), close: () => hide(false), reload: () => loadProfile({ force: true }) };
   paintButtons();
@@ -221,6 +239,10 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   if (!session() && handle.hasSignInNotice()) show(); // a failed or cancelled Google return: open the popover so the message is seen (quiet on success)
   return {
     reload: () => loadProfile({ force: true }),
+    // Production hotfix: lets shell/nav.js open the popover anchored on its own, currently visible Profile nav button (rail or bottom
+    // bar) instead of simulating a click on the legacy panel-header/dock account buttons, both of which can be hidden chrome under the
+    // new shell - with no `from`, behaves exactly as before (the headBtn/dockBtn fallback in show()).
+    open: (from) => show(from),
     // Review 01 S10.6 (NAV-07): used only by shell/nav.js, to keep the shell's current destination in sync with the popover closing by its
     // own means (its ✕, Escape, an outside tap, a swipe-down). Harmless if never called.
     isOpen: () => !pop.hidden,

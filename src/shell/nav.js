@@ -205,8 +205,14 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
     }
     if (key === 'profile') {
       const acct = getAccount?.();
-      if (acct) wireAccount(acct);
-      document.getElementById(accountBtnId)?.click();
+      // Production hotfix: open the account popover directly, anchored on this shell's own (always-visible) Profile button, rather than
+      // simulating a click on the legacy panel-header/dock account buttons - both can be hidden chrome under the new shell (the panel
+      // closed, the dock removed entirely), which left account-ui.js's position math computing from a zero-size rect and placing the
+      // popover off-screen on every tier that isn't narrow enough for its own phone-width full-screen CSS (desktop, tablet, the
+      // 601-900px "unfolded foldable" band, which uses bottom placement but is wider than account-ui.js's own phone breakpoint).
+      const profileBtn = buttons.find((b) => b.dataset.dest === 'profile');
+      if (acct) { wireAccount(acct); acct.open(profileBtn); }
+      else document.getElementById(accountBtnId)?.click(); // the account UI hasn't wired up yet; fall back to its own click handler
     }
   }
 

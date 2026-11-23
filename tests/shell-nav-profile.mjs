@@ -63,8 +63,8 @@ const PORT = 5195;
 const vite = await startVite(PORT);
 const b = await chromium.launch({ channel: CHANNEL, headless: true });
 
-async function open({ uid = null, email = null } = {}) {
-  const ctx = await b.newContext({ viewport: { width: 1400, height: 900 } });
+async function open({ uid = null, email = null, viewport = { width: 1400, height: 900 }, hasTouch, isMobile } = {}) {
+  const ctx = await b.newContext({ viewport, hasTouch, isMobile });
   await ctx.route(new RegExp('^' + URL_.replace(/[.]/g, '\\.') + '/'), mockFor(uid));
   await ctx.addInitScript(([ref, sess, dash]) => {
     localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.6, lon: 114.3, zoom: 11 }, basemap: 'osm' }));
@@ -117,6 +117,28 @@ try {
     await p.waitForTimeout(400);
     ok(await p.locator('#account-pop:not([hidden])').count() === 0, 'S10.9 (outer NAV-07): the browser Back button closes the popover');
     ok(await p.getAttribute('#shell-nav [data-dest=map]', 'aria-current') === 'true', 'S10.9: Back on Profile returns to Map as the current destination');
+    await ctx.close();
+  }
+
+  // ---- Production hotfix: Profile, opened from the shell nav button itself, must render fully on-screen and clickable on every tier -
+  // not just `:not([hidden])` (the pre-hotfix bug left it rendered-but-off-screen, which the two checks above alone never caught: the
+  // popover's position was computed from a different, invisible legacy button's zero-size bounding rect). Desktop/tabletHover use the
+  // rail (left side); the 601-900px "unfolded foldable" band and phone use the bottom bar, and account-ui.js's own phone-width CSS
+  // override (<=520px) must still take over exactly as before, unaffected by this fix.
+  for (const [name, viewport, extra] of [
+    ['desktop (rail)', { width: 1400, height: 900 }, {}],
+    ['touch tablet (rail)', { width: 1000, height: 800 }, { hasTouch: true, isMobile: false }],
+    ['unfolded foldable (bottom nav, wider than account-ui.js\'s own phone breakpoint)', { width: 717, height: 884 }, { hasTouch: true, isMobile: true }],
+    ['folded phone (bottom nav, account-ui.js\'s phone CSS override)', { width: 390, height: 844 }, { hasTouch: true, isMobile: true }],
+  ]) {
+    const { ctx, p } = await open({ uid: A, email: 'a@example.test', viewport, ...extra });
+    await p.waitForFunction(() => document.getElementById('shell-nav') != null, { timeout: 10000 });
+    await p.click('#shell-nav [data-dest=profile]');
+    await p.waitForSelector('#account-pop:not([hidden])', { timeout: 10000 });
+    const box = await p.locator('#account-pop').boundingBox();
+    const onScreen = box && box.width > 0 && box.height > 0 && box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width + 1 && box.y + box.height <= viewport.height + 1;
+    ok(onScreen, `production hotfix (${name}): Profile popover is fully within the ${viewport.width}x${viewport.height} viewport, not rendered off-screen (box: ${JSON.stringify(box)})`);
+    ok(await p.locator('#account-pop .account-close').isVisible(), `production hotfix (${name}): the popover's close button is visible/usable, not clipped off-screen`);
     await ctx.close();
   }
 
