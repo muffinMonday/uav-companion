@@ -236,6 +236,14 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
   // accounted for its width, so the map search box and Leaflet's own top-left/bottom-left controls (sized for the pre-shell layout)
   // overlapped it on desktop. `--shell-nav-rail-w`, measured from the rendered rail, lets styles.css offset both - 0px, and the
   // attribute absent, whenever the nav is a bottom bar or the flag is off, so this is a pure addition with no effect on either.
+  // The bar's height is not fixed (safe-area inset, label font scale, a fold or rotate that keeps the same tier), so it is re-measured
+  // whenever the bar resizes, not only on a tier change. Dashboard, side panel and route chip clear the bar through this one variable.
+  function publishBottomH() {
+    const bottom = root.dataset.placement === 'bottom';
+    document.documentElement.style.setProperty('--shell-nav-bottom-h', bottom ? `${root.offsetHeight}px` : '0px');
+  }
+  const barObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(publishBottomH) : null;
+  barObserver?.observe(root);
   stopTier = watchTier(({ tier, short, coarse }) => {
     root.dataset.tier = tier;
     root.dataset.placement = navPlacement(tier);
@@ -249,7 +257,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
     // Production hotfix: a bottom-anchored overlay (the Trips/Map route summary) had nothing to tell it a bottom nav bar
     // was also claiming that same screen edge, so it sat flush with the viewport bottom and visually overlapped the bar -
     // same pattern as --shell-nav-rail-w above, measured from the rendered bar, 0px whenever it isn't a bottom bar.
-    document.documentElement.style.setProperty('--shell-nav-bottom-h', bottom ? `${root.offsetHeight}px` : '0px');
+    publishBottomH();
     // Issue 2: relocate the map/global actions between the rail (where there is vertical room for eight items, unaffected by this
     // fix) and the top bar (where the bottom nav bar needs to stay at exactly four items). Re-running this on every tier change is
     // cheap and idempotent - `append` on an already-correctly-parented node is a no-op in the DOM.
@@ -263,7 +271,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
     destination: () => current,
     setDestination: go,
     destroy() {
-      stopTier?.(); tripHistory.destroy(); exploreHistory.destroy(); profileHistory.destroy(); root.remove(); topbar.remove();
+      stopTier?.(); barObserver?.disconnect(); tripHistory.destroy(); exploreHistory.destroy(); profileHistory.destroy(); root.remove(); topbar.remove();
       delete document.body.dataset.shell;
       delete document.documentElement.dataset.shellNavRail;
       document.documentElement.style.removeProperty('--shell-nav-rail-w');

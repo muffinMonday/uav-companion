@@ -324,6 +324,28 @@ try {
     ok(await p.locator('.route-summary').isHidden(), 'closing the window clears the route, and the summary hides again (contextual, not a standing panel)');
     await ctx.close();
   }
+  // ---- production hotfix (screenshots, 2026-11-24): the dashboard, its peek handle and the Trips side panel / bottom sheet sat under the
+  // persistent bottom nav bar. Phone and unfolded foldable both use the bottom bar; nothing the user must read may end below its top edge.
+  for (const [label, vp] of [['phone', { width: 390, height: 844 }], ['unfolded foldable', { width: 840, height: 900 }]]) {
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: vp, hasTouch: true, isMobile: true });
+    const rect = (sel) => p.evaluate((s) => { const e = document.querySelector(s); if (!e || e.hidden) return null; const r = e.getBoundingClientRect(); return r.width ? { t: r.top, b: r.bottom } : null; }, sel);
+    const navTop = (await rect('#shell-nav')).t;
+    const h = await p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--shell-nav-bottom-h')));
+    ok(Math.abs(h - (await p.evaluate(() => document.getElementById('shell-nav').offsetHeight))) < 1, `${label}: --shell-nav-bottom-h equals the rendered bar height (${h}px)`);
+    await p.evaluate(() => document.querySelector('#splash [data-splash-close], #splash button, .splash button')?.click()).catch(() => {});
+    await p.waitForTimeout(300);
+    if (await p.locator('#dash').isHidden()) await p.locator('#dash-peek:visible, #dash-tab:visible').first().tap().catch(() => {});
+    await p.waitForTimeout(350);
+    const dash = await rect('#dash');
+    if (dash) ok(dash.b <= navTop + 0.5, `${label}: the open dashboard ends above the nav bar (${Math.round(dash.b)} <= ${Math.round(navTop)})`);
+    await p.evaluate(() => document.getElementById('dash-collapse')?.click()); await p.waitForTimeout(350);
+    const handle = (await rect('#dash-peek')) || (await rect('#dash-tab'));
+    ok(handle && handle.b <= navTop + 0.5, `${label}: the collapsed dashboard handle ends above the nav bar (${handle && Math.round(handle.b)} <= ${Math.round(navTop)})`);
+    await p.click('#shell-nav [data-dest="trips"]'); await p.waitForTimeout(500);
+    const panel = await rect('#panel');
+    ok(panel && panel.b <= navTop + 0.5, `${label}: the Trips panel ends above the nav bar (${panel && Math.round(panel.b)} <= ${Math.round(navTop)})`);
+    await ctx.close();
+  }
   {
     const { ctx, p } = await openApp('http://127.0.0.1:5193/'); // flag off
     ok(await p.locator('.route-summary').count() === 0, 'flag off: the route summary element does not exist at all (tree-shaken, same as the rest of the new shell)');

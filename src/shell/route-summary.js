@@ -37,12 +37,19 @@ function createRouteSummaryUI({ poi }) {
   box.append(status, detail);
   document.body.append(box);
 
+  // The dashboard and its peek handle sit above this chip: publish where the chip's top edge is (px above the bar), 0 while hidden.
+  const rootStyle = document.documentElement.style;
+  const publishTop = () => rootStyle.setProperty('--route-chip-top', box.hidden ? '0px' : `${16 + box.offsetHeight}px`);
+  const sizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(publishTop) : null;
+  sizeObserver?.observe(box);
+
   let open = false;
   function setOpen(v) { open = v; box.dataset.open = String(open); detail.hidden = !open; status.setAttribute('aria-expanded', String(open)); }
   status.addEventListener('click', () => setOpen(!open));
 
   function render(summary) {
     box.hidden = !summary;
+    publishTop();
     if (!summary) return;
     const { units } = getDistanceSettings();
     text.textContent = compactText(summary, units);
@@ -52,7 +59,7 @@ function createRouteSummaryUI({ poi }) {
   render(poi.routeSummary());
   const off = poi.onRouteSummaryChange(render);
 
-  return { el: box, destroy() { off(); box.remove(); } };
+  return { el: box, destroy() { off(); sizeObserver?.disconnect(); rootStyle.removeProperty('--route-chip-top'); box.remove(); } };
 }
 
 /** With the flag off this is a constant no-op: nothing it imports is reachable from a default build. */

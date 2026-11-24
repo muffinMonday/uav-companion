@@ -104,7 +104,7 @@ textarea{resize:vertical;min-height:60px}
 @media (hover:hover){.dock button:hover{background:var(--accent-soft);color:var(--accent)}}
 
 /* ---------- side panel ---------- */
-.sidepanel{position:absolute;z-index:var(--z-panel);top:12px;right:12px;bottom:12px;width:380px;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);overflow:hidden;animation:slide-in .18s ease-out}
+.sidepanel{position:absolute;z-index:var(--z-panel);top:12px;right:12px;bottom:calc(12px + var(--shell-nav-bottom-h,0px));width:380px;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);overflow:hidden;animation:slide-in .18s ease-out}
 .sidepanel[hidden]{display:none}
 @keyframes slide-in{from{opacity:0;transform:translateX(48px)}to{opacity:1;transform:none}}
 .sp-head{display:flex;align-items:center;gap:8px;padding:10px 10px 8px 12px;border-bottom:1px solid var(--line)}
@@ -316,8 +316,8 @@ textarea{resize:vertical;min-height:60px}
 
 /* ---------- phones ---------- */
 @media (max-width:520px){
-  .sidepanel{left:8px;right:8px;bottom:8px;top:auto;width:auto;height:min(62vh,560px);border-radius:var(--radius-lg)}
-  .wx{left:8px;right:8px;width:auto;bottom:52px;max-height:50vh}
+  .sidepanel{left:8px;right:8px;bottom:calc(8px + var(--shell-nav-bottom-h,0px));top:auto;width:auto;height:min(calc(62vh - var(--shell-nav-bottom-h,0px)),560px);border-radius:var(--radius-lg)}
+  .wx{left:8px;right:8px;width:auto;bottom:calc(52px + var(--shell-nav-bottom-h,0px));max-height:50vh}
   .banner{left:10px;right:10px;top:60px;transform:none;max-width:none;border-radius:16px;justify-content:space-between}
 }
 
@@ -703,7 +703,7 @@ body.reordering{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .search-close svg{width:var(--icon);height:var(--icon);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 
 /* ---------- the dashboard ---------- */
-.dash{position:absolute;z-index:var(--z-dash);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:36px;width:min(780px,calc(100% - 24px - var(--panel-w,0px)));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);overflow:hidden;animation:dash-up .22s ease-out}
+.dash{position:absolute;z-index:var(--z-dash);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:calc(var(--shell-nav-bottom-h,0px) + max(36px, var(--route-chip-top,0px) + 8px));width:min(780px,calc(100% - 24px - var(--panel-w,0px)));max-height:44vh;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);overflow:hidden;animation:dash-up .22s ease-out}
 .dash[hidden],.dash-peek[hidden],.dash-tab[hidden]{display:none}
 body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, strip and tab centre in the map beside it */
 @keyframes dash-up{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
@@ -729,21 +729,21 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .dash-guide .w-steps{margin-top:6px}
 .key-body{overflow:hidden}
 .dash-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 10px;border-top:1px solid var(--line)}
-.dash-peek,.dash-tab{position:absolute;z-index:var(--z-dash);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;width:fit-content;bottom:36px;background:var(--surface);box-shadow:var(--shadow-1);color:var(--fg);cursor:pointer}
+.dash-peek,.dash-tab{position:absolute;z-index:var(--z-dash);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;width:fit-content;bottom:calc(var(--shell-nav-bottom-h,0px) + max(36px, var(--route-chip-top,0px) + 8px));background:var(--surface);box-shadow:var(--shadow-1);color:var(--fg);cursor:pointer}
 .dash-peek{display:flex;align-items:center;gap:8px;max-width:max(200px,calc(100% - 464px - var(--panel-w,0px)));padding:7px 14px 7px 10px;border:0;border-radius:var(--radius-pill);font-weight:var(--fw-semibold)}
 .dash-peek span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dash-peek svg{flex:none;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .dash-tab{width:46px;height:30px;border-radius:var(--radius-pill)}
 /* the weather card sits above the open dashboard; the map's own controls do not move: the dashboard stands above them */
-.wx{bottom:calc(44px + var(--dash-lift,0px))}
+.wx{bottom:calc(44px + var(--shell-nav-bottom-h,0px) + var(--dash-lift,0px))}
 .sp-grab,.dash-expand{display:none}
 .dash-expand svg{transition:transform var(--dur) var(--ease)}
 .dash.tall .dash-expand svg{transform:rotate(180deg)}
 /* the dashboard's expand button and tall height: phones, and touch screens up to 900px tall (an unfolded foldable is wider than a phone) */
 @media (max-width:520px), (pointer:coarse) and (max-height:900px){
   .dash-expand{display:inline-flex}
-  .dash.tall{z-index:var(--z-sheet);height:min(calc(90vh - 40px),calc(100vh - 48px - env(safe-area-inset-top,0px)));max-height:none}
-  @supports (height:1dvh){.dash.tall{height:min(calc(90dvh - 40px),calc(100dvh - 48px - env(safe-area-inset-top,0px)))}}
+  .dash.tall{z-index:var(--z-sheet);height:min(calc(90vh - 40px - var(--shell-nav-bottom-h,0px)),calc(100vh - 48px - var(--shell-nav-bottom-h,0px) - env(safe-area-inset-top,0px)));max-height:none}
+  @supports (height:1dvh){.dash.tall{height:min(calc(90dvh - 40px - var(--shell-nav-bottom-h,0px)),calc(100dvh - 48px - var(--shell-nav-bottom-h,0px) - env(safe-area-inset-top,0px)))}}
   .dash.tall .dash-head{flex:none}
 }
 @media (max-width:520px){
@@ -752,13 +752,13 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
   .sp-grab svg{transition:transform var(--dur) var(--ease)}
   .sidepanel.tall .sp-grab svg{transform:rotate(180deg)}
   /* expanded: the sheet's top edge is at 10% of the screen (never under the status bar); above the banner and the forecast card so its buttons are never covered */
-  .sidepanel.tall{z-index:var(--z-sheet);height:min(calc(90vh - 8px),calc(100vh - 16px - env(safe-area-inset-top,0px)))}
-  @supports (height:1dvh){.sidepanel.tall{height:min(calc(90dvh - 8px),calc(100dvh - 16px - env(safe-area-inset-top,0px)))}}
+  .sidepanel.tall{z-index:var(--z-sheet);height:min(calc(90vh - 8px - var(--shell-nav-bottom-h,0px)),calc(100vh - 16px - var(--shell-nav-bottom-h,0px) - env(safe-area-inset-top,0px)))}
+  @supports (height:1dvh){.sidepanel.tall{height:min(calc(90dvh - 8px - var(--shell-nav-bottom-h,0px)),calc(100dvh - 16px - var(--shell-nav-bottom-h,0px) - env(safe-area-inset-top,0px)))}}
   /* expanded (.dash.tall, see the block above): the header stays put and only the cards scroll, so shrink and close are always reachable */
-  .dash{left:8px;right:8px;bottom:40px;width:auto;max-width:none;max-height:54vh}
+  .dash{left:8px;right:8px;bottom:calc(var(--shell-nav-bottom-h,0px) + max(40px, var(--route-chip-top,0px) + 8px));width:auto;max-width:none;max-height:54vh}
   body[data-panel=open]{--panel-w:0px}
   .dash-card{max-width:none}
-  .dash-peek,.dash-tab{bottom:40px}
+  .dash-peek,.dash-tab{bottom:calc(var(--shell-nav-bottom-h,0px) + max(40px, var(--route-chip-top,0px) + 8px))}
   .dash-peek{max-width:calc(100% - 24px)}
 }
 
@@ -1198,7 +1198,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
   input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea,#ai-text,.maplinks-mode{font-size:max(16px,var(--fs-body))}
 }
 @media (max-width:520px){
-  .sidepanel{bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+  .sidepanel{bottom:calc(8px + var(--shell-nav-bottom-h,env(safe-area-inset-bottom,0px)))}
 }
 @media (pointer:coarse) and (max-width:520px){
   .sp-grab .icon-btn{width:48px;height:32px}
@@ -1253,7 +1253,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 .ses-preview ul{margin:4px 0;padding-left:18px}
 .ses-invite-form,.ses-link-form{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .ses-newlink{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.ses-newlink input{flex:1 1 200px;min-width:0}
-.ses-bar{position:fixed;z-index:var(--z-sheet);left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;max-width:min(560px,calc(100vw - 24px));padding:10px 12px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2)}
+.ses-bar{position:fixed;z-index:var(--z-sheet);left:50%;bottom:calc(16px + var(--shell-nav-bottom-h,env(safe-area-inset-bottom,0px)));transform:translateX(-50%);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;max-width:min(560px,calc(100vw - 24px));padding:10px 12px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2)}
 .ses-bar[hidden]{display:none}
 .ses-bar-text{flex:1 1 100%;text-align:center}
 .ses-map-pin span{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);font:var(--fw-bold) var(--fs-small)/1 var(--font)}
@@ -1380,9 +1380,9 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 /* ---------- the sessions map explorer (sessions-map-explorer.js): a non-modal dock over the interactive map, a left panel or a bottom sheet ---------- */
 .ses-explorer{position:fixed;z-index:var(--z-sheet);display:flex;flex-direction:column;min-height:0;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2);overflow:hidden;animation:ses-x-in .18s ease-out}
 .ses-explorer[hidden]{display:none}
-.ses-explorer[data-mode=side]{left:max(8px,env(safe-area-inset-left,0px));top:8px;bottom:8px;width:var(--ses-x-w,320px)}
+.ses-explorer[data-mode=side]{left:max(8px,env(safe-area-inset-left,0px));top:8px;bottom:calc(8px + var(--shell-nav-bottom-h,0px));width:var(--ses-x-w,320px)}
 .ses-explorer[data-mode=side][data-collapsed=true]{bottom:auto}
-.ses-explorer[data-mode=bottom]{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));height:var(--ses-x-h,260px)}
+.ses-explorer[data-mode=bottom]{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));bottom:calc(8px + var(--shell-nav-bottom-h,env(safe-area-inset-bottom,0px)));height:var(--ses-x-h,260px)}
 .ses-explorer[data-mode=bottom][data-collapsed=true]{height:auto}
 @keyframes ses-x-in{from{opacity:0}to{opacity:1}}
 .ses-x-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-2);padding:var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-3);border-bottom:1px solid var(--line)}
@@ -1699,7 +1699,7 @@ body[data-shell="new"] .search:not(.collapsed) .results{position:static;flex:1 1
 /* left/right + margin-inline:auto, not left:50%+transform, so a side-docked marker host/panel (--panel-w, marker-host.js/styles.css:704)
    shifts this centered the same way .dash and .dash-peek already move aside for it - the two are shown together whenever a selected
    stop's day has a route, so this must never sit under the host that triggered it. */
-.route-summary{position:fixed;z-index:calc(var(--z-sheet) + 1);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:calc(16px + var(--shell-nav-bottom-h,0px) + env(safe-area-inset-bottom,0px));width:fit-content;max-width:min(420px,calc(100% - 24px - var(--panel-w,0px)));display:flex;flex-direction:column;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2);overflow:hidden}
+.route-summary{position:fixed;z-index:calc(var(--z-sheet) + 1);left:12px;right:calc(12px + var(--panel-w,0px));margin-inline:auto;bottom:calc(16px + var(--shell-nav-bottom-h,env(safe-area-inset-bottom,0px)));width:fit-content;max-width:min(420px,calc(100% - 24px - var(--panel-w,0px)));display:flex;flex-direction:column;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2);overflow:hidden}
 /* Production hotfix, Issue 3: a selected marker's bottom sheet (--mh-off, marker-host.js's own reserved vertical space, already used by
    Leaflet's bottom controls at styles.css:1617) was never accounted for here, so the chip sat on top of the sheet - specifically over
    the previous/next waypoint bar (.pop-seq), which is pinned to the sheet's own bottom edge. The side-docked case needs no equivalent
@@ -1707,7 +1707,7 @@ body[data-shell="new"] .search:not(.collapsed) .results{position:static;flex:1 1
    Second hotfix: the base rule above now also clears the persistent bottom-nav bar (--shell-nav-bottom-h) on every destination,
    not just the marker-host one below - the chip is a global singleton (shell/route-summary.js appends it to document.body) shown
    on Trips/Explore/Profile too, where there is no marker-host sheet but the four-item bottom nav is still there. */
-body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + var(--shell-nav-bottom-h,0px) + env(safe-area-inset-bottom,0px))}
+body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + var(--shell-nav-bottom-h,env(safe-area-inset-bottom,0px)))}
 .route-summary[hidden]{display:none}
 .route-summary-status{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .route-summary-status svg{width:var(--icon);height:var(--icon);flex:0 0 auto;transition:transform var(--dur-fast) var(--ease)}
