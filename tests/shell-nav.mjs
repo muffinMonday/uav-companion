@@ -98,8 +98,50 @@ try {
     await topbar.locator('[data-action=settings]').click();
     ok(await p.locator('#pane-settings').isVisible(), 'Issue 2: Settings still opens the same adapter panel from the relocated button');
     await p.keyboard.press('Escape');
+    if ((await topbar.getAttribute('data-collapsed')) === 'true') await topbar.locator('.shell-topbar-toggle').click(); // opening Settings collapses the bar (side panel), so expand it again first
     await topbar.locator('[data-action=activity]').click();
     ok(await p.locator('#pane-activity').isVisible(), 'Issue 2: Activity still opens the same adapter panel from the relocated button');
+    await ctx.close();
+  }
+  // ---- top-bar collapse (phone): the right arrow folds Layers/Saved Places/Settings/Activity into one icon; tapping that icon expands
+  // them again; opening a side panel, or a saved marker's sheet, collapses the bar by itself.
+  {
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    await p.evaluate(() => document.querySelector('#splash button')?.click()).catch(() => {});
+    const topbar = p.locator('#shell-topbar'), toggle = topbar.locator('.shell-topbar-toggle');
+    const shownActions = () => topbar.locator('[data-action]').evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().width > 0).length);
+    const expandedW = (await topbar.boundingBox()).width;
+    ok((await toggle.getAttribute('aria-expanded')) === 'true' && (await shownActions()) === 4, 'top bar starts expanded: the arrow reports aria-expanded=true and the four actions show on Map');
+    await toggle.click(); await p.waitForTimeout(150);
+    ok((await topbar.getAttribute('data-collapsed')) === 'true' && (await shownActions()) === 0, 'tapping the arrow collapses the top bar: no action shows');
+    const collapsedH = (await topbar.boundingBox()).width; // the bar folds sideways; its height is the 44px target either way
+    ok(collapsedH < expandedW - 100 && (await toggle.isVisible()), `collapsed: a single icon remains (bar ${Math.round(collapsedH)}px wide, was ${Math.round(expandedW)}px)`);
+    await toggle.click(); await p.waitForTimeout(150);
+    ok((await topbar.getAttribute('data-collapsed')) === 'false' && (await shownActions()) === 4, 'tapping the single icon expands the four actions again');
+    await p.click('#shell-nav [data-dest="trips"]'); await p.waitForTimeout(400);
+    ok((await topbar.getAttribute('data-collapsed')) === 'true', 'opening the Trips side panel collapses the top bar by itself');
+    await ctx.close();
+  }
+  // the saved marker's sheet collapses the bar too (its own open announcement; a separate context so the seeded marker is the only one)
+  {
+    const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    await ctx.addInitScript(() => {
+      if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
+      localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: [{ id: 'a', type: 'photo', name: 'Tower', note: 'A note.', lat: 30.5, lon: 114.3, created: '2026-11-01T00:00:00.000Z' }] }));
+      localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.5, lon: 114.3, zoom: 14 }, basemap: 'osm' }));
+    });
+    const p = await ctx.newPage();
+    p.on('pageerror', (e) => errs.push(`marker collapse: pageerror ${e.message}`));
+    await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(800);
+    await p.evaluate(() => document.querySelector('#splash button')?.click()).catch(() => {});
+    await p.evaluate(() => document.getElementById('dash-collapse')?.click()); await p.waitForTimeout(400); // the phone dashboard covers the pin until folded
+    const pin = await p.evaluate(() => { const e = [...document.querySelectorAll('.poi-pin')].find((x) => x.getAttribute('title') === 'Tower' && x.getBoundingClientRect().width > 0); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+    ok(pin != null, 'marker collapse: the seeded marker has a pin on the phone map');
+    if (pin) {
+      await p.mouse.click(pin.x, pin.y); await p.waitForTimeout(800);
+      ok(await p.evaluate(() => { const e = document.getElementById('marker-host'); return !!e && !e.hidden; }), 'marker collapse: tapping the pin opens the marker sheet');
+      ok((await p.locator('#shell-topbar').getAttribute('data-collapsed')) === 'true', 'marker collapse: the marker sheet collapses the top bar by itself');
+    }
     await ctx.close();
   }
   // (The four-item rule is driven by placement, not by a specific width - compact and expandedTouch both resolve to navPlacement

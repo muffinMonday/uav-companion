@@ -1653,6 +1653,7 @@ html[data-shell-nav-rail="true"] .leaflet-left .leaflet-control{margin-left:calc
    to eight items. Same slot `.dock` used before the new shell hid it (styles.css:1639), so nothing new competes for that corner. */
 .shell-topbar{position:fixed;z-index:var(--z-dock);top:max(var(--sp-2),env(safe-area-inset-top));right:max(var(--sp-2),env(safe-area-inset-right));display:flex;align-items:center;gap:2px;background:var(--surface);border-radius:var(--radius-pill);box-shadow:var(--shadow-1);padding:4px}
 .shell-topbar[hidden]{display:none}
+.shell-topbar[data-collapsed="true"]>.shell-nav-item:not(.shell-topbar-toggle){display:none} /* collapsed: only the arrow shows (nav.js setTopbarCollapsed); the buttons are hidden, not removed, so they reappear on expand */
 .shell-topbar .shell-nav-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* icon-only here too (compact header controls); the accessible name stays on aria-label/title, same clip technique as the rail's icon-only tiers */
 
 /* S10.9 (NAV-04 row 2, NAV integration): the legacy dock rail and the panel's own tab row are superseded by the new shell's nav and its

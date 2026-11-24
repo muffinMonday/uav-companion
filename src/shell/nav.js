@@ -13,6 +13,7 @@ import { SHELL_NAV_ID } from './nav-id.js';
 import { createHistoryStack } from './history.js';
 import { initSettingsUI } from './settings.js';
 import { initActivityUI } from './activity.js';
+import { onOverlay } from '../overlay-policy.js';
 
 const ICONS = {
   map: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 3 5.5v15L9 18l6 2.5 6-2.5v-15L15 5.5 9 3Zm0 2.2 6 2.5v12.1l-6-2.5V5.2ZM3.9 6.3 8 4.6v12.1l-4.1 1.7V6.3Zm16.2 11.4-4.1 1.7V6.3l4.1-1.7v13.1Z"/></svg>',
@@ -44,6 +45,12 @@ const GLOBAL_ACTIONS = [
   { key: 'settings', label: 'Settings' },
   { key: 'activity', label: 'Activity' },
 ];
+
+/** Review 01 (top-bar collapse): the arrow that folds the top bar's actions into one icon, and expands them again. */
+const TOGGLE_ICONS = {
+  collapse: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>',
+  expand: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>',
+};
 
 function buildNav() {
   const root = el('nav', 'shell-nav'); root.id = SHELL_NAV_ID; root.setAttribute('aria-label', 'Primary');
@@ -81,10 +88,13 @@ function buildNav() {
   // watcher below), so the bottom bar never shows more than four items at once. Hidden by default; only shown on bottom-nav tiers.
   const topbar = el('div', 'shell-topbar'); topbar.id = 'shell-topbar'; topbar.setAttribute('aria-label', 'Map and account actions'); topbar.hidden = true;
   document.body.append(topbar);
+  // The top bar's collapse arrow: always its last child, so the four actions fold in front of it (createShellNav keeps it there).
+  const toggle = el('button', 'shell-nav-item shell-topbar-toggle'); toggle.type = 'button';
+  topbar.append(toggle);
   // Review 01 S10.9 (NAV-04 row 2): marks the legacy dock/panel-tabs as superseded so styles.css can hide that now-duplicate chrome
   // while the new shell is active, without this file (or panel.js) knowing anything about the other's DOM.
   document.body.dataset.shell = 'new';
-  return { root, buttons, mapActions, globalActions, topbar };
+  return { root, buttons, mapActions, globalActions, topbar, toggle };
 }
 
 /**
@@ -96,7 +106,7 @@ function buildNav() {
  * Returns { destination(), setDestination(key), destroy() }, or null if the flag is off (nothing was built).
  */
 function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud, getDash, accountBtnId = 'account-btn' }) {
-  const { root, buttons, mapActions, globalActions, topbar } = buildNav();
+  const { root, buttons, mapActions, globalActions, topbar, toggle } = buildNav();
   let current = 'map';
   let stopTier = null;
 
@@ -228,7 +238,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
   // The panel can close by other means (Escape, a map click, swipe-to-dismiss); reflect that as "Map" being current again,
   // but only when it was Trips that closed (Layers/Saved Places already leave current as 'map') - Explore/Profile use their own,
   // separate surfaces and are not affected by the panel.
-  panel.onChange(() => { if (current === 'trips' && !panel.isOpen()) go('map'); paint(); syncTripOuter(); });
+  panel.onChange(() => { if (current === 'trips' && !panel.isOpen()) go('map'); paint(); syncTripOuter(); if (panel.isOpen()) setTopbarCollapsed(true); });
 
   paint(); // establish the initial state (Map current, its actions visible) without calling go('map') and closing a panel the real app may have opened by default
 
@@ -252,6 +262,19 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
   }
   const topbarObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(publishTopbarH) : null;
   topbarObserver?.observe(topbar);
+  // Top bar collapse: the arrow folds the four top-bar actions into one icon (tap it to expand again). A side panel or a marker sheet
+  // opening collapses it by itself, so the bar never sits over their top edge. It starts expanded and is not saved between visits.
+  function setTopbarCollapsed(on) {
+    topbar.dataset.collapsed = String(on);
+    const label = on ? 'Show map and account actions' : 'Hide map and account actions';
+    toggle.setAttribute('aria-expanded', String(!on));
+    toggle.setAttribute('aria-label', label);
+    toggle.title = label;
+    toggle.innerHTML = on ? TOGGLE_ICONS.expand : TOGGLE_ICONS.collapse;
+  }
+  setTopbarCollapsed(false);
+  toggle.addEventListener('click', () => setTopbarCollapsed(topbar.dataset.collapsed !== 'true'));
+  const offMarkerOverlay = onOverlay((owner, phase) => { if (owner === 'marker' && phase === 'open') setTopbarCollapsed(true); });
   stopTier = watchTier(({ tier, short, coarse }) => {
     root.dataset.tier = tier;
     root.dataset.placement = navPlacement(tier);
@@ -271,6 +294,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
     // cheap and idempotent - `append` on an already-correctly-parented node is a no-op in the DOM.
     const actionHome = rail ? root : topbar;
     for (const b of [...mapActions, ...globalActions]) actionHome.append(b);
+    topbar.append(toggle); // the arrow stays last, after the actions it folds
     topbar.hidden = rail;
     publishTopbarH();
   });
@@ -280,7 +304,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
     destination: () => current,
     setDestination: go,
     destroy() {
-      stopTier?.(); barObserver?.disconnect(); topbarObserver?.disconnect(); document.documentElement.style.removeProperty('--shell-topbar-h'); tripHistory.destroy(); exploreHistory.destroy(); profileHistory.destroy(); root.remove(); topbar.remove();
+      stopTier?.(); offMarkerOverlay(); barObserver?.disconnect(); topbarObserver?.disconnect(); document.documentElement.style.removeProperty('--shell-topbar-h'); tripHistory.destroy(); exploreHistory.destroy(); profileHistory.destroy(); root.remove(); topbar.remove();
       delete document.body.dataset.shell;
       delete document.documentElement.dataset.shellNavRail;
       document.documentElement.style.removeProperty('--shell-nav-rail-w');
