@@ -1,3 +1,13 @@
+## Latest: top-right actions overlap fix DEPLOYED (2026-11-25; owner-approved commit, push and deploy)
+- **Release:** commit `f579a2d` on `main` (pushed); `deploy:live` with the standard flags, gh-pages `1df8b564`; preflight 33 regions, 0 added, 0 removed. Live check not yet done. **Rollback:** gh-pages `3a2e43e` (previous deploy), or revert `f579a2d`.
+- Status detail below still lists the blank-panel item as open.
+
+## (superseded wording) top-right actions overlap fix (2026-11-25)
+- **Report (owner screenshots, ~810 px wide):** the top-right action cluster (`#shell-topbar`) sat over the side panel's tab row and the marker sheet's top edge.
+- **Change:** `src/shell/nav.js` publishes `--shell-topbar-h` (the cluster's height + 8 px, 0 when hidden); `src/styles.css` `.sidepanel` top and `.marker-host[data-mode=side]` top add it. `tests/shell-nav.mjs` +1 check (panel starts below the cluster at 810x900; fails without the change: panel top 12 vs cluster bottom 60).
+- **Tests:** `shell-nav` 101/0, `shell-nav-explore` 9/0, `shell-nav-profile` 20/0, `marker-host` 43/0, `marker-host-s5..s8` pass, `marker-host-explorer` 45/0, `popswipe`, `side`, `sidedrag`, `sidelist`, `paneltall`, `dashtall`, `dashboard`, `tripstouch` pass; unit `shell-tier`, `marker-host-unit`, `side-unit` pass. The marker sheet's top measured 68 px against the cluster bottom at 60 px.
+- **Open: blank panel after closing a marker sheet.** Not reproduced in headless Chromium at 810 px and 1200 px (close by button and Escape: the sheet hides at once, the side panel reappears with its 86 rows at t=0). Possible causes not confirmed on a device: the sheet's `backdrop-filter` layer lingering, or the side panel's 0.18 s slide-in. Needs a device repro (which close action, which screen width, whether the side panel was open first).
+
 ## Latest: bottom-nav clearance for dashboard, side panel and weather card DEPLOYED (2026-11-24; owner-approved commit, push and deploy)
 - **Release:** commit `b4160a4` on `main` (pushed); `deploy:live` with the standard flags, gh-pages `3a2e43e`; preflight 33 regions, 0 added, 0 removed. Live check not yet done (Pages can lag a few minutes). **Rollback:** gh-pages `4e18511`, or revert `b4160a4`.
 - **Repo cleanup:** removed the stale `.git/worktrees/base-wt` metadata left by an earlier session (no checkout behind it; the other worktrees under `.worktrees/` are untouched).
