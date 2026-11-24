@@ -4,3 +4,5 @@ tests/fixtures/airspace/* text eol=lf
 data/regions/cn/chengdu/boundary.geojson text eol=lf
 docs/china-airspace/evidence/chengdu-mask-geos.json text eol=lf
 docs/china-airspace/evidence/sichuan-*.json text eol=lf
+# The raw official ENR 5.1 page is hashed (Vietnam); keep its bytes on every checkout.
+data/regions/vn/vn-enr51/source/*.html binary
