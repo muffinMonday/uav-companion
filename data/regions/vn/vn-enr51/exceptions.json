@@ -35,19 +35,19 @@
       "id": "VVR19",
       "class": "R",
       "category": "external-reference",
-      "reason": "description is not a plain coordinate list or circle (Eastern: The parallel 15 KM West of centre-line of airway W1 (Segment AC -BU); Western: The parallel 15 KM North of airw...) [boundaries are the parallels 15 km from airways W1 and R468 (ENR 3 route geometry), a runway-relative line at Bien Hoa and a 75 km circle about the Tan Son Nhat ARP; not defined by coordinates in ENR 5.1 (not reconstructed)]"
+      "reason": "description is not a plain coordinate list or circle (Eastern: The parallel 15 KM West of centre-line of airway W1 (Segment AC -BU); Western: The parallel 15 KM North of airw...) [boundaries are the parallels 15 km from airways W1 and R468 (ENR 3 route geometry), a runway-relative line at Bien Hoa and a 75 km circle about the Tan Son Nhat ARP; not defined by coordinates in ENR 5.1. Checked 2026-11-24 against the official ENR 3.1/3.3/4.1/4.4 of the 2026-10-01 edition: W1 gives AC (An Loc NDB) but no point `BU`, and R468 ends at TAN SON NHAT (TSH) in the Vietnamese AIP, so PNH (Phnom Penh, AIP Cambodia) has no official Vietnamese coordinates; the runway-relative line and \"parallel\" extents are also undefined. Not reconstructed]"
     },
     {
       "id": "VVD43",
       "class": "D",
       "category": "source-inconsistent",
-      "reason": "implausible edge of 116 km (a mistyped vertex in the source?) [the 4th vertex 200333N 1052801E is a full degree of latitude from its neighbours (210333N intended?); not corrected]"
+      "reason": "implausible edge of 116 km (a mistyped vertex in the source?) [the 4th vertex 200333N 1052801E is a full degree of latitude from its neighbours (210333N intended?); not corrected. Checked 2026-11-24: ENR 5.1 text is identical in the 2025-01-23, 2025-09-04, 2026-01-22, 2026-03-19, 2026-05-14 and 2026-10-01 AIRAC editions, and the official chart ENR 5.1-11 (graphics/9130, identical in 2025-01-23 and 2026-10-01) draws the same far vertex, so neither is independent evidence]"
     },
     {
       "id": "VVD45",
       "class": "D",
       "category": "source-inconsistent",
-      "reason": "implausible edge of 91 km (a mistyped vertex in the source?) [the 1st vertex 210159N 1062002E is 1 degree of longitude from its neighbours (1052002E intended?); not corrected]"
+      "reason": "implausible edge of 91 km (a mistyped vertex in the source?) [the 1st vertex 210159N 1062002E is 1 degree of longitude from its neighbours (1052002E intended?); not corrected. Same check as VVD43: identical text in six editions and the same far vertex drawn on chart ENR 5.1-11]"
     }
   ]
 }

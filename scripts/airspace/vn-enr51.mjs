@@ -88,9 +88,9 @@ function validate(g, outer) {
 
 // Curated reasons for the areas left unresolved (checked against the published text).
 const NOTES = {
-  VVR19: ['external-reference', 'boundaries are the parallels 15 km from airways W1 and R468 (ENR 3 route geometry), a runway-relative line at Bien Hoa and a 75 km circle about the Tan Son Nhat ARP; not defined by coordinates in ENR 5.1 (not reconstructed)'],
-  VVD43: ['source-inconsistent', 'the 4th vertex 200333N 1052801E is a full degree of latitude from its neighbours (210333N intended?); not corrected'],
-  VVD45: ['source-inconsistent', 'the 1st vertex 210159N 1062002E is 1 degree of longitude from its neighbours (1052002E intended?); not corrected'],
+  VVR19: ['external-reference', 'boundaries are the parallels 15 km from airways W1 and R468 (ENR 3 route geometry), a runway-relative line at Bien Hoa and a 75 km circle about the Tan Son Nhat ARP; not defined by coordinates in ENR 5.1. Checked 2026-11-24 against the official ENR 3.1/3.3/4.1/4.4 of the 2026-10-01 edition: W1 gives AC (An Loc NDB) but no point `BU`, and R468 ends at TAN SON NHAT (TSH) in the Vietnamese AIP, so PNH (Phnom Penh, AIP Cambodia) has no official Vietnamese coordinates; the runway-relative line and "parallel" extents are also undefined. Not reconstructed'],
+  VVD43: ['source-inconsistent', 'the 4th vertex 200333N 1052801E is a full degree of latitude from its neighbours (210333N intended?); not corrected. Checked 2026-11-24: ENR 5.1 text is identical in the 2025-01-23, 2025-09-04, 2026-01-22, 2026-03-19, 2026-05-14 and 2026-10-01 AIRAC editions, and the official chart ENR 5.1-11 (graphics/9130, identical in 2025-01-23 and 2026-10-01) draws the same far vertex, so neither is independent evidence'],
+  VVD45: ['source-inconsistent', 'the 1st vertex 210159N 1062002E is 1 degree of longitude from its neighbours (1052002E intended?); not corrected. Same check as VVD43: identical text in six editions and the same far vertex drawn on chart ENR 5.1-11'],
 };
 
 async function main() {
