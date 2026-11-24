@@ -28,7 +28,7 @@ const DASH_MENU = '.dash-fly .country-menu';
 {
   const { ctx, p } = await open(1300, 850);
   const btns = await p.$$eval('.dash-fly .country-btn', (bs) => bs.map((x) => x.textContent));
-  ok(JSON.stringify(btns) === JSON.stringify(['China', 'Malaysia', 'Singapore']), 'Fly in: one button per country, in order: ' + btns.join(', '));
+  ok(JSON.stringify(btns) === JSON.stringify(['China', 'Malaysia', 'Singapore', 'Vietnam']), 'Fly in: one button per country, in order: ' + btns.join(', '));
   ok(await p.getAttribute(DASH_CHINA, 'aria-expanded') === 'false' && await p.getAttribute(DASH_SG, 'aria-expanded') === null, 'China shows aria-expanded=false; Singapore is a plain button');
   ok(await p.locator(DASH_SG).evaluate((x) => !x.hasAttribute('aria-controls')), 'Singapore has no menu to control');
 

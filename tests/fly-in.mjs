@@ -45,7 +45,7 @@ const sgOnly = JSON.stringify([...ids(log)].sort()) === JSON.stringify(['my-enr5
 ok(sgOnly, 'fresh visit: archives downloaded = ' + JSON.stringify(ids(log)) + ' (' + log.length + ' response(s), ' + mb(bytes(log)) + ')');
 info(`fresh Singapore view: ${ids(log).length} archive(s) downloaded, ${mb(bytes(log))} transferred`);
 const flyBtns = await p.$$eval('.dash-fly .country-btn', (bs) => bs.map((b) => b.textContent));
-ok(JSON.stringify(flyBtns) === JSON.stringify(['China', 'Malaysia', 'Singapore']), 'Fly in shows one button per country: ' + flyBtns.join(', '));
+ok(JSON.stringify(flyBtns) === JSON.stringify(['China', 'Malaysia', 'Singapore', 'Vietnam']), 'Fly in shows one button per country: ' + flyBtns.join(', '));
 ok(await p.locator('.dash-fly .country-menu').isHidden(), 'the China menu is closed until its button is pressed');
 
 // ================= 2. choosing a China region focuses it and downloads its archive (and only the ones its view touches)

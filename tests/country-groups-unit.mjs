@@ -17,7 +17,7 @@ const areas = index.countries.filter((c) => c.manifest)
 const groups = countryGroups(supported, areas);
 const names = groups.map((g) => g.name);
 ok(JSON.stringify(names) === JSON.stringify([...names].sort((a, b) => a.localeCompare(b))), 'the country buttons are in name order: ' + names.join(', '));
-ok(JSON.stringify(names) === JSON.stringify(['China', 'Malaysia', 'Singapore']), 'one button per supported country: ' + names.join(', '));
+ok(JSON.stringify(names) === JSON.stringify(['China', 'Malaysia', 'Singapore', 'Vietnam']), 'one button per supported country: ' + names.join(', '));
 
 const sg = groups.find((g) => g.name === 'Singapore');
 ok(sg && sg.areas.length === 1 && sg.areas[0].id === 'sg-nofly', 'Singapore has one region, so its button navigates directly (no menu)');

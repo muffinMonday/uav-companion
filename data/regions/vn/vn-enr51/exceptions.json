@@ -1,0 +1,53 @@
+{
+  "source": {
+    "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-ENR-5.1-en-GB.html",
+    "edition": "2026-10-01-AIRAC",
+    "htmlSha256": "c84ed668903903cead2bd0c2e2e651d64bbec92373ca999e5141a21ad893f4b8",
+    "htmlBytes": 214430,
+    "rawCopy": "source/VV-ENR-5.1-en-GB.html"
+  },
+  "parsed": 74,
+  "applicable": 74,
+  "excluded": [],
+  "converted": 71,
+  "unresolved": 3,
+  "counts": {
+    "prohibited": {
+      "parsed": 4,
+      "converted": 4
+    },
+    "restricted": {
+      "parsed": 21,
+      "converted": 20
+    },
+    "danger": {
+      "parsed": 49,
+      "converted": 47
+    }
+  },
+  "notAreas": [
+    "Sơ đồ khu vực cấm bay, hạn chế bay và nguy hiểm Khu vực miền",
+    "Sơ đồ khu vực cấm bay, hạn chế bay và nguy hiểm Khu vực miền",
+    "Sơ đồ khu vực cấm bay, hạn chế bay và nguy hiểm Khu vực miền"
+  ],
+  "exceptions": [
+    {
+      "id": "VVR19",
+      "class": "R",
+      "category": "external-reference",
+      "reason": "description is not a plain coordinate list or circle (Eastern: The parallel 15 KM West of centre-line of airway W1 (Segment AC -BU); Western: The parallel 15 KM North of airw...) [boundaries are the parallels 15 km from airways W1 and R468 (ENR 3 route geometry), a runway-relative line at Bien Hoa and a 75 km circle about the Tan Son Nhat ARP; not defined by coordinates in ENR 5.1 (not reconstructed)]"
+    },
+    {
+      "id": "VVD43",
+      "class": "D",
+      "category": "source-inconsistent",
+      "reason": "implausible edge of 116 km (a mistyped vertex in the source?) [the 4th vertex 200333N 1052801E is a full degree of latitude from its neighbours (210333N intended?); not corrected]"
+    },
+    {
+      "id": "VVD45",
+      "class": "D",
+      "category": "source-inconsistent",
+      "reason": "implausible edge of 91 km (a mistyped vertex in the source?) [the 1st vertex 210159N 1062002E is 1 degree of longitude from its neighbours (1052002E intended?); not corrected]"
+    }
+  ]
+}

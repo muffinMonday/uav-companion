@@ -10,6 +10,7 @@ export const REGION_LABELS = {
   'cn-sichuan': 'Sichuan',
   'cn-yunnan': 'Yunnan',
   'my-enr51': 'Malaysia',
+  'vn-enr51': 'Vietnam',
   'sg-nofly': 'Singapore',
 };
 
