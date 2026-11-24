@@ -244,6 +244,14 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
   }
   const barObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(publishBottomH) : null;
   barObserver?.observe(root);
+  // The top-right action cluster (shown whenever the nav is a bottom bar) sits over the side panel's and the marker sheet's top edge:
+  // publish its bottom edge plus the gap, 0px while hidden, so those surfaces start below it.
+  function publishTopbarH() {
+    const shown = !topbar.hidden;
+    document.documentElement.style.setProperty('--shell-topbar-h', shown ? `${topbar.offsetHeight + 8}px` : '0px');
+  }
+  const topbarObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(publishTopbarH) : null;
+  topbarObserver?.observe(topbar);
   stopTier = watchTier(({ tier, short, coarse }) => {
     root.dataset.tier = tier;
     root.dataset.placement = navPlacement(tier);
@@ -264,6 +272,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
     const actionHome = rail ? root : topbar;
     for (const b of [...mapActions, ...globalActions]) actionHome.append(b);
     topbar.hidden = rail;
+    publishTopbarH();
   });
 
   return {
@@ -271,7 +280,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
     destination: () => current,
     setDestination: go,
     destroy() {
-      stopTier?.(); barObserver?.disconnect(); tripHistory.destroy(); exploreHistory.destroy(); profileHistory.destroy(); root.remove(); topbar.remove();
+      stopTier?.(); barObserver?.disconnect(); topbarObserver?.disconnect(); document.documentElement.style.removeProperty('--shell-topbar-h'); tripHistory.destroy(); exploreHistory.destroy(); profileHistory.destroy(); root.remove(); topbar.remove();
       delete document.body.dataset.shell;
       delete document.documentElement.dataset.shellNavRail;
       document.documentElement.style.removeProperty('--shell-nav-rail-w');

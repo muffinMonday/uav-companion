@@ -324,6 +324,18 @@ try {
     ok(await p.locator('.route-summary').isHidden(), 'closing the window clears the route, and the summary hides again (contextual, not a standing panel)');
     await ctx.close();
   }
+  // ---- production hotfix (screenshots, 2026-11-25): the top-right action cluster (#shell-topbar, shown with the bottom nav) sat over the
+  // side panel's tab row and over the marker sheet's top edge at 810 px wide. Both must start below it.
+  {
+    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 810, height: 900 } });
+    await p.evaluate(() => document.querySelector('#splash button')?.click()).catch(() => {});
+    await p.click('#shell-nav [data-dest="trips"]'); await p.waitForTimeout(500);
+    const bottomOf = (sel) => p.evaluate((s) => { const e = document.querySelector(s); return e && !e.hidden ? e.getBoundingClientRect().bottom : null; }, sel);
+    const topbarBottom = await bottomOf('#shell-topbar');
+    const panelTop = await p.evaluate(() => { const e = document.getElementById('panel'); return e.hidden ? null : e.getBoundingClientRect().top; });
+    ok(topbarBottom != null && panelTop != null && panelTop >= topbarBottom - 0.5, `810 px: the side panel starts below the top-right actions (${panelTop && Math.round(panelTop)} >= ${topbarBottom && Math.round(topbarBottom)})`);
+    await ctx.close();
+  }
   // ---- production hotfix (screenshots, 2026-11-24): the dashboard, its peek handle and the Trips side panel / bottom sheet sat under the
   // persistent bottom nav bar. Phone and unfolded foldable both use the bottom bar; nothing the user must read may end below its top edge.
   for (const [label, vp] of [['phone', { width: 390, height: 844 }], ['unfolded foldable', { width: 840, height: 900 }]]) {
