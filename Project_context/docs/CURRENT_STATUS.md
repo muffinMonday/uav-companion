@@ -1,4 +1,6 @@
-## Latest: bottom-nav clearance for dashboard, side panel and weather card (2026-11-24; UNCOMMITTED, not deployed)
+## Latest: bottom-nav clearance for dashboard, side panel and weather card DEPLOYED (2026-11-24; owner-approved commit, push and deploy)
+- **Release:** commit `b4160a4` on `main` (pushed); `deploy:live` with the standard flags, gh-pages `3a2e43e`; preflight 33 regions, 0 added, 0 removed. Live check not yet done (Pages can lag a few minutes). **Rollback:** gh-pages `4e18511`, or revert `b4160a4`.
+- **Repo cleanup:** removed the stale `.git/worktrees/base-wt` metadata left by an earlier session (no checkout behind it; the other worktrees under `.worktrees/` are untouched).
 - **Report (owner screenshots, phone and unfolded foldable):** the open dashboard and the Trips panel ran under the bottom nav bar, the collapsed dashboard handle sat on it, and the route chip overlapped the dashboard.
 - **Cause:** only the route chip read `--shell-nav-bottom-h`; `.dash`, `.dash-peek/.dash-tab`, `.sidepanel`, `.wx`, `.ses-explorer`, `.ses-bar` used fixed offsets (36/40/12/8 px). The variable was also measured only on a tier change.
 - **Change:** `src/styles.css` (those rules add `--shell-nav-bottom-h`; tall heights subtract it; safe-area is the fallback when the variable is unset, so flag-off builds are unchanged); `src/shell/nav.js` re-measures the bar with a `ResizeObserver`; `src/shell/route-summary.js` publishes `--route-chip-top` so the dashboard and its handle stack above the chip.
