@@ -44,7 +44,7 @@ th{color:var(--muted);font-weight:600}
 <p>The app sends a request to a service only in the situations below. Each request carries only what is listed.</p>
 <table>
 <tr><th>Service</th><th>When</th><th>What is sent</th></tr>
-<tr><td>Map tile servers (OpenStreetMap, OpenStreetMap France, OpenTopoMap)</td><td>Whenever the map is shown</td><td>Requested map tile coordinates, and your IP address as any web request includes</td></tr>
+<tr><td>Map tile servers (OpenStreetMap, OpenStreetMap France, OpenTopoMap, Go Tiles by WP Go Maps)</td><td>Whenever the map is shown</td><td>Requested map tile coordinates, your IP address and page origin. Dark standard maps use <a href="https://www.wpgmaps.com/go-tiles/privacy/">Go Tiles by WP Go Maps</a></td></tr>
 <tr><td>Open-Meteo (weather and ground elevation)</td><td>Only when you ask for weather or elevation, or turn on automatic marker weather</td><td>Coordinates: rounded to about 1 km unless you choose "precise"; elevation requests use 4 decimal places</td></tr>
 <tr><td>Photon, then Nominatim (place search)</td><td>Only when you search online, or use place-name lookup during AI import (off until you enable it)</td><td>The text you searched for</td></tr>
 <tr><td>HeiGIT routing service</td><td>Only when you are signed in and a shared trip has a leg with no stored road route</td><td>The two coordinates of that leg, with no names, notes or user or trip identifiers</td></tr>

@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import { currentTheme, onTheme } from './theme.js';
 import { leafletLayer, PolygonSymbolizer } from 'protomaps-leaflet';
 import { regionUrl, MAX_VIEW_BOUNDS } from './config.js';
 import { zonePaintSpec, approxOutline, hatchTile } from './zone-style.js';
@@ -24,10 +25,17 @@ const BASES = {
     { maxZoom: 19, attribution: OSM_CREDIT }],
 };
 
-/** The tile set for a basemap style: [url, options]. One seam for the theme: today the dark map is the same tiles darkened by a CSS filter on .base-tiles (styles.css);
- *  a real dark tile source would take a theme argument here (plus its attribution, the privacy list and tests/layers.mjs). */
-export function baseTiles(key) {
-  const [url, opts] = BASES[key in BASES ? key : 'osm'];
+// Go Tiles permits keyless website use up to 15,000 tiles/site/month. No billing is enabled.
+// Terms: https://www.wpgmaps.com/go-tiles/terms/ ; endpoint/zoom: https://www.wpgmaps.com/go-tiles/
+const DARK_OSM = ['https://tiles.wpgmaps.com/styles/dark/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19, maxNativeZoom: 20,
+  attribution: '&copy; Go Tiles by WP Go Maps | ' + OSM_CREDIT,
+}];
+
+/** The tile set for a selected basemap and resolved theme. Other selections retain their original cartography. */
+export function baseTiles(key, theme = 'light') {
+  const selected = Object.hasOwn(BASES, key) ? key : 'osm';
+  const [url, opts] = selected === 'osm' && theme === 'dark' ? DARK_OSM : BASES[selected];
   return [url, { ...opts, className: 'base-tiles' }];
 }
 
@@ -56,12 +64,64 @@ export function createMap(initial = {}) {
   applyMinZoom();
   map.on('resize', applyMinZoom);
 
-  let base = L.tileLayer(...baseTiles(initial.basemap)).addTo(map);
-  const switchBase = (key) => {
-    map.removeLayer(base);
-    base = L.tileLayer(...baseTiles(key)).addTo(map);
-    base.bringToBack();
+  let selectedBase = initial.basemap;
+  let base = null, pending = null;
+  // A failure disables dark requests for this map's lifetime, including after rapid theme changes.
+  // The preference remains untouched; a fresh visit can try the provider again.
+  let darkFailed = false;
+  const cancelPending = () => {
+    if (!pending) return;
+    const old = pending;
+    pending = null;
+    clearTimeout(old.timer);
+    // Leaflet's remove handler releases its attribution; let it run before clearing our listeners.
+    map.removeLayer(old.layer);
+    old.layer.off();
   };
+  const refreshBase = () => {
+    const tiles = baseTiles(selectedBase, darkFailed ? 'light' : currentTheme());
+    const isDark = tiles[0] === DARK_OSM[0];
+    if (pending?.url === tiles[0]) return;
+    cancelPending();
+    if (base?._url === tiles[0]) return;
+    const layer = L.tileLayer(tiles[0], { ...tiles[1], opacity: base ? 0 : 1 });
+    const job = { layer, url: tiles[0], timer: null };
+    pending = job;
+    const finish = () => {
+      if (pending !== job) return;
+      clearTimeout(job.timer);
+      layer.off('load', finish);
+      layer.setOpacity(1);
+      const settle = () => {
+        if (pending !== job) return;
+        pending = null;
+        if (base) map.removeLayer(base);
+        base = layer;
+      };
+      // Leaflet's load event precedes its 200ms tile fade. Keep backing tiles until that fade ends.
+      // Keeping this job pending also lets a rapid switch cancel both the layer and its settle timer.
+      if (base) job.timer = setTimeout(settle, 250);
+      else settle();
+    };
+    const fallback = () => {
+      if (pending !== job && base !== layer) return;
+      darkFailed = true;
+      layer.off('tileerror', fallback);
+      refreshBase();
+    };
+    layer.on('load', finish);
+    // Keep observing the active dark layer: later pans can fail too (including monthly quota exhaustion).
+    if (isDark) layer.on('tileerror', fallback);
+    job.timer = setTimeout(isDark ? fallback : finish, 12000);
+    layer.addTo(map);
+    layer.bringToBack();
+    // A pending layer must be above the previous tiles, but below all airspace tile layers.
+    if (base) base.bringToBack();
+  };
+  const switchBase = (key) => { selectedBase = key; refreshBase(); };
+  refreshBase();
+  const stopTheme = onTheme(refreshBase);
+  map.once('unload', () => { stopTheme(); cancelPending(); });
   /** Metric or imperial scale bar, to match the distance units setting. */
   // Leaflet's scale control only builds the bar for the unit it started with, so switching means replacing the control.
   const setScaleUnits = (units) => {

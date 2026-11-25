@@ -7,6 +7,7 @@ const theme = (p) => p.evaluate(() => document.documentElement.dataset.theme);
 const bg = (p) => p.evaluate(() => getComputedStyle(document.body).backgroundColor);
 const stored = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}'));
 async function open(ctx) {
+  await ctx.route(/^https:\/\/[^/]*(openstreetmap|opentopomap|tiles\.wpgmaps\.com)[^/]*\/.*\.png/i, r => r.fulfill({ status: 200, contentType: 'image/png', headers: { 'cache-control': 'no-store' }, body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64') }));
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push(e.message));
   await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(800);
@@ -20,9 +21,11 @@ ok((await theme(p)) === 'light' && (await p.isChecked('#theme-radios input[value
 ok((await stored(p)).theme === undefined, 'first visit stores nothing');
 const lightBg = await bg(p);
 // ---- System follows the device while the page is open
-await p.emulateMedia({ colorScheme: 'dark' }); await p.waitForTimeout(300);
+await p.emulateMedia({ colorScheme: 'dark' });
+await p.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
 ok((await theme(p)) === 'dark' && (await bg(p)) !== lightBg, 'System follows the device to dark without a reload');
-await p.emulateMedia({ colorScheme: 'light' }); await p.waitForTimeout(300);
+await p.emulateMedia({ colorScheme: 'light' });
+await p.waitForFunction(() => document.documentElement.dataset.theme === 'light');
 ok((await theme(p)) === 'light', 'and back to light');
 // ---- Dark override ignores the device
 await p.check('#theme-radios input[value=dark]'); await p.waitForTimeout(200);
@@ -48,12 +51,12 @@ ok((await theme(p)) === 'dark' && (await stored(p)).theme === 'system', 'System 
 const p2 = await ctx.newPage(); await p2.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p2.waitForTimeout(500);
 await p2.check('#theme-radios input[value=light]'); await p.waitForTimeout(500);
 ok((await theme(p)) === 'light', 'a choice made in another tab is followed');
-// ---- basemap: dark filter on the base tile layer only; toggling reloads nothing
+// ---- basemap: native dark tiles; markers and controls survive tile changes
 {
   const ctx3 = await b.newContext({ viewport: { width: 1200, height: 800 }, colorScheme: 'light' });
   await ctx3.addInitScript(() => { if (!sessionStorage.__s) { sessionStorage.__s = 1; localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: [{ id: 'm0', type: 'hotel', name: 'Seed A', note: '', lat: 30.59, lon: 114.30, created: '2026-11-01T00:00:00.000Z' }] })); localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.59, lon: 114.30, zoom: 14 } })); } });
   const q = await open(ctx3);
-  const tiles = []; q.on('request', (r) => { if (/tile.openstreetmap|opentopomap|openstreetmap.fr/.test(r.url())) tiles.push(r.url()); });
+  const tiles = []; q.on('request', (r) => { if (/tile.openstreetmap|opentopomap|openstreetmap.fr|tiles.wpgmaps.com/.test(r.url())) tiles.push(r.url()); });
   const filt = (sel) => q.evaluate((sel) => { const e = document.querySelector(sel); return e ? getComputedStyle(e).filter : null; }, sel);
   ok((await q.evaluate(() => document.querySelectorAll('.base-tiles').length)) === 1, 'exactly one layer carries .base-tiles (the zones are not filtered)');
   ok((await filt('.base-tiles')) === 'none', 'light: no filter on the base tiles');
@@ -61,12 +64,13 @@ ok((await theme(p)) === 'light', 'a choice made in another tab is followed');
   const before = await q.evaluate((mw) => ({ pop: !!document.querySelector(mw), z: document.querySelector('.leaflet-control-scale-line')?.textContent, m: document.querySelectorAll('.poi-pin').length }), MW);
   const n0 = tiles.length;
   await q.check('#theme-radios input[value=dark]'); await q.waitForTimeout(800);
-  ok((await filt('.base-tiles')).includes('invert'), 'dark: the base tiles are inverted by a filter');
-  ok(tiles.length === n0, 'switching to dark requests no new tiles');
+  ok((await filt('.base-tiles')) === 'none' && await q.locator('.base-tiles img[src*="tiles.wpgmaps.com"]').count() > 0, 'dark: native dark tiles without a filter');
+  ok(tiles.length > n0 && tiles.some(u => u.includes('tiles.wpgmaps.com/styles/dark/')), 'switching to dark requests the native dark source');
   const after = await q.evaluate((mw) => ({ pop: !!document.querySelector(mw), z: document.querySelector('.leaflet-control-scale-line')?.textContent, m: document.querySelectorAll('.poi-pin').length }), MW);
   ok(JSON.stringify(before) === JSON.stringify(after) && before.m >= 1 && before.pop, 'markers, the open window and the scale are unchanged by the switch');
-  await q.selectOption('#base', 'topo'); await q.waitForTimeout(1500);
-  ok((await filt('.base-tiles')).includes('invert') && (await q.evaluate(() => document.querySelectorAll('.base-tiles').length)) === 1, 'changing the basemap style in dark keeps the filter, on one layer');
+  await q.selectOption('#base', 'topo');
+  await q.waitForFunction(() => document.querySelectorAll('.base-tiles').length === 1 && document.querySelector('.base-tiles img[src*="opentopomap"]'));
+  ok((await filt('.base-tiles')) === 'none' && (await q.evaluate(() => document.querySelectorAll('.base-tiles').length)) === 1, 'changing to topo in dark uses one unfiltered layer');
   await q.check('#theme-radios input[value=light]'); await q.waitForTimeout(500);
   ok((await filt('.base-tiles')) === 'none', 'back to light: filter gone');
   await ctx3.close();

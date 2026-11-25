@@ -266,7 +266,7 @@ textarea{resize:vertical;min-height:60px}
 .help-hint.on-map{position:absolute;z-index:var(--z-card);left:10px;bottom:64px;margin:0;max-width:min(340px,calc(100% - 20px));background:var(--surface);box-shadow:var(--shadow-2)}
 .ses-hub .help-hint{margin:var(--sp-2) var(--sp-4) 0}
 .leaflet-control-scale-line{background:color-mix(in srgb,var(--surface) 88%,transparent)!important;color:var(--fg);border-color:var(--muted)!important;border-radius:0 0 4px 4px}
-.leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--muted)!important}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--muted)!important;margin-bottom:var(--shell-nav-bottom-h,0px)!important} /* keep the full provider credit above bottom navigation */
 .leaflet-control-attribution a{color:var(--accent)!important}
 .you-dot{background:var(--info);border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px color-mix(in srgb,var(--info) 35%,transparent)}
 
@@ -1100,7 +1100,6 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
   --rank-6:#e0832e; --rank-7:#d2542f; --rank-8:#b63d7a; --rank-9:#7a4cc2; --rank-10:#c99700;
   --rar-common:#8a97a3; --rar-rare:#3b82c4; --rar-epic:#8a54c9; --rar-legendary:#d99a16;
 }
-:root[data-theme="dark"] .base-tiles{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9)} /* dark basemap: the light tiles, inverted; only the base layer carries .base-tiles (zones are another layer) */
 :root[data-theme="dark"]{--zone-approx-line:#d2a8ff}
 :root[data-theme="dark"]{--rank-9:#9a70dc} /* the only rank colour under 3:1 against the dark surface (2.8 to 4.4). On the light surface ranks 1, 2, 4, 5, 6 and 10 are 2.4 to 3.0: the thin --rank-edge outline carries the 3:1 there, the hues stay */
 .rank-badge{--rb:22px;display:inline-flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box;width:var(--rb);height:var(--rb);border-radius:50%;border:max(2px,calc(var(--rb)/10)) solid var(--rank,var(--rank-1));background:var(--surface);color:var(--fg);font-weight:var(--fw-bold);font-size:calc(var(--rb)*.42);line-height:1}

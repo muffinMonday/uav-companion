@@ -135,11 +135,11 @@ for (const w of [320, 360, 390, 520, 768]) {
   await ctx.close();
 }
 
-// dark theme uses the base-layer filter; reduced motion removes the transition
+// previews retain original cartography without filtering; reduced motion removes the transition
 {
   const { ctx, p } = await page({ width: 390, height: 800 }, { colorScheme: 'dark', reducedMotion: 'reduce' });
   await p.locator(body + ' .ses-chev').first().click(); await p.waitForTimeout(300);
-  ok(/invert/.test(await p.evaluate(() => getComputedStyle(document.querySelector('.ses-prev-map img')).filter)), 'dark theme: the tiles carry the dark filter');
+  ok('none' === await p.evaluate(() => getComputedStyle(document.querySelector('.ses-prev-map img')).filter), 'dark theme: preview cartography is unfiltered');
   ok(/^0s$/.test(await p.evaluate(() => getComputedStyle(document.querySelector('.ses-prev')).transitionDuration)), 'reduced motion: no transition');
   await ctx.close();
 }

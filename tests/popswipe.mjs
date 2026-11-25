@@ -29,6 +29,8 @@ async function open(vp = { width: 390, height: 780 }, mobile = true, motion = 'r
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::|arcgisonline/.test(m.text()) && errs.push(m.text()));
   await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(900);
+  // Search is registered after region data loads; wait for its initialized, folded input.
+  await p.waitForFunction(() => document.getElementById('q')?.tabIndex === -1);
   const cdp = await ctx.newCDPSession(p);
   const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
   const swipe = async ([x0, y0], [x1, y1], steps = 8) => {

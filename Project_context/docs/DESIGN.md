@@ -13,7 +13,7 @@ Terms: **current** = in `styles.css` today; **planned (Pn)** = decided, to be ad
 2. Hierarchy first: title > primary value > body > meta > micro. Each role has one size and weight.
 3. Shared foundations, not mega-components: tokens plus a few small building blocks (section 6). A component with one use stays bespoke and only uses tokens.
 4. Use semantic tokens. No raw colour in component CSS except `#fff`/`#000` for glyphs and shadows, and the identity palette.
-5. Light and dark use the same tokens; a component never branches on theme (only `styles.css` token blocks and the three dark-only rules in section 8 do).
+5. Light and dark use the same tokens; components use theme tokens. The basemap source and small dark-only CSS rules are described in section 8.
 6. Phones first for space and touch: 44 px hit area on touch, 12 px minimum for text people read, 16 px inputs on touch screens.
 7. No new runtime cost: do not add `backdrop-filter`, CSS filters or extra shadow layers; animate transform and opacity only; no web fonts.
 8. Do not change behaviour or the tuned phone sheet / dashboard logic (`.sidepanel.tall`, `.dash.tall`, swipe handling) when restyling.
@@ -132,7 +132,7 @@ Marker types (`poi.js`): home `#2e7d32`, hotel `#6a4fb3`, takeoff `#1565c0`, lan
 **Rank indicators (owner decision 2026-11-13):** keep the palette; one subtle, consistent outline (`--rank-edge`) on rank badges and rings for contrast in both themes (P1, built). The ten colours are unchanged. Screens `rank-rings` (27) in the screenshot set draw all ten tiers as badges and live pins.
 
 ## 8. Themes
-`theme.js` writes the resolved theme to `<html data-theme>`; `index.html` runs the same few lines before first paint (`tests/theme-unit.mjs` keeps them equal). Dark values: the `:root[data-theme="dark"]` token block at the top of `styles.css`, plus three small dark-only rules: `:root[data-theme="dark"]{color-scheme:dark}`, the `.base-tiles` filter (dark basemap = light OSM tiles inverted by a CSS filter, base layer only), and `--rank-9`. Rules: a new colour is a token with a dark value; no `@media (prefers-color-scheme)` in components; test both themes.
+`theme.js` writes the resolved theme to `<html data-theme>`; `index.html` runs the same few lines before first paint (`tests/theme-unit.mjs` keeps them equal). Dark values: the `:root[data-theme="dark"]` token block at the top of `styles.css`, plus dark-only `:root[data-theme="dark"]{color-scheme:dark}` and `--rank-9`. The standard OSM selection uses native Go Tiles dark cartography in dark mode; HOT, CyclOSM and OpenTopoMap keep their original cartography in both themes. Basemaps have no CSS filter. Attribution clears the measured bottom navigation height so the complete provider credit remains visible on phones. Go Tiles is keyless for website use up to 15,000 tiles/site/month; failure or a 12-second initial load timeout falls back to ordinary OSM for the map session without saving a different preference. Provider terms: https://www.wpgmaps.com/go-tiles/terms/ . Rules: a new colour is a token with a dark value; no `@media (prefers-color-scheme)` in components; test both themes.
 
 ## 9. Responsive and mobile
 Breakpoints (documented, current): **phone <= 520 px** (bottom sheets: `.sidepanel`, `.dash`, `.account-pop`), **compact <= 760 px** (rail icons only, search shortens), 420 px (splash choices stack), touch + height <= 900 (dashboard expand button). No tablet tier (761-1024 uses the desktop layout: checked in the baseline screenshots `tabport`, `tabland`). Phone sheet sizes: panel 62vh (max 560) / `tall` 90dvh; dashboard max 54vh / `tall` 90dvh; account sheet 85vh; marker window: sized to fit above the pin (collapsed) or 60% of the screen (expanded, 85% on a computer) (`src/view.js`). **Do not change these without the owner.**
@@ -161,7 +161,7 @@ Other known gaps: touch targets 18-30 px (only `.checkin-btn` extends its hit ar
 Good and to keep: global focus ring, `prefers-reduced-motion` handling, accessible names on icon buttons (`.tool-label`, `.sr-only`), `color-scheme`, native `<dialog>`.
 
 ## 11. Map UI
-Popups (frosted glass via `--pop-alpha`), scale, attribution and Leaflet bar buttons follow the theme; `!important` in the Leaflet skin is deliberate (Leaflet's CSS is more specific). Markers, zones and routes keep identity colours. Do not add filters or blur beyond today's two (popup blur, `.base-tiles` filter): filter cost on a weak phone or a rotated map is still unmeasured. Check on the filtered dark map: `.crosshair` (`#111`), `.dist-label-text` border (`#888`).
+Popups (frosted glass via `--pop-alpha`), scale, attribution and Leaflet bar buttons follow the theme; `!important` in the Leaflet skin is deliberate (Leaflet's CSS is more specific). Markers, zones and routes keep identity colours. Do not add tile filters; popup blur remains. Check in both themes: `.crosshair` (`#111`), `.dist-label-text` border (`#888`).
 
 ## 12. Phases (owner approved the direction 2026-11-13; each phase from 1 on needs approval after review)
 | Phase | Scope | Visible | Status |
@@ -278,7 +278,7 @@ Spec: `DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md` sections 12 and 16. CSS only (blo
 - Files: 320 px WebP in `src/assets/mascots` derived by `scripts/make-mascots.mjs` from `public/mascots` originals (not shipped). Add a pose to the map only when a screen uses it. App icon: `public/icons`, `public/manifest.webmanifest`.
 
 ## 23. Flight Sessions: map preview, people, XP badge (2026-11-15)
-- **Preview (wave B1):** a right-edge chevron on every Discover card (44 x 44 px, `aria-expanded`, `aria-controls`, one open at a time, no swipe, nothing kept between visits). Open, it shows four raster tiles of the current basemap (`.ses-prev-map`, dark theme through the existing `.base-tiles` filter), a pin, the basemap credit as text and "Open the map to check airspace." Tapping the picture opens the Map Explorer focus path. No Leaflet instance, no airspace overlay, no thumbnail in explorer cards. Height transition 0.18 s (the global reduced-motion rule removes it). Code: `sessions-preview-model.js` (tile maths), `sessions-preview.js`.
+- **Preview (wave B1):** a right-edge chevron on every Discover card (44 x 44 px, `aria-expanded`, `aria-controls`, one open at a time, no swipe, nothing kept between visits). Open, it shows four raster tiles of the current basemap (`.ses-prev-map`, original cartography without filtering in either theme), a pin, the basemap credit as text and "Open the map to check airspace." Tapping the picture opens the Map Explorer focus path. No Leaflet instance, no airspace overlay, no thumbnail in explorer cards. Height transition 0.18 s (the global reduced-motion rule removes it). Code: `sessions-preview-model.js` (tile maths), `sessions-preview.js`.
 - **XP badge (B2):** `.badge.xp`, one helper `sessions-xp.js`; text from the server amount only.
 - **People (B2):** host and attendees are buttons (`.ses-host`, `.ses-person`, 44 px on touch) that open the profile popover; inside the open dialog the popover is a child of the dialog so it is not covered by the top layer, and Escape closes only the popover.
 

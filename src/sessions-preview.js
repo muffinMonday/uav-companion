@@ -1,4 +1,4 @@
-// A small map preview of a session's meeting point for Discover cards: four raster tiles of the current basemap (the same tiles and CSS dark filter as the map), a pin and
+// A small map preview of a session's meeting point for Discover cards: four raster tiles of the current basemap (original light cartography, without filtering), a pin and
 // the basemap's credit. No Leaflet instance, no airspace overlay (the text points to the map for that). Built only when a card is expanded; the browser cache does the rest.
 import { baseTiles } from './map.js';
 import { tileGrid, creditText, TILE } from './sessions-preview-model.js';
