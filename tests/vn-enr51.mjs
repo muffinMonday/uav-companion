@@ -28,8 +28,14 @@ for (const [label, vp] of [['desktop', { width: 1300, height: 850 }], ['phone', 
   ok(/Danger area: VVD23/.test(t) && /Caution/.test(t) && !/No-fly zone/.test(t), `${label}: inside VVD23 shows a danger area as a caution`);
   t = await check('20.5000, 105.0000'); // Vietnam, outside every polygon
   ok(/No data for this area/i.test(t), `${label}: a Vietnamese point outside every polygon is unknown, not clear`);
-  t = await check('10.9500, 106.8200'); // Bien Hoa, VVR19 unresolved
-  ok(/No data for this area/i.test(t) && !/Restricted area: VVR19/.test(t), `${label}: Bien Hoa (VVR19, unresolved) is unknown, nothing is guessed`);
+  t = await check('11.1000, 106.8000'); // inside VVR19 Bien Hoa (approximate boundary)
+  ok(/Potential restricted airspace — approximate boundary: VVR19/.test(t) && /Boundary approximated from official AIP chart/.test(t) && !/^Restricted area/m.test(t), `${label}: inside VVR19 shows potential restricted airspace with the chart-approximation notice`);
+  t = await check('10.7000, 106.8000'); // south of VVR19, outside every polygon
+  ok(!/VVR19/.test(t) && /No data for this area/i.test(t), `${label}: just south of VVR19 is unknown, not inside it`);
+  t = await check('21.0950, 105.4600'); // inside VVD43 (interpreted vertex 210333N)
+  ok(/Potential danger airspace — approximate boundary: VVD43/.test(t) && /Caution|danger/i.test(t), `${label}: inside VVD43 shows potential danger airspace, approximate boundary`);
+  t = await check('21.0150, 105.4700'); // inside VVD45 (interpreted vertex 1052002E)
+  ok(/Potential danger airspace — approximate boundary: VVD45/.test(t), `${label}: inside VVD45 shows potential danger airspace, approximate boundary`);
   t = await check('1.2800, 103.8600'); // Marina Bay
   ok(/Not inside a mapped no-fly zone/.test(t), `${label}: Singapore verdicts are unchanged`);
   t = await check('2.9150, 101.7983'); // WMP220 Puspati

@@ -131,6 +131,9 @@ async function main() {
     counts: Object.fromEntries(Object.entries(layers).map(([k, v]) => [k, { parsed: rows.filter((r) => r.cls === k).length, converted: v.length }])),
     notAreas: skipped, exceptions,
   };
+  // approximated by vn-enr51-approx.mjs (separate approx-* layers); the strict layers above stay exact-only
+  const apx = path.join(OUT, 'approx-provenance.json');
+  if (fs.existsSync(apx)) { const by = Object.fromEntries(JSON.parse(fs.readFileSync(apx, 'utf8')).areas.map((a) => [a.id, a.geometryConfidence])); for (const e of exceptions) if (by[e.id]) e.approximated = by[e.id]; report.approximated = exceptions.filter((e) => e.approximated).length; }
   fs.writeFileSync(path.join(OUT, 'exceptions.json'), JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify({ parsed: report.parsed, converted: report.converted, unresolved: report.unresolved, counts: report.counts, sha256: report.source.htmlSha256, exceptions: exceptions.map((e) => `${e.id} [${e.category}]: ${e.reason.slice(0, 140)}`) }, null, 1));
 }
