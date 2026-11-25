@@ -114,6 +114,7 @@ export function initPanel() {
   // or in the body once it is scrolled to the top.
   const inHeader = (t) => !!t.closest('.sp-head, .sp-grab');
   onSwipe(panel, { direction: 'down', enabled: () => isPhone() && !panel.hidden, canStart: (t) => inHeader(t) || atTop(t, panel), onDismiss: () => close({ instant: true }) });
+  onSwipe(panel, { direction: 'up', distance: 40, enabled: () => isPhone() && !panel.hidden && !panel.classList.contains('tall'), canStart: inHeader, onDismiss: () => setTall(true) }); // up from the header or handle: the same as the expand handle
   onSwipe(panel, { direction: 'right', enabled: () => !panel.hidden, onDismiss: () => close({ instant: true }) }); // to the right, on a phone as well as on a computer
 
   function wireTab(t) {

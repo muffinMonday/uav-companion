@@ -1,3 +1,6 @@
+## 2026-11-26 - Unified touch gestures
+- Swipe added to the top-right cluster, search header, More tools sheet, route summary, Sessions explorer fold and the phone panel's expand handle, all through the existing `onSwipe()` and each component's own state function. Smaller disclosures (Saved Places groups, Side Quests, trip warnings, profile sections, Help) stay tap-only (scroll conflict). Details: DESIGN.md section 26.
+
 ## 2026-11-26 - Malaysia airport traffic zones (66)
 - 5 NM circles around AIP ARPs (CAAM SI 11/2022, MCAR 2016 reg. 140(1)(b)); class "Airport traffic zone — authorisation required" under P/R/D. 2 unresolved (WBKE, WMAE). Merge `8228974`, gh-pages `0160734`, rollback `de13c55` / `7c8fb77`. Details: `docs/regions/my-enr51.md`.
 

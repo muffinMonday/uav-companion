@@ -9,6 +9,7 @@ import { sessionMapActions, hasPoint } from './maplinks-ui.js';
 import { createFreeArea, dockMode } from './free-area.js';
 import { announce, onOverlay } from './overlay-policy.js';
 import { SHELL_NAV_ID } from './shell/nav-id.js'; // Review 01 S10.2: the new shell's nav bar/rail, when built (VITE_NEW_SHELL), is a cover like the side panel; null (filtered out) otherwise. A plain constant, not shell/nav.js itself, so this file stays free of import.meta.env
+import { onSwipe } from './swipe.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -36,11 +37,16 @@ export function createExplorer({ map, panel, getItems, onDetails, onExpand, onCl
 
   expandB.addEventListener('click', () => onExpand?.());
   closeB.addEventListener('click', () => onClose?.());
-  foldB.addEventListener('click', () => { collapsed = !collapsed; paintFold(); layout({ recenter: true }); });
+  const setFold = (on) => { collapsed = on; paintFold(); layout({ recenter: true }); };
+  foldB.addEventListener('click', () => setFold(!collapsed));
   const paintFold = () => {
     dock.dataset.collapsed = String(collapsed); foldB.setAttribute('aria-expanded', String(!collapsed));
     const t = collapsed ? 'Show the list' : 'Collapse the list'; foldB.title = t; foldB.setAttribute('aria-label', t); body.hidden = collapsed;
   };
+  // The same fold by touch, from the header only (the list scrolls and its cards are tapped). The direction follows the dock: a left panel tucks away to the left and returns to
+  // the right; a bottom sheet goes down and comes back up.
+  const swipeFold = (direction, wantCollapsed, m) => onSwipe(head, { direction, distance: 28, follow: dock, enabled: () => isOpen && !parked && mode === m && collapsed === !wantCollapsed, onDismiss: () => setFold(wantCollapsed) });
+  swipeFold('left', true, 'side'); swipeFold('right', false, 'side'); swipeFold('down', true, 'bottom'); swipeFold('up', false, 'bottom');
   const onKey = (e) => { if (e.key === 'Escape' && isOpen && !parked && !e.defaultPrevented && !document.querySelector('dialog[open]') && !map.getContainer().querySelector('.leaflet-popup')) { e.preventDefault(); onClose?.(); } };
 
   // ---- geometry: the part of the map the dock and the side panel do not cover (shared module, src/free-area.js)

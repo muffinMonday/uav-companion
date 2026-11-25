@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import { parseCoordinates } from './coordparse.js';
 import { log } from './log.js';
+import { onSwipe } from './swipe.js';
 
 /**
  * The search box: coordinates (typed or from a pasted map link), and place names searched online only when the person asks (Enter, or the "Search online" row).
@@ -18,6 +19,12 @@ export function initSearch(map, { show }) {
   qEl.tabIndex = -1; // folded: out of the tab order
   const collapse = () => { const was = !box.classList.contains('collapsed'); box.classList.add('collapsed'); qEl.tabIndex = -1; toggle.setAttribute('aria-expanded', 'false'); resEl.hidden = true; qEl.setAttribute('aria-expanded', 'false'); if (document.activeElement === qEl) qEl.blur(); if (was) for (const fn of closeListeners) fn(); };
   closeBtn?.addEventListener('click', () => collapse()); // the full-screen close affordance (new shell only; CSS-hidden otherwise)
+  // Swipe to fold, from the header only (the magnifier, the close button or the empty bar around them; the input and the results are left alone, so typing,
+  // selecting text and scrolling the list are untouched). The compact box hangs off the left, so it goes left; the full-screen box (new shell, its close button shows) goes down.
+  const fullScreen = () => getComputedStyle(closeBtn).display !== 'none';
+  const header = (t) => t === box || !!t.closest('.search-btn, .search-close');
+  onSwipe(box, { direction: 'left', distance: 40, enabled: () => !box.classList.contains('collapsed') && !fullScreen(), canStart: header, onDismiss: () => collapse() });
+  onSwipe(box, { direction: 'down', enabled: () => !box.classList.contains('collapsed') && fullScreen(), canStart: header, onDismiss: () => collapse() });
   /** Out of use: nothing typed and no list showing. */
   const idle = () => !qEl.value.trim() && resEl.hidden;
   toggle.addEventListener('click', () => { if (box.classList.contains('collapsed')) expand(); else if (idle()) collapse(); else qEl.focus(); });

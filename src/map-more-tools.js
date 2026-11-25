@@ -8,6 +8,7 @@
 //     being placed or a point picked. Whether it is open is page memory only: a reload starts closed.
 import L from 'leaflet';
 import { FOLDED, toolRow } from './map-tool-labels.js';
+import { onSwipe, atTop } from './swipe.js';
 
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor"/></svg>';
 const TOOL_OF = (a) => a.dataset.tool || null;
@@ -116,6 +117,8 @@ export function initMapMoreTools(map, { onOpen = null, onUse = null } = {}) {
   }
 
   closeBtn.addEventListener('click', () => set(false, { focus: true }));
+  // The phone sheet goes back down the way it came: a swipe down from its header, or from the list once that is at the top. Same close as the x button (no focus move: it is a touch).
+  onSwipe(menu, { direction: 'down', enabled: () => isOpen && !menu.hidden && menu.classList.contains('sheet'), canStart: (t) => !!t.closest('.more-head') || atTop(t, menu), onDismiss: () => set(false, { focus: false }) });
   document.addEventListener('pointerdown', (e) => { if (isOpen && !menu.contains(e.target) && !toggle?.contains(e.target)) set(false); }, true);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen && (menu.contains(document.activeElement) || toggle === document.activeElement)) { e.stopPropagation(); set(false, { focus: true }); } }, true);
 

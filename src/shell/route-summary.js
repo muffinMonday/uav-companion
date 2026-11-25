@@ -7,6 +7,7 @@ import { el } from '../cards.js';
 import { labelText } from '../route/geometry.js';
 import { fmtDistance } from '../distance.js';
 import { getDistanceSettings } from '../units.js';
+import { onSwipe, atTop } from '../swipe.js';
 
 const CHEVRON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
 
@@ -46,6 +47,9 @@ function createRouteSummaryUI({ poi }) {
   let open = false;
   function setOpen(v) { open = v; box.dataset.open = String(open); detail.hidden = !open; status.setAttribute('aria-expanded', String(open)); }
   status.addEventListener('click', () => setOpen(!open));
+  // The chip sits on the bottom edge and opens upward: a swipe up on it expands the leg list, a swipe down (from the chip, or from the list once scrolled to its top) folds it. Same setOpen as the tap.
+  onSwipe(box, { direction: 'up', distance: 24, follow: status, enabled: () => !box.hidden && !open, onDismiss: () => setOpen(true) });
+  onSwipe(box, { direction: 'down', distance: 24, follow: status, enabled: () => !box.hidden && open, canStart: (t) => atTop(t, box), onDismiss: () => setOpen(false) });
 
   function render(summary) {
     box.hidden = !summary;

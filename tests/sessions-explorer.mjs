@@ -300,6 +300,37 @@ await p.setViewportSize({ width: 700, height: 850 }); await settle(p, 900);
 ok(await selectedId(p) === keep && await offBy(p, '.ses-map-pin.sel') <= 16, 'rotating to 700x850 keeps the selection centred');
 await ctx.close();
 
+// ======================================================================= swipe to fold the list (touch; Playwright emulation, not a real device)
+for (const [vp, mode] of [[{ width: 850, height: 700 }, 'side'], [{ width: 390, height: 844 }, 'bottom']]) {
+  ({ ctx, p } = await open('guest', { vp, touch: true }));
+  await explore(p);
+  const cdp = await ctx.newCDPSession(p);
+  const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
+  const swipe = async ([x0, y0], [x1, y1]) => { await touch('touchStart', x0, y0); for (let i = 1; i <= 8; i++) { await touch('touchMove', x0 + ((x1 - x0) * i) / 8, y0 + ((y1 - y0) * i) / 8); await p.waitForTimeout(12); } await touch('touchEnd'); await p.waitForTimeout(200); };
+  const folded = () => p.getAttribute(X, 'data-collapsed');
+  const h = await rect(p, X + ' .ses-x-head'), cy = (h.t + h.b) / 2;
+  const [away, back] = mode === 'side' ? [[[h.l + 150, cy], [h.l + 30, cy]], [[h.l + 30, cy], [h.l + 150, cy]]] : [[[h.l + 100, cy], [h.l + 100, cy + 90]], [[h.l + 100, cy], [h.l + 100, cy - 90]]];
+  ok(await folded() === 'false', mode + ' dock: starts unfolded');
+  await swipe(...back);
+  ok(await folded() === 'false', mode + ' dock: the opposite swipe (' + (mode === 'side' ? 'right' : 'up') + ') does nothing while unfolded');
+  await swipe(...away);
+  ok(await folded() === 'true' && await p.locator(X + ' .ses-x-body').isHidden(), mode + ' dock: a swipe ' + (mode === 'side' ? 'left' : 'down') + ' on the header folds the list (same state as the fold button)');
+  const h2 = await rect(p, X + ' .ses-x-head'), cy2 = (h2.t + h2.b) / 2;
+  await swipe([h2.l + (mode === 'side' ? 30 : 100), cy2], [h2.l + (mode === 'side' ? 34 : 100), cy2 + (mode === 'side' ? 3 : -6)]);
+  ok(await folded() === 'true', mode + ' dock: a short swipe changes nothing and leaves no offset (' + (await p.$eval(X, (e) => e.style.transform) || 'no transform') + ')');
+  await swipe(...(mode === 'side' ? [[h2.l + 30, cy2], [h2.l + 150, cy2]] : [[h2.l + 100, cy2], [h2.l + 100, cy2 - 90]]));
+  ok(await folded() === 'false' && await p.locator(X + ' .ses-x-body').isVisible(), mode + ' dock: the reverse swipe unfolds it');
+  const bodyBox = await rect(p, X + ' .ses-x-body');
+  await swipe([bodyBox.l + 150, bodyBox.t + 60], [bodyBox.l + 30, bodyBox.t + 60]);
+  await swipe([bodyBox.l + 100, bodyBox.t + 30], [bodyBox.l + 100, bodyBox.t + 120]);
+  ok(await folded() === 'false', mode + ' dock: swipes that start in the list body never fold it (the list scrolls and its cards are tapped)');
+  await p.locator('#ses-x-fold').tap(); await p.waitForTimeout(150);
+  ok(await folded() === 'true', mode + ' dock: the fold button still works after swiping');
+  await p.locator('#ses-x-fold').focus(); await p.keyboard.press('Enter'); await p.waitForTimeout(150);
+  ok(await folded() === 'false', mode + ' dock: and so does the keyboard');
+  await ctx.close();
+}
+
 // ======================================================================= a turned map
 for (const [w, h, bearing] of [[1300, 850, 35], [390, 844, -70]]) {
   ({ ctx, p } = await open('guest', { vp: { width: w, height: h }, touch: w < 600 }));
