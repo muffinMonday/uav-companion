@@ -1,3 +1,10 @@
+## Latest: unified touch gestures DEPLOYED (2026-11-26)
+- **Authorization:** owner authorized autonomous implement/commit/push/merge/deploy for this change only; expired with this release.
+- **Change:** swipes on the top-right cluster, search header, More tools sheet, route summary, Sessions explorer fold and the phone panel expand handle, all via existing `onSwipe()`; Saved Places groups, Side Quests, trip warnings, profile sections and Help stay tap-only (scroll conflict). Details: DESIGN.md section 26.
+- **Commits:** feature `75556dc`, merge `3acb7ed` on `main`; gh-pages `0a35bad` (serves `main-1wSowwbJ.js`). **Rollback:** `main` `869b1e9`, gh-pages `0160734`.
+- **Tests:** new `gestures` 64/0, explorer fold block 16/0, shell-nav 109/0 plus explore/profile, side*, dash*, paneltall, tripstouch, popswipe, poisearch 0 fail. Full run: 10 failed suites; baseline: html-components-unit, region-labels-unit, country-groups-unit, html-dom, country-buttons, splash, prefs, swipe (slider check), fly-in (verified on main); autoshare 1 load flake, passes alone. Live smoke: phone swipe folds the top bar, no page errors.
+- **Not verified:** real phone, foldable or tablet (Playwright emulation only); route summary tested with a stub route list.
+
 ## Latest: Malaysia airport traffic zones DEPLOYED (2026-11-26)
 - **Authorization:** owner authorized autonomous implement/commit/push/merge/deploy for this enrichment only; expired with this release.
 - **Change:** class `aerodrome-traffic-zone` ("Airport traffic zone — authorisation required") in region `my-enr51`: **66 five-nautical-mile (9,260 m) geodesic circles** around AIP Malaysia ARPs (AMDT 04/26, effective 2026-11-03; AD 2.2 for 40 aerodromes, AD 4.1 position for 26). Rule: MCAR 2016 reg. 140(1)(b) + CAAM Safety Information 11/2022. **Unresolved (2):** WBKE Terupid, WMAE Bidor (no position in AD 4.1). Drawn under P/R/D; P/R/D lead the point-check headline and the airport zone is listed as "Also inside". Details: `docs/regions/my-enr51.md`; extractor `scripts/airspace/my-atz.mjs`; provenance `atz-provenance.json`.
