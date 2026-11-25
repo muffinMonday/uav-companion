@@ -1,3 +1,7 @@
+## 2026-11-25 - Prefer the Amap app on phones
+- China Navigate and Open in Amap actions now try the native app directly on Android and iPhone, with a browser fallback. Route stops, travel modes, coordinate conversion, Home confirmation, copied links and desktop behavior are preserved. Source `39bbe09`, gh-pages `9b973af4`; deployed with the existing live flags and backend build configuration; all 33 published regions retained.
+- Focused validation: 90 unit checks, 14 new mobile browser checks, 34 existing map-link checks and 20 controls checks passed. Live Android/iPhone user-agent checks passed against the served release. Actual installed-app handoff still needs phone verification. Full-suite failures and release evidence: `CURRENT_STATUS.md`.
+
 ## 2026-11-24 - Vietnam ENR 5.1
 - `vn-enr51` (71 of 74 areas, AIP Viet Nam 2026-10-01-AIRAC) released in `33d1a04`, gh-pages `dfae17e`; VVR19, VVD43, VVD45 unresolved. Details: `docs/regions/vn-enr51.md`.
 
