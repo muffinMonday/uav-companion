@@ -289,3 +289,17 @@ Spec: `DASHBOARD_TOOLBAR_VISUAL_REFINEMENT.md` sections 12 and 16. CSS only (blo
 - **2026-11-23 (owner decision, UI/UX Review 01 G03 compact-auth authorization):** the original "soft secondary like the other popover buttons, no new colour" treatment is superseded to match approved mockup v4, which styles Continue with Google as the primary/accent action (`.btn.primary`, Design System v2 `--accent` token). The "or use email" form's own submit button (`.btn.small`) stays secondary, so Google remains the visually primary path while email stays the alternate. No change to click handlers, OAuth flow, or the states/notice behavior below.
 - States: idle; redirecting (both submit controls disabled, status "Opening Google…", reset on `pageshow`); failed or cancelled return (popover opens by itself with "Google sign-in did not finish. Try again, or use the email link below.", the provider's own text is never shown); success is quiet (no popover; the account button shows the avatar).
 - Code: `signInForm()` in `sync-ui.js`; tests `google-signin` (browser, mocked) and `google-signin-unit`.
+
+## 26. Unified touch gestures (2026-11-26)
+Every swipe goes through `onSwipe()` (`src/swipe.js`, unchanged: thresholds, axis lock, flick, cancel, reduced motion). The component keeps its own state; the swipe calls the same function as the button.
+| Surface | Gesture | Same as |
+|---|---|---|
+| Top-right cluster (`nav.js`, bottom-nav tiers) | right folds, left unfolds | arrow button |
+| Search (`search.js`) | header only (magnifier, close button, bar padding): left on the compact box, down on the full-screen new-shell box | close / Escape |
+| More tools sheet (`map-more-tools.js`, phone) | down from the header, or from the list at its top | x button / Escape |
+| Route summary (`shell/route-summary.js`) | up expands, down folds (from the chip, or the list at its top) | tap on the chip |
+| Sessions explorer (`sessions-map-explorer.js`) | header only; side dock: left folds, right unfolds; bottom dock: down folds, up unfolds | fold button |
+| Phone panel (`panel.js`) | up from the header/handle expands (new); down and right dismissals unchanged | expand handle |
+Unchanged: dashboard peek/expanded/hidden, rail fold, marker host's own drag, popup and dialog swipes.
+**Not given a gesture (tap/keyboard only), and why:** Saved Places trip/day group headers, Side Quest chips, trip warnings, profile accordion sections, Help topics. All sit inside a scrolling list or panel body, so a vertical swipe on a header would take over the scroll; a horizontal one collides with the panel's swipe-right dismissal and has no natural meaning for a vertical disclosure. `tests/gestures.mjs` asserts a vertical touch on the Saved Places disclosure header is not taken over.
+Tests: `tests/gestures.mjs` (new), explorer block in `tests/sessions-explorer.mjs`. Playwright emulation only; no real phone, foldable or tablet.

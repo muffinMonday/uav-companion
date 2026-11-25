@@ -14,6 +14,7 @@ import { createHistoryStack } from './history.js';
 import { initSettingsUI } from './settings.js';
 import { initActivityUI } from './activity.js';
 import { onOverlay } from '../overlay-policy.js';
+import { onSwipe } from '../swipe.js';
 
 const ICONS = {
   map: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 3 5.5v15L9 18l6 2.5 6-2.5v-15L15 5.5 9 3Zm0 2.2 6 2.5v12.1l-6-2.5V5.2ZM3.9 6.3 8 4.6v12.1l-4.1 1.7V6.3Zm16.2 11.4-4.1 1.7V6.3l4.1-1.7v13.1Z"/></svg>',
@@ -274,6 +275,10 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
   }
   setTopbarCollapsed(false);
   toggle.addEventListener('click', () => setTopbarCollapsed(topbar.dataset.collapsed !== 'true'));
+  // The same fold by touch: the cluster hangs off the right edge, so a swipe right tucks it away and a swipe left brings it back. Same state function as the arrow.
+  const topbarCollapsed = () => topbar.dataset.collapsed === 'true';
+  onSwipe(topbar, { direction: 'right', distance: 28, enabled: () => !topbar.hidden && !topbarCollapsed(), onDismiss: () => setTopbarCollapsed(true) });
+  onSwipe(topbar, { direction: 'left', distance: 28, enabled: () => !topbar.hidden && topbarCollapsed(), onDismiss: () => setTopbarCollapsed(false) });
   const offMarkerOverlay = onOverlay((owner, phase) => { if (owner === 'marker' && phase === 'open') setTopbarCollapsed(true); });
   stopTier = watchTier(({ tier, short, coarse }) => {
     root.dataset.tier = tier;
