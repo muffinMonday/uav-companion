@@ -1,11 +1,20 @@
 // The map-app controls: one Navigate action for a place (marker windows, point-check windows, session cards) and the route buttons for several markers.
 // Links come from maplinks.js. Opening one shares those coordinates with the map app, but only when the visitor taps it.
-import { APP_LABEL, MODES, appsFor, resolveApp, hereUrl, routeUrls } from './maplinks.js';
+import { APP_LABEL, MODES, appsFor, resolveApp, hereUrl, routeUrls, androidAmapIntentUrl } from './maplinks.js';
 import { inChina } from './coords.js';
 import { loadPrefs } from './prefs.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
-const open = (url) => window.open(url, '_blank', 'noopener,noreferrer');
+// Android Chrome supports package-qualified intent links. Other browsers retain
+// the original HTTPS URL; no hidden timer or automatic app launch is attempted.
+export const appFirstUrl = (url, ua = navigator.userAgent) =>
+  /Android/i.test(ua) && /Chrome\\//i.test(ua) && !/EdgA\\/|OPR\\/|SamsungBrowser\\/|Firefox\\//i.test(ua)
+    ? androidAmapIntentUrl(url) : url;
+const open = (url) => {
+  const target = appFirstUrl(url);
+  if (target.startsWith('intent://')) window.location.assign(target);
+  else window.open(target, '_blank', 'noopener,noreferrer');
+};
 /** A phone or tablet: Google Maps takes fewer stops in a mobile browser. */
 export const isMobileBrowser = () => window.matchMedia?.('(pointer: coarse)').matches ?? false;
 
@@ -16,7 +25,7 @@ export const isMobileBrowser = () => window.matchMedia?.('(pointer: coarse)').ma
 export function linkButton({ label, url, confirm = false }) {
   if (!confirm) {
     const a = el('a', 'btn small maplink', label);
-    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.href = appFirstUrl(url); a.target = a.href.startsWith('intent://') ? '_self' : '_blank'; a.rel = 'noopener noreferrer';
     return a;
   }
   const b = el('button', 'btn small maplink', label);
@@ -49,7 +58,7 @@ function actionControl({ icon, label, url, confirm = false, title }) {
   const tip = (title || label) + '. Opens in a new tab and shares this location with the map app.';
   if (!confirm) {
     const a = el('a', 'btn map-action maplink');
-    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.title = tip; a.setAttribute('aria-label', title || label);
+    a.href = appFirstUrl(url); a.target = a.href.startsWith('intent://') ? '_self' : '_blank'; a.rel = 'noopener noreferrer'; a.title = tip; a.setAttribute('aria-label', title || label);
     a.innerHTML = iconSvg(icon);
     a.append(el('span', 'map-action-label', label));
     return a;
