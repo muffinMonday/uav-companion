@@ -91,3 +91,17 @@ r = L.routeUrls('amap', cn.slice(0, 2), 'bike');
 ok(r.parts.length === 1 && /mode=ride/.test(r.parts[0].url) && /phone app only/.test(r.note), 'Amap route: bike is mode=ride, with a note that it needs the phone app');
 ok(L.routeUrls('amap', [{ lat: 30.5, lon: 114.3, name: 'A, B | C; D' }, cn[1]], 'walk').parts[0].url.includes('A%20B%20C%20D'), 'Amap route: commas, bars and semicolons in a name are removed (they separate fields)');
 ok(L.routeUrls('google', mk(2)).parts[0].url.includes('origin=30.000000%2C114.000000'), 'a route needs only coordinates, so a name with odd characters cannot affect a Google link');
+
+
+// ---------- Android app-first navigation
+const webNav = L.hereUrl('amap', wuhan, 'drive');
+const intent = L.androidAmapIntentUrl(webNav);
+ok(intent.startsWith('intent://uri.amap.com/navigation?to=') && intent.includes('package=com.autonavi.minimap;') && intent.includes('scheme=https;'), 'Android intent targets the Amap package with original navigation parameters');
+const fallback = intent.match(/S.browser_fallback_url=([^;]+);end$/)?.[1];
+ok(decodeURIComponent(fallback || '') === webNav, 'Android intent embeds the exact original HTTPS fallback');
+ok(intent.includes('to=' + gw.lon.toFixed(6) + ',' + gw.lat.toFixed(6)), 'Android intent preserves GCJ-02 destination');
+const webMulti = L.routeUrls('amap', cn.slice(0, 3), 'drive').parts[0].url;
+const multiIntent = L.androidAmapIntentUrl(webMulti);
+ok(multiIntent.includes('&via=') && decodeURIComponent(multiIntent.match(/S.browser_fallback_url=([^;]+);end$/)?.[1] || '') === webMulti, 'Android intent preserves intermediate stop and complete fallback');
+ok(L.androidAmapIntentUrl(L.hereUrl('google', wuhan)) === L.hereUrl('google', wuhan), 'Google navigation URL is unchanged');
+ok(L.androidAmapIntentUrl('https://example.com/navigation?to=1,2') === 'https://example.com/navigation?to=1,2', 'Unrelated hosts are not rewritten');
