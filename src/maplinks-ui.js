@@ -1,23 +1,60 @@
 // The map-app controls: one Navigate action for a place (marker windows, point-check windows, session cards) and the route buttons for several markers.
 // Links come from maplinks.js. Opening one shares those coordinates with the map app, but only when the visitor taps it.
-import { APP_LABEL, MODES, appsFor, resolveApp, hereUrl, routeUrls } from './maplinks.js';
+import { APP_LABEL, MODES, appsFor, resolveApp, hereUrl, routeUrls, amapLaunch } from './maplinks.js';
 import { inChina } from './coords.js';
 import { loadPrefs } from './prefs.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
-const open = (url) => window.open(url, '_blank', 'noopener,noreferrer');
+export const mapPlatform = (nav = navigator) => /Android/i.test(nav.userAgent) ? 'android'
+  : /iPhone|iPad|iPod/i.test(nav.userAgent) || (/Macintosh/i.test(nav.userAgent) && nav.maxTouchPoints > 1) ? 'ios' : 'desktop';
+
+let cancelLaunch = () => {};
+/** Call synchronously from a tap so Chrome keeps the user gesture for app launching. */
+export function openMapUrl(url) {
+  cancelLaunch();
+  const platform = mapPlatform(), launch = amapLaunch(url, platform);
+  if (!launch) { window.open(url, '_blank', 'noopener,noreferrer'); return; }
+  if (platform === 'android') { window.location.assign(launch.url); return; } // Chrome owns the intent fallback
+  // iOS has no intent fallback. Cancel permanently when the app takes over, including when the user returns later.
+  let timer;
+  const cleanup = () => {
+    window.clearTimeout(timer);
+    document.removeEventListener('visibilitychange', hidden);
+    window.removeEventListener('pagehide', cleanup);
+    cancelLaunch = () => {};
+  };
+  const hidden = () => { if (document.hidden) cleanup(); };
+  cancelLaunch = cleanup;
+  document.addEventListener('visibilitychange', hidden);
+  window.addEventListener('pagehide', cleanup);
+  timer = window.setTimeout(() => {
+    const visible = !document.hidden;
+    cleanup();
+    if (visible) window.location.assign(launch.fallbackUrl);
+  }, 1800);
+  try { window.location.assign(launch.url); } catch { cleanup(); window.location.assign(launch.fallbackUrl); }
+}
+
+// Keep HTTPS hrefs for copying, context menus and modified clicks. Ordinary mobile taps try the app in this tab.
+function appFirst(a, url) {
+  a.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || !amapLaunch(url, mapPlatform())) return;
+    e.preventDefault(); openMapUrl(url);
+  });
+  return a;
+}
 /** A phone or tablet: Google Maps takes fewer stops in a mobile browser. */
 export const isMobileBrowser = () => window.matchMedia?.('(pointer: coarse)').matches ?? false;
 
 /**
- * One link or button. A normal link is a real <a>, so it opens in a new tab and can be copied. With `confirm` (the Home marker's
+ * One link or button. A normal link is a real <a> with a copyable HTTPS URL; mobile taps try Amap first. With `confirm` (the Home marker's
  * location) it is a button that asks first: the first tap changes its text, the second opens the app.
  */
 export function linkButton({ label, url, confirm = false }) {
   if (!confirm) {
     const a = el('a', 'btn small maplink', label);
     a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-    return a;
+    return appFirst(a, url);
   }
   const b = el('button', 'btn small maplink', label);
   b.type = 'button';
@@ -29,7 +66,7 @@ export function linkButton({ label, url, confirm = false }) {
       return;
     }
     clearTimeout(armed); armed = null; b.textContent = label;
-    open(url);
+    openMapUrl(url);
   });
   b.dataset.url = url;
   return b;
@@ -42,17 +79,17 @@ const iconSvg = (icon) => '<svg viewBox="0 0 24 24" width="16" height="16" aria-
 
 /**
  * One outlined icon + visible text control (`.map-action`, styles.css), shared by marker windows, point-check windows and session cards.
- * It is a real external <a> (new tab; it shares the location with the map app only when tapped). With `confirm` (the Home marker's location) it is a button
+ * It is a real external <a> (mobile Amap app first, otherwise a new tab; shares the location only when tapped). With `confirm` (the Home marker's location) it is a button
  * that asks first: the first tap changes its text, the second opens the app. `title` is the full accessible name ("Navigate to X in Google Maps").
  */
 function actionControl({ icon, label, url, confirm = false, title }) {
-  const tip = (title || label) + '. Opens in a new tab and shares this location with the map app.';
+  const tip = (title || label) + '. Opens the map app or browser and shares this location with the map app when tapped.';
   if (!confirm) {
     const a = el('a', 'btn map-action maplink');
     a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.title = tip; a.setAttribute('aria-label', title || label);
     a.innerHTML = iconSvg(icon);
     a.append(el('span', 'map-action-label', label));
-    return a;
+    return appFirst(a, url);
   }
   // the Home marker: the first tap turns the text into "Tap again to share" for five seconds, the second opens the app
   const b = el('button', 'btn map-action maplink');
@@ -68,7 +105,7 @@ function actionControl({ icon, label, url, confirm = false, title }) {
       return;
     }
     clearTimeout(armed); armed = null; text.textContent = label; b.setAttribute('aria-label', title || label); b.classList.remove('armed', 'share');
-    open(url);
+    openMapUrl(url);
   });
   return b;
 }

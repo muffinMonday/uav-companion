@@ -91,3 +91,73 @@ r = L.routeUrls('amap', cn.slice(0, 2), 'bike');
 ok(r.parts.length === 1 && /mode=ride/.test(r.parts[0].url) && /phone app only/.test(r.note), 'Amap route: bike is mode=ride, with a note that it needs the phone app');
 ok(L.routeUrls('amap', [{ lat: 30.5, lon: 114.3, name: 'A, B | C; D' }, cn[1]], 'walk').parts[0].url.includes('A%20B%20C%20D'), 'Amap route: commas, bars and semicolons in a name are removed (they separate fields)');
 ok(L.routeUrls('google', mk(2)).parts[0].url.includes('origin=30.000000%2C114.000000'), 'a route needs only coordinates, so a name with odd characters cannot affect a Google link');
+
+// ---------- app-first mobile launch (desktop/copy links remain HTTPS)
+const ios = L.amapLaunch(L.hereUrl('amap', wuhan, 'walk'), 'ios');
+ok(ios.url.startsWith('iosamap://path?') && new URL(ios.url).searchParams.get('t') === '2', 'iPhone: native route planning uses the chosen walking mode');
+const params = (x) => new URL(x.url).searchParams;
+ok(params(ios).get('dlat') === gw.lat.toFixed(6) && params(ios).get('dlon') === gw.lon.toFixed(6) && params(ios).get('dev') === '0' && !params(ios).has('slat'), 'iPhone: GCJ-02 is passed once, with no fixed start for Navigate');
+for (const [mode, t] of [['drive', '0'], ['transit', '1'], ['walk', '2'], ['bike', '3']]) {
+  for (const platform of ['android', 'ios']) {
+    ok(params(L.amapLaunch(L.hereUrl('amap', wuhan, mode), platform)).get('t') === t, `${platform}: ${mode} reaches the matching native travel mode`);
+  }
+}
+for (const platform of ['android', 'ios']) {
+  const part = L.routeUrls('amap', cn.slice(0, 3), 'drive').parts[0].url;
+  const launch = L.amapLaunch(part, platform), q = params(launch);
+  ok(q.get('slat') === g1.lat.toFixed(6) && q.get('dlat') === g3.lat.toFixed(6) && q.get('vialats') === g2.lat.toFixed(6) && q.get('vian') === '1' && q.get('vianames') === 'East Lake', `${platform}: native route preserves start, via and destination`);
+  const name = '黄鹤楼 & #Intent; x=y';
+  const marker = L.amapLaunch(L.placeUrl('amap', { ...wuhan, name }), platform);
+  ok(marker.url.includes('//viewMap?') && params(marker).get('poiname') === '黄鹤楼 & #Intent x=y' && params(marker).get('lat') === gw.lat.toFixed(6) && params(marker).get('dev') === '0', `${platform}: place view uses native marker, converted coordinates and an encoded name`);
+  ok(!marker.url.split('#Intent')[0].includes('+') && marker.url.includes('%20'), `${platform}: native names encode spaces as percent escapes for app URI parsers`);
+  ok(new URL(launch.fallbackUrl).searchParams.get('via') === new URL(part).searchParams.get('via') && new URL(launch.fallbackUrl).searchParams.get('callnative') === '0', `${platform}: fallback preserves route stops and disables another native attempt`);
+}
+const android = L.amapLaunch(L.hereUrl('amap', wuhan), 'android');
+ok(android.url.startsWith('intent://route/plan/?') && android.url.includes(';scheme=amapuri;package=com.autonavi.minimap;') && android.url.endsWith(';end'), 'Android Chrome: explicit Amap package and documented route scheme');
+ok(decodeURIComponent(android.url.split('S.browser_fallback_url=')[1].split(';')[0]) === android.fallbackUrl, 'Android Chrome: correctly encoded browser fallback');
+for (const url of [L.hereUrl('google', wuhan), 'https://uri.amap.com.evil.test/navigation?to=114,30', 'javascript:alert(1)', 'bad', 'https://uri.amap.com/navigation?to=nope', L.placeUrl('amap', singapore)]) {
+  ok(L.amapLaunch(url, 'ios') === null, `no native launch for unsupported or invalid URL: ${url}`);
+}
+ok(L.amapLaunch(L.hereUrl('amap', wuhan), 'desktop') === null, 'desktop retains HTTPS behavior');
+
+// Lifecycle tests simulate the browser, without sending any coordinates or requiring installed apps.
+const UI = await load('src/maplinks-ui.js');
+ok(UI.mapPlatform({ userAgent: 'Mozilla Android Chrome' }) === 'android' && UI.mapPlatform({ userAgent: 'iPhone CriOS' }) === 'ios' && UI.mapPlatform({ userAgent: 'Macintosh', maxTouchPoints: 5 }) === 'ios' && UI.mapPlatform({ userAgent: 'Macintosh', maxTouchPoints: 0 }) === 'desktop', 'platform detection: Android, iPhone Chrome, iPad desktop UA, desktop Mac');
+const originalNav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+const originalWindow = globalThis.window, originalDocument = globalThis.document;
+const doc = new EventTarget(); doc.hidden = false;
+const win = new EventTarget(), pending = new Map(), assigned = [], opened = [];
+let timerId = 0;
+win.setTimeout = (fn) => { pending.set(++timerId, fn); return timerId; };
+win.clearTimeout = (id) => pending.delete(id);
+win.location = { assign: (url) => assigned.push(url) };
+win.open = (...args) => opened.push(args);
+globalThis.window = win; globalThis.document = doc;
+const usePlatform = (userAgent) => Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { userAgent } });
+const expire = () => { const fns = [...pending.values()]; pending.clear(); fns.forEach((fn) => fn()); };
+const web = L.hereUrl('amap', wuhan);
+try {
+  usePlatform('iPhone CriOS');
+  UI.openMapUrl(web);
+  ok(assigned.at(-1).startsWith('iosamap:') && pending.size === 1 && opened.length === 0, 'iPhone tap immediately launches Amap in the current tab without a blank popup');
+  expire();
+  ok(assigned.at(-1) === L.amapLaunch(web, 'ios').fallbackUrl, 'iPhone: no app handoff falls back to HTTPS');
+  UI.openMapUrl(web);
+  const count = assigned.length;
+  doc.hidden = true; doc.dispatchEvent(new Event('visibilitychange'));
+  doc.hidden = false; doc.dispatchEvent(new Event('visibilitychange')); expire();
+  ok(assigned.length === count && pending.size === 0, 'iPhone: returning from Amap never runs the old fallback');
+  UI.openMapUrl(web); win.dispatchEvent(new Event('pagehide')); expire();
+  ok(assigned.at(-1).startsWith('iosamap:'), 'iPhone: pagehide also cancels fallback');
+  UI.openMapUrl(web); UI.openMapUrl(L.hereUrl('amap', beijing));
+  ok(pending.size === 1, 'a repeated tap replaces the pending fallback');
+  usePlatform('Android Chrome'); UI.openMapUrl(web);
+  ok(assigned.at(-1).startsWith('intent:') && pending.size === 0, 'Android uses the intent fallback with no iPhone timer left over');
+  usePlatform('desktop'); UI.openMapUrl(web);
+  ok(opened.at(-1)[0] === web && opened.at(-1)[1] === '_blank' && opened.at(-1)[2] === 'noopener,noreferrer', 'desktop still opens a protected browser tab');
+  usePlatform('iPhone CriOS'); UI.openMapUrl(L.hereUrl('google', singapore));
+  ok(opened.at(-1)[0].includes('google.com/maps') && pending.size === 0, 'Google Maps retains existing behavior on phones');
+} finally {
+  if (originalNav) Object.defineProperty(globalThis, 'navigator', originalNav); else delete globalThis.navigator;
+  globalThis.window = originalWindow; globalThis.document = originalDocument;
+}

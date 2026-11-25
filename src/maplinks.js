@@ -59,6 +59,59 @@ export function hereUrl(app, p, modeId = 'drive') {
   return `https://www.google.com/maps/dir/?api=1&destination=${gll(p)}&travelmode=${m.google}`;
 }
 
+/** Native Amap launch plus a web fallback. Accept only our Amap HTTPS link formats.
+ * Android route/plan and iOS path (including via points):
+ * https://lbs.amap.com/api/amap-mobile/guide/android/route and ../ios/route
+ * Marker viewMap: ../android/marker and ../ios/marker. Native coordinates use GCJ-02, dev=0.
+ * Chrome's Android intent fallback: https://developer.chrome.com/docs/android/intents
+ */
+export function amapLaunch(url, platform) {
+  if (!['android', 'ios'].includes(platform)) return null;
+  let web;
+  try { web = new URL(url); } catch { return null; }
+  if (web.origin !== 'https://uri.amap.com') return null;
+  const q = web.searchParams, native = new URLSearchParams({ sourceApplication: SRC, dev: '0' });
+  let path, scheme;
+  if (web.pathname === '/marker') {
+    const [lon, lat] = (q.get('position') ?? '').split(',').map(Number);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || !inChina(lat, lon)) return null;
+    const p = q.get('coordinate') === 'wgs84' ? wgs84ToGcj02({ lat, lon }) : { lat, lon };
+    native.set('lat', fix(p.lat)); native.set('lon', fix(p.lon));
+    native.set('poiname', clean(q.get('name')) || 'Map location');
+    path = 'viewMap'; scheme = platform === 'android' ? 'androidamap' : 'iosamap';
+  } else if (web.pathname === '/navigation') {
+    const point = (field) => {
+      const [lon, lat, ...name] = (q.get(field) ?? '').split(',');
+      if (!lon || !lat || !Number.isFinite(+lat) || !Number.isFinite(+lon) || !inChina(+lat, +lon)) return null;
+      return { lat, lon, name: clean(name.join(',')) };
+    };
+    const to = point('to'), from = point('from'), via = point('via');
+    if (!to || (q.has('from') && !from) || (q.has('via') && !via)) return null;
+    for (const [prefix, p] of [['s', from], ['d', to]]) {
+      if (!p) continue; // no start means the device's location; no geolocation request here
+      native.set(`${prefix}lat`, p.lat); native.set(`${prefix}lon`, p.lon); native.set(`${prefix}name`, p.name);
+    }
+    native.set('t', ({ car: '0', bus: '1', walk: '2', ride: '3' })[q.get('mode')] ?? '0');
+    native.set('m', '0');
+    if (via) {
+      native.set('vian', '1'); native.set('vialons', via.lon); native.set('vialats', via.lat); native.set('vianames', via.name || 'Via point');
+    }
+    path = platform === 'android' ? 'route/plan/' : 'path';
+    scheme = platform === 'android' ? 'amapuri' : 'iosamap';
+  } else return null;
+  // A failed native launch must not try to launch the app again through the web page.
+  web.searchParams.set('callnative', '0');
+  const fallbackUrl = web.href;
+  // App URI parsers need percent-escaped spaces, rather than form-style '+'.
+  const target = `//${path}?${native.toString().replace(/\+/g, '%20')}`;
+  return {
+    url: platform === 'android'
+      ? `intent:${target}#Intent;scheme=${scheme};package=com.autonavi.minimap;S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`
+      : `${scheme}:${target}`,
+    fallbackUrl,
+  };
+}
+
 /** Stops cut into pieces of at most `size` stops, each piece starting at the previous one's last stop. */
 export function chunk(stops, size) {
   const out = [];
