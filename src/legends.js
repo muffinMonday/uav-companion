@@ -16,7 +16,11 @@ export const SELECTED_SOURCE_MEANING = 'Teal: suitable-flight polygons in the se
 export const AIRSPACE_DISCLAIMER = 'UAV Companion displays published baseline airspace boundaries for planning reference only. Temporary restricted areas, NOTAMs, temporary activations and short-notice changes are not tracked. Some permanent zones may apply only under specific conditions. Always consult current official aviation publications and announcements before flying.';
 
 /** Shown when the point is inside an approximate (reconstructed) P/R/D boundary. `verdict`: prohibited | restricted | danger. */
-export const approximateNotice = (verdict) => `This boundary was conservatively reconstructed from CAAM ENR 5.1 because part of the published definition references geographic features for which exact source geometry was unavailable. Treat this location as potentially ${verdict === 'danger' ? 'a danger area' : verdict} and verify with current CAAM information before flying.`;
+export const approximateNotice = (verdict, region) => {
+  const potential = verdict === 'danger' ? 'a danger area' : verdict;
+  if (/Viet Nam/i.test(region?.source?.authority || '')) return `Boundary approximated from official AIP chart: the published ENR 5.1 definition could not be converted exactly (referenced features or a malformed coordinate). Treat this location as potentially ${potential} and verify with current AIP Viet Nam information before flying.`;
+  return `This boundary was conservatively reconstructed from CAAM ENR 5.1 because part of the published definition references geographic features for which exact source geometry was unavailable. Treat this location as potentially ${potential} and verify with current CAAM information before flying.`;
+};
 
 const day = (iso) => iso?.slice(0, 10) || null;
 const isThirdParty = (r) => r.sourceConfidence?.type === 'third-party-uom-snapshot';

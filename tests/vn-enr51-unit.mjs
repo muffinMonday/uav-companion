@@ -54,6 +54,7 @@ ok(layers.prohibited.length === 4 && layers.restricted.length === 20 && layers.d
 ok(report.parsed === 74 && report.applicable === 74 && report.converted === 71 && report.unresolved === 3 && report.converted + report.unresolved === report.applicable, 'parsed 74 = converted 71 + unresolved 3');
 ok(report.exceptions.map((e) => e.id).sort().join() === 'VVD43,VVD45,VVR19' && report.exceptions.every((e) => e.reason && !ids.includes(e.id)), 'unresolved: VVD43, VVD45 (mistyped vertex in the source, not corrected) and VVR19 (referenced boundaries); none is also converted');
 ok(report.exceptions.find((e) => e.id === 'VVR19').category === 'external-reference' && report.exceptions.filter((e) => e.category === 'source-inconsistent').length === 2, 'VVR19 is external-reference; VVD43 and VVD45 are source-inconsistent');
+ok(report.approximated === 3 && report.exceptions.every((e) => e.approximated), 'all three strict-extractor exceptions are covered by the approximate layers (71 exact + 3 approximate = 74)');
 const byId = Object.fromEntries(all.map(({ f }) => [f.properties.id, f.properties]));
 ok(byId.VVP1.upper === 'UNL' && byId.VVP1.lower === 'GND' && byId.VVP2.upper === '1500 M' && byId.VVR10.upper === '20000 M' && byId.VVR10.lower === '200 M AGL' && /Air force area 14/.test(byId.VVR10.remarks), 'upper/lower limits and remarks are preserved as published');
 ok(byId.VVR37.upper === 'To be specified' && /notified by NOTAM/.test(byId.VVR37.remarks) && byId.VVD20.upper === 'Unspecified', 'unspecified upper limits are kept verbatim, never invented');
@@ -69,8 +70,8 @@ ok(all.every(({ f }) => validate({ kind: 'polygon' }, f.geometry.coordinates[0])
 // Archive
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/vn/manifest.json'), 'utf8'));
 const region = manifest.regions.find((r) => r.id === 'vn-enr51');
-ok(!!region && region.cells === 71 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'prohibited,restricted,danger' && region.classes.map((c) => c.verdict).join() === 'prohibited,restricted,danger', 'the manifest registers vn-enr51 with 71 areas and its three P/R/D classes');
-ok(region.source.edition === '2026-10-01-AIRAC' && region.source.effective === '2026-10-01' && region.partialCoverage === true && !region.boundary && !region.classes.some((c) => c.approximate), 'edition recorded; partial coverage; no boundary; nothing is flagged approximate');
+ok(!!region && region.cells === 74 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'prohibited,restricted,danger,approx-restricted,approx-danger' && region.classes.map((c) => c.verdict).join() === 'prohibited,restricted,danger,restricted,danger', 'the manifest registers vn-enr51 with 74 areas: three exact P/R/D classes plus approximate R and D');
+ok(region.source.edition === '2026-10-01-AIRAC' && region.source.effective === '2026-10-01' && region.partialCoverage === true && !region.boundary && region.classes.filter((c) => c.approximate).map((c) => c.id).join() === 'approx-restricted,approx-danger' && region.classes.filter((c) => c.approximate).every((c) => c.severity > 3), 'edition recorded; partial coverage; no boundary; only the two approximate classes are flagged (severity above every exact class)');
 const bytes = fs.readFileSync(path.join(ROOT, 'public/data', region.file));
 const arch = new PMTiles({ getKey: () => region.file, getBytes: async (o, n) => ({ data: Uint8Array.from(bytes.subarray(o, o + n)).buffer }) });
 const inRing = (r, x, y) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) if ((r[i][1] > y) !== (r[j][1] > y) && x < (r[j][0] - r[i][0]) * (y - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) c = !c; return c; };
@@ -86,19 +87,37 @@ const witness = (r) => {
   return best;
 };
 let lost = 0, wrong = 0;
-for (const { k, f } of all) {
+const apx = Object.fromEntries(['restricted', 'danger'].map((k) => [k, JSON.parse(fs.readFileSync(path.join(dir, 'layers', `approx-${k}.geojson`), 'utf8')).features]));
+const apxAll = Object.entries(apx).flatMap(([k, list]) => list.map((f) => ({ k: 'approx-' + k, f })));
+for (const { k, f } of [...all, ...apxAll]) {
   const w = witness(f.geometry.coordinates[0]);
   const zs = w ? await zonesInArchive(arch, region.maxZoom, w[1], w[0]) : [];
   if (!zs.length) { lost++; console.log('  lost ' + f.properties.id); } else if (!zs.some((z) => z.c === k)) { wrong++; console.log('  wrong class ' + f.properties.id); }
 }
-ok(lost === 0 && wrong === 0, 'every one of the 71 converted areas is present in the archive at its max zoom with its own class');
+ok(lost === 0 && wrong === 0, 'every one of the 74 areas (71 exact + 3 approximate) is present in the archive at its max zoom with its own class');
 const at = async (lat, lon) => (await zonesInArchive(arch, region.maxZoom, lat, lon)).map((z) => z.c).join();
 ok((await at(21.0305, 105.8)).split(',').includes('prohibited'), 'inside VVP1 (Ha Noi city): prohibited');
 ok(await at(15.4056, 108.7064) === 'restricted', 'inside VVR11 (15 km circle): restricted');
 ok(await at(10.775, 106.683) === 'prohibited', 'inside VVP4 (Ho Chi Minh City): prohibited');
 ok(await at(20.5, 105.0) === '', 'Ninh Binh, outside every converted polygon, has no zone (unknown, not permitted)');
 ok(await at(21.3, 108.0) === '' && await at(10.0, 100.5) === '', 'a Vietnamese sea point and a point outside Vietnam read no zone');
-ok(await at(10.3, 107.0) === '', 'Bien Hoa (VVR19, unresolved) reads no zone: nothing is guessed');
+// The three approximated areas
+const prov = JSON.parse(fs.readFileSync(path.join(dir, 'approx-provenance.json'), 'utf8')).areas, pv = Object.fromEntries(prov.map((a) => [a.id, a]));
+const apxIds = apxAll.map(({ f }) => f.properties.id).sort().join();
+ok(apxIds === 'VVD43,VVD45,VVR19' && !apxIds.split(',').some((i) => ids.includes(i)), 'VVR19, VVD43, VVD45 are the approximate features and none is also an exact feature');
+ok(apx.restricted.length === 1 && apx.restricted[0].properties.class === 'R' && apx.danger.length === 2 && apx.danger.every((x) => x.properties.class === 'D'), 'VVR19 is in the approximate R layer, VVD43 and VVD45 in the approximate D layer');
+ok(pv.VVR19.geometryConfidence === 'approximate' && pv.VVD43.geometryConfidence === 'derived' && pv.VVD45.geometryConfidence === 'approximate' && prov.every((a) => a.method && a.reasonApproximate && a.source && a.edition === '2026-10-01-AIRAC'), 'provenance records confidence, method, source/edition and the reason for each');
+ok(pv.VVD43.evidence.published === '200333N 1052801E' && pv.VVD43.evidence.interpreted === '210333N 1052801E' && pv.VVD45.evidence.published === '210159N 1062002E' && pv.VVD45.evidence.interpreted === '210159N 1052002E', 'the published and the interpreted malformed vertices are both kept as evidence');
+ok(pv.VVR19.chartMaxVertexDeviationM < 2000 && pv.VVR19.uncertaintyM === 2000, 'VVR19 matches the official chart outline within 2 km');
+ok(apxAll.every(({ f }) => f.properties.approximate === true && f.properties.upper && f.properties.vertical && f.properties.remarks && /approximated from official AIP chart/.test(f.properties.note)), 'approximate features keep their altitude/activation metadata and the chart-approximation wording');
+const vv19 = apx.restricted[0].geometry.coordinates[0];
+ok(Math.max(...vv19.map((p) => inverse(106.6608, 10.8206, p[0], p[1]).s)) < 75100 && vv19.filter((p) => Math.abs(inverse(106.6608, 10.8206, p[0], p[1]).s - 75000) < 50).length > 50, 'VVR19 northern edge is the 75 km arc about the Tan Son Nhat ARP');
+const vd43 = apx.danger.find((x) => x.properties.id === 'VVD43').geometry.coordinates[0], vd45 = apx.danger.find((x) => x.properties.id === 'VVD45').geometry.coordinates[0];
+ok(vd43.every((p) => p[1] > 21 && p[1] < 21.2) && vd45.every((p) => p[0] > 105.3 && p[0] < 105.6), 'VVD43 and VVD45 no longer have a vertex a degree from the rest');
+ok(await at(11.1, 106.8) === 'approx-restricted', 'inside VVR19 (Bien Hoa): approximate restricted');
+ok(await at(10.7, 106.8) === '' && await at(11.7, 106.8) === '' && await at(11.1, 107.5) === '' && await at(11.1, 105.9) === '', 'outside VVR19 (south, beyond the 75 km arc, east of W1, west of R468): no zone');
+ok(await at(21.095, 105.46) === 'approx-danger' && await at(21.095, 105.7) === '' && await at(20.5, 105.46) === '', 'VVD43: inside reads approximate danger; points east and 0.6 degrees south read no zone');
+ok(await at(21.015, 105.47) === 'approx-danger' && await at(21.015, 106.2) === '' && await at(21.2, 105.47) === '', 'VVD45: inside reads approximate danger; the published far vertex area (106.3E) and points north read no zone');
 
 // Point-check wording
 const z = (c, n) => ({ status: 'inside', region, zones: [{ c, n }] });
@@ -106,6 +125,8 @@ const p = zoneSummary(z('prohibited', 'VVP1 HA NOI CITY')), r = zoneSummary(z('r
 ok(p.cls === 'no' && /^Prohibited area: VVP1/.test(p.title) && /not permitted/.test(p.detail) && /Vietnam Air Traffic Management/.test(p.detail), 'P is worded as prohibited, citing the Vietnam source');
 ok(r.cls === 'no' && /^Restricted area/.test(r.title) && /conditions/.test(r.detail) && !/not permitted/.test(r.detail), 'R is worded as restricted with conditions, not as a ban');
 ok(d.cls === 'unk' && /^Danger area/.test(d.title) && /Caution/.test(d.detail) && !/no-fly|not allowed/i.test(d.title + d.detail), 'D is worded as caution, not as a ban');
+const ax = zoneSummary({ status: 'inside', region, zones: [{ c: 'approx-restricted', n: 'VVR19 BIEN HOA' }] });
+ok(ax.cls === 'no' && /^Potential restricted airspace — approximate boundary: VVR19/.test(ax.title) && /Boundary approximated from official AIP chart/.test(ax.detail) && /AIP Viet Nam/.test(ax.detail) && !/CAAM/.test(ax.detail), 'a point in VVR19 says: potential restricted airspace, approximate boundary, approximated from the official AIP chart');
 const none = zoneSummary({ status: 'outside', region, zones: [] });
 ok(none.cls === 'unk' && /does not mean flying is allowed/.test(none.detail), 'outside every polygon: unknown, never permission');
 await vite.close();

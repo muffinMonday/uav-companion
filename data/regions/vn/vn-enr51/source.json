@@ -44,6 +44,28 @@
       "color": "#ef6c00",
       "severity": 3,
       "summary": "Danger area (ENR 5.1): activities dangerous to aircraft may exist at the published times. Caution; check the conditions."
+    },
+    {
+      "id": "approx-restricted",
+      "file": "layers/approx-restricted.geojson",
+      "geojson": true,
+      "verdict": "restricted",
+      "approximate": true,
+      "label": "Restricted area (R), approximate boundary",
+      "color": "#e53935",
+      "severity": 5,
+      "summary": "Potential restricted area: boundary approximated from the official AIP Viet Nam ENR 5.1 text and chart (a referenced or malformed definition could not be converted exactly), not an exact AIP polygon. Verify with current AIP Viet Nam information."
+    },
+    {
+      "id": "approx-danger",
+      "file": "layers/approx-danger.geojson",
+      "geojson": true,
+      "verdict": "danger",
+      "approximate": true,
+      "label": "Danger area (D), approximate boundary",
+      "color": "#ef6c00",
+      "severity": 6,
+      "summary": "Potential danger area: boundary approximated from the official AIP Viet Nam ENR 5.1 text and chart (a referenced or malformed definition could not be converted exactly), not an exact AIP polygon. Verify with current AIP Viet Nam information."
     }
   ],
   "source": {
@@ -53,8 +75,8 @@
     "published": "2026-10-01",
     "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-ENR-5.1-en-GB.html",
     "htmlSha256": "c84ed668903903cead2bd0c2e2e651d64bbec92373ca999e5141a21ad893f4b8",
-    "extraction": "scripts/airspace/vn-enr51.mjs (parses the published tabulation; see exceptions.json for what was not converted)"
+    "extraction": "scripts/airspace/vn-enr51.mjs (parses the published tabulation; see exceptions.json for what was not converted); the three areas it cannot convert are approximated by scripts/airspace/vn-enr51-approx.mjs (layers approx-*, approx-provenance.json)"
   },
   "license": "unknown",
-  "licenseNote": "Derived from the public Vietnam eAIP (aim.vatm.vn). No reuse terms were checked or found; published on the owner's authorization of 2026-11-24 as planning reference, with the geometry reconstructed independently from the published coordinates. Partial coverage: unconverted areas are listed in exceptions.json. Remove this region (or set publish to false) if VATM asks."
+  "licenseNote": "Derived from the public Vietnam eAIP (aim.vatm.vn). No reuse terms were checked or found; published on the owner's authorization of 2026-11-24 as planning reference, with the geometry reconstructed independently from the published coordinates. Partial coverage; VVR19, VVD43 and VVD45 are shipped as approximate layers (approx-provenance.json). Remove this region (or set publish to false) if VATM asks."
 }

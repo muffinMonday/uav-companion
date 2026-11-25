@@ -100,7 +100,7 @@ For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map
 - `docs/backlogs/completed/MALAYSIA_AIRSPACE_ENR51_BACKLOG.md`: P/R/D areas for Malaysia, released 2026-11-24 (second pass 2026-11-24: 57 of 86 Malaysian-administered (SG and Brunei excluded)). Authorization was for that release only. Details in `docs/regions/my-enr51.md`.
 
 ## Completed backlog: Vietnam airspace (ENR 5.1)
-- Vietnam P/R/D areas (VVP/VVR/VVD) from AIP Viet Nam ENR 5.1, 2026-10-01-AIRAC; released 2026-11-24 (71 of 74 areas; VVR19, VVD43, VVD45 unresolved). Authorization was for that release only. Details in `docs/regions/vn-enr51.md`.
+- Vietnam P/R/D areas (VVP/VVR/VVD) from AIP Viet Nam ENR 5.1, 2026-10-01-AIRAC; released 2026-11-24 (71 of 74 exact); VVR19, VVD43, VVD45 added 2026-11-26 as approximate layers (74 of 74; deployed, see `CURRENT_STATUS.md`). Authorizations were for those releases only. Details in `docs/regions/vn-enr51.md`.
 
 ## Backlog: Route Visualization & Driving Navigation Rework
 - `docs/backlogs/in-progress/ROUTE_NAVIGATION_REWORK_BACKLOG.md`: approved spec and implementation status (driving-route bands with chevrons, always-on labels, HeiGIT routing through the `route-leg` edge function with a shared-trip cache, overlap lanes, coincident-marker fan, base-reference links kept straight). **Implemented and committed on `main` (not pushed unless stated in `CURRENT_STATUS.md`); not deployed, migration not applied, HeiGIT secret not set.** Deploying, applying `20261121100000_trip_routes.sql` or setting `HEIGIT_API_KEY` needs the owner. Source: `src/route/`, `src/spider.js`, `supabase/functions/route-leg/`.

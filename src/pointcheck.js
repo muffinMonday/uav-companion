@@ -119,7 +119,7 @@ function wording(res) {
       const verdict = worst?.verdict;
       if (worst?.approximate) { // reconstructed boundary: potential P/R/D, never the exact verdict (verified zones sort first, so an overlapping verified zone has already won)
         const noun = { prohibited: 'prohibited', restricted: 'restricted', danger: 'danger' }[verdict] ?? 'restricted';
-        return [verdict === 'danger' ? 'unk' : 'no', `Potential ${noun} airspace — approximate boundary: ${zs[0].n || worst.label}`, `${approximateNotice(verdict)} ${kinds.length > 1 ? `Also inside: ${kinds.slice(1).join('; ')}. ` : ''}`.trim()];
+        return [verdict === 'danger' ? 'unk' : 'no', `Potential ${noun} airspace — approximate boundary: ${zs[0].n || worst.label}`, `${approximateNotice(verdict, r)} ${kinds.length > 1 ? `Also inside: ${kinds.slice(1).join('; ')}. ` : ''}`.trim()];
       }
       // ICAO P / R / D areas (Malaysia): prohibited, restricted (conditions) and danger (caution) are not the same thing
       if (verdict === 'prohibited') return ['no', `Prohibited area: ${zs[0].n || worst.label}`, `Flight is not permitted here, per ${r.source.authority}. ${kinds.length > 1 ? `Also inside: ${kinds.slice(1).join('; ')}. ` : ''}Check the current official publication before flying.`];
