@@ -1,3 +1,6 @@
+## 2026-11-26 - Malaysia airport traffic zones (66)
+- 5 NM circles around AIP ARPs (CAAM SI 11/2022, MCAR 2016 reg. 140(1)(b)); class "Airport traffic zone — authorisation required" under P/R/D. 2 unresolved (WBKE, WMAE). Merge `8228974`, gh-pages `0160734`, rollback `de13c55` / `7c8fb77`. Details: `docs/regions/my-enr51.md`.
+
 ## 2026-11-26 - Vietnam ENR 5.1 complete (74/74)
 - VVR19, VVD43, VVD45 added as approximate layers (provenance and notice in-app); 71 exact areas unchanged. Merge `bc1f7af`, gh-pages `9300888`, rollback `c5fb712` / `43a4692`. Details: `docs/regions/vn-enr51.md`.
 

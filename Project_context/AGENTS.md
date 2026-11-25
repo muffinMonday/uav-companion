@@ -97,7 +97,7 @@ For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map
 - **Authorized:** read-only Phase 1 and Phase 2. The lab page (`/tools/preflight-spike/`) is live with the build flag on by owner decision (2026-11-16, sole user); the main app stays unchanged. **Not authorized:** motor commands, CLI, configuration writes, log erasure, reflashing, 4-way interface, Phase 3, further deployment without owner instruction. No UI or report may claim "safe to fly", airworthiness, certification or definitive diagnosis. No UI or report may claim "safe to fly", airworthiness, certification or definitive diagnosis.
 
 ## Completed backlog: Malaysia airspace (ENR 5.1)
-- `docs/backlogs/completed/MALAYSIA_AIRSPACE_ENR51_BACKLOG.md`: P/R/D areas for Malaysia, released 2026-11-24 (second pass 2026-11-24: 57 of 86 Malaysian-administered (SG and Brunei excluded)). Authorization was for that release only. Details in `docs/regions/my-enr51.md`.
+- `docs/backlogs/completed/MALAYSIA_AIRSPACE_ENR51_BACKLOG.md`: P/R/D areas for Malaysia, released 2026-11-24 (second pass 2026-11-24: 57 of 86 Malaysian-administered (SG and Brunei excluded)). Authorization was for that release only. Details in `docs/regions/my-enr51.md`. 2026-11-26: 66 aerodrome traffic zones (5 NM, authorisation required) added to the same region, deployed; see `CURRENT_STATUS.md`.
 
 ## Completed backlog: Vietnam airspace (ENR 5.1)
 - Vietnam P/R/D areas (VVP/VVR/VVD) from AIP Viet Nam ENR 5.1, 2026-10-01-AIRAC; released 2026-11-24 (71 of 74 exact); VVR19, VVD43, VVD45 added 2026-11-26 as approximate layers (74 of 74; deployed, see `CURRENT_STATUS.md`). Authorizations were for those releases only. Details in `docs/regions/vn-enr51.md`.
