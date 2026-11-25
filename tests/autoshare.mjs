@@ -70,6 +70,7 @@ async function open(who, { prefs = {}, geo = null, local = false, dialogs = null
     localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify(sess));
   }, [REF, session(uid, email), local ? trip : null, LATEST_SEEN, prefs]);
   const p = await ctx.newPage();
+  if (who !== 'a') await p.addLocatorHandler(p.locator('#autoshare-consent'), () => p.locator('#autoshare-enable').click()); // Bea and Cam answer yes, as the old browser confirm did
   p.on('dialog', (d) => { if (dialogs) dialogs.push(d.message()); (dialogs?.accept === false ? d.dismiss() : d.accept()).catch(() => {}); });
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::|status of 4|geolocation|Geolocation/.test(m.text()) && errs.push(m.text()));
@@ -87,12 +88,15 @@ await sleep(1500);
 
 // ---------- Alex has not answered the question yet: it is asked once, and a yes starts sharing without any switch
 const asked = [];
-const alex = await open('a', { geo: GEO, local: true, dialogs: asked });
-ok(await until(() => asked.length > 0, 30000), 'the first time someone is online, Alex is asked once');
-ok(/Share your location automatically/.test(asked[0] || '') && /party/.test(asked[0] || '') && /friend/.test(asked[0] || ''), 'the question says what it is about: ' + (asked[0] || '').split('\n')[0]);
+const alex = await open('a', { geo: GEO, local: true });
+ok(await alex.p.waitForSelector('#autoshare-consent', { timeout: 30000 }).then(() => true, () => false), 'the first time someone is online, Alex is asked once (the app dialog, not a browser prompt)');
+asked.push(await alex.p.textContent('#autoshare-consent'));
+ok(/Share your location automatically/.test(asked[0]) && /party/.test(asked[0]) && /friend/.test(asked[0]) && /future sessions/.test(asked[0]) && /nobody eligible is online/.test(asked[0]), 'the question says what it is about, that it recurs in future sessions and when it stops');
+ok(await alex.p.locator('#autoshare-enable').textContent() === 'Enable sharing' && await alex.p.locator('#autoshare-later').textContent() === 'Not now' && await alex.p.locator('#autoshare-keepoff').textContent() === 'Keep off', 'it offers Enable sharing, Not now and Keep off');
+await alex.p.click('#autoshare-enable');
 ok(await until(async () => !!(await partyRow(A)) && !!(await friendRow(A)), 20000), 'after yes the position goes to the party and to friends without touching a switch');
 ok(await alex.p.locator('#live-chip').isVisible() && /Sharing your location with “Hubei spring” and friends/.test(await alex.p.textContent('#live-chip')), 'the indicator on the map says both: ' + await alex.p.textContent('#live-chip'));
-ok(asked.length === 1, 'and he is not asked again');
+ok(await alex.p.locator('#autoshare-consent').count() === 0, 'and he is not asked again');
 const stored = await alex.p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).autoShare);
 ok(stored === 'on', 'the yes is remembered in this browser');
 
@@ -132,10 +136,19 @@ await alex.ctx.close();
 await db.exec('delete from public.live_locations; delete from public.friend_live_locations');
 
 // ---------- a person who said no is not asked and nothing starts
-const none = [];
-const dina = await open('a', { geo: GEO, local: true, dialogs: none, prefs: { autoShare: 'off' } });
+const nn = await open('a', { geo: GEO, local: true });
+ok(await nn.p.waitForSelector('#autoshare-consent', { timeout: 30000 }).then(() => true, () => false), 'Not now: a person who has not decided is asked');
+await nn.p.click('#autoshare-later'); await sleep(2500);
+ok(!(await partyRow(A)) && !(await friendRow(A)) && await nn.p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).autoShare === undefined), 'Not now: nothing is shared and no decision is stored');
+await nn.ctx.close();
+const ko = await open('a', { geo: GEO, local: true });
+ok(await ko.p.waitForSelector('#autoshare-consent', { timeout: 30000 }).then(() => true, () => false), 'asked again in a new session after Not now');
+await ko.p.click('#autoshare-keepoff'); await sleep(2500);
+ok(!(await partyRow(A)) && !(await friendRow(A)) && await ko.p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).autoShare === 'off'), 'Keep off: nothing is shared and "off" is stored');
+await ko.ctx.close();
+const dina = await open('a', { geo: GEO, local: true, prefs: { autoShare: 'off' } });
 await sleep(14000);
-ok(!none.length && !(await partyRow(A)) && !(await friendRow(A)) && await dina.p.locator('#live-chip').isHidden(), 'with automatic sharing off: no question, nothing is shared');
+ok(await dina.p.locator('#autoshare-consent').count() === 0 &&!(await partyRow(A)) && !(await friendRow(A)) && await dina.p.locator('#live-chip').isHidden(), 'with automatic sharing off: no question, nothing is shared');
 await dina.ctx.close();
 
 // ---------- friends can be left out

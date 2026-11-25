@@ -1,5 +1,6 @@
-// The privacy-settings sub-panel: three switches that decide what may be sent to Open-Meteo. See privacy.js.
+// The privacy-settings sub-panel: the switches that decide what may be sent to third parties and what the app may do with the position. See privacy.js.
 import { getPrivacy, setPrivacy } from './privacy.js';
+import { loadPrefs, savePrefs } from './prefs.js';
 import { diagnostics } from './log.js';
 import { approxSize as aircraftDiagSize, deleteAll as deleteAircraftDiag } from './aircraft-diag-data.js';
 
@@ -7,6 +8,7 @@ const $ = (id) => document.getElementById(id);
 
 export function initPrivacyUI({ mw, elev, toast = () => {}, routes = null }) {
   const auto = $('pv-auto'), alt = $('pv-alt'), geo = $('pv-geo'), chk = $('pv-checkin'), lau = $('pv-locate'), ash = $('pv-autoshare'), asf = $('pv-autoshare-friends');
+  const near = $('pv-nearby'); // nearby public flight sessions (prefs.sessionsNearby, read by sessions-hub.js; on unless false)
   const radios = [...document.querySelectorAll('input[name=pv-prec]')];
 
   const sync = () => {
@@ -16,6 +18,7 @@ export function initPrivacyUI({ mw, elev, toast = () => {}, routes = null }) {
     geo.checked = p.lookupNames;
     chk.checked = p.checkIn;
     lau.checked = p.locateOnLaunch;
+    if (near) near.checked = loadPrefs().sessionsNearby !== false;
     if (ash) { ash.checked = p.autoShare === 'on'; asf.checked = p.shareFriends; asf.disabled = p.autoShare !== 'on'; }
     for (const r of radios) r.checked = r.value === p.weatherPrecision;
   };
@@ -25,6 +28,7 @@ export function initPrivacyUI({ mw, elev, toast = () => {}, routes = null }) {
   auto.addEventListener('change', () => mw.setEnabled(auto.checked));
   alt.addEventListener('change', () => elev.setEnabled(alt.checked));
   geo.addEventListener('change', () => setPrivacy({ lookupNames: geo.checked }));
+  near?.addEventListener('change', () => savePrefs({ sessionsNearby: near.checked }));
   chk.addEventListener('change', () => setPrivacy({ checkIn: chk.checked }));
   lau.addEventListener('change', () => setPrivacy({ locateOnLaunch: lau.checked }));
   // Automatic sharing: turning it on here is the person's yes (autoshare.js starts and stops sharing by itself from then on; it also reads this setting each pass)

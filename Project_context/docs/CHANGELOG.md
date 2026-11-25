@@ -1,3 +1,6 @@
+## 2026-11-26 - Feature-rich privacy defaults and copy
+- New browsers: automatic weather (rounded coordinates), ground elevation, AI place-name lookup, marker check-in on; nearby public sessions on while signed in. Live sharing and automatic attendance still need explicit consent. Existing browsers keep their choices (migration). Live-sharing consent dialog with Keep off. First-time notice and `privacy.html` rewritten; mascot removed from the profile popover.
+
 ## 2026-11-26 - Unified touch gestures
 - Swipe added to the top-right cluster, search header, More tools sheet, route summary, Sessions explorer fold and the phone panel's expand handle, all through the existing `onSwipe()` and each component's own state function. Smaller disclosures (Saved Places groups, Side Quests, trip warnings, profile sections, Help) stay tap-only (scroll conflict). Details: DESIGN.md section 26.
 

@@ -173,12 +173,14 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     return {
       signedIn: signedIn(), ready: mine.status === 'ready', soon: next && Date.parse(next.startsAt) - t < 48 * 3600e3 ? next : null, next,
       invites: new Set(mine.invites.map((i) => i.id)).size, updates: mine.notices.filter((n) => n.unread).length, takedowns: mine.takedowns.length,
-      nearbyOn: loadPrefs().sessionsNearby === true, nearby,
+      nearbyOn: nearbyWanted(), nearby,
     };
   }
   const summaryDone = () => { for (const fn of listeners) { try { fn(summaryNow()); } catch (e) { log.warn('sessions', 'summary listener failed', e); } } };
+  /** On by default for a signed-in person; a guest is never contacted unless they switched it on (true). false = switched off. */
+  function nearbyWanted() { const v = loadPrefs().sessionsNearby; return v === true || (v !== false && signedIn()); }
   async function loadNearby() {
-    if (loadPrefs().sessionsNearby !== true) { nearby = null; return; }
+    if (!nearbyWanted()) { nearby = null; return; }
     const c = map.getCenter().wrap();
     try { const rows = await api.listPublic({ lat: Math.round(c.lat * 100) / 100, lng: Math.round(c.lng * 100) / 100, radiusKm: NEAR_KM, limit: 20 }); nearby = { count: rows.length, first: rows[0] ?? null, more: rows.length === 20 }; } catch { nearby = null; }
   }
@@ -626,7 +628,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     refresh: () => refreshSummary(false),
     summary: summaryNow,
     onSummary: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
-    setNearby(on) { savePrefs({ sessionsNearby: on ? true : null }); return loadNearby().then(summaryDone); },
+    setNearby(on) { savePrefs({ sessionsNearby: !!on }); return loadNearby().then(summaryDone); },
     redeemFromHash,
     // Review 01 S10.5 (NAV-07): used only by shell/nav.js, to keep the shell's current destination in sync with the dialog closing by its
     // own means (✕, Escape, an outside tap), and to give a session's full-screen detail one browser-history entry (Back returns to the

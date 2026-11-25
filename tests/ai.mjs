@@ -16,7 +16,7 @@ async function session({ seed, prefs, viewport = { width: 1200, height: 800 }, p
     if (!sessionStorage.__seeded) {
       sessionStorage.__seeded = '1';
       if (s) localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: s }));
-      if (pr) localStorage.setItem('uavzones.v1.prefs', JSON.stringify(pr));
+      localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ lookupNames: false, privacyDefaults: 2, ...(pr || {}) })); // starts from an existing browser with name lookup off; the new-user default is on (privacy-defaults-unit)
     }
   }, [seed, prefs]);
   const S = { ctx, photon: [], nom: [], photonFn: photon, nomFn: nominatim, delay };

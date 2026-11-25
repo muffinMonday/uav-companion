@@ -1,3 +1,8 @@
+## Latest: feature-rich privacy defaults, live-sharing prompt, first-notice copy, privacy policy (2026-11-26; owner-authorized implement/commit/push/merge/deploy for this change only)
+- **Change:** weather, elevation, AI name lookup, marker check-in on by default for new browsers; nearby public sessions on by default while signed in (guests only if switched on). `autoShare` stays `unset` (asked once), `autoSessionAttendance` stays off (server consent and flag untouched). Prefs v2: explicit true/false saved, `migratePrivacyDefaults()` writes explicit `false` for browsers that already had settings. Live-sharing question is now an app dialog (Enable sharing / Not now / Keep off) in `party-ui.js`; `autoshare.js` unchanged. Splash notice replaced; `privacy.html` and the Privacy panel rewritten to match. Profile popover no longer shows the mascot beside the avatar (`account-ui.js`).
+- **Tests:** new `privacy-defaults-unit`; updated autoshare, priv, mw, ai, storage, days, live, party, sessions, friends. See the release entry below for results and commit.
+- **Known limit:** an existing user who never changed anything and has no stored prefs is indistinguishable from a new user and gets the new defaults.
+
 ## Latest: unified touch gestures DEPLOYED (2026-11-26)
 - **Authorization:** owner authorized autonomous implement/commit/push/merge/deploy for this change only; expired with this release.
 - **Change:** swipes on the top-right cluster, search header, More tools sheet, route summary, Sessions explorer fold and the phone panel expand handle, all via existing `onSwipe()`; Saved Places groups, Side Quests, trip warnings, profile sections and Help stay tap-only (scroll conflict). Details: DESIGN.md section 26.

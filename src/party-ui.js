@@ -15,10 +15,32 @@ import { createAutoShare } from './autoshare.js';
 import { createSocial } from './social.js';
 import { getPrivacy, setPrivacy, onPrivacyChange } from './privacy.js';
 import { createBackoff, canPoll } from './backoff.js';
+import { showModalQuiet } from './touch.js';
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const WHO_KEY = 'uavzones.v1.sharedwho';
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+/** The one-time question before automatic sharing (autoshare.js): Enable sharing -> 'on', Keep off -> 'off' (never asked again), Not now or Escape -> 'later' (asked again next session). */
+function askShareConsent({ party, friends }) {
+  const who = party && friends ? 'someone in your party or a friend is' : party ? 'someone in your party is' : 'a friend is';
+  return new Promise((resolve) => {
+    const dlg = document.createElement('dialog');
+    dlg.className = 'splash'; dlg.id = 'autoshare-consent'; dlg.setAttribute('aria-labelledby', 'autoshare-consent-title');
+    let answer = 'later';
+    const h = el('h2', '', 'Share your location automatically?'); h.id = 'autoshare-consent-title';
+    const btn = (id, text, value, cls) => { const b = el('button', cls, text); b.type = 'button'; b.id = id; b.addEventListener('click', () => { answer = value; dlg.close(); }); return b; };
+    const row = el('div', 'btn-row');
+    row.append(btn('autoshare-enable', 'Enable sharing', 'on', 'btn primary'), btn('autoshare-later', 'Not now', 'later', 'btn small'), btn('autoshare-keepoff', 'Keep off', 'off', 'btn small'));
+    dlg.append(h,
+      el('p', 'hint', 'When ' + who + ' online, this app can start sharing your location with them by itself, in this and future sessions, so you do not have to switch it on each time. Only while this page is open; party members and friends see you on the map. Your browser still asks for location permission.'),
+      el('p', 'hint', 'Sharing stops when nobody eligible is online any more, or when you press Stop. You can change this at any time in Privacy settings.'),
+      row);
+    dlg.addEventListener('close', () => { dlg.remove(); resolve(answer); });
+    document.body.append(dlg);
+    showModalQuiet(dlg);
+  });
+}
 
 /** `handle` is what initSyncUI returns ({ sync, adapter, onChange, open }); `cloud` is the holder the dashboard reads. Returns the hooks the trips screen uses. */
 export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
@@ -49,10 +71,7 @@ export function initPartyUI({ handle, store, panel, toast, cloud, map }) {
   const autoshare = createAutoShare({
     live, privacy: { get: getPrivacy, set: setPrivacy }, signedIn, friendsOnline,
     trips: () => store.trips().filter((t) => t.shared).map((t) => ({ id: t.id, online: eng.snapshot().online[t.id] ?? 0, endDate: t.endDate })),
-    consent: async ({ party, friends }) => confirm(
-      'Share your location automatically?\n\nWhen ' + (party && friends ? 'someone in your party or a friend is' : party ? 'someone in your party is' : 'a friend is') +
-      ' online, this app can start sharing your location with them by itself, so you do not have to switch it on each time. Only while this page is open; party members and friends see you on the map. ' +
-      'You can stop at any time with the Stop button, and turn this off in the privacy settings.\n\nOK turns it on. Cancel: not now.') ? 'on' : 'later',
+    consent: askShareConsent,
   });
   onPrivacyChange(() => autoshare.evaluate()); // the master switch in the privacy settings
   let view = null; // the trips screen: { refresh() }
