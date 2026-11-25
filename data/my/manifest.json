@@ -1,0 +1,141 @@
+{
+  "country": {
+    "id": "my",
+    "name": "Malaysia",
+    "nameZh": "马来西亚"
+  },
+  "generated": "2026-11-24T15:09:57.082Z",
+  "regions": [
+    {
+      "id": "my-enr51",
+      "country": "my",
+      "name": "Malaysia prohibited, restricted and danger areas",
+      "nameZh": "马来西亚禁区、限制区和危险区",
+      "file": "tiles/my/my-enr51.0507ca99.pmtiles",
+      "boundary": null,
+      "bounds": [
+        98,
+        0.983611,
+        119.583333,
+        8.049444
+      ],
+      "coverageBounds": [
+        98,
+        0.983611,
+        119.583333,
+        8.049444
+      ],
+      "cells": 76,
+      "minZoom": 3,
+      "maxZoom": 12,
+      "semantics": "restrict",
+      "maxHeightM": null,
+      "source": {
+        "authority": "Civil Aviation Authority of Malaysia (CAAM), AIP Malaysia ENR 5.1",
+        "edition": "AIP AMDT 04/26",
+        "effective": "2026-11-03",
+        "published": "2026-11-03",
+        "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-ENR-5.1-en-MS.html",
+        "extraction": "scripts/airspace/my-enr51.mjs (parses the published tabulation; see exceptions.json for what was not converted)",
+        "approximation": {
+          "script": "scripts/airspace/my-enr51-approx.mjs",
+          "provenance": "approx-provenance.json",
+          "secondaryDataset": "OpenStreetMap contributors, ODbL 1.0 (coastline and Malaysia/Thailand border shape only)"
+        }
+      },
+      "license": "unknown",
+      "crs": "wgs84",
+      "crsVerified": true,
+      "partialCoverage": true,
+      "classes": [
+        {
+          "id": "approx-prohibited",
+          "label": "Prohibited area (P), approximate boundary",
+          "color": "#b71c1c",
+          "severity": 4,
+          "points": false,
+          "summary": "Potential prohibited area: boundary reconstructed from the CAAM ENR 5.1 description and a coastline or border dataset, not an official CAAM polygon. Verify with current CAAM information.",
+          "owner": "Civil Aviation Authority of Malaysia (CAAM), AIP Malaysia ENR 5.1",
+          "updated": "2026-11-03",
+          "published": "2026-11-03",
+          "count": 1,
+          "verdict": "prohibited",
+          "approximate": true,
+          "description": "Upper 5000 FT ALT, lower GND. Sultan’s Palace. Permanent"
+        },
+        {
+          "id": "approx-restricted",
+          "label": "Restricted area (R), approximate boundary",
+          "color": "#e53935",
+          "severity": 5,
+          "points": false,
+          "summary": "Potential restricted area: boundary reconstructed from the CAAM ENR 5.1 description and a coastline or border dataset, not an official CAAM polygon. Verify with current CAAM information.",
+          "owner": "Civil Aviation Authority of Malaysia (CAAM), AIP Malaysia ENR 5.1",
+          "updated": "2026-11-03",
+          "published": "2026-11-03",
+          "count": 10,
+          "verdict": "restricted",
+          "approximate": true
+        },
+        {
+          "id": "approx-danger",
+          "label": "Danger area (D), approximate boundary",
+          "color": "#ef6c00",
+          "severity": 6,
+          "points": false,
+          "summary": "Potential danger area: boundary reconstructed from the CAAM ENR 5.1 description and a coastline or border dataset, not an official CAAM polygon. Verify with current CAAM information.",
+          "owner": "Civil Aviation Authority of Malaysia (CAAM), AIP Malaysia ENR 5.1",
+          "updated": "2026-11-03",
+          "published": "2026-11-03",
+          "count": 1,
+          "verdict": "danger",
+          "approximate": true,
+          "description": "Upper 10000 FT ALT, lower GND. Artillery And Mortar Shells Firing. Activity: Notify by NOTAM"
+        },
+        {
+          "id": "prohibited",
+          "label": "Prohibited area (P)",
+          "color": "#b71c1c",
+          "severity": 1,
+          "points": false,
+          "summary": "Prohibited area (ENR 5.1): flight of aircraft is not permitted at any time.",
+          "owner": "Civil Aviation Authority of Malaysia (CAAM), AIP Malaysia ENR 5.1",
+          "updated": "2026-11-03",
+          "published": "2026-11-03",
+          "count": 3,
+          "verdict": "prohibited"
+        },
+        {
+          "id": "restricted",
+          "label": "Restricted area (R)",
+          "color": "#e53935",
+          "severity": 2,
+          "points": false,
+          "summary": "Restricted area (ENR 5.1): flight is allowed only if the published conditions are met. Read the times and conditions.",
+          "owner": "Civil Aviation Authority of Malaysia (CAAM), AIP Malaysia ENR 5.1",
+          "updated": "2026-11-03",
+          "published": "2026-11-03",
+          "count": 44,
+          "verdict": "restricted"
+        },
+        {
+          "id": "danger",
+          "label": "Danger area (D)",
+          "color": "#ef6c00",
+          "severity": 3,
+          "points": false,
+          "summary": "Danger area (ENR 5.1): activities dangerous to aircraft may exist at the published times. Caution; check the conditions.",
+          "owner": "Civil Aviation Authority of Malaysia (CAAM), AIP Malaysia ENR 5.1",
+          "updated": "2026-11-03",
+          "published": "2026-11-03",
+          "count": 17,
+          "verdict": "danger"
+        }
+      ],
+      "officialMap": {
+        "label": "CAAM eAIP Malaysia, ENR 5.1",
+        "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-ENR-5.1-en-MS.html"
+      }
+    }
+  ]
+}

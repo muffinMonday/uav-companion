@@ -1,0 +1,57 @@
+{
+  "generated": "2026-11-24T15:09:57.082Z",
+  "countries": [
+    {
+      "id": "cn",
+      "name": "China",
+      "nameZh": "中国",
+      "view": [
+        73.5,
+        18,
+        135.1,
+        53.6
+      ],
+      "regions": 30,
+      "manifest": "cn/manifest.json"
+    },
+    {
+      "id": "my",
+      "name": "Malaysia",
+      "nameZh": "马来西亚",
+      "view": [
+        99.5,
+        0.8,
+        119.5,
+        7.5
+      ],
+      "regions": 1,
+      "manifest": "my/manifest.json"
+    },
+    {
+      "id": "sg",
+      "name": "Singapore",
+      "nameZh": "新加坡",
+      "view": [
+        103.6,
+        1.15,
+        104.1,
+        1.48
+      ],
+      "regions": 1,
+      "manifest": "sg/manifest.json"
+    },
+    {
+      "id": "vn",
+      "name": "Vietnam",
+      "nameZh": "越南",
+      "view": [
+        102,
+        8,
+        110,
+        23.5
+      ],
+      "regions": 1,
+      "manifest": "vn/manifest.json"
+    }
+  ]
+}
