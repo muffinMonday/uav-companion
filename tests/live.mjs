@@ -67,6 +67,7 @@ async function open(who, { vp = { width: 1300, height: 900 }, mobile = false, ge
     localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify(sess));
   }, [REF, session(uid, email), local ? trip : null, LATEST_SEEN]);
   const p = await ctx.newPage();
+  await p.addLocatorHandler(p.locator('#autoshare-consent'), () => p.locator('#autoshare-later').click()); // the app's own question (it replaced a browser confirm that these tests dismissed)
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::|status of 4|geolocation|Geolocation/.test(m.text()) && errs.push(m.text()));
   await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' }); await p.waitForTimeout(1500);

@@ -38,7 +38,8 @@ function sanitize(raw) {
   if (raw.autoSessionAttendance === true) out.autoSessionAttendance = true; // automatic flight-session attendance (session-arrival.js): off unless the person turned it on; the server holds the consent too
   if (raw.shareFriends === false) out.shareFriends = false; // automatic sharing does not include friends (on unless switched off)
   if (Array.isArray(raw.shareOff)) out.shareOff = raw.shareOff.filter((x) => typeof x === 'string' && x.length > 0 && x.length <= 64).slice(0, 50); // trips (and 'friends') the person stopped by hand: never started automatically
-  if (raw.sessionsNearby === true) out.sessionsNearby = true; // the dashboard may look for public flight sessions within 10 km of the map centre (never the position)
+  if (typeof raw.sessionsNearby === 'boolean') out.sessionsNearby = raw.sessionsNearby; // the dashboard may look for public flight sessions within 10 km of the map centre (never the position); on unless false
+  if (raw.privacyDefaults === 2) out.privacyDefaults = 2; // the feature-rich defaults (privacy.js) apply: an absent choice means on. Absent = a browser from before them, whose absent choices still mean off
   if (raw.locateOnLaunch === false) out.locateOnLaunch = false; // on launch the map is not centred on the visitor (on unless switched off)
   if (['auto', 'amap', 'google'].includes(raw.mapApp)) out.mapApp = raw.mapApp; // which map app the Open / Navigate buttons use
   if (['drive', 'transit', 'walk', 'bike'].includes(raw.mapMode)) out.mapMode = raw.mapMode; // the usual way of travelling
@@ -52,6 +53,21 @@ function sanitize(raw) {
     out.view = { lat: v.lat, lon: v.lon, zoom: Math.round(v.zoom) };
   }
   return out;
+}
+
+/** Privacy defaults version 2 turned weather, elevation, name lookup, check-in and nearby sessions on by default. A browser that already holds settings
+ *  from before keeps its old reading (an absent choice meant off): each is written down as an explicit false once, so nothing is switched on for a person
+ *  who never chose it. A browser with no settings yet is new and gets the defaults. */
+const V2_KEYS = ['autoWeather', 'fetchAltitude', 'lookupNames', 'checkIn', 'sessionsNearby'];
+export function migratePrivacyDefaults() {
+  try {
+    const rawText = localStorage.getItem(KEY);
+    const old = rawText === null ? {} : sanitize(JSON.parse(rawText || 'null'));
+    if (old.privacyDefaults === 2) return;
+    const next = { ...old, privacyDefaults: 2 };
+    if (rawText !== null) for (const k of V2_KEYS) if (next[k] === undefined) next[k] = false;
+    localStorage.setItem(KEY, JSON.stringify(next));
+  } catch { /* storage blocked: the defaults apply in memory only */ }
 }
 
 export function loadPrefs() {

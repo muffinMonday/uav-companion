@@ -14,6 +14,7 @@ async function open({ pad = 0 } = {}) {
   await ctx.addInitScript(([po, w, e, pd]) => {
     if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
     localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po }));
+    localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ autoWeather: false, fetchAltitude: false, privacyDefaults: 2 })); // pruning is tested without the new-user automatic fetches
     localStorage.setItem('uavzones.v1.wxcache', JSON.stringify(w));
     localStorage.setItem('uavzones.v1.elevcache', JSON.stringify(e));
     if (pd) localStorage.setItem('uavzones.v1.pad', 'x'.repeat(pd));

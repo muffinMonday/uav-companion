@@ -15,8 +15,11 @@ import { countryPicker } from './app/country-menu.js';
 /** Review 01 S10.6 (AUTH-03): the one place the new shell changes splash.js's routing - "Continue as guest"/"Skip" opens the Map
  * destination directly (the shell's own default view) instead of the legacy dashboard/help entry flow. Off by default. */
 const NEW_SHELL = import.meta.env.VITE_NEW_SHELL === '1';
-/** The product description shown on the homepage; keep it equal to index.html's meta description and privacy.html's summary. */
-const APP_DESCRIPTION = 'An open-source map of suitable-flight (适飞) zones for most mainland Chinese provinces and no-fly zones for Singapore, from official and third-party reference data. You can check a spot, save places and plan trips. It is reference information, not flight advice: check the official platform for your location before every flight.';
+/** The first-time notice: what the app is and is not, and how guest and signed-in use differ. Two paragraphs; keep it equal in meaning to privacy.html's summary. */
+const NOTICE = [
+  'UAV Companion is a flight-planning companion, not an authoritative source of airspace regulations. Always verify local rules and restrictions before flying.',
+  'Use it as a guest to keep your saved data on your device, or sign in to unlock additional features, cloud backup and synchronization.',
+];
 
 export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud = {}, toolbar = null }) {
   const dlg = document.createElement('dialog');
@@ -41,7 +44,7 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
   const accountsOn = () => !!cloud.handle && !cloud.handle.sync.status().session;
   function paintAccount() {
     if (!acctBox) return;
-    if (introEl) introEl.textContent = cloud.handle ? 'Everything stays in this browser unless you sign in. You can change your mind at any time.' : 'Everything stays in this browser. You can change your mind at any time.';
+    if (introEl) introEl.textContent = cloud.handle ? 'Your saved data stays in this browser unless you sign in. You can change your mind at any time.' : 'Your saved data stays in this browser. You can change your mind at any time.';
     acctBox.replaceChildren();
     acctBox.hidden = !accountsOn();
     if (acctBox.hidden) return;
@@ -67,10 +70,10 @@ export function initSplash({ dash, panel, ai, locate, loadPrompt, toast, cloud =
     const skipB = Object.assign(btn('Skip, just show me the map', skip, 'dash-link'), { id: 'splash-skip' });
     const links = el('div', 'splash-links'); links.append(learn, skipB);
     const head = el('div', 'splash-head'); head.append(heading('Where do you want to start?'), mascotEl('waving', 56));
-    // The app's name, what it is for, and its privacy policy, visible before anything else (Google branding review; the same text is in index.html's description).
+    // The app's name, what it is for, and its privacy policy, visible before anything else (Google branding review; index.html's meta description names the app's purpose too).
     const brand = el('div', 'splash-brand');
     const policy = el('a', '', 'Privacy policy'); policy.href = 'privacy.html';
-    brand.append(el('p', 'splash-name', 'UAV Companion'), el('p', 'splash-desc', APP_DESCRIPTION), policy);
+    brand.append(el('p', 'splash-name', 'UAV Companion'), ...NOTICE.map((t) => el('p', 'splash-desc', t)), policy);
     show(brand, head, introEl, choices, acctBox, links);
   }
 

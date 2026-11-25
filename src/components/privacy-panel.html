@@ -9,12 +9,12 @@
       </button>
     </header>
     <div class="sp-body">
-      <p class="lead">Everything here is off or minimal by default. Your markers, notes and settings stay in this browser. These switches only control what is sent to Open-Meteo.com for weather and elevation.</p>
+      <p class="lead">Most helpful online features are on by default; each one sends only what its card says, and every switch here turns it off. Automatic location sharing and automatic attendance stay off until you agree. As a guest, your markers, trips, notes and settings are kept in this browser; map tiles and any feature you leave on still contact the services named below. Signing in adds a cloud copy and social features.</p>
 
       <div class="card">
         <h2>Weather</h2>
         <p class="hint" id="pv-mw-status"></p>
-        <label class="switch"><span>Fetch weather for markers automatically <small>Shows the next 5 hours in each marker window. Sent when you place a marker and when the page loads (at most every 30 minutes).</small></span><input type="checkbox" id="pv-auto"></label>
+        <label class="switch"><span>Fetch weather for markers automatically <small>Shows the next 5 hours in each marker window. Sent when you place a marker and when the page loads (at most every 30 minutes), to Open-Meteo.com. On by default.</small></span><input type="checkbox" id="pv-auto"></label>
         <fieldset class="radios">
           <legend>Location sent for weather</legend>
           <label class="radio"><input type="radio" name="pv-prec" value="estimated"><span>Estimated <small>Rounded to about 1 km. The forecast is the same, because its grid is 10 to 25 km. Recommended.</small></span></label>
@@ -25,12 +25,12 @@
 
       <div class="card">
         <h2>Altitude</h2>
-        <label class="switch"><span>Fetch ground elevation <small>Shown in marker windows and when you check a point. Always sends the exact location (about 10 m), whatever the weather setting: at 1 km the ground can differ by hundreds of metres in the mountains.</small></span><input type="checkbox" id="pv-alt"></label>
+        <label class="switch"><span>Fetch ground elevation <small>Shown in marker windows and when you check a point, using Open-Meteo.com. On by default. Always sends the exact marker or point location (about 10 m), whatever the weather setting: at 1 km the ground can differ by hundreds of metres in the mountains.</small></span><input type="checkbox" id="pv-alt"></label>
       </div>
 
       <div class="card">
         <h2>Place lookup</h2>
-        <label class="switch"><span>Look up places by name when importing <small>For itineraries from an AI: a place that came without coordinates is searched by its name or address. Those names are sent to Photon (Komoot), or Nominatim (OpenStreetMap) if Photon fails, only when you press Add on an import. Looked-up places are marked unverified.</small></span><input type="checkbox" id="pv-geo"></label>
+        <label class="switch"><span>Look up places by name when importing <small>For itineraries from an AI: a place that came without coordinates is searched by its name or address. Those names are sent to Photon (Komoot), or Nominatim (OpenStreetMap) if Photon fails, only when you press Add on an import. On by default. Looked-up places are marked unverified.</small></span><input type="checkbox" id="pv-geo"></label>
       </div>
 
       <div class="card">
@@ -40,7 +40,7 @@
 
       <div class="card">
         <h2>Share my location automatically</h2>
-        <label class="switch"><span>Start sharing by itself <small>When you are signed in and someone in a trip's party, or a friend, is online, your location is shared with them without switching anything on, only while this page is open. Nothing is sent otherwise. The Stop button on the map ends it, and a switch you turn off by hand stays off until you turn it on again. Off: sharing starts only when you switch it on.</small></span><input type="checkbox" id="pv-autoshare"></label>
+        <label class="switch"><span>Start sharing by itself <small>Off until you agree: the app asks once, the first time a friend or a shared-trip member is online. Once on, and while you are signed in, your location is shared with them in future sessions without switching anything on, only while this page is open, and the browser still asks for location permission. Sharing stops when no eligible friend or member is online, or when you press Stop. Nothing is sent otherwise. The Stop button on the map ends it, and a switch you turn off by hand stays off until you turn it on again. Off: sharing starts only when you switch it on.</small></span><input type="checkbox" id="pv-autoshare"></label>
         <label class="switch"><span>Include friends <small>Friends who are online see you on their map, marked as a friend. Off: only trip parties are included.</small></span><input type="checkbox" id="pv-autoshare-friends"></label>
       </div>
 
@@ -51,8 +51,13 @@
       </div>
 
       <div class="card">
+        <h2>Nearby public flight sessions</h2>
+        <label class="switch"><span>Look for public sessions near the map centre <small>On by default once you are signed in; as a guest nothing is requested unless you switch this on. The dashboard asks UAV Companion's server for public sessions within 10 km of the map centre, rounded to about 1 km. It uses the map centre, never your position.</small></span><input type="checkbox" id="pv-nearby"></label>
+      </div>
+
+      <div class="card">
         <h2>Check-in</h2>
-        <label class="switch"><span>Check in at markers <small>Uses your position to enable a Check in button on a marker when you are within 300 m of it. Your position is read only while the panel shows markers and is never sent anywhere. A check-in saves your coordinates and the time with the marker, in this browser.</small></span><input type="checkbox" id="pv-checkin"></label>
+        <label class="switch"><span>Check in at markers <small>On by default. Uses your position to enable a Check in button on a marker when you are within 300 m of it, and the browser asks for location permission first. Your position is read only while the panel shows markers and is never sent anywhere. A check-in saves your coordinates and the time with the marker, in this browser.</small></span><input type="checkbox" id="pv-checkin"></label>
       </div>
 
       <div class="card" id="dist-card">
@@ -77,9 +82,11 @@
         <h2>What leaves your browser</h2>
         <ul class="plain">
           <li><b>Map tiles:</b> the basemap you pick is loaded from OpenStreetMap, OpenStreetMap France (the Humanitarian and CyclOSM styles), OpenTopoMap or Go Tiles by WP Go Maps (standard OSM in dark mode), which see which area you view. Go Tiles receives your IP address and page origin; <a href="https://www.wpgmaps.com/go-tiles/privacy/" target="_blank" rel="noopener noreferrer">Go Tiles privacy policy</a>.</li>
-          <li><b>Place search and lookup:</b> online search sends your query to Photon or Nominatim, only when you search. Name lookup on import does the same with the names in the import, only if you turn it on above.</li>
-          <li><b>Check-in:</b> your position is read by the browser only while check-in is on and the panel shows markers. It is saved with the marker in this browser, included in an export, and left out of share links.</li>
-          <li><b>Weather and elevation:</b> Open-Meteo.com, only as set above.</li>
+          <li><b>Place search and lookup:</b> online search sends your query to Photon or Nominatim, only when you search. Name lookup on import does the same with the names in the import (on by default; switch it off above).</li>
+          <li><b>Check-in:</b> on by default; your position is read by the browser only while check-in is on and the panel shows markers. It is saved with the marker in this browser, included in an export, and left out of share links.</li>
+          <li><b>Weather and elevation:</b> Open-Meteo.com. Weather uses rounded coordinates (about 1 km) unless you choose Precise; elevation uses the exact marker or point location. Both are on by default and can be turned off above.</li>
+          <li><b>Nearby sessions, live sharing and attendance:</b> these go to UAV Companion's own server (Supabase): the rounded map centre for nearby public sessions (on by default when signed in; for a guest only if switched on), your position for live sharing (signed in, once you agree), and position samples for automatic attendance (signed in, once you and the server have agreed).</li>
+          <li><b>As a guest:</b> markers, trips and settings stay in this browser; signing in adds a cloud copy.</li>
           <li><b>Never sent:</b> marker names and notes, your saved markers, the wind limit, and these settings. Your location is read by the browser when you press the location button and, unless you turn it off above, once when the app opens; it stays on this device.</li>
         </ul>
       </div>

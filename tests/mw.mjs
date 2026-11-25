@@ -28,7 +28,7 @@ async function session({ seed = items(3), prefs, cache, delay = 0, fail = false,
     if (!sessionStorage.__seeded) {
       sessionStorage.__seeded = '1';
       if (s) localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: s }));
-      if (pr) localStorage.setItem('uavzones.v1.prefs', JSON.stringify(pr));
+      localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ autoWeather: false, fetchAltitude: false, privacyDefaults: 2, ...(pr || {}) })); // this suite tests the opt-in flow, so it starts from an existing browser with weather off (the new-user default is on: see priv.mjs and privacy-defaults-unit)
       if (ca) localStorage.setItem('uavzones.v1.wxcache', JSON.stringify(ca));
     }
   }, [seed, prefs, cache]);

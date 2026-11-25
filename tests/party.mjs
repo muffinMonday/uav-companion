@@ -65,6 +65,7 @@ async function open(who, { items = [], trips = [], vp = { width: 1300, height: 9
     if (sess) localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify(sess));
   }, [REF, signedIn ? session(uid, email) : null, items, trips, LATEST_SEEN]);
   const p = await ctx.newPage();
+  await p.addLocatorHandler(p.locator('#autoshare-consent'), () => p.locator('#autoshare-enable').click()); // the app's own question (it replaced a browser confirm that these tests accepted)
   p.on('dialog', (d) => d.accept());
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::|status of 4/.test(m.text()) && errs.push(m.text()));

@@ -56,6 +56,7 @@ async function open(who, { vp = { width: 1300, height: 850 }, mobile = false, ha
     if (sess) localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify(sess));
   }, [REF, uid ? session(uid, email) : null, { v: 1, showOnStart: false, welcomed: true, seen: '9999' }]);
   const p = await ctx.newPage();
+  await p.addLocatorHandler(p.locator('#autoshare-consent'), () => p.locator('#autoshare-enable').click()); // replaces the browser confirm these tests accepted
   p.on('dialog', (d) => (d.type() === 'prompt' ? d.accept('Marked the wrong person') : d.accept()));
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   p.on('console', (m) => m.type() === 'error' && !/Failed to load resource|ERR_FAILED|net::|status of [45]/.test(m.text()) && errs.push(m.text()));
