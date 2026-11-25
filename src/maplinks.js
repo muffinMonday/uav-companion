@@ -105,3 +105,18 @@ export function routeUrls(app, stops, modeId = 'drive', { mobile = false } = {})
   if (app === 'amap' && m.id === 'bike') note = (note ? `${note} ` : '') + 'Amap opens bike routes in its phone app only.';
   return { parts, note };
 }
+
+/**
+ * Android Chrome app-first handoff. Preserve the complete Amap web navigation
+ * URL (including GCJ-02 coordinates, via, mode and names) as the browser fallback.
+ * The package-qualified intent is a request, not a guarantee that Amap launches:
+ * browsers/Android settings ultimately decide whether the installed app handles it.
+ * Non-Amap links are never rewritten.
+ */
+export function androidAmapIntentUrl(url) {
+  let parsed;
+  try { parsed = new URL(url); } catch { return url; }
+  if (parsed.protocol !== 'https:' || parsed.hostname !== 'uri.amap.com' || parsed.pathname !== '/navigation') return url;
+  const fallback = encodeURIComponent(parsed.href);
+  return `intent://uri.amap.com/navigation${parsed.search}#Intent;scheme=https;package=com.autonavi.minimap;S.browser_fallback_url=${fallback};end`;
+}
