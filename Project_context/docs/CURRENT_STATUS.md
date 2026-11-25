@@ -3,7 +3,7 @@
 - **Change:** VVR19, VVD43, VVD45 added as `approx-restricted`/`approx-danger` layers by `scripts/airspace/vn-enr51-approx.mjs` (VVR19 approximate ~2 km, VVD43 derived, VVD45 approximate); 71 exact layers unchanged; notice "Boundary approximated from official AIP chart". Details: `docs/regions/vn-enr51.md`.
 - **Commits:** feature `2e288c2`, merge `bc1f7af` on `main`; gh-pages `9300888` (first Pages run failed with GitHub HTTP 500 at deploy; re-triggered with empty commit `7c8fb77`, which is live: production serves `vn-enr51.0048c9f9.pmtiles`, 74 areas). **Rollback target:** `main` `c5fb712`, gh-pages `43a4692` (live Vietnam archive `vn-enr51.19c9900a.pmtiles`, 71 areas). New archive `vn-enr51.0048c9f9.pmtiles`.
 - **Tests:** vn unit 0 fail, vn browser (desktop+phone) 0 fail, my-enr51/layers/zones-lifecycle 0 fail, `npm run build` ok, verify-data 0 mismatches. `npm run test:unit`: html-components-unit and country-groups-unit fail identically at the unchanged baseline (pre-existing).
-- Live check (2026-11-26, uavcompanion.com): Vietnam browser suite 19 PASS on first run; a second run failed "phone: Singapore verdicts are unchanged" (under investigation, see below).
+- Live check (2026-11-26, uavcompanion.com): permanent standalone suite `tests/prod-airspace-points.mjs` (not in `npm test`; needs network): 20/20 PASS on desktop and phone (Malaysia 7, Singapore 1, China Anhui and Hubei 2, no console errors). Chongqing and Kunming city centres return "No data"; not asserted, open question.
 - Deploy note: gh-pages failed once ("failed to remove tools/motor-bench-lab/: Permission denied"); deleting the cache clone `node_modules/.cache/gh-pages/` fixed it.
 
 ## Latest: keyless native dark basemap VERIFIED; release in progress (2026-11-25)
