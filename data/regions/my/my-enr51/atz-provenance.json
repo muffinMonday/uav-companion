@@ -1,0 +1,1001 @@
+{
+ "classification": "aerodrome-traffic-zone",
+ "label": "Airport traffic zone — authorisation required",
+ "edition": "2026-11-03",
+ "effective": "2026-11-03",
+ "radiusM": 9260,
+ "radiusNm": 5,
+ "rule": {
+  "regulation": "Civil Aviation Regulations 2016 (P.U.(A) 97), reg. 140(1)(b): no person shall fly an unmanned aircraft system within an aerodrome traffic zone unless authorised.",
+  "zoneDefinition": "CAAM Safety Information 11/2022, 11 August 2022: \"CAAM classifies the boundary of an aerodrome traffic zone as 5 nautical miles (9.26 kilometers) to the aerodrome reference point (ARP)\".",
+  "url": "https://www.caam.gov.my/wp-content/uploads/2022/08/SI-11_2022-Unmanned-Aircraft-System-UAS-Operations-Flown-Without-Approval-From-CAAM.pdf",
+  "differentiation": "The notice does not differentiate controlled, uncontrolled, military or private aerodromes; all receive the same circle and the category is recorded only.",
+  "currency": "No newer published CAAM text was found (checked 2026-11-26). CAAM announced a new UAS regulation in March 2025; no published text was located, so the 2022 rule stands. SI 01/2025 re-cites reg. 140.",
+  "activation": "Authorisation is by ATF; CAAM issues a NOTAM with it. NOTAMs and temporary authorisations are not tracked."
+ },
+ "counts": {
+  "ad1Index": {
+   "ad2": 40,
+   "ad4": 23
+  },
+  "aerodromes": 66,
+  "zones": 66,
+  "unresolved": 2
+ },
+ "heliports": "None published (AIP Malaysia AD 1.1.1.4: AD 3 omitted).",
+ "maxRadiusErrorM": 0.075,
+ "sources": {
+  "AD 1.3": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-1.3-en-MS.html",
+   "sha256": "efb905c2b697868fec37b4897ddd23dbef6a6297d1d7e8085e3efa2b57d9a97b"
+  },
+  "AD 2 WBGA": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGA-en-MS.html",
+   "sha256": "780c990d109ef110a39b02615e14423c448a1f9e5b3ee4b44443db2fd7c39770"
+  },
+  "AD 2 WBGB": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGB-en-MS.html",
+   "sha256": "f2dab1618a643b38c85e54924b54f1f7d72dc9271a10b5fca9a546cb0beba486"
+  },
+  "AD 2 WBGF": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGF-en-MS.html",
+   "sha256": "6784c86421ee6f451e436e53749b4f4ac18decb00d08324d90951aee7603b7b9"
+  },
+  "AD 2 WBGG": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGG-en-MS.html",
+   "sha256": "7edff57459aee9ca5cd6bb655ebe0b6e0001538e6d80e9946da7d526bc240394"
+  },
+  "AD 2 WBGI": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGI-en-MS.html",
+   "sha256": "6332064af23d6d93da076b48fcfc42deefd6fc6c65fb5c9ecc3aea595fb469d7"
+  },
+  "AD 2 WBGJ": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGJ-en-MS.html",
+   "sha256": "373c7ea2943ed70082f35b7c5455455955ebb71ec2cc9faa066d694dfb1a9191"
+  },
+  "AD 2 WBGK": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGK-en-MS.html",
+   "sha256": "e7923666bff2f4df962c0648675f0934bad937ed95ffc44314750a2027d66300"
+  },
+  "AD 2 WBGL": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGL-en-MS.html",
+   "sha256": "819d9d6b9ec4662ba5086bb2622e789dc657c92fa0bf78457dfb7e6a1b2e331a"
+  },
+  "AD 2 WBGM": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGM-en-MS.html",
+   "sha256": "0da73901d48f150b1ca5a14b922548deb91502e3b63b45cebf2d2338b31a59c8"
+  },
+  "AD 2 WBGQ": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGQ-en-MS.html",
+   "sha256": "a11d8d65fee6f0712b64a81dd7e17cd87093ef5ddcd284c89108c271100590f7"
+  },
+  "AD 2 WBGR": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGR-en-MS.html",
+   "sha256": "a1be631ac26a314128b226e09a886ecfe631e915c5a321be9e23b916039854e1"
+  },
+  "AD 2 WBGS": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGS-en-MS.html",
+   "sha256": "d489270799e8df000b0408f468e85657a9cb36d5765766ee3ecb158a24e20649"
+  },
+  "AD 2 WBGW": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGW-en-MS.html",
+   "sha256": "e33fe9e382c124e825fde78c7e85c40fd2968a2fcd517385d0bc8c769b5c1854"
+  },
+  "AD 2 WBGZ": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBGZ-en-MS.html",
+   "sha256": "9e4f35fc7af5eb1a9ed0735bc5f093cd07bba0a9a536c747c54b7844b4ae5c92"
+  },
+  "AD 2 WBKD": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBKD-en-MS.html",
+   "sha256": "ad941e40ddba4fbd3c7450f04b3f27f689086e51dba07f245ba367fe42dcde68"
+  },
+  "AD 2 WBKK": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBKK-en-MS.html",
+   "sha256": "3e064ed745e6d038b3c8ccd59bca1be1556ad8e88382f1a92d500f901a58c274"
+  },
+  "AD 2 WBKL": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBKL-en-MS.html",
+   "sha256": "2fd672b2403b4c814f509d1c65eb9d3c2947bf8fb76f8778c171d97a3ededf2f"
+  },
+  "AD 2 WBKS": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBKS-en-MS.html",
+   "sha256": "b8ed4bd06c9989204d1828249523a2f32db3d43ac1e5617de00d1658c0f99476"
+  },
+  "AD 2 WBKT": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBKT-en-MS.html",
+   "sha256": "cefabec71f554b0befc016fdddfda5db1190febacfe866faeb77daf45859cff4"
+  },
+  "AD 2 WBKW": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBKW-en-MS.html",
+   "sha256": "0251dfe87998960dc3a5271766578ed8a854cba46176301d79f17020062e5c47"
+  },
+  "AD 2 WBMU": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBMU-en-MS.html",
+   "sha256": "b703c6d51b251c2ce12d001a38db8baf7e4728f6ea03e6a9891ebdaa757f6708"
+  },
+  "AD 2 WBTM": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WBTM-en-MS.html",
+   "sha256": "7deeef3c269dd1cece1a64f2d907c33e6d4a513ee649c31b1883cf465aaca3f3"
+  },
+  "AD 2 WMAP": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMAP-en-MS.html",
+   "sha256": "f28b2e3816414ebfe7123546887a1048c3d93bce05811f2e5ed34cc62c0a3450"
+  },
+  "AD 2 WMBT": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMBT-en-MS.html",
+   "sha256": "d877a07455942e1f3ebe556ec5a6707aa35ca1884ac69064fa7871e3678f22ce"
+  },
+  "AD 2 WMGK": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMGK-en-MS.html",
+   "sha256": "e9bae84f48a8050317afb2852d6ecf454a05a04e1a7447a24a312e6254468f83"
+  },
+  "AD 2 WMKA": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKA-en-MS.html",
+   "sha256": "9416ee76cc0393bc51a255d67c72179a78aebf9e1c07d8e4468d98a1600da029"
+  },
+  "AD 2 WMKB": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKB-en-MS.html",
+   "sha256": "fe7a40136945efc16d5f7352a492855ad79342f8f06b2dd28b3e85e1cca0e7d9"
+  },
+  "AD 2 WMKC": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKC-en-MS.html",
+   "sha256": "7571ca5b1a1969eedd0b9979ff30de26ab3e2ff203e94170d5bda819f52f3ba5"
+  },
+  "AD 2 WMKD": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKD-en-MS.html",
+   "sha256": "3f4490e2be7664e5c386e5dac72b9ecb680bd6179fb7451ea51641451b0a1123"
+  },
+  "AD 2 WMKE": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKE-en-MS.html",
+   "sha256": "24ddd77879c8a07a9383a4aceeb19758604f40add4498d17823b2be03aca7b08"
+  },
+  "AD 2 WMKI": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKI-en-MS.html",
+   "sha256": "b5dbfc1a5ed3c7c7400586cc2d58cd53325cd80e70c5c6ecccbc950353b3a95b"
+  },
+  "AD 2 WMKJ": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKJ-en-MS.html",
+   "sha256": "520b057fd2f685cdf96dc9a1983bd78e5574ff23d94d83bba0b1c4f0df65e850"
+  },
+  "AD 2 WMKK": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKK-en-MS.html",
+   "sha256": "505c5899e962da33a761da4904322665a3332ebd5e2ce29b6fa805b710f168de"
+  },
+  "AD 2 WMKL": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKL-en-MS.html",
+   "sha256": "7e26c17625f4ff51c8159bcd8e2d0087f19757308ffa6b062488f1439ac9f1af"
+  },
+  "AD 2 WMKM": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKM-en-MS.html",
+   "sha256": "0ec017ecf804abd25f76d641018bc20d5f2e5a22075f4ec77178fdec0a8a262e"
+  },
+  "AD 2 WMKN": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKN-en-MS.html",
+   "sha256": "59baad3fb56af4e48df7fbf09689a085d5c9b6c18c5214488bd8269f724cc218"
+  },
+  "AD 2 WMKP": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMKP-en-MS.html",
+   "sha256": "d634e0fe04af1eb34be7ddb170df1033133d1d9941f64dcf5e87ad208a762f63"
+  },
+  "AD 2 WMPA": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMPA-en-MS.html",
+   "sha256": "208b00af811d1dc4bfa8f412e9846eaa995ebbea0ac41aa32715a39d888c7f4b"
+  },
+  "AD 2 WMPR": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMPR-en-MS.html",
+   "sha256": "c172d9fe545ed5be7f915ac4f11138b798eebd5e1d9ab03dbe0c9f0f274837e0"
+  },
+  "AD 2 WMSA": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-2.WMSA-en-MS.html",
+   "sha256": "ca09a9f9443ed1e1253258b5e4ebab2177fb0dc97091cc429e6f428748ca47b2"
+  },
+  "AD 4.1": {
+   "url": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-4.1-en-MS.html",
+   "sha256": "d54af5d4c11fe22c7520de234f93f090afe4ca15c019f679806898c764e4f7bc"
+  }
+ },
+ "unresolved": [
+  {
+   "icao": "WBKE",
+   "reason": "listed in AD 1.3 (AD 4) but AD 4.1 publishes no position for it; not inferred"
+  },
+  {
+   "icao": "WMAE",
+   "reason": "listed in AD 1.3 (AD 4) but AD 4.1 publishes no position for it; not inferred"
+  }
+ ],
+ "aerodromes": [
+  {
+   "id": "MY-JEROCO",
+   "icao": null,
+   "name": "JEROCO",
+   "section": "AD 4",
+   "arp": [
+    118.396389,
+    5.406111
+   ],
+   "arpText": "052422N 1182347E",
+   "category": "state/private-use"
+  },
+  {
+   "id": "WBGA",
+   "icao": "WBGA",
+   "name": "LONG AKAH",
+   "section": "AD 2",
+   "arp": [
+    114.786389,
+    3.312778
+   ],
+   "arpText": "031846N 1144711E",
+   "category": "state/private-use"
+  },
+  {
+   "id": "WBGB",
+   "icao": "WBGB",
+   "name": "BINTULU",
+   "section": "AD 2",
+   "arp": [
+    113.019722,
+    3.124167
+   ],
+   "arpText": "030727N 1130111E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGC",
+   "icao": "WBGC",
+   "name": "BELAGA",
+   "section": "AD 4",
+   "arp": [
+    113.760556,
+    2.636111
+   ],
+   "arpText": "023810N 1134538E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGD",
+   "icao": "WBGD",
+   "name": "LONG SEMADO",
+   "section": "AD 4",
+   "arp": [
+    115.582778,
+    4.216389
+   ],
+   "arpText": "041259N 1153458E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGF",
+   "icao": "WBGF",
+   "name": "LONG LELLANG",
+   "section": "AD 2",
+   "arp": [
+    115.153333,
+    3.421389
+   ],
+   "arpText": "032517N 1150912E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGG",
+   "icao": "WBGG",
+   "name": "KUCHING INTERNATIONAL",
+   "section": "AD 2",
+   "arp": [
+    110.345,
+    1.485278
+   ],
+   "arpText": "012907N 1102042E",
+   "category": "international"
+  },
+  {
+   "id": "WBGI",
+   "icao": "WBGI",
+   "name": "LONG SERIDAN",
+   "section": "AD 2",
+   "arp": [
+    115.068611,
+    3.976944
+   ],
+   "arpText": "035837N 1150407E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGJ",
+   "icao": "WBGJ",
+   "name": "LIMBANG",
+   "section": "AD 2",
+   "arp": [
+    115.009444,
+    4.808333
+   ],
+   "arpText": "044830N 1150034E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGK",
+   "icao": "WBGK",
+   "name": "MUKAH",
+   "section": "AD 2",
+   "arp": [
+    112.043333,
+    2.881944
+   ],
+   "arpText": "025255N 1120236E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGL",
+   "icao": "WBGL",
+   "name": "LONG BANGA",
+   "section": "AD 2",
+   "arp": [
+    115.401667,
+    3.201389
+   ],
+   "arpText": "031205N 1152406E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGM",
+   "icao": "WBGM",
+   "name": "MARUDI",
+   "section": "AD 2",
+   "arp": [
+    114.327778,
+    4.178889
+   ],
+   "arpText": "041044N 1141940E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGP",
+   "icao": "WBGP",
+   "name": "KAPIT",
+   "section": "AD 4",
+   "arp": [
+    112.931944,
+    2.009722
+   ],
+   "arpText": "020035N 1125555E",
+   "category": "state/private-use"
+  },
+  {
+   "id": "WBGQ",
+   "icao": "WBGQ",
+   "name": "BAKELALAN",
+   "section": "AD 2",
+   "arp": [
+    115.618889,
+    3.974722
+   ],
+   "arpText": "035829N 1153708E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGR",
+   "icao": "WBGR",
+   "name": "MIRI",
+   "section": "AD 2",
+   "arp": [
+    113.987222,
+    4.3225
+   ],
+   "arpText": "041921N 1135914E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGS",
+   "icao": "WBGS",
+   "name": "SIBU",
+   "section": "AD 2",
+   "arp": [
+    111.9825,
+    2.264167
+   ],
+   "arpText": "021551N 1115857E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGW",
+   "icao": "WBGW",
+   "name": "LAWAS",
+   "section": "AD 2",
+   "arp": [
+    115.407222,
+    4.846389
+   ],
+   "arpText": "045047N 1152426E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBGZ",
+   "icao": "WBGZ",
+   "name": "BARIO",
+   "section": "AD 2",
+   "arp": [
+    115.477778,
+    3.735278
+   ],
+   "arpText": "034407N 1152840E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBKA",
+   "icao": "WBKA",
+   "name": "SEMPORNA",
+   "section": "AD 4",
+   "arp": [
+    118.596389,
+    4.449722
+   ],
+   "arpText": "042659N 1183547E",
+   "category": "domestic-military-shared"
+  },
+  {
+   "id": "WBKB",
+   "icao": "WBKB",
+   "name": "KOTA BELUD",
+   "section": "AD 4",
+   "arp": [
+    116.463333,
+    6.366389
+   ],
+   "arpText": "062159N 1162748E",
+   "category": "state/private-use"
+  },
+  {
+   "id": "WBKD",
+   "icao": "WBKD",
+   "name": "LAHAD DATU",
+   "section": "AD 2",
+   "arp": [
+    118.329167,
+    5.029444
+   ],
+   "arpText": "050146N 1181945E",
+   "category": "domestic-military-shared"
+  },
+  {
+   "id": "WBKG",
+   "icao": "WBKG",
+   "name": "KENINGAU",
+   "section": "AD 4",
+   "arp": [
+    116.159167,
+    5.357222
+   ],
+   "arpText": "052126N 1160933E",
+   "category": "military"
+  },
+  {
+   "id": "WBKK",
+   "icao": "WBKK",
+   "name": "KOTA KINABALU INTERNATIONAL",
+   "section": "AD 2",
+   "arp": [
+    116.050278,
+    5.931944
+   ],
+   "arpText": "055555N 1160301E",
+   "category": "international"
+  },
+  {
+   "id": "WBKL",
+   "icao": "WBKL",
+   "name": "LABUAN",
+   "section": "AD 2",
+   "arp": [
+    115.252222,
+    5.296389
+   ],
+   "arpText": "051747N 1151508E",
+   "category": "domestic-military-shared"
+  },
+  {
+   "id": "WBKM",
+   "icao": "WBKM",
+   "name": "TOMMANGGONG",
+   "section": "AD 4",
+   "arp": [
+    118.646389,
+    5.399722
+   ],
+   "arpText": "052359N 1183847E",
+   "category": "state/private-use"
+  },
+  {
+   "id": "WBKN",
+   "icao": "WBKN",
+   "name": "LONG PASIA",
+   "section": "AD 4",
+   "arp": [
+    115.718889,
+    4.409444
+   ],
+   "arpText": "042434N 1154308E",
+   "category": "domestic-military-shared"
+  },
+  {
+   "id": "WBKO",
+   "icao": "WBKO",
+   "name": "SEPULOT",
+   "section": "AD 4",
+   "arp": [
+    116.453611,
+    4.712222
+   ],
+   "arpText": "044244N 1162713E",
+   "category": "state/private-use"
+  },
+  {
+   "id": "WBKP",
+   "icao": "WBKP",
+   "name": "PAMOL",
+   "section": "AD 4",
+   "arp": [
+    117.396389,
+    5.992778
+   ],
+   "arpText": "055934N 1172347E",
+   "category": "state/private-use"
+  },
+  {
+   "id": "WBKS",
+   "icao": "WBKS",
+   "name": "SANDAKAN",
+   "section": "AD 2",
+   "arp": [
+    118.061389,
+    5.900833
+   ],
+   "arpText": "055403N 1180341E",
+   "category": "domestic-military-shared"
+  },
+  {
+   "id": "WBKT",
+   "icao": "WBKT",
+   "name": "KUDAT",
+   "section": "AD 2",
+   "arp": [
+    116.837778,
+    6.923611
+   ],
+   "arpText": "065525N 1165016E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBKU",
+   "icao": "WBKU",
+   "name": "KUALA PENYU",
+   "section": "AD 4",
+   "arp": [
+    115.574444,
+    5.599722
+   ],
+   "arpText": "053559N 1153428E",
+   "category": "state/private-use"
+  },
+  {
+   "id": "WBKW",
+   "icao": "WBKW",
+   "name": "TAWAU",
+   "section": "AD 2",
+   "arp": [
+    118.116389,
+    4.310833
+   ],
+   "arpText": "041839N 1180659E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBMU",
+   "icao": "WBMU",
+   "name": "MULU",
+   "section": "AD 2",
+   "arp": [
+    114.809444,
+    4.049444
+   ],
+   "arpText": "040258N 1144834E",
+   "category": "domestic"
+  },
+  {
+   "id": "WBTM",
+   "icao": "WBTM",
+   "name": "TANJUNG MANIS",
+   "section": "AD 2",
+   "arp": [
+    111.202222,
+    2.176667
+   ],
+   "arpText": "021036N 1111208E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMAC",
+   "icao": "WMAC",
+   "name": "BENTA",
+   "section": "AD 4",
+   "arp": [
+    101.981944,
+    4.049722
+   ],
+   "arpText": "040259N 1015855E",
+   "category": "domestic-military-shared"
+  },
+  {
+   "id": "WMAD",
+   "icao": "WMAD",
+   "name": "BENTONG",
+   "section": "AD 4",
+   "arp": [
+    101.881944,
+    3.549722
+   ],
+   "arpText": "033259N 1015255E",
+   "category": "domestic-military-shared"
+  },
+  {
+   "id": "WMAH",
+   "icao": "WMAH",
+   "name": "GRIK",
+   "section": "AD 4",
+   "arp": [
+    101.115278,
+    5.433056
+   ],
+   "arpText": "052559N 1010655E",
+   "category": "military"
+  },
+  {
+   "id": "WMAJ",
+   "icao": "WMAJ",
+   "name": "JENDERATA",
+   "section": "AD 4",
+   "arp": [
+    100.948611,
+    3.899722
+   ],
+   "arpText": "035359N 1005655E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMAN",
+   "icao": "WMAN",
+   "name": "SUNGAI TIANG",
+   "section": "AD 4",
+   "arp": [
+    102.395,
+    4.330278
+   ],
+   "arpText": "041949N 1022342E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMAP",
+   "icao": "WMAP",
+   "name": "KLUANG",
+   "section": "AD 2",
+   "arp": [
+    103.3075,
+    2.043889
+   ],
+   "arpText": "020238N 1031827E",
+   "category": "military"
+  },
+  {
+   "id": "WMAU",
+   "icao": "WMAU",
+   "name": "MERSING",
+   "section": "AD 4",
+   "arp": [
+    103.865,
+    2.383333
+   ],
+   "arpText": "022300N 1035154E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMAV",
+   "icao": "WMAV",
+   "name": "MUAR / BAKRI",
+   "section": "AD 4",
+   "arp": [
+    102.648333,
+    2.05
+   ],
+   "arpText": "020300N 1023854E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMAZ",
+   "icao": "WMAZ",
+   "name": "SEGAMAT",
+   "section": "AD 4",
+   "arp": [
+    102.831667,
+    2.5
+   ],
+   "arpText": "023000N 1024954E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMBA",
+   "icao": "WMBA",
+   "name": "SITIAWAN",
+   "section": "AD 4",
+   "arp": [
+    100.698611,
+    4.216389
+   ],
+   "arpText": "041259N 1004155E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMBE",
+   "icao": "WMBE",
+   "name": "TERMELOH",
+   "section": "AD 4",
+   "arp": [
+    102.381667,
+    3.466389
+   ],
+   "arpText": "032759N 1022254E",
+   "category": "military"
+  },
+  {
+   "id": "WMBF",
+   "icao": "WMBF",
+   "name": "ULU BERNAM",
+   "section": "AD 4",
+   "arp": [
+    101.168056,
+    3.749722
+   ],
+   "arpText": "034459N 1011005E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMBH",
+   "icao": "WMBH",
+   "name": "KROH",
+   "section": "AD 4",
+   "arp": [
+    100.981944,
+    5.683056
+   ],
+   "arpText": "054059N 1005855E",
+   "category": "military"
+  },
+  {
+   "id": "WMBI",
+   "icao": "WMBI",
+   "name": "TAIPING",
+   "section": "AD 4",
+   "arp": [
+    100.716944,
+    4.866944
+   ],
+   "arpText": "045201N 1004301E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMBT",
+   "icao": "WMBT",
+   "name": "PULAU TIOMAN",
+   "section": "AD 2",
+   "arp": [
+    104.16,
+    2.819167
+   ],
+   "arpText": "024909N 1040936E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMGK",
+   "icao": "WMGK",
+   "name": "GONG KEDAK",
+   "section": "AD 2",
+   "arp": [
+    102.484361,
+    5.798917
+   ],
+   "arpText": "054756.10N 1022903.70E",
+   "category": "military"
+  },
+  {
+   "id": "WMKA",
+   "icao": "WMKA",
+   "name": "ALOR SETAR/SULTAN ABDUL HALIM",
+   "section": "AD 2",
+   "arp": [
+    100.400833,
+    6.194444
+   ],
+   "arpText": "061140N 1002403E",
+   "category": "domestic-military-shared"
+  },
+  {
+   "id": "WMKB",
+   "icao": "WMKB",
+   "name": "BUTTERWORTH",
+   "section": "AD 2",
+   "arp": [
+    100.391665,
+    5.467474
+   ],
+   "arpText": "052802.905N 1002329.995E",
+   "category": "military"
+  },
+  {
+   "id": "WMKC",
+   "icao": "WMKC",
+   "name": "KOTA BHARU/SULTAN ISMAIL PETRA",
+   "section": "AD 2",
+   "arp": [
+    102.290833,
+    6.167778
+   ],
+   "arpText": "061004N 1021727E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMKD",
+   "icao": "WMKD",
+   "name": "KUANTAN AIRPORT",
+   "section": "AD 2",
+   "arp": [
+    103.209444,
+    3.769722
+   ],
+   "arpText": "034611N 1031234E",
+   "category": "domestic-military-shared"
+  },
+  {
+   "id": "WMKE",
+   "icao": "WMKE",
+   "name": "KERTEH",
+   "section": "AD 2",
+   "arp": [
+    103.426667,
+    4.538333
+   ],
+   "arpText": "043218N 1032536E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMKI",
+   "icao": "WMKI",
+   "name": "IPOH/IPOH SULTAN AZLAN SHAH",
+   "section": "AD 2",
+   "arp": [
+    101.093056,
+    4.569167
+   ],
+   "arpText": "043409N 1010535E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMKJ",
+   "icao": "WMKJ",
+   "name": "JOHOR BAHRU/SENAI INTERNATIONAL",
+   "section": "AD 2",
+   "arp": [
+    103.670278,
+    1.640556
+   ],
+   "arpText": "013826N 1034013E",
+   "category": "international"
+  },
+  {
+   "id": "WMKK",
+   "icao": "WMKK",
+   "name": "KL INTERNATIONAL / SEPANG",
+   "section": "AD 2",
+   "arp": [
+    101.698056,
+    2.743333
+   ],
+   "arpText": "024436N 1014153E",
+   "category": "international"
+  },
+  {
+   "id": "WMKL",
+   "icao": "WMKL",
+   "name": "LANGKAWI INTERNATIONAL",
+   "section": "AD 2",
+   "arp": [
+    99.733611,
+    6.339444
+   ],
+   "arpText": "062022N 0994401E",
+   "category": "international"
+  },
+  {
+   "id": "WMKM",
+   "icao": "WMKM",
+   "name": "MALACCA",
+   "section": "AD 2",
+   "arp": [
+    102.2525,
+    2.263056
+   ],
+   "arpText": "021547N 1021509E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMKN",
+   "icao": "WMKN",
+   "name": "KUALA TERENGGANU/SULTAN MAHMUD",
+   "section": "AD 2",
+   "arp": [
+    103.103056,
+    5.381111
+   ],
+   "arpText": "052252N 1030611E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMKP",
+   "icao": "WMKP",
+   "name": "PENANG INTERNATIONAL AIRPORT",
+   "section": "AD 2",
+   "arp": [
+    100.272222,
+    5.295556
+   ],
+   "arpText": "051744N 1001620E",
+   "category": "international"
+  },
+  {
+   "id": "WMLH",
+   "icao": "WMLH",
+   "name": "LUMUT",
+   "section": "AD 4",
+   "arp": [
+    100.617778,
+    4.232778
+   ],
+   "arpText": "041358N 1003704E",
+   "category": "military"
+  },
+  {
+   "id": "WMPA",
+   "icao": "WMPA",
+   "name": "PULAU PANGKOR",
+   "section": "AD 2",
+   "arp": [
+    100.553333,
+    4.244722
+   ],
+   "arpText": "041441N 1003312E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMPR",
+   "icao": "WMPR",
+   "name": "PULAU REDANG",
+   "section": "AD 2",
+   "arp": [
+    103.005833,
+    5.768333
+   ],
+   "arpText": "054606N 1030021E",
+   "category": "domestic"
+  },
+  {
+   "id": "WMSA",
+   "icao": "WMSA",
+   "name": "SUBANG/SULTAN ABDUL AZIZ SHAH",
+   "section": "AD 2",
+   "arp": [
+    101.550278,
+    3.132222
+   ],
+   "arpText": "030756N 1013301E",
+   "category": "domestic-military-shared"
+  }
+ ]
+}

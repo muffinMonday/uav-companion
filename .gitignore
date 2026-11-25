@@ -19,6 +19,7 @@ data/regions/*/*/*
 !data/regions/my/my-enr51/exceptions.json
 !data/regions/my/my-enr51/references.json
 !data/regions/my/my-enr51/approx-provenance.json
+!data/regions/my/my-enr51/atz-provenance.json
 !data/regions/my/my-enr51/approx-sources/
 !data/regions/my/my-enr51/approx-sources/osm-extract.json
 # Vietnam ENR 5.1: layers, exception report and the exact official page the layers were built from
