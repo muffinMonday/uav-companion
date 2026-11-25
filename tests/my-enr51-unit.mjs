@@ -92,10 +92,10 @@ ok(rings.every((r) => r.reduce((s, p, i) => (i ? s + (r[i - 1][0] * p[1] - p[0] 
 // Archive
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/my/manifest.json'), 'utf8'));
 const region = manifest.regions.find((r) => r.id === 'my-enr51');
-ok(!!region && region.cells === 76 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'approx-prohibited,approx-restricted,approx-danger,prohibited,restricted,danger', 'the manifest registers my-enr51 with 64 verified + 12 approximate areas and its six classes');
-ok(region.classes.map((c) => c.verdict).join() === 'prohibited,restricted,danger,prohibited,restricted,danger' && region.source.effective === '2026-11-03', 'classes carry their P/R/D verdict; the edition date is recorded');
+ok(!!region && region.cells === 142 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'aerodrome-traffic-zone,approx-prohibited,approx-restricted,approx-danger,prohibited,restricted,danger', 'the manifest registers my-enr51 with 64 verified + 12 approximate areas + 66 aerodrome traffic zones and its seven classes (traffic zones are drawn first, under P/R/D)');
+ok(region.classes.map((c) => c.verdict).join() === 'authorisation-required,prohibited,restricted,danger,prohibited,restricted,danger' && region.source.effective === '2026-11-03', 'classes carry their P/R/D verdict; the edition date is recorded');
 ok(region.classes.filter((c) => c.approximate).map((c) => c.id).join() === 'approx-prohibited,approx-restricted,approx-danger' && region.classes.filter((c) => !c.approximate).every((c) => !('approximate' in c)), 'only the three approx-* classes are flagged approximate; verified classes are not');
-ok(region.classes.filter((c) => c.approximate).every((c) => c.severity > Math.max(...region.classes.filter((v) => !v.approximate).map((v) => v.severity))), 'approximate classes sort after every verified class (verified geometry takes precedence)');
+ok(region.classes.filter((c) => c.approximate).every((c) => c.severity > Math.max(...region.classes.filter((v) => !v.approximate && v.verdict !== 'authorisation-required').map((v) => v.severity))), 'approximate classes sort after every verified class (verified geometry takes precedence)');
 const bytes = fs.readFileSync(path.join(ROOT, 'public/data', region.file));
 const arch = new PMTiles({ getKey: () => region.file, getBytes: async (o, n) => ({ data: Uint8Array.from(bytes.subarray(o, o + n)).buffer }) });
 const inRing = (r, x, y) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) if ((r[i][1] > y) !== (r[j][1] > y) && x < (r[j][0] - r[i][0]) * (y - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) c = !c; return c; };

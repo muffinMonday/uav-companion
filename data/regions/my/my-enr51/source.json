@@ -16,6 +16,16 @@
   },
   "layers": [
     {
+      "id": "aerodrome-traffic-zone",
+      "file": "layers/aerodrome-traffic-zone.geojson",
+      "geojson": true,
+      "verdict": "authorisation-required",
+      "label": "Airport traffic zone — authorisation required",
+      "color": "#1565c0",
+      "severity": 7,
+      "summary": "5 NM (9.26 km) around the aerodrome reference point: flying an unmanned aircraft here needs CAAM authorisation (MCAR 2016 reg. 140(1)(b); CAAM Safety Information 11/2022). Not an outright ban."
+    },
+    {
       "id": "approx-prohibited",
       "file": "layers/approx-prohibited.geojson",
       "geojson": true,
@@ -90,8 +100,17 @@
       "script": "scripts/airspace/my-enr51-approx.mjs",
       "provenance": "approx-provenance.json",
       "secondaryDataset": "OpenStreetMap contributors, ODbL 1.0 (coastline and Malaysia/Thailand border shape only)"
+    },
+    "aerodromeTrafficZones": {
+      "script": "scripts/airspace/my-atz.mjs",
+      "provenance": "atz-provenance.json",
+      "edition": "AIP AMDT 04/26",
+      "effective": "2026-11-03",
+      "rule": "CAAM Safety Information 11/2022 (11 Aug 2022), MCAR 2016 reg. 140(1)(b)",
+      "ruleUrl": "https://www.caam.gov.my/wp-content/uploads/2022/08/SI-11_2022-Unmanned-Aircraft-System-UAS-Operations-Flown-Without-Approval-From-CAAM.pdf",
+      "aerodromesUrl": "https://aip.caam.gov.my/aip/eAIP/2026-11-03/html/eAIP/WM-AD-1.3-en-MS.html"
     }
   },
   "license": "unknown",
-  "licenseNote": "Derived from the public CAAM eAIP. No copyright or reuse terms were found on the eAIP site (checked GEN 0.1, the edition index and the cover pages on 2026-11-24); published on the owner's authorization of 2026-11-24 as planning reference, with the geometry reconstructed independently from the published coordinates. Approximate layers (approx-*) are reconstructions, not CAAM polygons; the coastline/border shape in them is from OpenStreetMap (ODbL, (c) OpenStreetMap contributors). Partial coverage: unconverted areas are listed in exceptions.json. Remove this region (or set publish to false) if CAAM asks."
+  "licenseNote": "Derived from the public CAAM eAIP. No copyright or reuse terms were found on the eAIP site (checked GEN 0.1, the edition index and the cover pages on 2026-11-24); published on the owner's authorization of 2026-11-24 as planning reference, with the geometry reconstructed independently from the published coordinates. Approximate layers (approx-*) are reconstructions, not CAAM polygons; the coastline/border shape in them is from OpenStreetMap (ODbL, (c) OpenStreetMap contributors). Partial coverage: unconverted areas are listed in exceptions.json. Remove this region (or set publish to false) if CAAM asks. Aerodrome traffic zones: 5 NM circles centred on the aerodrome positions published in AIP Malaysia AD 2.2 and AD 4.1 (same unknown licence status)."
 }
