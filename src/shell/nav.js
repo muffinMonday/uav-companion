@@ -307,6 +307,7 @@ function createShellNav({ panel, getSessionsHub, getAccount, toast, trips, cloud
   return {
     el: root,
     destination: () => current,
+    bindSessions: wireExploreHub,
     setDestination: go,
     destroy() {
       stopTier?.(); offMarkerOverlay(); barObserver?.disconnect(); topbarObserver?.disconnect(); document.documentElement.style.removeProperty('--shell-topbar-h'); tripHistory.destroy(); exploreHistory.destroy(); profileHistory.destroy(); root.remove(); topbar.remove();

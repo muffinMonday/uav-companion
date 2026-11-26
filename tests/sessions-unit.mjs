@@ -1,5 +1,5 @@
 // The plain side of flight sessions (src/sessions.js): validation of what the database returns, which controls to offer when, and the database wrapper. No browser, no network.
-import { cleanSession, cleanPerson, sessionState, whenText, createSessions, cleanPublic, cleanInvitation, cleanNotice, cleanTakedown, cleanInviteList, capacityText, roleText, seriesText, linkUrl, tokenFromHash, metres, todayRange, stillOn, nextExpiry, cleanParticipant } from '../src/sessions.js';
+import { cleanSession, cleanPerson, sessionState, whenText, createSessions, cleanPublic, cleanInvitation, cleanNotice, cleanTakedown, cleanInviteList, capacityText, roleText, seriesText, linkUrl, tokenFromHash, publicSessionUrl, publicSessionFromHash, metres, todayRange, stillOn, nextExpiry, cleanParticipant } from '../src/sessions.js';
 import { xpBadgeInfo } from '../src/sessions-xp.js';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 
@@ -150,4 +150,22 @@ ok(calls2.slice(-5).map((c) => c[0]).join() === 'invite_to_session,create_sessio
   ok(pp.people.length === 1 && pp.total === 2 && calls3.at(-1)[0] === 'list_session_participants' && calls3.at(-1)[1].p_limit === 10 && calls3.at(-1)[1].p_offset === 5 && calls3.at(-1)[1].p_session === 's1', 'participants() sends the page and cleans the rows');
   ok(await api3.requestFriendFrom('s1', 'h1') === 'friends' && calls3.at(-1)[1].p_handle === 'h1', 'requestFriendFrom sends the session and the handle only');
   ok(await api3.showInLists() === false && await api3.setShowInLists(true) !== undefined && calls3.at(-1)[1].p_show === true, 'the list switch calls its two functions');
+}
+
+// Public links are exact occurrence UUIDs; private invitation parsing stays separate.
+{
+  const id = '01234567-89ab-4cde-8fab-0123456789ab';
+  for (const base of ['https://example.test/', 'https://example.test/uav-companion/?q=1#old']) {
+    const url = publicSessionUrl(id, base);
+    ok(url === new URL(base).origin + new URL(base).pathname + '#flight-session=' + id && publicSessionFromHash(new URL(url).hash) === id, 'public occurrence URL preserves origin and application path');
+  }
+  for (const bad of ['', 'x', id + 'x', id.replaceAll('-', ''), id + '&session=secret', '%30' + id.slice(1), '{' + id + '}']) {
+    ok(publicSessionFromHash('#flight-session=' + bad) === null && publicSessionUrl(bad, 'https://example.test/') === null, 'invalid UUID rejected: ' + bad);
+  }
+  ok(publicSessionFromHash('#session=' + 'a'.repeat(64)) === null && tokenFromHash('#flight-session=' + id) === null, 'public and private links never consume each other');
+  reply = [{ ...pubRow, id }];
+  ok((await api.getPublic(id)).id === id && calls.at(-1)[0] === 'get_public_session' && calls.at(-1)[1].p_id === id, 'direct public lookup cleans the first Supabase array row');
+  for (const missing of [[], null, [{}], pubRow]) { reply = missing; ok(await api.getPublic(id) === null, 'unavailable or malformed public lookup returns null'); }
+  const before = calls.length;
+  ok(await api.getPublic('invalid') === null && calls.length === before, 'invalid direct lookup never calls the RPC');
 }

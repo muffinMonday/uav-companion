@@ -110,6 +110,71 @@ const nextS = await ins('Tomorrow meetup', { s: hr(24), e: hr(27), cap: 1, lat: 
 const farS = await ins('Far away fly-in', { s: hr(48), e: hr(50), lat: 40.0, lng: 116.0, loc: 'Beijing' });
 const privS = await ins('Private club', { s: hr(30), e: hr(33), vis: 'private', loc: 'Secret field' });
 
+// Public deep links bypass Discover entirely, including filtered/paginated results.
+for (const who of ['guest', 'c', 'b']) {
+  ({ ctx, p } = await open(who, { hash: '#flight-session=' + farS, ...(who === 'guest' ? { vp: { width: 360, height: 740 }, mobile: true } : {}) }));
+  await p.waitForSelector(body + ' [data-act=share]');
+  ok(/Far away fly-in/.test(await txt(p, body)) && await p.locator(hub + '[open]').count() === 1, who + ' opens the specific public occurrence directly');
+  ok(who === 'guest' ? await p.locator(body + ' [data-act=signin]').count() === 1 : await p.locator(body + ' [data-act=rsvp]').count() === 1, who + ' keeps the existing RSVP/sign-in flow');
+  if (who === 'b') ok(await p.locator('#ses-manage').count() === 1, 'public link preserves host management controls');
+  if (who === 'guest') {
+    const rect = await p.locator(hub).boundingBox();
+    ok(rect.x >= 0 && rect.x + rect.width <= 361 && rect.y >= 0 && rect.y + rect.height <= 741, 'public details fit a mobile screen');
+    await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: async (v) => { window.sharedSession = v; } }); });
+    await p.click('[data-act=share]');
+    ok(await p.evaluate((id) => window.sharedSession.title === 'Far away fly-in' && window.sharedSession.url === location.origin + location.pathname + '#flight-session=' + id, farS), 'Web Share receives the title and occurrence URL');
+    await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (url) => { window.copiedSession = url; } } }); });
+    await p.click('[data-act=share]');
+    ok(await p.evaluate((id) => window.copiedSession.endsWith('#flight-session=' + id), farS), 'clipboard fallback copies the public URL');
+    await p.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined }); });
+    await p.click('[data-act=share]');
+    ok(await p.locator('[data-public-url]').inputValue() === 'http://localhost:5173/#flight-session=' + farS, 'selectable public URL fallback stays in existing detail');
+    await p.reload({ waitUntil: 'networkidle' });
+    await p.waitForSelector('[data-act=share]');
+    ok(/Far away fly-in/.test(await txt(p, body)), 'reload reopens the shared occurrence');
+    await p.goBack();
+    await p.waitForTimeout(300);
+    ok(await p.locator(hub + '[open]').count() === 1 && await p.locator('#ses-q').isVisible(), 'browser Back returns from linked detail to Discover');
+  }
+  await ctx.close();
+}
+({ ctx, p } = await open('guest'));
+await openHub(p);
+await p.fill('#ses-q', 'no matching sessions'); await p.press('#ses-q', 'Enter');
+await p.waitForTimeout(400);
+await p.evaluate((id) => { location.hash = 'flight-session=' + id; }, farS);
+await p.waitForSelector('[data-act=share]');
+ok(/Far away fly-in/.test(await txt(p, body)), 'hash change opens a session outside the filtered Discover results');
+const directPattern = new RegExp('/rest/v1/rpc/get_public_session$');
+let releaseLookup;
+const held = new Promise((resolve) => { releaseLookup = resolve; });
+await p.route(directPattern, async (route) => { if (route.request().postDataJSON().p_id === nowS) await held; await route.fallback(); });
+await p.evaluate((id) => { location.hash = 'flight-session=' + id; }, nowS);
+await p.waitForFunction(() => document.querySelector('#ses-hub-body')?.textContent.includes('Loading session'));
+await p.evaluate((id) => { location.hash = 'flight-session=' + id; }, nextS);
+await p.waitForFunction(() => document.querySelector('#ses-hub-body .ses-title')?.textContent === 'Tomorrow meetup');
+releaseLookup(); await p.waitForTimeout(300);
+ok(/Tomorrow meetup/.test(await txt(p, body)) && !/Field day/.test(await txt(p, body)), 'rapid hash changes discard stale public lookup results');
+for (const id of ['not-a-uuid', privS, '00000000-0000-4000-8000-000000000000']) {
+  await p.evaluate((id) => { location.hash = 'flight-session=' + id; }, id);
+  await p.waitForFunction(() => document.querySelector('#ses-hub-body')?.textContent.includes('This session is no longer available.'));
+  ok(!/Private club|Secret field/.test(await txt(p, body)) && await p.locator('[data-act=share]').count() === 0, 'invalid/private/unavailable links show the same generic failure');
+}
+await ctx.close();
+// A guest follows the existing sign-in control and signs in on the same page.
+({ ctx, p } = await open('guest', { hash: '#flight-session=' + farS }));
+await p.waitForSelector('[data-act=share]');
+await p.click('[data-act=signin]');
+await ctx.route(new RegExp('^' + URL_.replace(/[.]/g, '\\.') + '/'), mockFor(C));
+await p.evaluate(([ref, sess]) => {
+  localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify(sess));
+  const channel = new BroadcastChannel(`sb-${ref}-auth-token`);
+  channel.postMessage({ event: 'SIGNED_IN', session: sess }); channel.close();
+}, [REF, session(C, 'c@example.test')]);
+await p.waitForSelector('[data-act=rsvp]');
+ok(/Far away fly-in/.test(await txt(p, body)) && await p.locator(hub + '[open]').count() === 1, 'sign-in transition refreshes the same public detail without duplicate dialogs');
+await ctx.close();
+
 ({ ctx, p } = await open('c'));
 await openHub(p);
 await p.waitForSelector(body + ' .ses-row', { timeout: 5000 });
@@ -221,6 +286,7 @@ await p.selectOption(body + ' .ses-link-form select:nth-of-type(1)', 'series').c
 await p.click(body + ' [data-act=link]');
 await p.waitForSelector('#ses-link-url', { timeout: 5000 });
 const url = await p.inputValue('#ses-link-url');
+ok(await p.locator('[data-act=share]').count() === 0, 'private details never offer public sharing');
 ok(/#session=[A-Za-z0-9]{32,}$/.test(url) && /Copy it now/.test(await txt(p, body + ' .ses-message')), 'a private link is shown once with its token after #');
 const tokenInDb = (await sql(`select token_hash from public.session_links`))[0]?.token_hash;
 ok(tokenInDb && !url.includes(tokenInDb), 'only a hash of the token is stored');

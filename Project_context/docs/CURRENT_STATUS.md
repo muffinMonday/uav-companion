@@ -1,3 +1,9 @@
+## Latest: public Flight Session occurrence sharing (2026-11-26; release checks in progress)
+- Owner explicitly authorized implementation, commit/push/merge and `npm run deploy:live`; focused tests only. Baseline source `1905d56`; production `gh-pages` rollback target `3c375d8c05886cd751062958eac67bf985823a25` (main asset `main-9PrE_XmU.js`).
+- Added `#flight-session=<UUID>`, direct `get_public_session` lookup, public-only Share session (Web Share, clipboard, selectable URL), guest details and existing sign-in/RSVP flow. Existing detail UI and shell history reused; request generations suppress stale results. Private tokens, DB/RLS, XP and series rules unchanged.
+- Tests: 12 focused session/database/history unit suites pass; `sessions` 114/0, `shell-nav-explore` 9/0, `session-preview` 64/0. Production candidate public/private fixture smoke 29/0; actual live anonymous RPC + mobile detail/reload pass. Sign-in-button return and private-link production-candidate checks pass (11/0). Explorer layout/drag/centring failures are being compared with baseline.
+- Production-flag build passes; data preflight retains 33/33 regions. No release yet. Real authenticated production RPC verification requires an authenticated session; none is configured in this environment (signed-in UI checked using SQL-backed fixtures).
+
 ## Latest: first-open Profile clipping fix (2026-11-26; in progress)
 - Owner requested autonomous fix and production deployment. Baseline `53ed5eb`; clean checkout.
 - Reproduced with a gated first progression response: Profile grows after placement and extends below the viewport on touch tablet and unfolded foldable. Cached reopen masks the bug.
