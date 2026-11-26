@@ -26,6 +26,7 @@ data/regions/*/*/*
 !data/regions/vn/vn-enr51/layers/
 !data/regions/vn/vn-enr51/layers/*.geojson
 !data/regions/vn/vn-enr51/exceptions.json
+!data/regions/vn/vn-enr51/ad-provenance.json
 !data/regions/vn/vn-enr51/source/
 !data/regions/vn/vn-enr51/source/VV-ENR-5.1-en-GB.html
 

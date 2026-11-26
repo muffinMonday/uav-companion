@@ -36,6 +36,12 @@ for (const [label, vp] of [['desktop', { width: 1300, height: 850 }], ['phone', 
   ok(/Potential danger airspace — approximate boundary: VVD43/.test(t) && /Caution|danger/i.test(t), `${label}: inside VVD43 shows potential danger airspace, approximate boundary`);
   t = await check('21.0150, 105.4700'); // inside VVD45 (interpreted vertex 1052002E)
   ok(/Potential danger airspace — approximate boundary: VVD45/.test(t), `${label}: inside VVD45 shows potential danger airspace, approximate boundary`);
+  t = await check('8.7320, 106.6326'); // Con Dao VVCS runway midpoint (Decision 18/2020 prohibited rectangle)
+  ok(/Prohibited area: VVCS/.test(t) && /not permitted/.test(t), `${label}: the Con Dao runway shows the airport drone prohibited zone`);
+  t = await check('8.6851, 106.6161'); // 5.5 km beside the Con Dao runway centreline (adjoining band)
+  ok(/Restricted area: VVCS/.test(t) && /conditions/.test(t) && !/not permitted/.test(t), `${label}: 5.5 km beside the Con Dao runway shows the airport restricted zone, not a ban`);
+  t = await check('8.6595, 106.6070'); // 8.5 km beside the centreline: outside both
+  ok(!/VVCS/.test(t) && /No data for this area/i.test(t), `${label}: 8.5 km beside the Con Dao runway is unknown`);
   t = await check('1.2800, 103.8600'); // Marina Bay
   ok(/Not inside a mapped no-fly zone/.test(t), `${label}: Singapore verdicts are unchanged`);
   t = await check('2.9150, 101.7983'); // WMP220 Puspati

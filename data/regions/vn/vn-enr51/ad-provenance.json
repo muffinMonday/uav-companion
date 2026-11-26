@@ -1,0 +1,814 @@
+{
+ "classification": [
+  "aerodrome-prohibited",
+  "aerodrome-restricted"
+ ],
+ "edition": "2026-10-01-AIRAC",
+ "effective": "2026-10-01",
+ "rule": {
+  "instrument": "Decision No. 18/2020/QD-TTg of the Prime Minister, 10 June 2020 (effective 10 June 2020; Official Gazette 647-648), establishing prohibited and restricted areas for unmanned aircraft and ultra-light flying objects.",
+  "url": "https://english.luatvietnam.vn/decision-no-18-2020-qd-ttg-on-establishment-of-prohibited-areas-and-restricted-areas-for-unmanned-aircraft-184590-doc1.html",
+  "prohibited": "Art. 3(4)(a,b): airports and aerodromes where civil and military aircraft operate: rectangle from the runway thresholds extended 15,000 m and 5,000 m either side of the centreline (outer runways for 2+), all altitudes.",
+  "flexible": "Art. 3(4)(c): airports with fewer than 6 civil flights per day may apply a flexible prohibited area (no flights inside the airport boundary, or none within an hour of manned operations) and flights need approval of military flight management and ATM. Flight counts are not in the AIP, so no airport is treated as flexible.",
+  "restricted": "Art. 4(4): adjoining area expanded 3,000 m widthwise and 5,000 m lengthwise from the prohibited area; flight needs the competent authority (Art. 4(5)).",
+  "basis": "Runway-based rectangles; no aerodrome reference point radius exists in the rule, so no circle and no Malaysian 5 NM radius is used.",
+  "currency": "Checked 2026-11-26: no amendment or repeal found; effect status could not be confirmed (official Vietnamese text and consolidated status are behind a login). Decree 288/2025/ND-CP and a 2026 draft decree were not read. English translation only; the Appendix illustrations were not read."
+ },
+ "counts": {
+  "ad1Index": 22,
+  "aerodromes": 22,
+  "prohibitedZones": 22,
+  "restrictedZones": 22,
+  "unresolved": 0
+ },
+ "coverageLimits": [
+  "Military-only aerodromes and heliports are not in AIP AD 1.3/AD 2 coordinates and are not mapped.",
+  "The 120 m AGL and crowded/border restricted areas of Art. 4 are not geographic here.",
+  "Temporary MND prohibitions (Art. 3(6)), NOTAMs and the 500 m / 200 m margins of other sites are not tracked."
+ ],
+ "dimensionChecks": [
+  {
+   "id": "VVBM",
+   "lengthM": 33000.1,
+   "widthM": 10000.1
+  },
+  {
+   "id": "VVCA",
+   "lengthM": 33049.9,
+   "widthM": 10000
+  },
+  {
+   "id": "VVCI",
+   "lengthM": 33049.9,
+   "widthM": 10000.1
+  },
+  {
+   "id": "VVCM",
+   "lengthM": 31499.8,
+   "widthM": 10000
+  },
+  {
+   "id": "VVCR",
+   "lengthM": 33364.1,
+   "widthM": 10552.4
+  },
+  {
+   "id": "VVCS",
+   "lengthM": 31828.6,
+   "widthM": 10000
+  },
+  {
+   "id": "VVCT",
+   "lengthM": 32999.8,
+   "widthM": 10000
+  },
+  {
+   "id": "VVDB",
+   "lengthM": 32399.8,
+   "widthM": 10000
+  },
+  {
+   "id": "VVDH",
+   "lengthM": 32400.3,
+   "widthM": 10000.1
+  },
+  {
+   "id": "VVDL",
+   "lengthM": 33249.6,
+   "widthM": 10000.1
+  },
+  {
+   "id": "VVDN",
+   "lengthM": 33500.4,
+   "widthM": 10213.9
+  },
+  {
+   "id": "VVNB",
+   "lengthM": 33808,
+   "widthM": 10459.6
+  },
+  {
+   "id": "VVPB",
+   "lengthM": 32701,
+   "widthM": 10000.1
+  },
+  {
+   "id": "VVPC",
+   "lengthM": 33048.6,
+   "widthM": 10000
+  },
+  {
+   "id": "VVPK",
+   "lengthM": 32400.2,
+   "widthM": 10000
+  },
+  {
+   "id": "VVPQ",
+   "lengthM": 33000.2,
+   "widthM": 10000
+  },
+  {
+   "id": "VVRG",
+   "lengthM": 31500,
+   "widthM": 9999.9
+  },
+  {
+   "id": "VVTH",
+   "lengthM": 32901.1,
+   "widthM": 10000
+  },
+  {
+   "id": "VVTS",
+   "lengthM": 33828,
+   "widthM": 10365.9
+  },
+  {
+   "id": "VVTX",
+   "lengthM": 33200.4,
+   "widthM": 10000
+  },
+  {
+   "id": "VVVD",
+   "lengthM": 33600.2,
+   "widthM": 10000.1
+  },
+  {
+   "id": "VVVH",
+   "lengthM": 32399.9,
+   "widthM": 10000
+  }
+ ],
+ "sources": {
+  "AD 1.3": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-1.3-en-GB.html",
+   "sha256": "975b8b69d7a1a840381ba4957f938ffc9ee9588ff5f2542363ab7885f22a11b0"
+  },
+  "AD 2 VVBM": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVBM-en-GB.html",
+   "sha256": "c5d87a2bccc1e61f584089477650c03bbc546f127287ba7626dd595a8bf3c320"
+  },
+  "AD 2 VVCA": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVCA-en-GB.html",
+   "sha256": "973d0765a354712b255bc5d2c132fc57cc3edc328b037dc512e168edcfea0c0b"
+  },
+  "AD 2 VVCI": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVCI-en-GB.html",
+   "sha256": "94e3fdbdc990af517a2fedd9a281159eee6c8fbd0e43ccc65172e633d7cc4847"
+  },
+  "AD 2 VVCM": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVCM-en-GB.html",
+   "sha256": "9193523e538ad88ec3e340b25d138e10c5986e89a2792d56132e2f8e7d45486a"
+  },
+  "AD 2 VVCR": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVCR-en-GB.html",
+   "sha256": "a36a51d351e0ce8f89ee89655f2272fefcb67a563873eef4f45bf5fc2bbe2cab"
+  },
+  "AD 2 VVCS": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVCS-en-GB.html",
+   "sha256": "abdbd7da72f2e067d8cd5025d5044a4ae1c3891789901033c0806c0265daf0ef"
+  },
+  "AD 2 VVCT": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVCT-en-GB.html",
+   "sha256": "56618054a21cd2f2bcbfd4b8f55c6434fd844188a626244c8e89cfa15cd6d74a"
+  },
+  "AD 2 VVDB": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVDB-en-GB.html",
+   "sha256": "db6e237871934244445248be74b7b33be94ba07fa61baece4b0049205307549a"
+  },
+  "AD 2 VVDH": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVDH-en-GB.html",
+   "sha256": "251acf389a7882deee287e314886ae32acf30d6fa65a89d0b64e8b21a9821d0d"
+  },
+  "AD 2 VVDL": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVDL-en-GB.html",
+   "sha256": "f255a532f66d2a2c9bb2c861561e5f401c12cf3de5e5e135e27256fdbded07be"
+  },
+  "AD 2 VVDN": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVDN-en-GB.html",
+   "sha256": "3e741004ef09aa5c6dd81900885dfacce4662ec1ca09ad31566ca3f63ed405fd"
+  },
+  "AD 2 VVNB": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVNB-en-GB.html",
+   "sha256": "2b26572a1a0bf0bae40af7559a99e400393f46d9239132d376b49af8895b1294"
+  },
+  "AD 2 VVPB": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVPB-en-GB.html",
+   "sha256": "e01147321d5571ad30bc44fb614ab6ba3c595f17694854a0a1bcc6777d64ad96"
+  },
+  "AD 2 VVPC": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVPC-en-GB.html",
+   "sha256": "5f334a85e62903264c90ea6f9c667b357ec3c7df8aaa4bf9e786d9383f4e2f84"
+  },
+  "AD 2 VVPK": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVPK-en-GB.html",
+   "sha256": "9e9949b31b7ea9a075f92c54ea42ef6e1e1bd279b03de5aa533c8b423c007e7b"
+  },
+  "AD 2 VVPQ": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVPQ-en-GB.html",
+   "sha256": "40503ea7370aed382170735f6723127599e8ceff1ecad8ebec42ac2e52dd320d"
+  },
+  "AD 2 VVRG": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVRG-en-GB.html",
+   "sha256": "915fb8853891fcfd64fe1de751f6c69bae53c4a28aa7a1324bef3f6c365b6053"
+  },
+  "AD 2 VVTH": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVTH-en-GB.html",
+   "sha256": "6f89e49ac2815352fa49b9697e6efbf0b7cfe42aac5bc71421ac83e4118ad9d8"
+  },
+  "AD 2 VVTS": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVTS-en-GB.html",
+   "sha256": "ad99ef3adbbe519ca7569dd893aee557aa53134eba8069639d452a8c74ea4150"
+  },
+  "AD 2 VVTX": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVTX-en-GB.html",
+   "sha256": "6a7df7e762e9fb753a6bec146e916c9e9f0db41ed5f32418c1c39c31fbefa4c0"
+  },
+  "AD 2 VVVD": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVVD-en-GB.html",
+   "sha256": "812735069b83736d15643220c6164e84e2f7850356a70c41a8fc7f2f03f1f04d"
+  },
+  "AD 2 VVVH": {
+   "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-2.VVVH-en-GB.html",
+   "sha256": "451eb838380c71738b582c4044046325a86a2dc4dd57a4eee46f5427ff9c0a51"
+  }
+ },
+ "unresolved": [],
+ "aerodromes": [
+  {
+   "id": "VVBM",
+   "name": "DAK LAK/BUON MA THUOT",
+   "category": "national",
+   "arp": [
+    108.116667,
+    12.668333
+   ],
+   "arpText": "124006N 1080700E",
+   "thresholds": [
+    {
+     "rwy": "09",
+     "lon": 108.106472,
+     "lat": 12.668556,
+     "text": "124006.80N 1080623.30E"
+    },
+    {
+     "rwy": "27",
+     "lon": 108.134086,
+     "lat": 12.6681,
+     "text": "124005.16N 1080802.71E"
+    }
+   ]
+  },
+  {
+   "id": "VVCA",
+   "name": "DA NANG/CHU LAI",
+   "category": "national",
+   "arp": [
+    108.705833,
+    15.406111
+   ],
+   "arpText": "152422N 1084221E",
+   "thresholds": [
+    {
+     "rwy": "14",
+     "lon": 108.695753,
+     "lat": 15.415658,
+     "text": "152456.37N 1084144.71E"
+    },
+    {
+     "rwy": "32",
+     "lon": 108.716006,
+     "lat": 15.396328,
+     "text": "152346.78N 1084257.62E"
+    }
+   ]
+  },
+  {
+   "id": "VVCI",
+   "name": "HAI PHONG/CAT BI INTL",
+   "category": "international-national",
+   "arp": [
+    106.723056,
+    20.816944
+   ],
+   "arpText": "204901N 1064323E",
+   "thresholds": [
+    {
+     "rwy": "07",
+     "lon": 106.709194,
+     "lat": 20.812742,
+     "text": "204845.87N 1064233.10E"
+    },
+    {
+     "rwy": "25",
+     "lon": 106.737111,
+     "lat": 20.821103,
+     "text": "204915.97N 1064413.60E"
+    }
+   ]
+  },
+  {
+   "id": "VVCM",
+   "name": "CA MAU/CA MAU",
+   "category": "national",
+   "arp": [
+    105.176111,
+    9.1775
+   ],
+   "arpText": "091039N 1051034E",
+   "thresholds": [
+    {
+     "rwy": "09",
+     "lon": 105.17105,
+     "lat": 9.17765,
+     "text": "091039.54N 1051015.78E"
+    },
+    {
+     "rwy": "27",
+     "lon": 105.184692,
+     "lat": 9.177283,
+     "text": "091038.22N 1051104.89E"
+    }
+   ]
+  },
+  {
+   "id": "VVCR",
+   "name": "KHANH HOA/CAM RANH INTL",
+   "category": "international-national",
+   "arp": [
+    109.218333,
+    11.995556
+   ],
+   "arpText": "115944N 1091306E",
+   "thresholds": [
+    {
+     "rwy": "02L",
+     "lon": 109.2148,
+     "lat": 11.985069,
+     "text": "115906.25N 1091253.28E"
+    },
+    {
+     "rwy": "20R",
+     "lon": 109.22385,
+     "lat": 12.011178,
+     "text": "120040.24N 1091325.86E"
+    },
+    {
+     "rwy": "02R",
+     "lon": 109.216564,
+     "lat": 11.981625,
+     "text": "115853.85N 1091259.63E"
+    },
+    {
+     "rwy": "20L",
+     "lon": 109.2256,
+     "lat": 12.007703,
+     "text": "120027.73N 1091332.16E"
+    }
+   ]
+  },
+  {
+   "id": "VVCS",
+   "name": "HO CHI MINH/CON DAO",
+   "category": "national",
+   "arp": [
+    106.629722,
+    8.733056
+   ],
+   "arpText": "084359N 1063747E",
+   "thresholds": [
+    {
+     "rwy": "11",
+     "lon": 106.624789,
+     "lat": 8.734725,
+     "text": "084405.01N 1063729.24E"
+    },
+    {
+     "rwy": "29",
+     "lon": 106.640469,
+     "lat": 8.729247,
+     "text": "084345.29N 1063825.69E"
+    }
+   ]
+  },
+  {
+   "id": "VVCT",
+   "name": "CAN THO/CAN THO INTL",
+   "category": "international-national",
+   "arp": [
+    105.71,
+    10.083889
+   ],
+   "arpText": "100502N 1054236E",
+   "thresholds": [
+    {
+     "rwy": "06",
+     "lon": 105.697633,
+     "lat": 10.076947,
+     "text": "100437.01N 1054151.48E"
+    },
+    {
+     "rwy": "24",
+     "lon": 105.721339,
+     "lat": 10.0905,
+     "text": "100525.80N 1054316.82E"
+    }
+   ]
+  },
+  {
+   "id": "VVDB",
+   "name": "DIEN BIEN/DIEN BIEN",
+   "category": "national",
+   "arp": [
+    103.000556,
+    21.402222
+   ],
+   "arpText": "212408N 1030002E",
+   "thresholds": [
+    {
+     "rwy": "17",
+     "lon": 102.999378,
+     "lat": 21.406567,
+     "text": "212423.64N 1025957.76E"
+    },
+    {
+     "rwy": "35",
+     "lon": 103.004831,
+     "lat": 21.385503,
+     "text": "212307.81N 1030017.39E"
+    }
+   ]
+  },
+  {
+   "id": "VVDH",
+   "name": "QUANG TRI/DONG HOI",
+   "category": "national",
+   "arp": [
+    106.590833,
+    17.515278
+   ],
+   "arpText": "173055N 1063527E",
+   "thresholds": [
+    {
+     "rwy": "11",
+     "lon": 106.584772,
+     "lat": 17.517844,
+     "text": "173104.24N 1063505.18E"
+    },
+    {
+     "rwy": "29",
+     "lon": 106.605408,
+     "lat": 17.508994,
+     "text": "173032.38N 1063619.47E"
+    }
+   ]
+  },
+  {
+   "id": "VVDL",
+   "name": "LAM DONG/LIEN KHUONG INTL",
+   "category": "international-national",
+   "arp": [
+    108.368056,
+    11.753333
+   ],
+   "arpText": "114512N 1082205E",
+   "thresholds": [
+    {
+     "rwy": "09",
+     "lon": 108.346933,
+     "lat": 11.752242,
+     "text": "114508.07N 1082048.96E"
+    },
+    {
+     "rwy": "27",
+     "lon": 108.376703,
+     "lat": 11.753819,
+     "text": "114513.75N 1082236.13E"
+    }
+   ]
+  },
+  {
+   "id": "VVDN",
+   "name": "DA NANG/DA NANG INTL",
+   "category": "international-national",
+   "arp": [
+    108.200278,
+    16.043889
+   ],
+   "arpText": "160238N 1081201E",
+   "thresholds": [
+    {
+     "rwy": "17L",
+     "lon": 108.198,
+     "lat": 16.060372,
+     "text": "160337.34N 1081152.80E"
+    },
+    {
+     "rwy": "35R",
+     "lon": 108.202547,
+     "lat": 16.029047,
+     "text": "160144.57N 1081209.17E"
+    },
+    {
+     "rwy": "17R",
+     "lon": 108.196411,
+     "lat": 16.057417,
+     "text": "160326.70N 1081147.08E"
+    },
+    {
+     "rwy": "35L",
+     "lon": 108.200372,
+     "lat": 16.030133,
+     "text": "160148.48N 1081201.34E"
+    }
+   ]
+  },
+  {
+   "id": "VVNB",
+   "name": "HA NOI/NOI BAI INTL",
+   "category": "international-national",
+   "arp": [
+    105.805556,
+    21.221667
+   ],
+   "arpText": "211318N 1054820E",
+   "thresholds": [
+    {
+     "rwy": "11L",
+     "lon": 105.792569,
+     "lat": 21.225264,
+     "text": "211330.95N 1054733.25E"
+    },
+    {
+     "rwy": "29R",
+     "lon": 105.822033,
+     "lat": 21.216744,
+     "text": "211300.28N 1054919.32E"
+    },
+    {
+     "rwy": "11R",
+     "lon": 105.786347,
+     "lat": 21.224697,
+     "text": "211328.91N 1054710.85E"
+    },
+    {
+     "rwy": "29L",
+     "lon": 105.821325,
+     "lat": 21.214589,
+     "text": "211252.52N 1054916.77E"
+    }
+   ]
+  },
+  {
+   "id": "VVPB",
+   "name": "HUE/PHU BAI INTL",
+   "category": "international-national",
+   "arp": [
+    107.702494,
+    16.400683
+   ],
+   "arpText": "162402.46N 1074208.98E",
+   "thresholds": [
+    {
+     "rwy": "09",
+     "lon": 107.691097,
+     "lat": 16.401294,
+     "text": "162404.66N 1074127.95E"
+    },
+    {
+     "rwy": "27",
+     "lon": 107.716344,
+     "lat": 16.399942,
+     "text": "162359.79N 1074258.84E"
+    }
+   ]
+  },
+  {
+   "id": "VVPC",
+   "name": "GIA LAI/PHU CAT",
+   "category": "national",
+   "arp": [
+    109.046111,
+    13.949167
+   ],
+   "arpText": "135657N 1090246E",
+   "thresholds": [
+    {
+     "rwy": "33",
+     "lon": 109.050081,
+     "lat": 13.943422,
+     "text": "135636.32N 1090300.29E"
+    },
+    {
+     "rwy": "15",
+     "lon": 109.034575,
+     "lat": 13.966442,
+     "text": "135759.19N 1090204.47E"
+    }
+   ]
+  },
+  {
+   "id": "VVPK",
+   "name": "GIA LAI/PLEIKU",
+   "category": "national",
+   "arp": [
+    108.019722,
+    14.004444
+   ],
+   "arpText": "140016N 1080111E",
+   "thresholds": [
+    {
+     "rwy": "09",
+     "lon": 108.003553,
+     "lat": 14.004661,
+     "text": "140016.78N 1080012.79E"
+    },
+    {
+     "rwy": "27",
+     "lon": 108.025767,
+     "lat": 14.0043,
+     "text": "140015.48N 1080132.76E"
+    }
+   ]
+  },
+  {
+   "id": "VVPQ",
+   "name": "AN GIANG/PHU QUOC INTL",
+   "category": "international-national",
+   "arp": [
+    103.993056,
+    10.169722
+   ],
+   "arpText": "101011N 1035935E",
+   "thresholds": [
+    {
+     "rwy": "10",
+     "lon": 103.979464,
+     "lat": 10.171189,
+     "text": "101016.28N 1035846.07E"
+    },
+    {
+     "rwy": "28",
+     "lon": 104.006706,
+     "lat": 10.168492,
+     "text": "101006.57N 1040024.14E"
+    }
+   ]
+  },
+  {
+   "id": "VVRG",
+   "name": "AN GIANG/RACH GIA",
+   "category": "national",
+   "arp": [
+    105.134167,
+    9.958611
+   ],
+   "arpText": "095731N 1050803E",
+   "thresholds": [
+    {
+     "rwy": "08",
+     "lon": 105.126042,
+     "lat": 9.956472,
+     "text": "095723.30N 1050733.75E"
+    },
+    {
+     "rwy": "26",
+     "lon": 105.139289,
+     "lat": 9.959853,
+     "text": "095735.47N 1050821.44E"
+    }
+   ]
+  },
+  {
+   "id": "VVTH",
+   "name": "DAK LAK/TUY HOA",
+   "category": "national",
+   "arp": [
+    109.330278,
+    13.042222
+   ],
+   "arpText": "130232N 1091949E",
+   "thresholds": [
+    {
+     "rwy": "03",
+     "lon": 109.327358,
+     "lat": 13.037064,
+     "text": "130213.43N 1091938.49E"
+    },
+    {
+     "rwy": "21",
+     "lon": 109.340667,
+     "lat": 13.059811,
+     "text": "130335.32N 1092026.40E"
+    }
+   ]
+  },
+  {
+   "id": "VVTS",
+   "name": "HO CHI MINH/TAN SON NHAT INTL",
+   "category": "international-national",
+   "arp": [
+    106.660833,
+    10.820556
+   ],
+   "arpText": "104914N 1063939E",
+   "thresholds": [
+    {
+     "rwy": "07L",
+     "lon": 106.637125,
+     "lat": 10.815019,
+     "text": "104854.07N 1063813.65E"
+    },
+    {
+     "rwy": "25R",
+     "lon": 106.663175,
+     "lat": 10.824856,
+     "text": "104929.48N 1063947.43E"
+    },
+    {
+     "rwy": "07R",
+     "lon": 106.636828,
+     "lat": 10.811369,
+     "text": "104840.93N 1063812.58E"
+    },
+    {
+     "rwy": "25L",
+     "lon": 106.669531,
+     "lat": 10.823714,
+     "text": "104925.37N 1064010.31E"
+    }
+   ]
+  },
+  {
+   "id": "VVTX",
+   "name": "THANH HOA/THO XUAN",
+   "category": "national",
+   "arp": [
+    105.469167,
+    19.9025
+   ],
+   "arpText": "195409N 1052809E",
+   "thresholds": [
+    {
+     "rwy": "13",
+     "lon": 105.457356,
+     "lat": 19.911619,
+     "text": "195441.83N 1052726.48E"
+    },
+    {
+     "rwy": "31",
+     "lon": 105.481178,
+     "lat": 19.893506,
+     "text": "195336.62N 1052852.24E"
+    }
+   ]
+  },
+  {
+   "id": "VVVD",
+   "name": "QUANG NINH/VAN DON INTL",
+   "category": "international-national",
+   "arp": [
+    107.414167,
+    21.118056
+   ],
+   "arpText": "210705N 1072451E",
+   "thresholds": [
+    {
+     "rwy": "03",
+     "lon": 107.407753,
+     "lat": 21.105814,
+     "text": "210620.93N 1072427.91E"
+    },
+    {
+     "rwy": "21",
+     "lon": 107.422881,
+     "lat": 21.135069,
+     "text": "210806.25N 1072522.37E"
+    }
+   ]
+  },
+  {
+   "id": "VVVH",
+   "name": "NGHE AN/VINH",
+   "category": "national",
+   "arp": [
+    105.671667,
+    18.73
+   ],
+   "arpText": "184348N 1054018E",
+   "thresholds": [
+    {
+     "rwy": "17",
+     "lon": 105.669264,
+     "lat": 18.748339,
+     "text": "184454.02N 1054009.35E"
+    },
+    {
+     "rwy": "35",
+     "lon": 105.672203,
+     "lat": 18.726839,
+     "text": "184336.62N 1054019.93E"
+    }
+   ]
+  }
+ ]
+}

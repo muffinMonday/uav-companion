@@ -16,6 +16,26 @@
   },
   "layers": [
     {
+      "id": "aerodrome-restricted",
+      "file": "layers/aerodrome-restricted.geojson",
+      "geojson": true,
+      "verdict": "restricted",
+      "label": "Airport drone restricted zone (Decision 18/2020)",
+      "color": "#e53935",
+      "severity": 8,
+      "summary": "Area adjoining an airport prohibited zone (3 km each side, 5 km at each end; Decision 18/2020/QD-TTg Art. 4(4)): flight only with the permission of the competent authority. Rectangle built from the AIP runway thresholds; verify with current Vietnamese rules."
+    },
+    {
+      "id": "aerodrome-prohibited",
+      "file": "layers/aerodrome-prohibited.geojson",
+      "geojson": true,
+      "verdict": "prohibited",
+      "label": "Airport drone prohibited zone (Decision 18/2020)",
+      "color": "#b71c1c",
+      "severity": 7,
+      "summary": "Drone flight not permitted: rectangle 15 km beyond the runway thresholds and 5 km either side of the runway centreline, all altitudes (Decision 18/2020/QD-TTg Art. 3(4)). Airports with fewer than 6 civil flights a day may use a flexible zone with military and air traffic approval; flight counts are not mapped. Verify with current Vietnamese rules."
+    },
+    {
       "id": "prohibited",
       "file": "layers/prohibited.geojson",
       "geojson": true,
@@ -75,8 +95,16 @@
     "published": "2026-10-01",
     "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-ENR-5.1-en-GB.html",
     "htmlSha256": "c84ed668903903cead2bd0c2e2e651d64bbec92373ca999e5141a21ad893f4b8",
-    "extraction": "scripts/airspace/vn-enr51.mjs (parses the published tabulation; see exceptions.json for what was not converted); the three areas it cannot convert are approximated by scripts/airspace/vn-enr51-approx.mjs (layers approx-*, approx-provenance.json)"
+    "extraction": "scripts/airspace/vn-enr51.mjs (parses the published tabulation; see exceptions.json for what was not converted); the three areas it cannot convert are approximated by scripts/airspace/vn-enr51-approx.mjs (layers approx-*, approx-provenance.json)",
+    "aerodromeZones": {
+      "script": "scripts/airspace/vn-ad.mjs",
+      "provenance": "ad-provenance.json",
+      "edition": "2026-10-01-AIRAC",
+      "rule": "Decision 18/2020/QD-TTg (10 June 2020), Art. 3(4) and 4(4); runway thresholds from AIP Viet Nam AD 2.12",
+      "ruleUrl": "https://english.luatvietnam.vn/decision-no-18-2020-qd-ttg-on-establishment-of-prohibited-areas-and-restricted-areas-for-unmanned-aircraft-184590-doc1.html",
+      "aerodromesUrl": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-AD-1.3-en-GB.html"
+    }
   },
   "license": "unknown",
-  "licenseNote": "Derived from the public Vietnam eAIP (aim.vatm.vn). No reuse terms were checked or found; published on the owner's authorization of 2026-11-24 as planning reference, with the geometry reconstructed independently from the published coordinates. Partial coverage; VVR19, VVD43 and VVD45 are shipped as approximate layers (approx-provenance.json). Remove this region (or set publish to false) if VATM asks."
+  "licenseNote": "Derived from the public Vietnam eAIP (aim.vatm.vn). No reuse terms were checked or found; published on the owner's authorization of 2026-11-24 as planning reference, with the geometry reconstructed independently from the published coordinates. Partial coverage; VVR19, VVD43 and VVD45 are shipped as approximate layers (approx-provenance.json). Remove this region (or set publish to false) if VATM asks. Aerodrome zones: runway-based rectangles per Decision 18/2020/QD-TTg, built from the AIP AD 2.12 threshold coordinates (same unknown licence status); the 2020 Decision was read in English translation and its current effect status is unconfirmed."
 }

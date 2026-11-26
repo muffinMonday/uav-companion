@@ -70,7 +70,7 @@ ok(all.every(({ f }) => validate({ kind: 'polygon' }, f.geometry.coordinates[0])
 // Archive
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/vn/manifest.json'), 'utf8'));
 const region = manifest.regions.find((r) => r.id === 'vn-enr51');
-ok(!!region && region.cells === 74 && region.semantics === 'restrict' && region.classes.map((c) => c.id).join() === 'prohibited,restricted,danger,approx-restricted,approx-danger' && region.classes.map((c) => c.verdict).join() === 'prohibited,restricted,danger,restricted,danger', 'the manifest registers vn-enr51 with 74 areas: three exact P/R/D classes plus approximate R and D');
+ok(!!region && region.cells === 118 && region.semantics === 'restrict' && region.classes.filter((c) => !c.id.startsWith('aerodrome-')).map((c) => c.id).join() === 'prohibited,restricted,danger,approx-restricted,approx-danger' && region.classes.filter((c) => !c.id.startsWith('aerodrome-')).map((c) => c.verdict).join() === 'prohibited,restricted,danger,restricted,danger', 'the manifest registers vn-enr51 with the 74 ENR 5.1 areas (three exact P/R/D classes plus approximate R and D) and the 44 airport zones (tested in vn-ad-unit)');
 ok(region.source.edition === '2026-10-01-AIRAC' && region.source.effective === '2026-10-01' && region.partialCoverage === true && !region.boundary && region.classes.filter((c) => c.approximate).map((c) => c.id).join() === 'approx-restricted,approx-danger' && region.classes.filter((c) => c.approximate).every((c) => c.severity > 3), 'edition recorded; partial coverage; no boundary; only the two approximate classes are flagged (severity above every exact class)');
 const bytes = fs.readFileSync(path.join(ROOT, 'public/data', region.file));
 const arch = new PMTiles({ getKey: () => region.file, getBytes: async (o, n) => ({ data: Uint8Array.from(bytes.subarray(o, o + n)).buffer }) });
@@ -97,8 +97,8 @@ for (const { k, f } of [...all, ...apxAll]) {
 ok(lost === 0 && wrong === 0, 'every one of the 74 areas (71 exact + 3 approximate) is present in the archive at its max zoom with its own class');
 const at = async (lat, lon) => (await zonesInArchive(arch, region.maxZoom, lat, lon)).map((z) => z.c).join();
 ok((await at(21.0305, 105.8)).split(',').includes('prohibited'), 'inside VVP1 (Ha Noi city): prohibited');
-ok(await at(15.4056, 108.7064) === 'restricted', 'inside VVR11 (15 km circle): restricted');
-ok(await at(10.775, 106.683) === 'prohibited', 'inside VVP4 (Ho Chi Minh City): prohibited');
+ok((await at(15.4056, 108.7064)).split(',').includes('restricted'), 'inside VVR11 (15 km circle): restricted');
+ok((await at(10.775, 106.683)).split(',').includes('prohibited'), 'inside VVP4 (Ho Chi Minh City): prohibited');
 ok(await at(20.5, 105.0) === '', 'Ninh Binh, outside every converted polygon, has no zone (unknown, not permitted)');
 ok(await at(21.3, 108.0) === '' && await at(10.0, 100.5) === '', 'a Vietnamese sea point and a point outside Vietnam read no zone');
 // The three approximated areas
