@@ -58,3 +58,20 @@ ok(bad.showOnStart === true && bad.hideUntil === null && bad.seen === null && ba
   ok(storageUse({ get length() { throw new Error('blocked'); } }) === null, 'blocked storage gives no readout instead of an error');
   ok(sizeLabel(62000) === '62 KB' && sizeLabel(10) === '1 KB' && sizeLabel(1400000) === '1.4 MB', 'size labels: ' + sizeLabel(62000) + ', ' + sizeLabel(1400000));
 }
+
+// ---------- the strip's text: route > trip > my next session > private invitations > nothing
+{
+  const now = new Date(2026, 10, 27, 10, 0, 0);
+  const at = (dd, h, m = 0) => new Date(2026, 10, 27 + dd, h, m).toISOString();
+  const next = (dd, h) => ({ title: 'Saturday FPV Meetup', startsAt: at(dd, h) });
+  ok(S.sessionWhen(at(1, 9), now) === 'Tomorrow, 09:00' && S.sessionWhen(at(0, 15), now) === 'Today, 15:00', 'session time: Tomorrow / Today with 24 h clock');
+  ok(/^Tue 1 Dec, 09:00$|^Tue, 1 Dec, 09:00$/.test(S.sessionWhen(at(4, 9), now)), 'a later session shows the weekday and date: ' + S.sessionWhen(at(4, 9), now));
+  ok(S.sessionWhen(at(0, 9), now) === 'Now', 'a session that has started reads Now');
+  const all = { routeStops: 3, tripText: 'Hubei · 8 days to go', sessions: { next: next(1, 9), invites: 2 }, now };
+  ok(S.peekText(all) === 'Route · 3 stops' && S.peekText({ ...all, routeStops: 1 }) === 'Route · 1 stop', 'route is first');
+  ok(S.peekText({ ...all, routeStops: 0 }) === 'Hubei · 8 days to go', 'a trip beats an imminent flight session');
+  ok(S.peekText({ ...all, routeStops: 0, tripText: null }) === 'Saturday FPV Meetup · Tomorrow, 09:00', 'then my next flight session');
+  ok(S.peekText({ ...all, routeStops: 0, tripText: null, sessions: { next: null, invites: 2 } }) === '2 private session invitations', 'then pending private invitations');
+  ok(S.peekText({ sessions: { next: null, invites: 1 } }) === '1 private session invitation', 'one invitation is singular');
+  ok(S.peekText({ sessions: { next: null, invites: 0, soon: null, nearby: { count: 5 } } }) === null && S.peekText({}) === null && S.peekText({ sessions: null }) === null, 'nearby public sessions and no data give nothing (the strip falls back to Dashboard)');
+}

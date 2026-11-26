@@ -29,27 +29,4 @@ export function initMapAttribution(map) {
     onRemove() { events.abort(); },
   });
   new Control().addTo(map);
-
-  // Tile providers require visible on-map credit (not just an entry in a tools menu).
-  // Keep only the basemap credit here; Leaflet's full, live list stays in the disclosure.
-  const BaseCredit = L.Control.extend({
-    options: { position: 'bottomright' },
-    onAdd() {
-      const line = L.DomUtil.create('div', 'map-base-attribution');
-      L.DomEvent.disableClickPropagation(line);
-      this.update = () => {
-        const active = new Set();
-        map.eachLayer((layer) => {
-          if (layer.options?.className === 'base-tiles' && layer.getAttribution()) active.add(layer.getAttribution());
-        });
-        line.innerHTML = [...active].join(' | ');
-        line.hidden = !active.size;
-      };
-      map.on('layeradd layerremove', this.update);
-      this.update();
-      return line;
-    },
-    onRemove() { map.off('layeradd layerremove', this.update); },
-  });
-  new BaseCredit().addTo(map);
 }

@@ -73,3 +73,25 @@ export function backupDue(lastBackup, markers, now = Date.now()) {
   const days = Math.floor((now - t) / 86400000);
   return days > BACKUP_DAYS ? { days } : null;
 }
+
+/** Concise start text for the strip: "Now", "Today, 09:00", "Tomorrow, 09:00", else "Sat 28 Nov, 09:00". */
+export function sessionWhen(startsAt, now = new Date()) {
+  const a = new Date(startsAt);
+  if (a <= now) return 'Now';
+  const day0 = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const gap = Math.round((day0(a) - day0(now)) / 864e5);
+  const hm = a.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return (gap === 0 ? 'Today' : gap === 1 ? 'Tomorrow' : a.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + ', ' + hm;
+}
+
+/**
+ * The strip's text, by priority: the route being built, the next trip (`tripText`, already with its countdown), the person's own next flight session
+ * (`sessions.next`: hosted or RSVP'd; never nearby public ones), pending private invitations. null = nothing worth showing.
+ */
+export function peekText({ routeStops = 0, tripText = null, sessions = null, now = new Date() } = {}) {
+  if (routeStops > 0) return 'Route · ' + routeStops + ' stop' + (routeStops === 1 ? '' : 's');
+  if (tripText) return tripText;
+  if (sessions?.next?.title) return sessions.next.title + ' · ' + sessionWhen(sessions.next.startsAt, now);
+  if (sessions?.invites > 0) return sessions.invites === 1 ? '1 private session invitation' : sessions.invites + ' private session invitations';
+  return null;
+}

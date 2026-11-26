@@ -3,7 +3,7 @@
 // peek strip (V), and hidden behind a small ^ tab (close). How it starts is decided in dashstate.js.
 import { comingTrips, countdownLabel, tripSummary, todayISO, tripLength, tripStatus, planDays, tripWarnings } from './trips.js';
 import { WHATS_NEW } from './whatsnew.js';
-import { load, save, unseenEntries, startState, backupDue, storageUse, sizeLabel } from './dashstate.js';
+import { load, save, unseenEntries, startState, backupDue, storageUse, sizeLabel, peekText } from './dashstate.js';
 import { animateOut } from './motion.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { onSwipe, atTop } from './swipe.js';
@@ -417,13 +417,17 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
     if (next === 'help') $('dash-help-title')?.focus();
     else helpBtn.focus();
   }
+  function peekSummary() {
+    const rs = poi.route.state(), coming = comingTrips(store.trips(), todayISO());
+    return peekText({ routeStops: rs.selecting ? rs.stops.length : 0, tripText: coming.length ? coming[0].trip.name + ' · ' + countdownLabel(coming[0].status) : null, sessions: cloud.sessions?.summary?.() });
+  }
   function updatePeek() {
-    const coming = comingTrips(store.trips(), todayISO());
-    const rs = poi.route.state();
-    const text = rs.selecting && rs.stops.length ? 'Route · ' + rs.stops.length + ' stop' + (rs.stops.length === 1 ? '' : 's') : coming.length ? coming[0].trip.name + ' · ' + countdownLabel(coming[0].status) : 'Dashboard';
+    const text = peekSummary() ?? 'Dashboard';
     $('dash-peek-text').textContent = text;
     peek.setAttribute('aria-label', 'Open the dashboard: ' + text);
   }
+  /** Where Close and swipe-down put the dashboard away to: the strip when it has something to say (never hidden behind the arrow-only tab), else the tab. */
+  const putAway = () => (peekSummary() ? 'peek' : 'hidden');
 
   // ---------- the three states ----------
   // On a phone the dashboard can grow to 90% of the screen (the button beside close). The choice is remembered (prefs.dashTall).
@@ -472,20 +476,20 @@ export function initDashboard({ poi, panel, trips, cloud = {}, shared = false, s
   }
 
   // Swipe down puts the dashboard away to its tab, like Close. It starts in the header, or in the cards once they are scrolled to the top; the strip swipes down too.
-  onSwipe(dash, { direction: 'down', enabled: () => state === 'expanded', canStart: (t) => !!t.closest('.dash-head') || atTop(t, dash), onDismiss: () => setState('hidden', { instant: true }) });
-  onSwipe(peek, { direction: 'down', distance: 24, enabled: () => state === 'peek', onDismiss: () => setState('hidden', { instant: true }) });
+  onSwipe(dash, { direction: 'down', enabled: () => state === 'expanded', canStart: (t) => !!t.closest('.dash-head') || atTop(t, dash), onDismiss: () => setState(putAway(), { instant: true }) });
+  onSwipe(peek, { direction: 'down', distance: 24, enabled: () => state === 'peek' && !peekSummary(), onDismiss: () => setState('hidden', { instant: true }) });
   // and swiping the collapsed dashboard up (the strip, or the chevron when it is put away) opens it
   onSwipe(peek, { direction: 'up', distance: 24, enabled: () => state === 'peek', onDismiss: () => setState('expanded', { instant: true }) });
   onSwipe(tab, { direction: 'up', distance: 24, enabled: () => state === 'hidden', onDismiss: () => setState('expanded', { instant: true }) });
   $('dash-collapse').addEventListener('click', () => setState('peek'));
-  $('dash-close').addEventListener('click', () => setState('hidden'));
+  $('dash-close').addEventListener('click', () => setState(putAway()));
   peek.addEventListener('click', () => setState('expanded'));
   tab.addEventListener('click', () => setState('expanded'));
   $('dash-snooze').addEventListener('click', () => { save({ hideUntil: todayISO() }); setState('peek'); });
   dash.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setState('peek'); peek.focus(); } });
   panel.onOpen?.(() => { if (isPhone() && state === 'expanded') setState('peek'); }); // on a phone the panel and the dashboard take turns
   store.onChange(() => { if (state === 'expanded') render(); else updatePeek(); });
-  cloud.refresh = () => { if (state === 'expanded') render(); };
+  cloud.refresh = () => { if (state === 'expanded') render(); else updatePeek(); }; // main.js calls this from its one sessions onSummary subscription
   poi.checkin.also(() => state === 'expanded' && todayShown);
   actions.crosshair?.onChange(() => { if (state === 'expanded') render(); });
   trips.onForecast?.(() => { if (state === 'expanded') render(); });

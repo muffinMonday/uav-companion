@@ -87,9 +87,9 @@ ok(peek.h < 50 && peek.w < 600, 'the strip is slim (' + Math.round(peek.h) + ' p
 await p.click('#dash-peek'); await p.waitForTimeout(250);
 ok(await stateOf(p) === 'expanded', 'the strip opens it again');
 await p.click('#dash-close'); await p.waitForTimeout(250);
-ok(await stateOf(p) === 'hidden' && await p.isVisible('#dash-tab') && (await rect(p, '#dash-tab')).h < 40, 'close hides it behind a small ^ tab');
-await p.click('#dash-tab'); await p.waitForTimeout(250);
-ok(await stateOf(p) === 'expanded', 'the tab brings it back');
+ok(await stateOf(p) === 'peek' && /Under way · Day 2 of 3/.test(await p.textContent('#dash-peek')) && !(await p.isVisible('#dash-tab')), 'close, with a trip to show, leaves the summary strip (not the arrow-only tab)');
+await p.click('#dash-peek'); await p.waitForTimeout(250);
+ok(await stateOf(p) === 'expanded', 'tapping the strip expands it normally');
 await p.locator('#dash-snooze').focus(); await p.keyboard.press('Escape'); await p.waitForTimeout(250);
 ok(await stateOf(p) === 'peek', 'Escape inside it collapses it to the strip');
 await p.click('#dash-peek');
@@ -97,6 +97,15 @@ await p.click('#dash-snooze'); await p.waitForTimeout(250);
 ok(await stateOf(p) === 'peek' && (await dashSaved(p)).hideUntil === TODAY, '"Do not show for today" drops it to the strip and remembers the day');
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1000);
 ok(await stateOf(p) === 'peek', 'after a reload the same day it starts as the strip');
+await ctx.close();
+
+// ================= with nothing to summarise, Close keeps the old behaviour: the small ^ tab
+({ ctx, p } = await open({ width: 1300, height: 850 }, false, { data: false }));
+ok(await stateOf(p) === 'expanded' && /^Dashboard$/.test(await p.evaluate(() => document.getElementById('dash-peek-text').textContent)), 'no trip, route or session: the strip falls back to "Dashboard"');
+await p.click('#dash-close'); await p.waitForTimeout(250);
+ok(await stateOf(p) === 'hidden' && await p.isVisible('#dash-tab') && (await rect(p, '#dash-tab')).h < 40, 'Close with nothing to summarise hides it behind the small ^ tab');
+await p.click('#dash-tab'); await p.waitForTimeout(250);
+ok(await stateOf(p) === 'expanded', 'the tab brings it back');
 await ctx.close();
 
 // ================= the start switch, what's new, a first visit, a share link
@@ -139,6 +148,36 @@ ok(await stateOf(p) === 'peek' && !(await p.evaluate(() => document.getElementBy
 await p.tap('#dash-peek'); await p.waitForTimeout(350);
 ok(await stateOf(p) === 'expanded' && await p.evaluate(() => document.getElementById('panel').hidden), 'opening the dashboard closes the panel');
 await ctx.close();
+
+// ================= swipe-down on a phone: a summary is never put behind the arrow-only tab
+for (const withData of [true, false]) {
+  ({ ctx, p } = await open({ width: 390, height: 780 }, true, { data: withData }));
+  const cdp = await ctx.newCDPSession(p);
+  const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
+  const swipeDown = async (x, y, d = 90) => { await touch('touchStart', x, y); for (let i = 1; i <= 8; i++) { await touch('touchMove', x, y + (d * i) / 8); await p.waitForTimeout(12); } await touch('touchEnd'); await p.waitForTimeout(450); };
+  const tag = withData ? 'with a trip' : 'with nothing to show';
+  await p.tap('#dash-peek'); await p.waitForTimeout(350);
+  ok(await stateOf(p) === 'expanded', tag + ': strip opens the dashboard');
+  const head = await rect(p, '#dash .dash-head');
+  await swipeDown(head.x + head.w / 2, head.y + head.h / 2);
+  ok(await stateOf(p) === (withData ? 'peek' : 'hidden'), tag + ': swipe-down on the open dashboard leaves the ' + (withData ? 'summary strip' : 'tab'));
+  if (withData) {
+    ok(/Under way · Day 2 of 3/.test(await p.textContent('#dash-peek')), tag + ': the strip shows the trip and countdown');
+    const pk = await rect(p, '#dash-peek');
+    await swipeDown(pk.x + pk.w / 2, pk.y + pk.h / 2, 60);
+    ok(await stateOf(p) === 'peek' && await p.isVisible('#dash-peek'), tag + ': swiping the summary strip down does not hide it');
+    await p.tap('#dash-peek'); await p.waitForTimeout(350);
+    ok(await stateOf(p) === 'expanded', tag + ': tapping the strip expands again');
+  } else {
+    await p.tap('#dash-tab'); await p.waitForTimeout(350);
+    ok(await stateOf(p) === 'expanded', tag + ': the tab brings it back');
+    await p.tap('#dash-collapse'); await p.waitForTimeout(350);
+    const pk = await rect(p, '#dash-peek');
+    await swipeDown(pk.x + pk.w / 2, pk.y + pk.h / 2, 60);
+    ok(await stateOf(p) === 'hidden', tag + ': with only the generic "Dashboard" strip, swiping it down still tucks it behind the tab');
+  }
+  await ctx.close();
+}
 // ================= the welcome line and the route card
 ({ ctx, p } = await open({ width: 1300, height: 850 }, false, { dash: { ...RETURNING, showOnStart: false } }));
 await p.evaluate(() => document.getElementById('tab-poi').click()); await p.waitForTimeout(200);

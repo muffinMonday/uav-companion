@@ -178,5 +178,30 @@ for (const width of [390, 800, 1300]) {
   await ctx.close();
 }
 
+// ---------- the scale bar and the single credit control, on the real app
+for (const [width, height, touch] of [[1300, 850, false], [800, 700, true], [390, 700, true], [320, 568, true]]) {
+  for (const units of ['metric', 'imperial']) {
+    ({ ctx, p } = await open({ basemap: 'osm', theme: 'light', ...(units === 'imperial' ? { units } : {}) }, { viewport: { width, height }, hasTouch: touch, isMobile: touch }));
+    const tag = width + 'px ' + units;
+    ok(await p.locator('.map-base-attribution').count() === 0 && await p.locator('.leaflet-bottom.leaflet-right .leaflet-control-attribution').count() === 0, tag + ': no persistent bottom-right credit');
+    ok(await p.locator('.leaflet-control-scale').count() === 1, tag + ': exactly one scale control');
+    const text = await p.textContent('.leaflet-control-scale-line');
+    const unit = text.replace(/[^a-z]/gi, '');
+    ok(units === 'imperial' ? unit === 'mi' || unit === 'ft' : unit === 'km' || unit === 'm', tag + ': scale follows the units: ' + text);
+    const geo = await p.evaluate(() => {
+      const r = (e) => { if (!e || e.hidden) return null; const b = e.getBoundingClientRect(); return b.width && b.height ? { l: b.left, t: b.top, r: b.right, b: b.bottom } : null; };
+      const s = document.querySelector('.leaflet-control-scale-line'), nav = document.getElementById('shell-nav');
+      const others = ['#dash', '#dash-peek', '#dash-tab', '.sidepanel', '.search'].map((q) => [q, r(document.querySelector(q))]).filter(([, v]) => v);
+      return { s: r(s), vis: !!s && getComputedStyle(s).visibility !== 'hidden' && getComputedStyle(s).display !== 'none', navTop: nav && nav.dataset.placement === 'bottom' ? nav.getBoundingClientRect().top : null, nav: r(nav), h: innerHeight, w: innerWidth, others };
+    });
+    ok(geo.vis && geo.s && geo.s.l >= 0 && geo.s.r <= geo.w && geo.s.t >= 0 && geo.s.b <= geo.h, tag + ': scale is visible in the viewport');
+    ok(geo.navTop === null ? true : geo.s.b <= geo.navTop + 0.5, tag + ': scale stays above the bottom navigation (' + Math.round(geo.s.b) + ' vs ' + (geo.navTop === null ? 'no bottom bar' : Math.round(geo.navTop)) + ')');
+    ok(!geo.nav || geo.navTop !== null || geo.s.l >= geo.nav.r - 0.5 || geo.s.r <= geo.nav.l + 0.5, tag + ': scale clears a side navigation rail');
+    const hit = geo.others.filter(([, v]) => v.l < geo.s.r && v.r > geo.s.l && v.t < geo.s.b && v.b > geo.s.t).map(([q]) => q);
+    ok(hit.length === 0, tag + ': scale overlaps no dashboard, panel or search box' + (hit.length ? ' (' + hit.join(', ') + ')' : ''));
+    await ctx.close();
+  }
+}
+
 ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
 await b.close();
