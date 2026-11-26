@@ -219,9 +219,9 @@ Add/extend database tests to prove:
 **Approved policy:** the same optional 100–500 XP slider applies to the first accepted contribution and to each materially improved, accepted revision. Each approved revision can receive at most one award. The checkbox is enabled by default; the slider starts at 100 XP. The admin decides whether the improvement merits a reward and selects its amount. The examples and non-qualifying cases above guide that decision; they do not create automatic XP eligibility. No implementation is authorized by this proposed section.
 
 ## 13. Proposed flying-spot attributes — OWNER REVIEW
-### 13.5 Pilot setup spots — PROPOSED ADDITION
+### 13.5 Pilot setup spots — OWNER DECISIONS RECORDED
 
-**Recommended name:** **Pilot setup spots**. This describes places where pilots can sit, shelter themselves, lay out equipment and organize their flying session. It does not imply that the point is an approved take-off/landing location or that flying is permitted there.
+**Approved name:** **Pilot setup spots**. This describes places where pilots can sit, shelter themselves, lay out equipment and organize their flying session. It does not imply that the point is an approved take-off/landing location or that flying is permitted there.
 
 A community flying area may contain zero or more setup spots. Contributors can add these while drawing or editing the parent area's submission. They are subordinate point annotations inside the parent area, not separate community flying areas and not additional flying-zone polygons.
 
@@ -244,7 +244,7 @@ Each setup spot contains:
 
 - Allow contributors to add, move and remove multiple setup spots while editing the parent area's private draft.
 - Setup spots must be inside or on the boundary of the parent community area. Reject or visibly flag out-of-area points before submission; server-side validation is authoritative.
-- Set a modest per-area cap for MVP (proposed maximum 20 spots) to avoid clutter and oversized submissions.
+- Enforce the approved per-area maximum of **10 spots** to avoid clutter and oversized submissions.
 - Setup spots are included in the same submitted revision as the parent geometry and attributes. They are reviewed, approved, rejected, withdrawn, versioned, unpublished and deleted with that revision/area; do not create an independent moderation workflow.
 - A correction to a setup spot in an existing published area is a new revision. It may qualify as a material improvement under Section 12, but an XP award remains an explicit admin decision and is subject to the per-revision one-time rule.
 - Do not require contributors to map every pavilion or seating location. Zero spots is a valid submission; absence of a marker means “not mapped”, not “no shelter or setup facilities exist”.
@@ -254,7 +254,7 @@ Each setup spot contains:
 
 - Display setup spots as small, distinct icons inside the parent community area, visually different from the area boundary and from official airspace markers.
 - Use a simple fixed icon per type (shelter, seating, open setup, other). The detail view should show the type and optional note.
-- Show these markers only when the map is sufficiently zoomed in (proposed starting threshold: zoom 13 or higher) or when the parent area is selected, to avoid nationwide/regional map clutter. Tune through mobile testing.
+- Show these markers only at **Leaflet zoom level 13 or higher** (zoom 13 and closer) or when the parent area is selected, to avoid nationwide/regional map clutter. The threshold may be tuned later through mobile testing.
 - Selecting a setup spot opens a compact detail card and identifies its parent community area. Do not make it behave as an independent saved POI or trip marker.
 - Keep the parent area's community disclaimer available. A setup spot is a practical location hint, not authorization to enter the site, set up equipment or operate an aircraft.
 
@@ -266,7 +266,7 @@ Each setup spot contains:
 - Public RPCs expose only the approved revision's spot coordinates, type and note; never expose contributor/reviewer identity, pending edits or moderation metadata.
 - This is separate from the user's existing Saved Places/POI system. Do not write setup spots into `uavzones.v1.pois`, trips, or personal cloud-copy data.
 
-**Open owner decisions:** confirm the name “Pilot setup spots”, supported types, per-area cap (20 proposed), note length (120 proposed) and display threshold (zoom 13 proposed). This section is a design proposal and does not authorize implementation.
+**Approved decisions (2026-11-27):** name “Pilot setup spots”; maximum 10 per area; individual markers shown at Leaflet zoom level 13 or higher; fixed “Other setup spot” category enabled. The optional note maximum remains 120 characters. These decisions do not authorize implementation.
 
 
 **Design principle:** Geometry answers where the community-recommended area is. A small set of structured attributes should explain what the location is like, what activities it may suit, whether public access or landowner permission is required, what hazards contributors have observed, and how recent the information is. These attributes are community observations, not verified flight permission or regulatory status.
@@ -320,3 +320,15 @@ These are prone to becoming stale, require more moderation, can expose personal 
 - Keep the attribute set intentionally small. Do not introduce a general custom-schema or user-defined taxonomy engine in the MVP.
 
 **Open owner decisions:** confirm the proposed MVP field set and whether “other” should be available for environment, activity and hazard categories. This section is a design proposal and does not authorize implementation.
+
+
+### 13.7 Owner decisions recorded — Pilot setup spots
+
+| Decision | Approved value |
+|---|---|
+| Name | Pilot setup spots |
+| Maximum per community area | 10 |
+| Map display threshold | Leaflet zoom level 13 or higher; may also display while parent area is selected |
+| Other category | Enabled as a fixed category; optional short note can clarify it |
+
+Setup spots remain subordinate point annotations included in the parent area's immutable revision. They are submitted, reviewed, published and unpublished together with the parent revision. No separate moderation, public identity or XP mechanism is introduced.
