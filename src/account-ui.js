@@ -224,6 +224,10 @@ export function initAccountUI({ handle, panel, toast, cloud }) {
   onDialogSwipe(dlg); onDialogSwipe(nameDlg, { close: () => skipName?.() }); // a swipe down is Cancel, and Skip for the name
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) hide(); });
   document.addEventListener('pointerdown', (e) => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest?.('dialog') && !headBtn.contains(e.target) && !dockBtn.contains(e.target)) hide(false); });
+  // Async progression/Steam content and section toggles can grow the panel after show()
+  // measured it. Keep the visible panel anchored using its actual size, including on first open.
+  const popResize = new ResizeObserver(() => { if (!pop.hidden) place(); });
+  popResize.observe(pop, { box: 'border-box' });
   window.addEventListener('resize', () => { if (!pop.hidden) place(); });
   panel.onChange(() => { if (!pop.hidden && trigger && trigger.offsetParent === null) { hide(false); } });
 

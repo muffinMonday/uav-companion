@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import { CHANNEL, chromium, ROOT } from './lib.mjs';
 import { makeDb, as, A } from './lib-db.mjs';
 
-const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
+const ok = (c, m) => { console.log((c ? 'PASS' : 'FAIL') + '  ' + m); if (!c) process.exitCode = 1; };
 const VITE = path.join(ROOT, 'node_modules/vite/bin/vite.js');
 const errs = [];
 
@@ -133,12 +133,30 @@ try {
   ]) {
     const { ctx, p } = await open({ uid: A, email: 'a@example.test', viewport, ...extra });
     await p.waitForFunction(() => document.getElementById('shell-nav') != null, { timeout: 10000 });
+    // Keep the first progression response pending until the loading panel has been positioned.
+    // A cached/fast response hides the first-open growth regression.
+    let releaseProgression;
+    const progressionReady = new Promise((resolve) => { releaseProgression = resolve; });
+    await ctx.route('**/rest/v1/rpc/my_progression', async (route) => {
+      await progressionReady;
+      await mockFor(A)(route);
+    });
     await p.click('#shell-nav [data-dest=profile]');
-    await p.waitForSelector('#account-pop:not([hidden])', { timeout: 10000 });
+    await p.waitForSelector('#account-pop .prog-card[data-status=loading]', { timeout: 10000 });
+    releaseProgression();
+    await p.waitForSelector('#account-pop .prog-card[data-status=ready]', { timeout: 10000 });
+    await p.waitForTimeout(100); // allow the layout observer to run after the async card grows
     const box = await p.locator('#account-pop').boundingBox();
     const onScreen = box && box.width > 0 && box.height > 0 && box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width + 1 && box.y + box.height <= viewport.height + 1;
     ok(onScreen, `production hotfix (${name}): Profile popover is fully within the ${viewport.width}x${viewport.height} viewport, not rendered off-screen (box: ${JSON.stringify(box)})`);
     ok(await p.locator('#account-pop .account-close').isVisible(), `production hotfix (${name}): the popover's close button is visible/usable, not clipped off-screen`);
+    await p.click('#account-pop .account-close');
+    await p.click('#shell-nav [data-dest=profile]');
+    await p.waitForSelector('#account-pop .prog-card[data-status=ready]');
+    await p.waitForTimeout(100);
+    const reopened = await p.locator('#account-pop').boundingBox();
+    ok(Math.abs(reopened.y - box.y) <= 1 && Math.abs(reopened.height - box.height) <= 1,
+      `first-open regression (${name}): loaded first open and cached reopen have the same position and size`);
     await ctx.close();
   }
 
@@ -164,3 +182,5 @@ try {
 }
 
 console.log(errs.length ? 'CONSOLE/PAGE ERRORS:\n' + errs.join('\n') : 'errors: none');
+
+if (errs.length) process.exitCode = 1;

@@ -1,3 +1,6 @@
+## 2026-11-26 - Profile visible on first open
+- Reposition the account panel when asynchronous progression/Steam content or section toggles change its size. A delayed first progression response now stays within the viewport, with the same geometry as a cached reopen on desktop, tablet, unfolded phone and folded phone (24 regression checks). No styling, backend or region-data changes.
+
 ## 2026-11-26 - Feature-rich privacy defaults and copy
 - New browsers: automatic weather (rounded coordinates), ground elevation, AI place-name lookup, marker check-in on; nearby public sessions on while signed in. Live sharing and automatic attendance still need explicit consent. Existing browsers keep their choices (migration). Live-sharing consent dialog with Keep off. First-time notice and `privacy.html` rewritten; mascot removed from the profile popover.
 
