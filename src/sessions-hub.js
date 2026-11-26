@@ -438,6 +438,8 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (s.location) f.append(el('p', 'ses-place', s.location));
     if (s.lat !== null) { const p = el('p', 'ses-coords'); p.append(el('span', '', `Meeting point: ${s.lat.toFixed(5)}, ${s.lng.toFixed(5)} `)); const m = btn('Show on the map'); m.dataset.act = 'show-map'; m.addEventListener('click', () => explore('one', { id: s.id, focus: s.id })); p.append(m); f.append(p); }
     else f.append(el('p', 'hint', 'No meeting point was set for this session.'));
+    const navigation = s.visibility === 'public' ? el('div', 'btn-row') : null;
+    if (navigation) { navigation.append(sessionMapActions(s)); f.append(navigation); }
     f.append(hostBadge(s), el('p', 'ses-count', capacityText(s)));
     if (s.description) f.append(el('p', 'ses-desc', s.description));
     const rt = roleText(s); if (rt) { const n = el('p', 'ses-role', rt); n.dataset.role = s.isHost ? (s.canVerify ? 'host-verifier' : 'host') : 'verifier'; f.append(n); }
@@ -449,7 +451,9 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (s.visibility === 'public') {
       const url = publicSessionUrl(s.id, location.href);
       if (url) {
-        const share = btn('Share session'); share.dataset.act = 'share';
+        const share = btn('', 'btn map-action'); share.dataset.act = 'share';
+        share.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>';
+        share.append(el('span', 'map-action-label', 'Share session'));
         share.addEventListener('click', async () => {
           try { if (navigator.share) { await navigator.share({ title: s.title, url }); return; } }
           catch (e) { if (e.name === 'AbortError') return; }
@@ -460,7 +464,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
             input.focus(); input.select(); toast('Select and copy the link.');
           }
         });
-        bs.append(share);
+        navigation.append(share);
       }
     }
     if (!signedIn()) bs.append(signInBox('Sign in to say you will come.'));
