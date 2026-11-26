@@ -1,0 +1,1 @@
+export{r as WebSerialTransport,i as hasWebSerial}from"./transport-CaN67il1.js";

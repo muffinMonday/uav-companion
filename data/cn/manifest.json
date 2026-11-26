@@ -1,0 +1,1582 @@
+{
+  "country": {
+    "id": "cn",
+    "name": "China",
+    "nameZh": "中国"
+  },
+  "generated": "2026-11-25T16:36:29.890Z",
+  "regions": [
+    {
+      "id": "cn-anhui",
+      "country": "cn",
+      "name": "Anhui",
+      "nameZh": "安徽",
+      "file": "tiles/cn/cn-anhui.0b20e74e.pmtiles",
+      "boundary": null,
+      "bounds": [
+        114.87716675,
+        29.39529419,
+        119.64523315,
+        34.62615967
+      ],
+      "coverageBounds": [
+        114.87716675,
+        29.39529419,
+        119.64523315,
+        34.62615967
+      ],
+      "cells": 172,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:48:51.705Z",
+        "contentSha256": "44a6c4610174c5b8ea5265c332024b21d73bba247bccf45d90c7f6d0116a7abd",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-chongqing",
+      "country": "cn",
+      "name": "Chongqing",
+      "nameZh": "重庆",
+      "file": "tiles/cn/cn-chongqing.a1d54094.pmtiles",
+      "boundary": null,
+      "bounds": [
+        105.293158,
+        28.166218,
+        110.191549,
+        32.203522
+      ],
+      "coverageBounds": [
+        105.293158,
+        28.166218,
+        110.191549,
+        32.203522
+      ],
+      "cells": 777,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:48:52.820Z",
+        "contentSha256": "fe74a3a59558df666907c7af40a28a03b6ae121dac75f7fad515bb34044e9f89"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-fujian",
+      "country": "cn",
+      "name": "Fujian",
+      "nameZh": "福建",
+      "file": "tiles/cn/cn-fujian.a2004498.pmtiles",
+      "boundary": null,
+      "bounds": [
+        115.84671021,
+        23.53134155,
+        120.72463989,
+        28.31726074
+      ],
+      "coverageBounds": [
+        115.84671021,
+        23.53134155,
+        120.72463989,
+        28.31726074
+      ],
+      "cells": 601,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:48:53.928Z",
+        "contentSha256": "e040bffdce23926f68bb00c82b2411f26f40afe699ab2ee1fdd889b8cae5d02f",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-gansu",
+      "country": "cn",
+      "name": "Gansu",
+      "nameZh": "甘肃",
+      "file": "tiles/cn/cn-gansu.efa9f69e.pmtiles",
+      "boundary": null,
+      "bounds": [
+        92.33769,
+        32.595967,
+        108.707693,
+        42.701111
+      ],
+      "coverageBounds": [
+        92.33769,
+        32.595967,
+        108.707693,
+        42.701111
+      ],
+      "cells": 159,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:48:55.033Z",
+        "contentSha256": "49b2e2201655006999b63b3d7f48925a98c7d9789003729c36fa0d2fd7342fbc",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-guangdong",
+      "country": "cn",
+      "name": "Guangdong",
+      "nameZh": "广东",
+      "file": "tiles/cn/cn-guangdong.550bc53c.pmtiles",
+      "boundary": null,
+      "bounds": [
+        111.922594,
+        21.998749,
+        115.278168,
+        25.51691
+      ],
+      "coverageBounds": [
+        111.922594,
+        21.998749,
+        115.278168,
+        25.51691
+      ],
+      "cells": 101,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:48:55.817Z",
+        "contentSha256": "2090fd2361165f4fb9df3c48a115c7e29ce46d2e87400d2aaca5ab5581c0dbc5"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-guangxi",
+      "country": "cn",
+      "name": "Guangxi",
+      "nameZh": "广西",
+      "file": "tiles/cn/cn-guangxi.6cadb803.pmtiles",
+      "boundary": null,
+      "bounds": [
+        104.490073,
+        21.042938,
+        112.053963,
+        26.389254
+      ],
+      "coverageBounds": [
+        104.490073,
+        21.042938,
+        112.053963,
+        26.389254
+      ],
+      "cells": 590,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:48:56.843Z",
+        "contentSha256": "fb62229de8248b32578366814878e52b0b3d72ea00c02ea5e5a75a01ae33f244",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-guizhou",
+      "country": "cn",
+      "name": "Guizhou",
+      "nameZh": "贵州",
+      "file": "tiles/cn/cn-guizhou.78681cf7.pmtiles",
+      "boundary": null,
+      "bounds": [
+        103.599598,
+        24.620926,
+        109.546208,
+        29.161835
+      ],
+      "coverageBounds": [
+        103.599598,
+        24.620926,
+        109.546208,
+        29.161835
+      ],
+      "cells": 425,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:48:58.191Z",
+        "contentSha256": "992899219e984073dc711bf13a6985cfa8d266c9efa11a8d59a3e768ef250329",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-hainan",
+      "country": "cn",
+      "name": "Hainan",
+      "nameZh": "海南",
+      "file": "tiles/cn/cn-hainan.ff8941d2.pmtiles",
+      "boundary": null,
+      "bounds": [
+        108.595284,
+        18.261709,
+        110.97702,
+        20.155809
+      ],
+      "coverageBounds": [
+        108.595284,
+        18.261709,
+        110.97702,
+        20.155809
+      ],
+      "cells": 49,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:48:58.914Z",
+        "contentSha256": "7e61ae8b95aa0e62299982614d6bc913ded636c18e353c5026295605bbd9fc03",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-hebei",
+      "country": "cn",
+      "name": "Hebei",
+      "nameZh": "河北",
+      "file": "tiles/cn/cn-hebei.27b8cd39.pmtiles",
+      "boundary": null,
+      "bounds": [
+        113.48053,
+        36.052346,
+        119.849451,
+        42.616376
+      ],
+      "coverageBounds": [
+        113.48053,
+        36.052346,
+        119.849451,
+        42.616376
+      ],
+      "cells": 1380,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:48:59.704Z",
+        "contentSha256": "adb9c627106e1b5a31e753f21454ac200914d3d3934db5f5a40e6359fdeb2ea4",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-heilongjiang",
+      "country": "cn",
+      "name": "Heilongjiang",
+      "nameZh": "黑龙江",
+      "file": "tiles/cn/cn-heilongjiang.d0e8f039.pmtiles",
+      "boundary": null,
+      "bounds": [
+        121.174744,
+        43.422907,
+        134.585266,
+        53.467712
+      ],
+      "coverageBounds": [
+        121.174744,
+        43.422907,
+        134.585266,
+        53.467712
+      ],
+      "cells": 125,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:00.730Z",
+        "contentSha256": "e63eced44beb949a2ae3257a6b8ba7f66a17c135a083f6a69a520e3134e487db",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-henan",
+      "country": "cn",
+      "name": "Henan",
+      "nameZh": "河南",
+      "file": "tiles/cn/cn-henan.27735ea1.pmtiles",
+      "boundary": null,
+      "bounds": [
+        110.390625,
+        31.385853,
+        116.636312,
+        36.365975
+      ],
+      "coverageBounds": [
+        110.390625,
+        31.385853,
+        116.636312,
+        36.365975
+      ],
+      "cells": 720,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:01.582Z",
+        "contentSha256": "6d1b80d661706f3ac856dca738d53969136ef9ec656b7a2a63b109fb71b3f589",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-hubei",
+      "country": "cn",
+      "name": "Hubei",
+      "nameZh": "湖北",
+      "file": "tiles/cn/cn-hubei.566a4850.pmtiles",
+      "boundary": "cn/cn-hubei.boundary.d51de41d.json",
+      "bounds": [
+        108.38562012,
+        29.03137207,
+        116.06643677,
+        33.27758789
+      ],
+      "coverageBounds": [
+        108.38039,
+        29.03137207,
+        116.14726,
+        33.27758789
+      ],
+      "cells": 84863,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": 120,
+      "source": {
+        "authority": "Hubei Development and Reform Commission",
+        "announced": "2026-05-12",
+        "effective": "2026-05-14",
+        "attachment": "P020260512578795333014.zip (湖北/湖北适飞网格)"
+      },
+      "license": "unknown",
+      "crs": "wgs84",
+      "crsVerified": false
+    },
+    {
+      "id": "cn-hunan",
+      "country": "cn",
+      "name": "Hunan",
+      "nameZh": "湖南",
+      "file": "tiles/cn/cn-hunan.b0935b4d.pmtiles",
+      "boundary": null,
+      "bounds": [
+        108.78662109,
+        24.63821411,
+        114.25643921,
+        30.13000488
+      ],
+      "coverageBounds": [
+        108.78662109,
+        24.63821411,
+        114.25643921,
+        30.13000488
+      ],
+      "cells": 53,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:03.681Z",
+        "contentSha256": "b4b8a50fcef36b89bcbb2f922eaaeefe1f2ce8add39369349aa29168dc0583d3"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-jiangsu",
+      "country": "cn",
+      "name": "Jiangsu",
+      "nameZh": "江苏",
+      "file": "tiles/cn/cn-jiangsu.e8c9305c.pmtiles",
+      "boundary": null,
+      "bounds": [
+        116.367188,
+        30.871582,
+        121.485443,
+        35.117798
+      ],
+      "coverageBounds": [
+        116.367188,
+        30.871582,
+        121.485443,
+        35.117798
+      ],
+      "cells": 918,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:04.721Z",
+        "contentSha256": "3eb6a375342ac9485179c03e1b48f598d6de6bc2e66aac39638b192f3f964ceb",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-jiangxi",
+      "country": "cn",
+      "name": "Jiangxi",
+      "nameZh": "江西",
+      "file": "tiles/cn/cn-jiangxi.59c9a150.pmtiles",
+      "boundary": null,
+      "bounds": [
+        113.572778,
+        24.4926453,
+        118.482141,
+        30.079839
+      ],
+      "coverageBounds": [
+        113.572778,
+        24.4926453,
+        118.482141,
+        30.079839
+      ],
+      "cells": 674,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:25.243Z",
+        "contentSha256": "174022822ea6ae30a9766398086962f6307ed5cddef03b6d93a577dec52131e6",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-jilin",
+      "country": "cn",
+      "name": "Jilin",
+      "nameZh": "吉林",
+      "file": "tiles/cn/cn-jilin.f11867c2.pmtiles",
+      "boundary": null,
+      "bounds": [
+        121.63787842,
+        40.98175049,
+        131.17675781,
+        46.2538147
+      ],
+      "coverageBounds": [
+        121.63787842,
+        40.98175049,
+        131.17675781,
+        46.2538147
+      ],
+      "cells": 140,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:05.729Z",
+        "contentSha256": "c08a9934ddf899371c6ac76e9fcb276fae08b4f49cf4169fc9559a1825a88570"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-liaoning",
+      "country": "cn",
+      "name": "Liaoning",
+      "nameZh": "辽宁",
+      "file": "tiles/cn/cn-liaoning.3db2dfa8.pmtiles",
+      "boundary": null,
+      "bounds": [
+        118.877563,
+        38.721763,
+        125.780639,
+        43.474274
+      ],
+      "coverageBounds": [
+        118.877563,
+        38.721763,
+        125.780639,
+        43.474274
+      ],
+      "cells": 501,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:06.578Z",
+        "contentSha256": "358b7ce6ff056f029a0107dd0ef2722c2bf4b99c7944f39a3db3decd19e24e78",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-neimenggu",
+      "country": "cn",
+      "name": "Inner Mongolia",
+      "nameZh": "内蒙古",
+      "file": "tiles/cn/cn-neimenggu.c6b739c5.pmtiles",
+      "boundary": null,
+      "bounds": [
+        97.229481,
+        37.406086,
+        126.060825,
+        53.260935
+      ],
+      "coverageBounds": [
+        97.229481,
+        37.406086,
+        126.060825,
+        53.260935
+      ],
+      "cells": 437,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:07.747Z",
+        "contentSha256": "6e9ca82f05a469c1df42a57798e6061b63efe6d60cf86a3e02cdd783d2cc011b",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-ningxia",
+      "country": "cn",
+      "name": "Ningxia",
+      "nameZh": "宁夏",
+      "file": "tiles/cn/cn-ningxia.99868b1d.pmtiles",
+      "boundary": null,
+      "bounds": [
+        104.284236,
+        35.238995,
+        107.654304,
+        39.006958
+      ],
+      "coverageBounds": [
+        104.284236,
+        35.238995,
+        107.654304,
+        39.006958
+      ],
+      "cells": 79,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:08.719Z",
+        "contentSha256": "60af7b14aa6c7bb557b51984abc1aa3b8fb55a053a834ba1a37e384e8854ebc0"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-qinghai",
+      "country": "cn",
+      "name": "Qinghai",
+      "nameZh": "青海",
+      "file": "tiles/cn/cn-qinghai.1fdb5e01.pmtiles",
+      "boundary": null,
+      "bounds": [
+        89.402018,
+        31.600964,
+        103.064501,
+        39.207698
+      ],
+      "coverageBounds": [
+        89.402018,
+        31.600964,
+        103.064501,
+        39.207698
+      ],
+      "cells": 701,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:09.446Z",
+        "contentSha256": "77ae3019a7d47e7c2e0e597f22b85ef07c1c4e33dba8192ab150f3ceaf145f60",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-shaanxi",
+      "country": "cn",
+      "name": "Shaanxi",
+      "nameZh": "陕西",
+      "file": "tiles/cn/cn-shaanxi.437cd2ba.pmtiles",
+      "boundary": null,
+      "bounds": [
+        105.491761,
+        31.707103,
+        111.241247,
+        39.585889
+      ],
+      "coverageBounds": [
+        105.491761,
+        31.707103,
+        111.241247,
+        39.585889
+      ],
+      "cells": 1169,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:10.842Z",
+        "contentSha256": "575a18c156eddbb8b0a808aae9c0b7f0e3f45782a64aa949d12a2a014809046f",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-shandong",
+      "country": "cn",
+      "name": "Shandong",
+      "nameZh": "山东",
+      "file": "tiles/cn/cn-shandong.321e77df.pmtiles",
+      "boundary": null,
+      "bounds": [
+        114.813365,
+        34.380333,
+        122.597809,
+        38.170624
+      ],
+      "coverageBounds": [
+        114.813365,
+        34.380333,
+        122.597809,
+        38.170624
+      ],
+      "cells": 1034,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:12.427Z",
+        "contentSha256": "a61362e529b9d8198c2f9c9e4bf14886bf4fd2415a95a2ca9237b09288fce65b",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-shanghai",
+      "country": "cn",
+      "name": "Shanghai",
+      "nameZh": "上海",
+      "file": "tiles/cn/cn-shanghai.0ca2f7ba.pmtiles",
+      "boundary": null,
+      "bounds": [
+        120.892181,
+        30.72464,
+        122.118305,
+        31.757355
+      ],
+      "coverageBounds": [
+        120.892181,
+        30.72464,
+        122.118305,
+        31.757355
+      ],
+      "cells": 233,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:13.404Z",
+        "contentSha256": "697f3085c2b851812df613e57daf4b11d25776a3dfda785c01a6e9d4dcde203e",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-shanxi",
+      "country": "cn",
+      "name": "Shanxi",
+      "nameZh": "山西",
+      "file": "tiles/cn/cn-shanxi.4a1217de.pmtiles",
+      "boundary": null,
+      "bounds": [
+        110.23132324,
+        34.64126587,
+        114.52560425,
+        40.72906494
+      ],
+      "coverageBounds": [
+        110.23132324,
+        34.64126587,
+        114.52560425,
+        40.72906494
+      ],
+      "cells": 305,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:14.064Z",
+        "contentSha256": "1502ad91eb7fc0a42dcbea22d128cad4f100cdeb0fbe3f488079ae6f14350fe7",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-sichuan",
+      "country": "cn",
+      "name": "Sichuan",
+      "nameZh": "四川",
+      "file": "tiles/cn/cn-sichuan.493d55a3.pmtiles",
+      "boundary": null,
+      "bounds": [
+        97.382812,
+        26.049327,
+        108.542536,
+        34.314628
+      ],
+      "coverageBounds": [
+        97.382812,
+        26.049327,
+        108.542536,
+        34.314628
+      ],
+      "cells": 468,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:15.173Z",
+        "contentSha256": "8e12e3ed54ca3768bd190406558f813a0abf76bbc369eaccf75ec7622faa4ffa",
+        "acquiredOn": "2026-11-15"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-tianjin",
+      "country": "cn",
+      "name": "Tianjin",
+      "nameZh": "天津",
+      "file": "tiles/cn/cn-tianjin.39b8f1f3.pmtiles",
+      "boundary": null,
+      "bounds": [
+        116.7,
+        38.5,
+        118.1,
+        40.285492
+      ],
+      "coverageBounds": [
+        116.7,
+        38.5,
+        118.1,
+        40.285492
+      ],
+      "cells": 356,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:16.028Z",
+        "contentSha256": "3c93e9fa42ef6f6e4270062f748050580e5dcbfde5471b61550324684b6b9079",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-xinjiang",
+      "country": "cn",
+      "name": "Xinjiang",
+      "nameZh": "新疆",
+      "file": "tiles/cn/cn-xinjiang.932e3baa.pmtiles",
+      "boundary": null,
+      "bounds": [
+        73.661957,
+        34.418793,
+        96.2883,
+        48.917999
+      ],
+      "coverageBounds": [
+        73.661957,
+        34.418793,
+        96.2883,
+        48.917999
+      ],
+      "cells": 802,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:17.249Z",
+        "contentSha256": "a2e8ad1108b4084b169f8f1313a2128dbf7dec0bab592f88c82bf43fcf951f3c",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-xizang",
+      "country": "cn",
+      "name": "Tibet",
+      "nameZh": "西藏",
+      "file": "tiles/cn/cn-xizang.97d6b722.pmtiles",
+      "boundary": null,
+      "bounds": [
+        78.554993,
+        27.371063,
+        99.113295,
+        36.482384
+      ],
+      "coverageBounds": [
+        78.554993,
+        27.371063,
+        99.113295,
+        36.482384
+      ],
+      "cells": 241,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:18.919Z",
+        "contentSha256": "a894fcb08a86ab4552e776e38e9e77311bf4daf5095ea76f879b8be0981d3980",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-yunnan",
+      "country": "cn",
+      "name": "Yunnan",
+      "nameZh": "云南",
+      "file": "tiles/cn/cn-yunnan.8c769712.pmtiles",
+      "boundary": null,
+      "bounds": [
+        97.707731,
+        21.260711,
+        106.195137,
+        29.131439
+      ],
+      "coverageBounds": [
+        97.707731,
+        21.260711,
+        106.195137,
+        29.131439
+      ],
+      "cells": 14,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "Published image of the Yunnan provincial suitable-flight map, vectorized by UAV Companion (not original GIS data)",
+        "url": null,
+        "effective": null,
+        "publishedMonth": null,
+        "snapshotAt": null,
+        "acquiredOn": "2026-11-17",
+        "contentSha256": "783fedf8e433ce4427c8a1aa784db0c1b07f5cb93bc69a8e5ae2da27a5329aad",
+        "extraction": {
+          "method": "colour segmentation of the published map image, owner purple/orange corrections for label and artefact areas, Web Mercator georeferencing from visible city control points, vectorization",
+          "sourceImageSha256": null,
+          "metadataSha256": "da6f26e293d447ca2c237e4bfa8b292ab151e0b6bb98139c5e6e3053dc99e9f4",
+          "imageSize": [
+            1080,
+            942
+          ],
+          "cyanPixelsInitial": 260733,
+          "purpleAnnotationPixels": 29714,
+          "orangeAnnotationPixels": 1522,
+          "correctedFlyablePixels": 291336,
+          "retainedPixelComponents": 9,
+          "vectorPolygons": 14,
+          "boundsWGS84": [
+            97.707731,
+            21.260711,
+            106.195137,
+            29.131439
+          ],
+          "georeference": "web-mercator-city-control-v2",
+          "controlRmseKm": 1.381,
+          "controlMaxErrorKm": 1.907,
+          "caveats": [
+            "Geometry is extracted from a rendered official-map image, not original GIS vectors.",
+            "Purple owner annotations restore areas obscured by labels; orange owner annotations remain excluded.",
+            "Unmarked obscured areas remain conservative.",
+            "Calibration is based on visible city markers and a Web Mercator model; local boundary error can exceed control-point residuals."
+          ],
+          "geojsonNote": "Approximate image-derived Yunnan fly-zone geometry (corrected v2, 14 polygons); purple owner annotations restored as flyable; orange annotations kept no-fly/unknown. Not suitable for precise boundary decisions.",
+          "approximate": true,
+          "originalGis": false
+        },
+        "geometryVersion": "corrected-v2"
+      },
+      "license": "LicenseRef-OwnerApproved-ImageDerived-Yunnan",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "image-derived-approximate",
+        "alignment": "approximate-linear-extent",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-approved-image-derivation",
+        "notice": "Yunnan data was extracted from a published image of the official provincial suitable-flight map rather than original GIS data. Boundaries are approximate and may contain extraction or positional inaccuracies. Check the current official map before flying."
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    },
+    {
+      "id": "cn-zhejiang",
+      "country": "cn",
+      "name": "Zhejiang",
+      "nameZh": "浙江",
+      "file": "tiles/cn/cn-zhejiang.b1e87ad2.pmtiles",
+      "boundary": null,
+      "bounds": [
+        118.02200317,
+        27.15545654,
+        122.5881958,
+        31.17782593
+      ],
+      "coverageBounds": [
+        118.02200317,
+        27.15545654,
+        122.5881958,
+        31.17782593
+      ],
+      "cells": 1343,
+      "minZoom": 3,
+      "maxZoom": 14,
+      "semantics": "allow",
+      "maxHeightM": null,
+      "source": {
+        "authority": "KDji third-party UOM reference mirror",
+        "url": "https://kdji.cn/support/nfz-map.html",
+        "effective": null,
+        "publishedMonth": "2026-05",
+        "snapshotAt": "2026-09-22T05:49:23.221Z",
+        "contentSha256": "7e932f8db9d928be86a5dc9ee9344e6db18ade233f735e7a7683c8a8633a7672",
+        "acquiredOn": "2026-11-17"
+      },
+      "license": "LicenseRef-OwnerAttested-KDji-Project",
+      "crs": "wgs84",
+      "crsVerified": false,
+      "coverageMode": "positive-only",
+      "sourceConfidence": {
+        "mode": "selected-source",
+        "type": "third-party-uom-snapshot",
+        "alignment": "declared-only",
+        "completeness": "unverified",
+        "currency": "unverified",
+        "temporaryRestrictions": "not-included",
+        "flightPermission": "unverified",
+        "rightsBasis": "owner-attested-project-authorization"
+      },
+      "officialMap": {
+        "label": "Verify with UOM",
+        "url": "https://uom.caac.gov.cn/"
+      }
+    }
+  ]
+}

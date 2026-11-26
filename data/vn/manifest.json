@@ -1,0 +1,122 @@
+{
+  "country": {
+    "id": "vn",
+    "name": "Vietnam",
+    "nameZh": "越南"
+  },
+  "generated": "2026-11-25T16:36:29.890Z",
+  "regions": [
+    {
+      "id": "vn-enr51",
+      "country": "vn",
+      "name": "Vietnam prohibited, restricted and danger areas",
+      "nameZh": "越南禁区、限制区和危险区",
+      "file": "tiles/vn/vn-enr51.0048c9f9.pmtiles",
+      "boundary": null,
+      "bounds": [
+        103.983611,
+        9.733056,
+        109.400556,
+        22.483056
+      ],
+      "coverageBounds": [
+        103.983611,
+        9.733056,
+        109.400556,
+        22.483056
+      ],
+      "cells": 74,
+      "minZoom": 3,
+      "maxZoom": 12,
+      "semantics": "restrict",
+      "maxHeightM": null,
+      "source": {
+        "authority": "Vietnam Air Traffic Management Corporation (VATM), AIS, AIP Viet Nam ENR 5.1",
+        "edition": "2026-10-01-AIRAC",
+        "effective": "2026-10-01",
+        "published": "2026-10-01",
+        "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-ENR-5.1-en-GB.html",
+        "htmlSha256": "c84ed668903903cead2bd0c2e2e651d64bbec92373ca999e5141a21ad893f4b8",
+        "extraction": "scripts/airspace/vn-enr51.mjs (parses the published tabulation; see exceptions.json for what was not converted); the three areas it cannot convert are approximated by scripts/airspace/vn-enr51-approx.mjs (layers approx-*, approx-provenance.json)"
+      },
+      "license": "unknown",
+      "crs": "wgs84",
+      "crsVerified": true,
+      "partialCoverage": true,
+      "classes": [
+        {
+          "id": "prohibited",
+          "label": "Prohibited area (P)",
+          "color": "#b71c1c",
+          "severity": 1,
+          "points": false,
+          "summary": "Prohibited area (ENR 5.1): flight of aircraft is not permitted at any time.",
+          "owner": "Vietnam Air Traffic Management Corporation (VATM), AIS, AIP Viet Nam ENR 5.1",
+          "updated": "2026-10-01",
+          "published": "2026-10-01",
+          "count": 4,
+          "verdict": "prohibited"
+        },
+        {
+          "id": "restricted",
+          "label": "Restricted area (R)",
+          "color": "#e53935",
+          "severity": 2,
+          "points": false,
+          "summary": "Restricted area (ENR 5.1): flight is allowed only if the published conditions are met. Read the times and conditions.",
+          "owner": "Vietnam Air Traffic Management Corporation (VATM), AIS, AIP Viet Nam ENR 5.1",
+          "updated": "2026-10-01",
+          "published": "2026-10-01",
+          "count": 20,
+          "verdict": "restricted"
+        },
+        {
+          "id": "danger",
+          "label": "Danger area (D)",
+          "color": "#ef6c00",
+          "severity": 3,
+          "points": false,
+          "summary": "Danger area (ENR 5.1): activities dangerous to aircraft may exist at the published times. Caution; check the conditions.",
+          "owner": "Vietnam Air Traffic Management Corporation (VATM), AIS, AIP Viet Nam ENR 5.1",
+          "updated": "2026-10-01",
+          "published": "2026-10-01",
+          "count": 47,
+          "verdict": "danger"
+        },
+        {
+          "id": "approx-restricted",
+          "label": "Restricted area (R), approximate boundary",
+          "color": "#e53935",
+          "severity": 5,
+          "points": false,
+          "summary": "Potential restricted area: boundary approximated from the official AIP Viet Nam ENR 5.1 text and chart (a referenced or malformed definition could not be converted exactly), not an exact AIP polygon. Verify with current AIP Viet Nam information.",
+          "owner": "Vietnam Air Traffic Management Corporation (VATM), AIS, AIP Viet Nam ENR 5.1",
+          "updated": "2026-10-01",
+          "published": "2026-10-01",
+          "count": 1,
+          "verdict": "restricted",
+          "approximate": true,
+          "description": "Upper 7000 M, lower GND. Hours: H24 Military operations"
+        },
+        {
+          "id": "approx-danger",
+          "label": "Danger area (D), approximate boundary",
+          "color": "#ef6c00",
+          "severity": 6,
+          "points": false,
+          "summary": "Potential danger area: boundary approximated from the official AIP Viet Nam ENR 5.1 text and chart (a referenced or malformed definition could not be converted exactly), not an exact AIP polygon. Verify with current AIP Viet Nam information.",
+          "owner": "Vietnam Air Traffic Management Corporation (VATM), AIS, AIP Viet Nam ENR 5.1",
+          "updated": "2026-10-01",
+          "published": "2026-10-01",
+          "count": 2,
+          "verdict": "danger",
+          "approximate": true
+        }
+      ],
+      "officialMap": {
+        "label": "Vietnam AIM/VATM eAIP, ENR 5.1",
+        "url": "https://aim.vatm.vn/images/stories/vnaic.vn/SanPhamDichVu/AIPVietNam/AIP/2026-10-01-AIRAC/html/eAIP/VV-ENR-5.1-en-GB.html"
+      }
+    }
+  ]
+}
