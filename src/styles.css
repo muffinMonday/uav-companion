@@ -265,6 +265,8 @@ textarea{resize:vertical;min-height:60px}
 .help-hint .help-ok{flex:none}
 .help-hint.on-map{position:absolute;z-index:var(--z-card);left:10px;bottom:64px;margin:0;max-width:min(340px,calc(100% - 20px));background:var(--surface);box-shadow:var(--shadow-2)}
 .ses-hub .help-hint{margin:var(--sp-2) var(--sp-4) 0}
+/* bottom-left controls (the scale bar) clear the fixed bottom navigation; the explorer and marker-host offsets below add to it */
+.leaflet-bottom.leaflet-left{margin-bottom:var(--shell-nav-bottom-h,0px)}
 .leaflet-control-scale-line{background:color-mix(in srgb,var(--surface) 88%,transparent)!important;color:var(--fg);border-color:var(--muted)!important;border-radius:0 0 4px 4px}
 .map-attribution{position:relative;background:var(--surface);color:var(--fg);border:2px solid var(--line);border-radius:4px;box-shadow:var(--shadow-1)}
 .map-attribution summary{display:flex;align-items:center;justify-content:center;width:30px;height:30px;list-style:none;cursor:pointer;font-size:22px}
@@ -272,9 +274,7 @@ textarea{resize:vertical;min-height:60px}
 .map-attribution summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .map-attribution[open]{z-index:1001}
 .map-attribution .leaflet-control-attribution{position:absolute;left:calc(100% + 8px);top:0;float:none;box-sizing:border-box;width:min(280px,calc(100vw - 72px));max-height:min(240px,40vh);overflow:auto;margin:0!important;padding:8px 10px;background:var(--surface)!important;color:var(--fg)!important;border:1px solid var(--line);border-radius:var(--radius-sm);box-shadow:var(--shadow-1);font-size:12px;line-height:1.5}
-.map-base-attribution{max-width:min(280px,calc(100vw - 20px));padding:0 5px;background:var(--surface);color:var(--muted);font-size:11px;line-height:1.5;margin-bottom:var(--shell-nav-bottom-h,0px)!important}
-.map-base-attribution[hidden]{display:none}
-.leaflet-control-attribution a,.map-base-attribution a{color:var(--accent)!important}
+.leaflet-control-attribution a{color:var(--accent)!important}
 .you-dot{background:var(--info);border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px color-mix(in srgb,var(--info) 35%,transparent)}
 
 /* point-check popup extras */
@@ -1418,7 +1418,7 @@ body[data-panel=open]{--panel-w:392px} /* the open side panel: the dashboard, st
 /* the map's own controls and the search box stay reachable beside the dock */
 body[data-sesx=side] .leaflet-top.leaflet-left,body[data-sesx=side] .leaflet-bottom.leaflet-left{margin-left:var(--ses-x-off)}
 body[data-sesx=side] .search{left:calc(56px + var(--ses-x-off));width:min(340px,calc(100% - 56px - 72px - var(--ses-x-off)))}
-body[data-sesx=bottom] .leaflet-bottom{margin-bottom:var(--ses-x-off)}
+body[data-sesx=bottom] .leaflet-bottom{margin-bottom:calc(var(--ses-x-off) + var(--shell-nav-bottom-h,0px))}
 
 /* the folded "What does this mean?" beside a zone verdict (legends.js): quiet, under the verdict, never replacing it */
 .zone-meaning{margin:6px 0 0;font-size:var(--fs-meta)}
@@ -1632,7 +1632,7 @@ button.ses-attendee{cursor:pointer}
 .leaflet-container.is-moving .crosshair{display:none}
 @keyframes mh-in{from{opacity:0}to{opacity:1}} /* opacity only: the size is read the moment it opens to keep the pin in the free area */
 body[data-mh=side] .leaflet-top.leaflet-right,body[data-mh=side] .leaflet-bottom.leaflet-right{margin-right:var(--mh-off)}
-body[data-mh=bottom] .leaflet-bottom{margin-bottom:var(--mh-off)}
+body[data-mh=bottom] .leaflet-bottom{margin-bottom:calc(var(--mh-off) + var(--shell-nav-bottom-h,0px))}
 
 /* ---------- new shell navigation (Review 01 S10.2, experimental: VITE_NEW_SHELL; absent from a default build) ---------- */
 .shell-nav{position:fixed;z-index:var(--z-dock);display:flex;background:var(--surface);box-shadow:var(--shadow-1)}

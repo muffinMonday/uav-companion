@@ -31,10 +31,8 @@ try {
     const credits = page.locator('.leaflet-control-attribution');
     assert.equal(await control.count(), 1);
     assert.equal(await credits.isVisible(), false, 'full attribution starts collapsed');
-    const baseCredit = page.locator('.map-base-attribution');
-    assert(await baseCredit.isVisible(), 'required basemap credit stays visible');
-    assert.match(await baseCredit.innerText(), /OpenStreetMap/);
-    assert(!/CAAM|CAAS|Leaflet/.test(await baseCredit.innerText()), 'expanded credits leave the default layout');
+    assert.equal(await page.locator('.map-base-attribution').count(), 0, 'no duplicate persistent bottom-right credit');
+    assert.equal(await page.locator('.leaflet-bottom.leaflet-right .leaflet-control-attribution, .leaflet-bottom.leaflet-right .map-attribution').count(), 0, 'nothing credit-like at bottom right');
     assert.equal(await page.locator('.leaflet-bottom .leaflet-control-attribution').count(), 0);
     const closed = await control.boundingBox();
     assert(closed.width <= 36 && closed.height <= 36, 'closed control reclaims map space');
@@ -56,7 +54,7 @@ try {
       base.options.attribution = '&copy; Go Tiles by WP Go Maps | &copy; OpenStreetMap contributors';
       base.addTo(map);
     });
-    assert.match(await baseCredit.innerText(), /Go Tiles by WP Go Maps.*OpenStreetMap/);
+    assert.match(await credits.innerText(), /Go Tiles by WP Go Maps.*OpenStreetMap/s);
     assert.match(await credits.innerText(), /Go Tiles by WP Go Maps/);
     await page.keyboard.press('Escape');
     assert.equal(await credits.isVisible(), false);
@@ -68,7 +66,7 @@ try {
     await page.locator('#ses-explorer').waitFor({ state: 'visible' });
     await toggle.click();
     assert(await credits.isVisible(), 'credits work while the Flight Sessions dock is open');
-    for (const element of [toggle, baseCredit]) {
+    for (const element of [toggle]) {
       assert(await element.evaluate((e) => {
         const r = e.getBoundingClientRect();
         return e.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
