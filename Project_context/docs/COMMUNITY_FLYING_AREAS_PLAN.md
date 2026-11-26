@@ -300,7 +300,7 @@ Name and description remain the primary text. If “other” is selected for a c
 
 Do not add these unless separately approved:
 
-- Photos, videos, comments, ratings, likes, votes or popularity scores.
+- Videos, comments, ratings, likes, votes or popularity scores. (One optional location photo per revision is proposed separately in Section 13.6.)
 - Live weather, wind readings, crowd estimates or live occupancy.
 - Detailed frequency/interference reports or claims of RF-clearance.
 - Exact opening hours, contact details, landowner names or personal contact information.
@@ -321,6 +321,47 @@ These are prone to becoming stale, require more moderation, can expose personal 
 
 **Open owner decisions:** confirm the proposed MVP field set and whether “other” should be available for environment, activity and hazard categories. This section is a design proposal and does not authorize implementation.
 
+
+### 13.6 Optional location photo — PROPOSED ADDITION
+
+Allow each submitted community-area revision to include **zero or one photo** showing the location or its practical setup conditions. This is optional; a submission without a photo remains fully valid.
+
+**Purpose and scope**
+- Show useful context that geometry and structured fields cannot convey (for example, what a pavilion, shelter, seating area or open setup location looks like).
+- The photo should depict the site or a relevant setup spot, not serve as a profile picture, promotional gallery or evidence that flight is legally permitted.
+- One photo is attached to the revision as a whole. Do not add separate photos for every Pilot setup spot in the MVP.
+- Replacing or removing the photo on an already-published area creates a new revision and goes through the same moderation process. The previously approved revision and its photo remain public until the new revision is approved.
+
+**Upload constraints — proposed defaults**
+- Maximum **one photo per revision**.
+- Accept JPEG, PNG and WebP only; reject SVG, GIF, animated formats and all other file types.
+- Maximum original upload size: **5 MB**.
+- Client-side resize/compression to a longest edge of approximately **1600 px**, preserving aspect ratio; show a preview and allow removal/replacement before submission.
+- Server-side validation of actual file signature, MIME type, dimensions and size; never trust the filename or client-provided content type.
+- Strip EXIF and other metadata, especially GPS coordinates, device identifiers and timestamps, before publication. The photo's location is represented by the community-area geometry, not hidden image metadata.
+- Generate a random, non-guessable object key. Never use a user-supplied filename as a storage path. Do not expose storage paths containing contributor identity.
+- No external image URL or hotlinking; store the image in the project's controlled Supabase Storage.
+
+**Privacy and publication lifecycle**
+- Uploads remain private and inaccessible to anonymous users while a submission/revision is pending, rejected or withdrawn.
+- Publish the photo only when its parent revision is approved. Public area RPCs return a photo reference only for the currently approved revision.
+- Do not use a publicly readable bucket for unmoderated uploads. Use private quarantine storage and an explicit approved-publication path (for example, copying a validated image to a separate public bucket only inside a trusted server-side workflow, or a controlled image-serving function that checks approved revision state). Select the simplest secure implementation after verifying the current Supabase project capabilities; never expose pending/rejected objects through predictable URLs.
+- If a new revision is rejected or withdrawn, keep the previously approved photo available. Clean up the unapproved upload according to a bounded retention policy.
+- Unpublishing an area removes its photo from fresh public access as well. Cached public image URLs must not bypass the unpublish decision; use versioned objects and a documented cache lifetime/invalidation strategy.
+- When the contributor deletes their account, retain a photo belonging to an approved area only if it remains part of the retained approved community content; remove private, pending, rejected and otherwise unapproved uploads. Strip personal metadata and anonymize ownership consistently with Section 6.
+- Admin moderation must preview the image before approval and provide a way to reject the photo or remove/unpublish it if it is inappropriate, identifying, unrelated, copyrighted without permission, or unsafe. A photo issue must not silently change geometry approval; the moderator can require a corrected revision or approve the area without a photo if the data model and review workflow support that outcome.
+- Warn contributors not to upload images containing faces, vehicle registration plates, private property interiors, personal contact details or other identifying information. Avoid collecting unnecessary personal information.
+- Do not send images to third-party recognition, moderation or analytics services in the MVP.
+
+**Implementation and operational implications**
+- Supabase Storage is not currently part of the community-area implementation architecture; confirm bucket, object policy, upload and publication design before coding.
+- Prefer a private staging/quarantine bucket and a separate approved-public delivery path, with server-side authorization for the transition. Do not assume that a private database row makes an object in a public bucket private.
+- The object reference belongs to the immutable community-area revision. Enforce one photo reference per revision and prevent clients from attaching another user's object.
+- Submission idempotency must not create duplicate objects. Failed submission or approval must leave no publicly accessible orphan; add cleanup for abandoned uploads.
+- Include photo presence and replacement/removal in revision comparison. The photo is optional and must not affect XP eligibility automatically; an admin may consider a genuinely useful photo as supporting evidence when deciding whether a revision merits XP under Section 12.
+- Add tests for upload authorization, anonymous denial before approval, approved guest display, rejected/withdrawn cleanup, account deletion, invalid MIME/signature, oversized/dimension-invalid images, EXIF stripping, orphan cleanup and unpublish/cache behavior.
+
+**Open owner decisions:** approve one optional photo per revision, accepted formats, 5 MB original upload limit, approximately 1600 px client resize, metadata stripping and private-until-approved publication. This is a proposal and does not authorize implementation.
 
 ### 13.7 Owner decisions recorded — Pilot setup spots
 
