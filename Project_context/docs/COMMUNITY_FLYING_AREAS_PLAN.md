@@ -1,9 +1,10 @@
 # Community Flying Areas — Approved Product Specification and Implementation Backlog
 
-**Status:** PLANNED — NOT IMPLEMENTED.  
-**Decision date:** 2026-11-13.  
-**Authorization:** Planning only; owner must explicitly approve implementation, migrations, commits, pushes and deployments.  
-**Dependency:** Revisit file paths and UI ownership after the HTML/main.js refactor.
+**Status:** PLANNED — NOT IMPLEMENTED; active design discussion on `docs/community-areas-design`.  
+**Decision date:** 2026-11-13; discussion baseline refreshed 2026-11-27.  
+**Review baseline:** `main` at `91df30d65562b32c63c051babfd0a34e9707b17c` (PR #15 merge).  
+**Authorization:** Backlog/design edits only on this branch. Feature implementation, hosted migrations, implementation commits/merges and production deployment require separate explicit owner approval.  
+**Architecture dependency:** The HTML/main.js refactor is complete. Before implementation, reconcile proposed paths and initialization seams against the current `src/components/`, `src/app/`, `Project_context/docs/MODULES.md` and source code.
 
 ## 1. Owner-approved requirements
 
@@ -126,4 +127,63 @@ Each phase requires owner authorization. Inspect `git status`, recent commits, `
 
 ## 11. Relationship to refactor
 
-Before implementing Community Flying Areas, read `HTML_MAIN_REFACTOR_BACKLOG.md`. Once that refactor is complete, revise this plan's component paths and initialization seams, without reopening approved product policy unless the owner requests it.
+The HTML/main.js refactor is complete. Before implementation, reconcile the proposed file paths and initialization seams with the current component ownership map in `Project_context/docs/MODULES.md`, the `src/components/` fragments and `src/app/` startup modules. Do not repeat the refactor or treat the proposed paths in section 4 as mandatory if the current architecture has a clearer owner.
+
+## 12. Contribution XP for accepted community areas — PROPOSED, NOT YET APPROVED
+
+**Product intent:** Recognize useful community contributions without turning submissions into a volume-based farming mechanism. XP is a moderation outcome, not a reward for merely submitting a polygon.
+
+### 12.1 Admin approval workflow
+
+- Add an optional `Award contribution XP` control to the administrator's approval action.
+- The control is available only when approving a submission/revision; rejecting, withdrawing or merely editing a record never awards XP.
+- The administrator can approve and publish without awarding XP (for example, a duplicate, marginal or low-value contribution). The admin-only review interface may identify the submitter; public area responses and public map UI must remain anonymous.
+- Show the exact reward amount beside the control before confirmation. Do not allow an arbitrary per-review amount in the MVP; use one centrally configured standard reward to keep awards consistent.
+- The feature remains optional and does not affect whether geometry is published. A contribution can be approved with no XP.
+
+### 12.2 Eligibility and one-time policy
+
+- The recommended MVP policy is one reward at most per `community_areas.id`, on approval of its first published revision.
+- Later revisions, re-approvals, retries, moderator changes and duplicate calls must not generate another reward for the same area.
+- A rejected submission earns nothing. If it is later corrected and approved as the same area, it may receive its one initial reward.
+- A newly created area that duplicates another area is a separate candidate only if an administrator explicitly approves it and elects to award XP; consider duplicate detection/moderation separately, not as an automatic geometry-merging feature.
+- Unpublishing an area later does not automatically claw back XP. Fraud or abuse can be handled through the existing administrator XP adjustment mechanism with a reason; do not silently mutate or delete the original ledger row.
+- No XP for private drafts, pending submissions, self-approval (if the submitter is an administrator), or edits to an already-published area in the MVP.
+
+### 12.3 Backend and ledger design
+
+- Add a dedicated XP source, proposed name `community_area`, to the `xp_ledger.source` constraint and the internal `award_xp()` allowlist through a new migration. Follow the current `PROGRESSION.md` instructions for introducing a source.
+- Award only inside the same security-definer transaction that successfully approves and publishes the first revision. Derive the recipient from the server-stored submitter/owner; never accept a target user ID from the client.
+- Use a deterministic unique reference, proposed `area:<community_area_id>`, with the existing `(user_id, source, ref)` ledger uniqueness as a second idempotency guard. Also enforce/check the one-award-per-area rule so changing ownership or retrying cannot pay twice.
+- Call the existing internal `award_xp()`; do not write `xp_ledger` or `user_xp` directly. Existing ledger triggers must continue to update totals and rank progression.
+- Record the actor, recipient, amount, reason and area reference in the ledger. Extend the `area.approve` audit event metadata with whether XP was awarded and the amount, without exposing the submitter publicly. The approval, ledger entry and audit event must commit or roll back together.
+- Keep `award_xp()` and all direct ledger writes inaccessible to client roles. Only the admin-only approval RPC can request this reward.
+- Account deletion retains approved geometry but follows existing progression deletion rules for the contributor's XP account; do not create a separate identity or permanent XP record for anonymized contributors.
+
+### 12.4 Reward amount — owner decision required
+
+- Proposed starting value: **50 XP per qualifying first approval**, configurable centrally rather than hard-coded in the UI or supplied by the administrator per submission.
+- This is a proposal, not an approved number. Confirm the amount before implementation. It should be large enough to recognize a useful contribution but not so large that users are incentivized to submit many marginal areas.
+
+### 12.5 Tests
+
+Add/extend database tests to prove:
+
+- Only an administrator can approve and award; guests, submitters and organisers without admin authority cannot.
+- Approval without the reward option publishes normally and creates no XP row.
+- Approval with the reward option creates exactly one `community_area` ledger row for the correct submitter.
+- Repeated RPC calls, concurrent approval attempts, retries and later revisions cannot duplicate the reward.
+- Rejected, withdrawn, pending, private and already-published revision cases do not earn XP.
+- The XP ledger trigger updates totals/rank correctly; the admin audit record and ledger amount agree.
+- A failed approval transaction cannot leave a published area without its corresponding requested reward, or an XP award for an unapproved area.
+- Public RPCs never expose contributor identity, XP award metadata or moderation internals.
+- Account/profile deletion follows the existing XP wipe and approved-area retention rules.
+
+### 12.6 UI and documentation
+
+- Show the optional reward control and configured amount only in the admin approval UI.
+- Show a neutral confirmation/result to the administrator after success (published; XP awarded or not awarded).
+- Do not display contributor XP details on the public map or public area popup. The contributor may see the resulting XP through the existing private progression history; avoid adding a separate reward history UI.
+- Update `PROGRESSION.md`, `DATABASE.md`, `DECISIONS.md`, `CURRENT_STATUS.md` and the audit documentation when implementation is approved.
+
+**Open owner decision:** confirm the standard reward amount (50 XP is the current proposal) and whether the optional admin checkbox should default to enabled or disabled. No implementation is authorized by this proposed section.
