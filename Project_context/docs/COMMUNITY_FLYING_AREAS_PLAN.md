@@ -219,6 +219,55 @@ Add/extend database tests to prove:
 **Approved policy:** the same optional 100–500 XP slider applies to the first accepted contribution and to each materially improved, accepted revision. Each approved revision can receive at most one award. The checkbox is enabled by default; the slider starts at 100 XP. The admin decides whether the improvement merits a reward and selects its amount. The examples and non-qualifying cases above guide that decision; they do not create automatic XP eligibility. No implementation is authorized by this proposed section.
 
 ## 13. Proposed flying-spot attributes — OWNER REVIEW
+### 13.5 Pilot setup spots — PROPOSED ADDITION
+
+**Recommended name:** **Pilot setup spots**. This describes places where pilots can sit, shelter themselves, lay out equipment and organize their flying session. It does not imply that the point is an approved take-off/landing location or that flying is permitted there.
+
+A community flying area may contain zero or more setup spots. Contributors can add these while drawing or editing the parent area's submission. They are subordinate point annotations inside the parent area, not separate community flying areas and not additional flying-zone polygons.
+
+#### Supported MVP spot types
+
+| Type | Meaning |
+|---|---|
+| Pavilion / shelter | Covered structure where pilots may sit and set up equipment, subject to access rules. |
+| Seating / picnic area | Benches, tables or designated picnic/seating area suitable for organizing equipment. |
+| Open setup space | An open, relatively convenient spot within the area where pilots can place chairs and equipment. |
+| Other setup spot | Another useful place to organize a session; explain briefly in the optional note. |
+
+Each setup spot contains:
+- A WGS-84 point coordinate.
+- One required type from the fixed list above.
+- An optional short note (bounded text; suggested maximum 120 characters), e.g. “Covered pavilion with picnic tables” or “Open grass beside the path”.
+- No contributor identity or XP fields in public output.
+
+#### Authoring and validation
+
+- Allow contributors to add, move and remove multiple setup spots while editing the parent area's private draft.
+- Setup spots must be inside or on the boundary of the parent community area. Reject or visibly flag out-of-area points before submission; server-side validation is authoritative.
+- Set a modest per-area cap for MVP (proposed maximum 20 spots) to avoid clutter and oversized submissions.
+- Setup spots are included in the same submitted revision as the parent geometry and attributes. They are reviewed, approved, rejected, withdrawn, versioned, unpublished and deleted with that revision/area; do not create an independent moderation workflow.
+- A correction to a setup spot in an existing published area is a new revision. It may qualify as a material improvement under Section 12, but an XP award remains an explicit admin decision and is subject to the per-revision one-time rule.
+- Do not require contributors to map every pavilion or seating location. Zero spots is a valid submission; absence of a marker means “not mapped”, not “no shelter or setup facilities exist”.
+- Do not infer accessibility, availability, public access or permission from the presence of a spot. Contributors must use the parent area's access attribute and optional note for relevant caveats.
+
+#### Map presentation
+
+- Display setup spots as small, distinct icons inside the parent community area, visually different from the area boundary and from official airspace markers.
+- Use a simple fixed icon per type (shelter, seating, open setup, other). The detail view should show the type and optional note.
+- Show these markers only when the map is sufficiently zoomed in (proposed starting threshold: zoom 13 or higher) or when the parent area is selected, to avoid nationwide/regional map clutter. Tune through mobile testing.
+- Selecting a setup spot opens a compact detail card and identifies its parent community area. Do not make it behave as an independent saved POI or trip marker.
+- Keep the parent area's community disclaimer available. A setup spot is a practical location hint, not authorization to enter the site, set up equipment or operate an aircraft.
+
+#### Storage and moderation implications
+
+- Store the setup-spot collection within the immutable community-area revision (for example, a bounded JSONB array of typed points and notes), rather than on the parent area, so geometry, attributes and setup locations are reviewed and published atomically.
+- Validate count, coordinates, type enum, note length and point-in-parent-polygon on both client and server.
+- Include setup-spot additions, removals, moves and note/type changes in the administrator's old-versus-new revision comparison.
+- Public RPCs expose only the approved revision's spot coordinates, type and note; never expose contributor/reviewer identity, pending edits or moderation metadata.
+- This is separate from the user's existing Saved Places/POI system. Do not write setup spots into `uavzones.v1.pois`, trips, or personal cloud-copy data.
+
+**Open owner decisions:** confirm the name “Pilot setup spots”, supported types, per-area cap (20 proposed), note length (120 proposed) and display threshold (zoom 13 proposed). This section is a design proposal and does not authorize implementation.
+
 
 **Design principle:** Geometry answers where the community-recommended area is. A small set of structured attributes should explain what the location is like, what activities it may suit, whether public access or landowner permission is required, what hazards contributors have observed, and how recent the information is. These attributes are community observations, not verified flight permission or regulatory status.
 
