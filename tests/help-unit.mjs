@@ -57,7 +57,7 @@ ok(h.list().length === 0, 'malformed ids are not stored');
 ok(FOLDED.every((x) => { const r = toolRow(x, { pressed: true }); return r && typeof r.name === 'string' && r.name.length > 0; }), 'every folded tool has a row');
 ok(toolRow('nope') === null && toolRow('locate') === null && toolRow('compass') === null, 'unknown tools and the direct buttons (locate, compass) have no row');
 ok(!FOLDED.includes('zoom-in') && DIRECT.join() === 'locate,compass' && TOOLS.includes('more'), 'zoom buttons are not rows; locate and compass stay direct');
-ok(FOLDED.join() === 'details,side-quests,trips,crosshair,inspect,sessions', 'the rows come in a fixed order');
+ok(FOLDED.join() === 'details,side-quests,trips,crosshair,inspect,areas,sessions', 'the rows come in a fixed order');
 ok(toolRow('crosshair', { pressed: true }).state === 'On' && toolRow('crosshair', { pressed: false }).state === 'Off', 'crosshair row follows its state');
 ok(toolRow('details', { pressed: true }).name === 'Marker details' && toolRow('details', { pressed: false }).state === 'Off', 'marker details row follows its state');
 ok(toolRow('side-quests', { pressed: true }).state === 'All shown' && toolRow('side-quests', { pressed: false }).state === 'Open stop only', 'Side Quests row says what the switch does');

@@ -61,7 +61,7 @@ For any UI change, find the owner in `docs/MODULES.md` ("Component ownership map
 - `docs/backlogs/for-review/UAV_COMPANION_UI_UX_REVIEW_01_G1_DESIGN_SPECIFICATION.md` (2026-11-22): completes the G1 design reconciliation the main backlog left undone for everything except the marker panel — navigation shell, the rest of Map/Saved Places, Trips, Explore, Profile, Settings, Activity inbox, authentication/onboarding. Continues the main backlog's IDs (C-30+, AM-13+, U-13+) rather than renumbering them; breaks S10 into named sub-stages S10.1-S10.10. PROPOSED / UNAPPROVED; no code authorized. Needed before S10 or the G1 release gate can proceed.
 
 ## Future backlog (documentation only)
-- `docs/COMMUNITY_FLYING_AREAS_PLAN.md`: approved product specification for locally saved, admin-reviewed community polygons. **Planned, not implemented**; its file paths should follow the component convention above. Do not start it, commit, push or deploy without owner authorization.
+- `docs/COMMUNITY_FLYING_AREAS_PLAN.md`: approved product specification for locally saved, admin-reviewed community polygons. **Phase 1 (local authoring, `src/areas/`) is implemented and committed to `main` (2026-11-27), NOT deployed**; its status is in the plan's section 0 and in `CURRENT_STATUS.md`. Phases 2 to 6 (Supabase submission, moderation, public layer, revisions and deletion, release) are not started and need owner authorization each; no hosted migration, no `deploy:live` without the owner.
 
 ## Completed backlog: Flight Sessions 2.0
 - `docs/backlogs/completed/FLIGHT_SESSIONS_2_PLAN.md`: product decisions, schema, phases and tests. Released 2026-11-14 (`a387936`, `0d4257b`, `7690262`; public sessions on).

@@ -60,7 +60,7 @@ await p.click('.more-btn'); await p.waitForTimeout(150);
 ok(await menuOpen(p) && (await p.getAttribute('.more-btn', 'aria-expanded')) === 'true', 'pressing it opens the menu and sets aria-expanded');
 let r = await rows(p);
 const hasSessions = r.some((x) => x.tool === 'sessions');
-ok(r.map((x) => x.tool).filter((x) => x !== 'sessions').join() === 'details,side-quests,trips,crosshair,inspect', 'rows: Marker details, Side Quests, Trip markers, Crosshair, Inspect' + (hasSessions ? ', Flight Sessions' : ''));
+ok(r.map((x) => x.tool).filter((x) => x !== 'sessions').join() === 'details,side-quests,trips,crosshair,inspect,areas', 'rows: Marker details, Side Quests, Trip markers, Crosshair, Inspect, My flying areas' + (hasSessions ? ', Flight Sessions' : ''));
 ok(r.every((x) => x.tool === 'sessions' || x.pressed === t0.find((y) => y.tool === x.tool).pressed), 'each row reads its tool\'s own aria-pressed');
 ok(/Marker details\s*On/.test(r[0].text) && /Trip markers\s*Shown/.test(r.find((x) => x.tool === 'trips').text) && /Side Quests\s*Open stop only/.test(r.find((x) => x.tool === 'side-quests').text) && /Crosshair\s*On/.test(r.find((x) => x.tool === 'crosshair').text) && r.find((x) => x.tool === 'inspect').text === 'Inspect a spot', 'rows show the label and the current state: ' + r.map((x) => x.text).join(' | '));
 ok(await p.evaluate(() => document.activeElement?.classList.contains('more-row')), 'opening by button moves focus to the first row');

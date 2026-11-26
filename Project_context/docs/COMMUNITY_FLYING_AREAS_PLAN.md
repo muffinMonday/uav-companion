@@ -1,10 +1,42 @@
 # Community Flying Areas — Approved Product Specification and Implementation Backlog
 
-**Status:** PLANNED — NOT IMPLEMENTED; design decisions consolidated to `main` on 2026-11-27.  
+**Status:** PHASE 1 (local authoring) IMPLEMENTED on `main` 2026-11-27, NOT DEPLOYED; Phases 2 to 6 NOT STARTED. Section 0 has the evidence.  
 **Decision date:** 2026-11-13; discussion baseline refreshed 2026-11-27.  
 **Review baseline:** `main` at `91df30d65562b32c63c051babfd0a34e9707b17c` (PR #15 merge).  
 **Authorization:** Backlog/design edits only on this branch. Feature implementation, hosted migrations, implementation commits/merges and production deployment require separate explicit owner approval.  
 **Architecture dependency:** The HTML/main.js refactor is complete. Before implementation, reconcile proposed paths and initialization seams against the current `src/components/`, `src/app/`, `Project_context/docs/MODULES.md` and source code.
+
+## 0. Implementation status (updated 2026-11-27)
+
+**Phase 1 — Local drawing and storage: IMPLEMENTED, tested locally, committed to `main`; not deployed.** Authorization for this work: implement, test, build, commit and push to `main`; no deploy, no hosted migration, no public submission. The owner reviews before any further phase.
+
+| Item | State |
+|---|---|
+| Polygon by taps/clicks; rectangle by two opposite corners (axis-aligned in longitude/latitude) | Done (`src/areas/editor.js`, `draw.js`) |
+| Vertex move, midpoint insert, delete, undo (200 steps), finish, cancel with discard confirmation, Escape | Done |
+| Validation: 3 to 100 distinct vertices, 25 km² spherical area, self-intersection (incl. touching and doubling back), degenerate, invalid coordinates, antimeridian, holes rejected, live feedback while drawing | Done (`core.js`) |
+| Name 1 to 80 (required), description up to 500 | Done (`form.js`) |
+| Pilot setup spots: add, move, remove; max 10; four fixed types; note up to 120; inside or on the boundary; flagged when an outline edit strands one; shown from zoom 13 or while their area is selected | Done |
+| Local persistence `uavzones.v1.areas` (v1), memory fallback with warning, corrupted data backed up to `uavzones.v1.areas.bak` | Done (`store.js`) |
+| Edit, duplicate, delete (confirmed), reopen, show on map, export one or all, import | Done (`ui.js`) |
+| GeoJSON import/export: FeatureCollection / Feature / Polygon in; polygons only, holes, MultiPolygon, Point, oversize, invalid skipped with reasons; 2 MB and 200-area ceilings; spots travel as Point features naming their area | Done |
+| Guest use; nothing sent to Supabase | Done (no network code in `src/areas/`; asserted in `tests/areas.mjs`) |
+| Touch: taps add points, a press over 600 ms is not a tap, hold-to-check / right-click / Inspect disabled while drawing, pan, pinch and two-finger rotation add no points, double-tap zoom off for the session | Done; verified with Chromium touch emulation and CDP touch events, **not on a real phone** |
+| Community polygons never interactive; never read by `pointcheck.js`; own purple dashed style | Done |
+
+**Where it lives:** the map control `data-tool="areas"` (folded into More tools as "My flying areas"); code map in `MODULES.md`; storage in `DATABASE.md`; look in `DESIGN.md` section 27; decisions in `DECISIONS.md`.
+
+**Tests:** `areas-unit` (79), `areas-store-unit` (62), `areas-editor-unit` (62), browser `areas` (99; desktop, 390 px touch, dark theme, corrupted and blocked storage, regressions). Existing `toolbar`, `help-unit` updated for the new row.
+
+**Deviations and decisions for owner review**
+1. The proposed `api.js`, `admin-ui.js` and the public/pending layers are Phase 2 to 4 and were not created. `draw.js`, `editor.js` (pure state), `form.js` and `ui.js` split the proposed `draw.js`/`ui.js` so the drawing rules are testable in Node. Entry point `src/areas/index.js`; no HTML fragment (dynamic, like More tools).
+2. Area is a spherical approximation (mean radius). The future server must use the same formula, or its 25 km² limit will disagree at the edge.
+3. Stored spot and area ids are local; import always creates new ids.
+4. Rectangles are lat/lng-axis-aligned, not rotated with a turned map.
+5. The More tools popover now scrolls and starts below the search box on short screens (needed for the seventh row).
+6. No "Phase 1 acknowledgement of the regulatory disclaimer" checkbox: the disclaimer text is shown in the panel, dialog and spot popup; the acknowledgement belongs to submission (Phase 2).
+
+**Not done / blockers:** real-device touch review (owner); photo, structured attributes (section 13.1 fields), submission, moderation, public layer, XP are deferred by instruction. Pre-existing failures on `main` (not caused by this work): `region-labels-unit`, `country-groups-unit`, `vn-ad-unit`, `vn-enr51-unit`, `html-components-unit`, `contrast-unit` (2), `preflight-safety-unit`, `bench-safety-unit`, `html-dom`, `fly-in`, `country-buttons`, `splash`, `window`, `prefs`, `swipe`, `sessions` when run from a worktree without the full local data (see `CURRENT_STATUS.md`).
 
 ## 1. Owner-approved requirements
 

@@ -46,7 +46,7 @@ export function initMapMoreTools(map, { onOpen = null, onUse = null } = {}) {
   new Control().addTo(map);
   const corner = container.querySelector('.leaflet-top.leaflet-left');
 
-  const stepAside = () => container.classList.contains('is-placing') || !!document.querySelector('.ses-bar:not([hidden])');
+  const stepAside = () => container.classList.contains('is-placing') || container.classList.contains('is-drawing') || !!document.querySelector('.ses-bar:not([hidden])');
   const present = (a) => !a.closest('[hidden]'); // a control the owning module has hidden has no row (the button itself is folded away, so it has no box either way)
   const tools = () => [...(corner?.querySelectorAll('.leaflet-control a[data-tool]') ?? [])].filter((a) => FOLDED.includes(TOOL_OF(a)) && present(a)).sort((x, y) => FOLDED.indexOf(TOOL_OF(x)) - FOLDED.indexOf(TOOL_OF(y)));
   const pressedOf = (a) => (a.getAttribute('aria-pressed') === 'true' ? true : a.getAttribute('aria-pressed') === 'false' ? false : null);
@@ -76,7 +76,7 @@ export function initMapMoreTools(map, { onOpen = null, onUse = null } = {}) {
   }
   /** Presses the tool's own control: its handler runs once and it repaints its own state; the menu then follows through the observer. */
   function press(a, tool) {
-    if (tool === 'sessions' || tool === 'inspect') { toggle?.focus({ preventScroll: true }); set(false, { focus: false }); } // the hub opens a dialog, Inspect arms a mode over the map: the menu steps out of the way first either way
+    if (tool === 'sessions' || tool === 'inspect' || tool === 'areas') { toggle?.focus({ preventScroll: true }); set(false, { focus: false }); } // the hub opens a dialog, Inspect arms a mode over the map: the menu steps out of the way first either way
     onUse?.(tool);
     a.click();
   }
@@ -100,11 +100,15 @@ export function initMapMoreTools(map, { onOpen = null, onUse = null } = {}) {
   function place() {
     const phone = matchMedia('(max-width: 520px)').matches;
     menu.classList.toggle('sheet', phone);
-    if (phone || !toggle) { menu.style.left = ''; menu.style.top = ''; return; }
+    if (phone || !toggle) { menu.style.left = ''; menu.style.top = ''; menu.style.maxHeight = ''; return; }
     const cr = container.getBoundingClientRect(), r = toggle.getBoundingClientRect();
     menu.style.left = Math.round(r.right - cr.left + 8) + 'px';
-    const top = Math.max(8, Math.min(r.top - cr.top, cr.height - menu.offsetHeight - 8));
+    // never over the search box: on a short screen the menu starts below it and scrolls, rather than sliding up under it
+    const sr = document.getElementById('search')?.getBoundingClientRect();
+    const floor = sr && sr.width && sr.bottom > cr.top && sr.left < r.right + 8 + menu.offsetWidth && sr.right > r.right + 8 ? sr.bottom - cr.top + 8 : 8;
+    const top = Math.max(floor, Math.min(r.top - cr.top, cr.height - menu.offsetHeight - 8));
     menu.style.top = Math.round(top) + 'px';
+    menu.style.maxHeight = Math.max(120, Math.round(cr.height - top - 8)) + 'px';
   }
 
   function set(on, { focus = false } = {}) {

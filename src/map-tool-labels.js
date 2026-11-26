@@ -2,7 +2,7 @@
 // Each left-hand map button carries data-tool. Zoom, locate and the compass stay on the map; the rest live in the menu. A row names the thing and
 // says how it is now, from the state the owning module already keeps on its button (aria-pressed: the feature is on). The rows never hold state of their own.
 export const DIRECT = ['locate', 'compass'];                                        // stay on the map as buttons
-export const FOLDED = ['details', 'side-quests', 'trips', 'crosshair', 'inspect', 'sessions']; // reached from More tools, in this order
+export const FOLDED = ['details', 'side-quests', 'trips', 'crosshair', 'inspect', 'areas', 'sessions']; // reached from More tools, in this order
 export const TOOLS = [...DIRECT, 'more', ...FOLDED];
 
 /** `state`: { pressed: true | false | null (an action with no on/off state) }. Returns { name, state } for a row, or null for an unknown tool. */
@@ -14,6 +14,7 @@ export function toolRow(tool, { pressed = null } = {}) {
     case 'trips': return { name: 'Trip markers', state: on('Shown', 'Hidden') };
     case 'crosshair': return { name: 'Crosshair', state: on('On', 'Off') };
     case 'inspect': return { name: 'Inspect a spot', state: pressed ? 'Tap the map…' : null }; // a one-shot action, not an on/off toggle (MAP-05)
+    case 'areas': return { name: 'My flying areas', state: pressed ? 'Open' : null }; // opens a panel of local drafts (community areas, Phase 1)
     case 'sessions': return { name: 'Flight Sessions', state: null };
     default: return null;
   }

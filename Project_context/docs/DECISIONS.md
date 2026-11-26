@@ -139,6 +139,9 @@ Current, constraining decisions only; superseded ones are removed (history: git,
 - **Enter on a pin now acts as a click** (Leaflet only does that for bound popups); needed for the keyboard path into a fan, and applies to every pin.
 - **Budget defaults** (150 per user per day, 1,500 per day, 30 per minute) sit below the quota figures seen in HeiGIT's public pages (2,000 per day, 40 per minute, not confirmed for the owner's plan); adjust with the function's environment variables.
 
+## Community flying areas
+**Phase 1 is local only (owner, 2026-11-27; built the same day).** Guests draw, edit, export and import areas without an account; nothing is sent. Areas are `uavzones.v1.areas`, separate from `uavzones.v1.pois`, trips and the cloud copy, and `src/areas/` is imported by nothing in the point check. A community polygon is never interactive on the map, so it cannot take a hold, a tap or a right-click from the point check, and it has its own purple dashed style. Geometry is a spherical-area approximation (mean radius 6371008.8 m) with planar self-intersection tests; a server added later must use the same formulas. Setup spots are the owner-approved "Pilot setup spots": four fixed types, at most 10, note <= 120, inside or on the boundary, shown from zoom 13 or while their area is selected. A press held longer than 600 ms is not a tap while drawing (its release would otherwise add a point), and double-tap zoom is off for the session. Rectangles are axis-aligned in longitude and latitude (two opposite corners), not rotated with a turned map.
+
 ## Testing and process
 **Tests live in `tests/`; browser suites need the dev server on :5173 and Edge; external services mocked; Supabase tests run the real SQL on PGlite.** Suites must be parallel-safe (rules in `DEVELOPMENT.md`).
 

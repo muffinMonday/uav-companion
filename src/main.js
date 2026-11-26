@@ -15,6 +15,7 @@ import { initPanel } from './panel.js';
 import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
 import { initInspect } from './inspect.js';
+import { initAreas } from './areas/index.js'; // community flying areas, Phase 1: local drawing only; never read by the point check
 import { initDashboard } from './dashboard.js';
 import { initSplash } from './splash.js';
 import { initMapMoreTools } from './map-more-tools.js';
@@ -114,6 +115,7 @@ const trips = initTripsUI({ poi, panel, toast, checkPoint, zoneSummary });      
 const ai = initAI({ map, toast, panel, poi });  // paste an AI's itinerary, or open a share link, then preview and add
 const opensShareLink = /^#import=/.test(location.hash); // read before fromHash() clears it
 ai.fromHash();
+const areas = initAreas({ map, toast, panel, isBusy: () => poi.isBusy() }); // My flying areas (local drafts), a folded map tool; while one is being drawn, areas.isBusy() keeps holds, right-clicks and Inspect from checking a spot
 const cross = initCrosshair(map); // a crosshair at the centre of the map (the button goes under the marker-details button)
 // the zone verdict for where I am now (the position is read once, when the button is pressed)
 const checkHere = () => locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ });
@@ -141,11 +143,12 @@ initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h;
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch((e) => { log.warn('map', 'point check failed', e); toast('Point check failed. Check your connection and try again.'); });
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.
-const hold = initHoldCheck({ map, isBusy: () => poi.isBusy(), onCheck: checkAt, holdMs: HOLD_MS });
+const hold = initHoldCheck({ map, isBusy: () => poi.isBusy() || areas.isBusy(), onCheck: checkAt, holdMs: HOLD_MS });
 // An explicit alternative to the hold (MAP-05): arm it, then tap the map once; the same checkAt runs either way.
-initInspect({ map, isBusy: () => poi.isBusy(), onCheck: (latlng) => { if (!loadPrefs().holdHint) savePrefs({ holdHint: true }); checkAt(latlng); } });
+initInspect({ map, isBusy: () => poi.isBusy() || areas.isBusy(), onCheck: (latlng) => { if (!loadPrefs().holdHint) savePrefs({ holdHint: true }); checkAt(latlng); } });
 // (windows are opened with closeOnClick off: Leaflet would close them on the release that ends a hold, before this runs)
 map.on('click', (e) => {
+  if (areas.isBusy()) { hold.consumeClick(); return; } // drawing a flying area: the area tool owns the tap (no hint, no window changes)
   if (hold.consumeClick()) return;   // the release after a hold is not a click
   poi.closeWindow();                 // the marker window: the popup, or the development marker host
   if (poi.handleMapClick(e)) return; // placing or editing markers: no point check
