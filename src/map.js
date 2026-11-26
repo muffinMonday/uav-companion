@@ -4,6 +4,7 @@ import { leafletLayer, PolygonSymbolizer } from 'protomaps-leaflet';
 import { regionUrl, MAX_VIEW_BOUNDS } from './config.js';
 import { zonePaintSpec, approxOutline, hatchTile } from './zone-style.js';
 import { retainArchive, releaseArchive } from './pmtiles-source.js';
+import { initMapAttribution } from './map-attribution.js';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -51,8 +52,7 @@ export function createMap(initial = {}) {
    .setView(v ? [v.lat, v.lon] : [35, 105], v ? v.zoom : 4);
   const makeScale = (units) => L.control.scale({ metric: units !== 'imperial', imperial: units === 'imperial', position: 'bottomleft', maxWidth: 140 }).addTo(map);
   let scale = makeScale(initial.units);
-  // Always-visible name and privacy link in the attribution line (bottom right, outside the map's controls); the same page the homepage links to.
-  map.attributionControl.addAttribution('UAV Companion · <a href="privacy.html">Privacy policy</a>');
+  initMapAttribution(map);
 
   // Minimum zoom = the zoom at which the largest region fills the view. Recomputed on resize, since it depends on the screen size.
   const largest = L.latLngBounds([MAX_VIEW_BOUNDS[1], MAX_VIEW_BOUNDS[0]], [MAX_VIEW_BOUNDS[3], MAX_VIEW_BOUNDS[2]]);
