@@ -1,9 +1,10 @@
 # Community Flying Areas — Approved Product Specification and Implementation Backlog
 
-**Status:** PLANNED — NOT IMPLEMENTED.  
-**Decision date:** 2026-11-13.  
-**Authorization:** Planning only; owner must explicitly approve implementation, migrations, commits, pushes and deployments.  
-**Dependency:** Revisit file paths and UI ownership after the HTML/main.js refactor.
+**Status:** PLANNED — NOT IMPLEMENTED; design decisions consolidated to `main` on 2026-11-27.  
+**Decision date:** 2026-11-13; discussion baseline refreshed 2026-11-27.  
+**Review baseline:** `main` at `91df30d65562b32c63c051babfd0a34e9707b17c` (PR #15 merge).  
+**Authorization:** Backlog/design edits only on this branch. Feature implementation, hosted migrations, implementation commits/merges and production deployment require separate explicit owner approval.  
+**Architecture dependency:** The HTML/main.js refactor is complete. Before implementation, reconcile proposed paths and initialization seams against the current `src/components/`, `src/app/`, `Project_context/docs/MODULES.md` and source code.
 
 ## 1. Owner-approved requirements
 
@@ -22,7 +23,7 @@
 | Account deletion | Retain approved areas, anonymize ownership; remove pending/rejected |
 | Limits | 3–100 distinct vertices, 25 km² maximum geodesic area, five pending submissions per account |
 | Text | Name 1–80 characters; description up to 500 |
-| MVP exclusions | Ratings, comments, votes, photos, XP rewards, offline public snapshot, automated regulatory approval |
+| MVP exclusions | Ratings, comments, votes, videos, offline public snapshot, automated regulatory approval. One optional photo per revision and admin-controlled contribution XP are included in the agreed scope; see Sections 12 and 13.6. |
 
 A community recommendation must **never** override the official zone layer or change the existing point-check verdict. Display: “Community recommendation, not flight authorization. Check current official restrictions and local conditions before flying.” Missing official data must not be interpreted as permission.
 
@@ -126,4 +127,251 @@ Each phase requires owner authorization. Inspect `git status`, recent commits, `
 
 ## 11. Relationship to refactor
 
-Before implementing Community Flying Areas, read `HTML_MAIN_REFACTOR_BACKLOG.md`. Once that refactor is complete, revise this plan's component paths and initialization seams, without reopening approved product policy unless the owner requests it.
+The HTML/main.js refactor is complete. Before implementation, reconcile the proposed file paths and initialization seams with the current component ownership map in `Project_context/docs/MODULES.md`, the `src/components/` fragments and `src/app/` startup modules. Do not repeat the refactor or treat the proposed paths in section 4 as mandatory if the current architecture has a clearer owner.
+
+## 12. Contribution XP for accepted community areas — APPROVED POLICY; IMPLEMENTATION NOT STARTED
+
+**Product intent:** Recognize useful community contributions without turning submissions into a volume-based farming mechanism. XP is a moderation outcome, not a reward for merely submitting a polygon.
+
+### 12.1 Admin approval workflow
+
+- Add an `Award contribution XP` checkbox to the administrator's approval action. It is **enabled by default**; the administrator can untick it to approve and publish without a reward (for example, a duplicate, marginal or low-value contribution).
+- When enabled, show an admin-controlled slider for the reward amount: **100–500 XP, in 100 XP increments** (100, 200, 300, 400 or 500 XP). The initial slider value is **100 XP** as the conservative default; the administrator may increase it for an especially useful contribution.
+- Show the selected amount beside the slider and in the final confirmation before approval.
+- The controls are available only when approving a submission/revision; rejecting, withdrawing or merely editing a record never awards XP.
+- The admin-only review interface may identify the submitter; public area responses and public map UI must remain anonymous.
+- The reward remains optional and does not affect whether geometry is published. An administrator can approve with the checkbox off.
+
+### 12.2 Eligibility and one-time policy
+
+- One reward at most per `community_areas.id`, on approval of its first published revision.
+- For the first publication, award at most once for the initial area contribution.
+- For an already-published area, a **materially improved revision may independently earn one reward** when approved. Each revision can be rewarded at most once; retries, concurrent moderation, re-approval and duplicate calls for that same revision cannot create another award.
+- A rejected or withdrawn revision earns nothing. If corrected and resubmitted, only the eventual approved revision is eligible; the earlier rejected/withdrawn revision is never paid.
+- Revisions that are merely cosmetic or do not materially improve the area's usefulness should be approved without XP. The administrator makes this judgement and may untick the reward checkbox.
+- A newly created area that duplicates another area is a separate candidate only if an administrator explicitly approves it and elects to award XP; consider duplicate detection/moderation separately, not as an automatic geometry-merging feature.
+- Unpublishing an area later does not automatically claw back XP. Fraud or abuse can be handled through the existing administrator XP adjustment mechanism with a reason; do not silently mutate or delete the original ledger row.
+- No XP for private drafts, pending submissions, self-approval (if the submitter is an administrator), or a revision that is not materially useful. The reward applies to the contributor who submitted the specific approved revision, not automatically to the area's original creator.
+
+### 12.2a What qualifies as a material improvement — PROPOSED MODERATION GUIDANCE
+
+Examples of improvements that may merit XP when supported by credible local knowledge or evidence:
+
+- **Boundary correction:** fixing an inaccurate, incomplete or misleading polygon boundary; moving vertices to better reflect the actual usable site.
+- **Coverage completion:** adding a genuinely missing part of the same flying area or correcting an omitted section. Do not split disconnected places into one area merely to inflate coverage; the MVP geometry type remains Polygon unless separately approved.
+- **Removal of false coverage:** trimming parts incorrectly shown as usable, such as inaccessible land, buildings, water, fenced/private property or other unsuitable portions. A smaller, more accurate area can be a valuable improvement.
+- **Material site-information correction:** updating the description with useful, verifiable practical information that materially changes a pilot's understanding of the location, such as access limitations, landowner permission requirements, operating-hour constraints or significant site hazards. The existing form only has a name and description; do not add new structured fields or photos as part of this XP change.
+- **Evidence-backed revalidation:** updating an area when its physical layout or access conditions have changed, with a clear explanation of what changed and why the new revision is more reliable.
+
+Examples that should normally be approved without XP:
+
+- Spelling, punctuation, formatting or cosmetic name changes.
+- Re-submitting identical or nearly identical geometry without a substantive explanation.
+- Tiny vertex adjustments that do not improve practical accuracy.
+- Rewording a description without adding useful information.
+- Unsupported speculation, duplicate areas or changes that make the area less accurate or less safe to interpret.
+
+The admin should see a concise revision diff/summary (old versus proposed geometry and text) before deciding. The contributor's free-text explanation is supporting context, not proof by itself. XP is not automatically calculated from polygon size, vertex count, number of edits or the amount of text changed.
+
+**Safety boundary:** community-area edits remain recommendations, never regulatory clearance. A revision must not erase, override or weaken official airspace restrictions or point-check results. Where a proposed change concerns permission to access private land or fly at a site, require credible supporting context and retain the standard community disclaimer.
+
+### 12.3 Backend and ledger design
+
+- Add a dedicated XP source, proposed name `community_area`, to the `xp_ledger.source` constraint and the internal `award_xp()` allowlist through a new migration. Follow the current `PROGRESSION.md` instructions for introducing a source.
+- The approval RPC must validate the submitted reward amount server-side: only 100, 200, 300, 400 or 500 are accepted when the reward checkbox is enabled. Never trust the client slider alone.
+- Award only inside the same security-definer transaction that successfully approves and publishes the first revision. Derive the recipient from the server-stored submitter/owner; never accept a target user ID from the client.
+- Use a deterministic unique reference per contribution, proposed `area-revision:<revision_id>`, with the existing `(user_id, source, ref)` ledger uniqueness as an idempotency guard. Enforce at most one award per revision, while allowing distinct materially improved revisions to earn separate rewards.
+- Add an internal `submitted_by`/contributor identity to each revision (or an equivalent immutable server-side attribution field). The existing area-level `owner_id` alone is insufficient to identify the person who submitted a later improvement. Never expose this identity through public RPCs. Apply the account-deletion anonymization policy to revision-level identities as well.
+- Call the existing internal `award_xp()`; do not write `xp_ledger` or `user_xp` directly. Existing ledger triggers must continue to update totals and rank progression.
+- Record the actor, recipient, selected amount and area reference in the ledger. Extend the `area.approve` audit event metadata with whether XP was awarded and the amount, without exposing the submitter publicly. The approval, ledger entry and audit event must commit or roll back together.
+- Keep `award_xp()` and all direct ledger writes inaccessible to client roles. Only the admin-only approval RPC can request this reward.
+- Account deletion retains approved geometry but follows existing progression deletion rules for the contributor's XP account; do not create a separate identity or permanent XP record for anonymized contributors.
+
+### 12.4 Reward amount — owner decision recorded
+
+- **Approved control:** an admin slider from **100 to 500 XP**, stepping by **100 XP**.
+- **Approved default:** the `Award contribution XP` checkbox is enabled by default.
+- **Initial slider value:** **100 XP**, chosen as the conservative starting value; the admin may select a higher amount up to 500 XP for a particularly useful contribution.
+- The amount is chosen per qualifying first approval, is stored in the immutable XP ledger row and cannot be changed by editing or re-approving the area.
+
+### 12.5 Tests
+
+Add/extend database tests to prove:
+
+- Only an administrator can approve and award; guests, submitters and organisers without admin authority cannot.
+- Approval without the reward option publishes normally and creates no XP row.
+- Initial approval with the reward option creates exactly one `community_area` ledger row for the initial contributor.
+- A materially improved revision can earn one separate award for that revision's submitter; two distinct approved revisions may each earn once.
+- Repeated RPC calls, concurrent approval attempts, retries and re-approval of the same revision cannot duplicate its reward.
+- Rejected, withdrawn, pending, private, self-approved and cosmetic-only revisions do not earn XP.
+- The XP ledger trigger updates totals/rank correctly; the admin audit record and ledger amount agree.
+- A failed approval transaction cannot leave a published area without its corresponding requested reward, or an XP award for an unapproved area.
+- Public RPCs never expose contributor identity, XP award metadata or moderation internals.
+- Account/profile deletion follows the existing XP wipe and approved-area retention rules.
+
+### 12.6 UI and documentation
+
+- Show the optional reward control and configured amount only in the admin approval UI.
+- Show a neutral confirmation/result to the administrator after success (published; XP awarded or not awarded).
+- Do not display contributor XP details on the public map or public area popup. The contributor may see the resulting XP through the existing private progression history; avoid adding a separate reward history UI.
+- Update `PROGRESSION.md`, `DATABASE.md`, `DECISIONS.md`, `CURRENT_STATUS.md` and the audit documentation when implementation is approved.
+
+**Approved policy:** the same optional 100–500 XP slider applies to the first accepted contribution and to each materially improved, accepted revision. Each approved revision can receive at most one award. The checkbox is enabled by default; the slider starts at 100 XP. The admin decides whether the improvement merits a reward and selects its amount. The examples and non-qualifying cases above guide that decision; they do not create automatic XP eligibility. No implementation is authorized by this proposed section.
+
+## 13. Proposed flying-spot attributes — OWNER REVIEW
+### 13.5 Pilot setup spots — OWNER DECISIONS RECORDED
+
+**Approved name:** **Pilot setup spots**. This describes places where pilots can sit, shelter themselves, lay out equipment and organize their flying session. It does not imply that the point is an approved take-off/landing location or that flying is permitted there.
+
+A community flying area may contain zero or more setup spots. Contributors can add these while drawing or editing the parent area's submission. They are subordinate point annotations inside the parent area, not separate community flying areas and not additional flying-zone polygons.
+
+#### Supported MVP spot types
+
+| Type | Meaning |
+|---|---|
+| Pavilion / shelter | Covered structure where pilots may sit and set up equipment, subject to access rules. |
+| Seating / picnic area | Benches, tables or designated picnic/seating area suitable for organizing equipment. |
+| Open setup space | An open, relatively convenient spot within the area where pilots can place chairs and equipment. |
+| Other setup spot | Another useful place to organize a session; explain briefly in the optional note. |
+
+Each setup spot contains:
+- A WGS-84 point coordinate.
+- One required type from the fixed list above.
+- An optional short note (bounded text; suggested maximum 120 characters), e.g. “Covered pavilion with picnic tables” or “Open grass beside the path”.
+- No contributor identity or XP fields in public output.
+
+#### Authoring and validation
+
+- Allow contributors to add, move and remove multiple setup spots while editing the parent area's private draft.
+- Setup spots must be inside or on the boundary of the parent community area. Reject or visibly flag out-of-area points before submission; server-side validation is authoritative.
+- Enforce the approved per-area maximum of **10 spots** to avoid clutter and oversized submissions.
+- Setup spots are included in the same submitted revision as the parent geometry and attributes. They are reviewed, approved, rejected, withdrawn, versioned, unpublished and deleted with that revision/area; do not create an independent moderation workflow.
+- A correction to a setup spot in an existing published area is a new revision. It may qualify as a material improvement under Section 12, but an XP award remains an explicit admin decision and is subject to the per-revision one-time rule.
+- Do not require contributors to map every pavilion or seating location. Zero spots is a valid submission; absence of a marker means “not mapped”, not “no shelter or setup facilities exist”.
+- Do not infer accessibility, availability, public access or permission from the presence of a spot. Contributors must use the parent area's access attribute and optional note for relevant caveats.
+
+#### Map presentation
+
+- Display setup spots as small, distinct icons inside the parent community area, visually different from the area boundary and from official airspace markers.
+- Use a simple fixed icon per type (shelter, seating, open setup, other). The detail view should show the type and optional note.
+- Show these markers only at **Leaflet zoom level 13 or higher** (zoom 13 and closer) or when the parent area is selected, to avoid nationwide/regional map clutter. The threshold may be tuned later through mobile testing.
+- Selecting a setup spot opens a compact detail card and identifies its parent community area. Do not make it behave as an independent saved POI or trip marker.
+- Keep the parent area's community disclaimer available. A setup spot is a practical location hint, not authorization to enter the site, set up equipment or operate an aircraft.
+
+#### Storage and moderation implications
+
+- Store the setup-spot collection within the immutable community-area revision (for example, a bounded JSONB array of typed points and notes), rather than on the parent area, so geometry, attributes and setup locations are reviewed and published atomically.
+- Validate count, coordinates, type enum, note length and point-in-parent-polygon on both client and server.
+- Include setup-spot additions, removals, moves and note/type changes in the administrator's old-versus-new revision comparison.
+- Public RPCs expose only the approved revision's spot coordinates, type and note; never expose contributor/reviewer identity, pending edits or moderation metadata.
+- This is separate from the user's existing Saved Places/POI system. Do not write setup spots into `uavzones.v1.pois`, trips, or personal cloud-copy data.
+
+**Approved decisions (2026-11-27):** name “Pilot setup spots”; maximum 10 per area; individual markers shown at Leaflet zoom level 13 or higher; fixed “Other setup spot” category enabled. The optional note maximum remains 120 characters. These decisions do not authorize implementation.
+
+
+**Design principle:** Geometry answers where the community-recommended area is. A small set of structured attributes should explain what the location is like, what activities it may suit, whether public access or landowner permission is required, what hazards contributors have observed, and how recent the information is. These attributes are community observations, not verified flight permission or regulatory status.
+
+### 13.1 Recommended MVP fields
+
+Keep the existing name (required, 1–80 characters) and description (optional, up to 500 characters). Add the following structured fields to each submitted revision:
+
+| Attribute | Requirement | Suggested values / behavior | Why it matters |
+|---|---|---|---|
+| Site environment | Required single-select | Open field, park/recreation area, beach/coast, open water, hill/high ground, woodland/green space, built-up/urban space, other, unknown | Gives a quick sense of the physical setting. |
+| Suitable activity | Optional multi-select | FPV freestyle, cinematic, cruising/general multirotor, long-range, fixed-wing, other / not sure | Helps users assess whether the space matches their intended type of flying. These are community suitability tags, not legal permission or a safety rating. |
+| Access / permission | Required single-select | Public access (subject to local rules), permission required, private/restricted access, unknown / not verified | Prevents a map pin from implying that the public may enter or launch there. Never infer landowner or park permission from the fact that a spot is mapped. |
+| Ground / launch surface | Optional single-select | Grass, paved/concrete, dirt, sand, rock, mixed, unknown | Useful for take-off/landing practicality and equipment choice. |
+| Known site hazards | Optional multi-select | People/crowds, roads/traffic, power lines, trees/structures, water, wildlife, uneven/obstructed ground, nearby official airspace restrictions, other, none reported, unknown | Surfaces practical hazards. “None reported” must not be presented as “hazard-free”; keep it distinct from “unknown”. |
+| Last observed | Optional date | Date the contributor last personally visited or checked the site; do not default it to submission date | Lets users judge freshness instead of treating old observations as current. |
+
+Name and description remain the primary text. If “other” is selected for a categorical field, allow a short bounded clarification in the description rather than adding many free-text columns.
+
+### 13.2 Presentation
+
+- Show the environment and access/permission status prominently in the public area detail.
+- Show suitable-activity and ground-surface tags as secondary information.
+- Show known hazards clearly, without alarmist styling. If access is “permission required”, “private/restricted” or “unknown”, display that prominently and do not imply walk-in access.
+- Show “Last observed [date]” where supplied; otherwise show “Last observation date not provided”. Do not substitute the last edit, approval or publication date.
+- Keep the regulatory disclaimer visible: community recommendations do not establish permission to enter land or permission to fly. Users must check current official restrictions and local conditions.
+- Public map pins should remain visually subordinate to official airspace layers. Attributes must never change point-check verdicts, airspace colors or legal classifications.
+- Public output remains anonymous and must not expose contributor, reviewer or XP information.
+
+### 13.3 Fields deliberately deferred from MVP
+
+Do not add these unless separately approved:
+
+- Videos, comments, ratings, likes, votes or popularity scores. (One optional location photo per revision is proposed separately in Section 13.6.)
+- Live weather, wind readings, crowd estimates or live occupancy.
+- Detailed frequency/interference reports or claims of RF-clearance.
+- Exact opening hours, contact details, landowner names or personal contact information.
+- Automatic “safe to fly”, legality, permission or suitability scores.
+- Separate amenity inventories (parking, toilets, shops, charging) unless user feedback later demonstrates a clear need.
+- Arbitrary user-defined tag systems.
+
+These are prone to becoming stale, require more moderation, can expose personal information, or risk making a community observation look like an authoritative safety assessment.
+
+### 13.4 Data and moderation implications
+
+- Store these attributes with the immutable revision, not only on the parent area, so a revised submission captures the exact attributes the administrator reviewed and approved.
+- Validate all enum values and date formats on both client and server. Bound any additional text; render it as text, never HTML.
+- The admin review view must compare the currently published revision with the proposed revision's geometry and structured attributes.
+- Changes to access status, hazards, environment or activity tags are reviewable revision changes. They may qualify as material improvements under Section 12, but XP remains an explicit admin decision; field changes do not automatically earn XP.
+- Missing or unknown attributes must remain unknown. Do not infer “public access”, “no hazards” or activity suitability from geometry, basemap labels or other users' submissions.
+- Keep the attribute set intentionally small. Do not introduce a general custom-schema or user-defined taxonomy engine in the MVP.
+
+**Open owner decisions:** confirm the proposed MVP field set and whether “other” should be available for environment, activity and hazard categories. This section is a design proposal and does not authorize implementation.
+
+
+### 13.6 Optional location photo — APPROVED CONCEPT; IMPLEMENTATION DETAILS TO CONFIRM
+
+Allow each submitted community-area revision to include **zero or one photo** showing the location or its practical setup conditions. This is optional; a submission without a photo remains fully valid.
+
+**Approved concept:** Each community-area revision may include zero or one optional location photo. A submission without a photo remains valid.
+
+**Purpose and scope**
+- Show useful context that geometry and structured fields cannot convey (for example, what a pavilion, shelter, seating area or open setup location looks like).
+- The photo should depict the site or a relevant setup spot, not serve as a profile picture, promotional gallery or evidence that flight is legally permitted.
+- One photo is attached to the revision as a whole. Do not add separate photos for every Pilot setup spot in the MVP.
+- Replacing or removing the photo on an already-published area creates a new revision and goes through the same moderation process. The previously approved revision and its photo remain public until the new revision is approved.
+
+**Upload constraints — proposed defaults**
+- Maximum **one photo per revision**.
+- Accept JPEG, PNG and WebP only; reject SVG, GIF, animated formats and all other file types.
+- Maximum original upload size: **5 MB**.
+- Client-side resize/compression to a longest edge of approximately **1600 px**, preserving aspect ratio; show a preview and allow removal/replacement before submission.
+- Server-side validation of actual file signature, MIME type, dimensions and size; never trust the filename or client-provided content type.
+- Strip EXIF and other metadata, especially GPS coordinates, device identifiers and timestamps, before publication. The photo's location is represented by the community-area geometry, not hidden image metadata.
+- Generate a random, non-guessable object key. Never use a user-supplied filename as a storage path. Do not expose storage paths containing contributor identity.
+- No external image URL or hotlinking; store the image in the project's controlled Supabase Storage.
+
+**Privacy and publication lifecycle**
+- Uploads remain private and inaccessible to anonymous users while a submission/revision is pending, rejected or withdrawn.
+- Publish the photo only when its parent revision is approved. Public area RPCs return a photo reference only for the currently approved revision.
+- Do not use a publicly readable bucket for unmoderated uploads. Use private quarantine storage and an explicit approved-publication path (for example, copying a validated image to a separate public bucket only inside a trusted server-side workflow, or a controlled image-serving function that checks approved revision state). Select the simplest secure implementation after verifying the current Supabase project capabilities; never expose pending/rejected objects through predictable URLs.
+- If a new revision is rejected or withdrawn, keep the previously approved photo available. Clean up the unapproved upload according to a bounded retention policy.
+- Unpublishing an area removes its photo from fresh public access as well. Cached public image URLs must not bypass the unpublish decision; use versioned objects and a documented cache lifetime/invalidation strategy.
+- When the contributor deletes their account, retain a photo belonging to an approved area only if it remains part of the retained approved community content; remove private, pending, rejected and otherwise unapproved uploads. Strip personal metadata and anonymize ownership consistently with Section 6.
+- Admin moderation must preview the image before approval and provide a way to reject the photo or remove/unpublish it if it is inappropriate, identifying, unrelated, copyrighted without permission, or unsafe. A photo issue must not silently change geometry approval; the moderator can require a corrected revision or approve the area without a photo if the data model and review workflow support that outcome.
+- Warn contributors not to upload images containing faces, vehicle registration plates, private property interiors, personal contact details or other identifying information. Avoid collecting unnecessary personal information.
+- Do not send images to third-party recognition, moderation or analytics services in the MVP.
+
+**Implementation and operational implications**
+- Supabase Storage is not currently part of the community-area implementation architecture; confirm bucket, object policy, upload and publication design before coding.
+- Prefer a private staging/quarantine bucket and a separate approved-public delivery path, with server-side authorization for the transition. Do not assume that a private database row makes an object in a public bucket private.
+- The object reference belongs to the immutable community-area revision. Enforce one photo reference per revision and prevent clients from attaching another user's object.
+- Submission idempotency must not create duplicate objects. Failed submission or approval must leave no publicly accessible orphan; add cleanup for abandoned uploads.
+- Include photo presence and replacement/removal in revision comparison. The photo is optional and must not affect XP eligibility automatically; an admin may consider a genuinely useful photo as supporting evidence when deciding whether a revision merits XP under Section 12.
+- Add tests for upload authorization, anonymous denial before approval, approved guest display, rejected/withdrawn cleanup, account deletion, invalid MIME/signature, oversized/dimension-invalid images, EXIF stripping, orphan cleanup and unpublish/cache behavior.
+
+**Owner decisions still required:** confirm the technical upload details (JPEG/PNG/WebP only, 5 MB original limit, approximately 1600 px client resize, metadata stripping and private-until-approved publication strategy). The one-optional-photo-per-revision product decision is approved. This section does not authorize implementation of photo storage or uploads.
+
+### 13.7 Owner decisions recorded — Pilot setup spots
+
+| Decision | Approved value |
+|---|---|
+| Name | Pilot setup spots |
+| Maximum per community area | 10 |
+| Map display threshold | Leaflet zoom level 13 or higher; may also display while parent area is selected |
+| Other category | Enabled as a fixed category; optional short note can clarify it |
+
+Setup spots remain subordinate point annotations included in the parent area's immutable revision. They are submitted, reviewed, published and unpublished together with the parent revision. No separate moderation, public identity or XP mechanism is introduced.
