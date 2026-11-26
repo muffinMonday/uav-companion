@@ -2,7 +2,7 @@
 // (hosting, joined, history, updates), Invitations, a session's detail with its host tools, and the New session form. The map point picker closes the dialog while the person
 // chooses on the map and reopens it with the draft intact. The database decides everything (sessions.js); this only draws. Plain DOM, textContent only.
 import L from 'leaflet';
-import { createSessions, todayRange, stillOn, nextExpiry, sessionState, whenText, capacityText, roleText, seriesText, linkUrl, tokenFromHash } from './sessions.js';
+import { createSessions, todayRange, stillOn, nextExpiry, sessionState, whenText, capacityText, roleText, seriesText, linkUrl, tokenFromHash, publicSessionUrl, publicSessionFromHash } from './sessions.js';
 import { createSessionForm, clearDraft } from './sessions-create.js';
 import { localDate, localTime } from './sessions-recurrence.js';
 import { createExplorer } from './sessions-map-explorer.js';
@@ -32,6 +32,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   const mineEmpty = () => ({ status: 'idle', sessions: [], roles: { admin: false, organiser: false }, notices: [], takedowns: [], invites: [] });
   let mine = mineEmpty(), section = 'discover', view = 'list', detail = null, message = '', busy = false, seqMine = 0, seqPub = 0, summaryAt = 0, nearby = null;
   let pub = { status: 'idle', list: [], more: false, query: '', near: 'any', when: 'any', space: false, offset: 0 };
+  let publicSeq = 0, publicHash = null, publicAuth = null, resumePublic = false;
   let inLists = null; // "Show me in attendee lists": null = not asked yet, undefined = asking, else the stored choice
   let xpRates = null; // the host reward the database pays, { hostBase, hostPerAttendee }, read with the signed-in list (null until then)
   let previewOpen = null; // the one Discover card whose map preview is open (not kept between visits)
@@ -58,7 +59,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   closeB.addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener('cancel', (e) => { if (view !== 'list') { e.preventDefault(); back(); } }); // Escape closes the detail or the form before the hub
-  dlg.addEventListener('close', () => { dlg.style.removeProperty('--ses-vvh'); dlg.style.removeProperty('--ses-vvtop'); if (quietClose) { quietClose = false; return; } scroll.clear(); previewOpen = null; const o = opener; opener = null; if (o?.isConnected && !o.closest('[inert]')) o.focus?.({ preventScroll: true }); }); // focus goes back to what opened the hub, also after the map picker closed and reopened it
+  dlg.addEventListener('close', () => { dlg.style.removeProperty('--ses-vvh'); dlg.style.removeProperty('--ses-vvtop'); if (quietClose) { quietClose = false; return; } publicSeq++; scroll.clear(); previewOpen = null; const o = opener; opener = null; if (o?.isConnected && !o.closest('[inert]')) o.focus?.({ preventScroll: true }); }); // focus goes back to what opened the hub, also after the map picker closed and reopened it
   // The sheet (a touch screen up to 900 px wide, styles.css) follows the visual viewport, so the on-screen keyboard and a moving browser toolbar never cover its header, tabs or the Create / Cancel row.
   const vv = window.visualViewport;
   const fit = () => { if (!dlg.open || !vv || vv.scale > 1.01) return; dlg.style.setProperty('--ses-vvh', vv.height + 'px'); dlg.style.setProperty('--ses-vvtop', vv.offsetTop + 'px'); };
@@ -128,6 +129,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     mine = failed.v ? { ...mine, status: 'error' } : { status: 'ready', sessions, roles, notices, takedowns, invites };
     summaryAt = Date.now();
     (arrival.config() ? Promise.resolve() : arrival.loadConfig()).then(() => arrival.kick());
+    if (detail?.publicLink && currentOf(detail.id)?.canManage) manageOpen.add(detail.id);
     if (!failed.v) await Promise.all([...manageOpen].map(async (id) => { const s = mine.sessions.find((x) => x.id === id); if (s?.canManage) await loadPeople(s); else manageOpen.delete(id); }));
     summaryDone();
     if (dlg.open) paint();
@@ -198,7 +200,14 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     paint();
   }
   const warningText = (r) => (Array.isArray(r?.warnings) && r.warnings.some((w) => w.code === 'public_overlap') ? ' Another public session overlaps this one in time and place.' : '');
-  const currentOf = (id) => mine.sessions.find((x) => x.id === id) ?? pub.list.map(asSession).find((x) => x.id === id) ?? (detail?.id === id ? detail.fallback : null);
+  const currentOf = (id) => {
+    const own = mine.sessions.find((x) => x.id === id);
+    if (detail?.publicLink && detail.id === id) {
+      if (!detail.fallback || (own && own.visibility !== 'public')) return null;
+      return own ?? detail.fallback;
+    }
+    return own ?? pub.list.map(asSession).find((x) => x.id === id) ?? (detail?.id === id ? detail.fallback : null);
+  };
   const hostBadge = (s) => {
     const w = el(s.isHost ? 'span' : 'button', 'ses-host'); w.append(avatarEl(s.hostAvatar, s.hostName, 20), el('small', '', s.isHost ? 'You' : s.hostName));
     if (!s.isHost) { w.type = 'button'; w.classList.add('pv-trigger'); w.dataset.act = 'host-profile'; w.setAttribute('aria-haspopup', 'dialog'); w.setAttribute('aria-label', 'View profile of ' + s.hostName); w.addEventListener('click', (e) => { e.stopPropagation(); showPerson(s, null, w); }); }
@@ -265,9 +274,9 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     return box;
   }
 
-  function go(sec, v = 'list') { previewOpen = null; section = sec; view = v; message = ''; editing = null; reporting = null; newLink = null; if (v === 'list') detail = null; paint(); if (sec === 'discover' && v === 'list') loadPublic({ quiet: true }); }
-  function back() { if (view === 'detail' || view === 'create') { view = 'list'; detail = null; message = ''; editing = null; paint(); } }
-  function openDetail(s) { detail = { id: s.id, fallback: s }; view = 'detail'; message = ''; editing = null; reporting = null; newLink = null; paint(); if (s.visibility === 'public') loadPublic({ quiet: true }); if (signedIn()) loadMine({ quiet: true }); const sess = currentOf(s.id); if (sess?.canManage) { manageOpen.add(s.id); loadPeople(sess).then(paint); } }
+  function go(sec, v = 'list') { publicSeq++; previewOpen = null; section = sec; view = v; message = ''; editing = null; reporting = null; newLink = null; if (v === 'list') detail = null; paint(); if (sec === 'discover' && v === 'list') loadPublic({ quiet: true }); }
+  function back() { publicSeq++; if (view === 'detail' || view === 'create') { view = 'list'; detail = null; message = ''; editing = null; paint(); if (section === 'discover' && pub.status === 'idle') loadPublic(); } }
+  function openDetail(s, publicLink = false) { publicSeq++; detail = { id: s.id, fallback: s, publicLink }; view = 'detail'; message = ''; editing = null; reporting = null; newLink = null; paint(); if (s.visibility === 'public' && !publicLink) loadPublic({ quiet: true }); if (signedIn()) loadMine({ quiet: true }); const sess = currentOf(s.id); if (sess?.canManage) { manageOpen.add(s.id); loadPeople(sess).then(paint); } }
 
   // ---- drawing
   function rowFor(s, extra = [], { preview = false } = {}) {
@@ -296,7 +305,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     return r;
   }
   const empty = (t) => el('p', 'hint ses-empty', t);
-  const signInBox = (t) => { const b = el('div', 'ses-signin'); b.append(el('p', 'hint', t)); const s = btn('Sign in', 'btn small primary'); s.dataset.act = 'signin'; s.addEventListener('click', () => { dlg.close(); document.getElementById('account-btn')?.click(); }); b.append(s); return b; };
+  const signInBox = (t) => { const b = el('div', 'ses-signin'); b.append(el('p', 'hint', t)); const s = btn('Sign in', 'btn small primary'); s.dataset.act = 'signin'; s.addEventListener('click', () => { if (detail?.publicLink) { resumePublic = true; try { sessionStorage.setItem('uavzones.public-session', location.hash); } catch { /* memory only */ } } dlg.close(); document.getElementById('account-btn')?.click(); }); b.append(s); return b; };
 
   function paintTabs() {
     tabs.replaceChildren();
@@ -418,6 +427,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     f.classList.add('ses-narrow');
     const s = currentOf(detail.id);
     const back_ = btn('← Back'); back_.id = 'ses-back'; back_.addEventListener('click', back); f.append(back_);
+    if (detail.loading) { f.append(empty('Loading session…')); return; }
     if (!s) { f.append(empty('This session is no longer available.')); return; }
     const st = sessionState(s);
     const top = el('div', 'ses-top'); top.append(el('h3', 'ses-title', s.title), el('span', 'badge', s.visibility === 'public' ? 'Public' : 'Private'));
@@ -436,6 +446,23 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     if (s.status === 'scheduled' || s.status === 'closed') f.append(peopleSection(s));
     { const t = xpExplainText(s, xpRates); if (t) { const sec = el('section', 'ses-xp'); sec.setAttribute('aria-label', 'EXP'); sec.dataset.xp = s.isHost ? 'host' : 'attendee'; sec.append(el('h3', 'ses-group', 'EXP'), el('p', 'ses-xp-text', t)); f.append(sec); } }
     const bs = el('div', 'btn-row');
+    if (s.visibility === 'public') {
+      const url = publicSessionUrl(s.id, location.href);
+      if (url) {
+        const share = btn('Share session'); share.dataset.act = 'share';
+        share.addEventListener('click', async () => {
+          try { if (navigator.share) { await navigator.share({ title: s.title, url }); return; } }
+          catch (e) { if (e.name === 'AbortError') return; }
+          try { await navigator.clipboard.writeText(url); toast('Link copied.'); }
+          catch {
+            let input = f.querySelector('[data-public-url]');
+            if (!input) { input = el('input'); input.type = 'text'; input.readOnly = true; input.dataset.publicUrl = ''; input.setAttribute('aria-label', 'Public session link'); input.value = url; input.addEventListener('focus', () => input.select()); f.append(input); }
+            input.focus(); input.select(); toast('Select and copy the link.');
+          }
+        });
+        bs.append(share);
+      }
+    }
     if (!signedIn()) bs.append(signInBox('Sign in to say you will come.'));
     else if (st.canRsvp) { if (s.visibility === 'public') bs.append(el('small', 'hint ses-rsvp-note', 'Your name and picture show in the list of who is coming. You can switch that off under My sessions.')); const b = btn('I will come', 'btn small primary'); b.dataset.act = 'rsvp'; b.addEventListener('click', () => act(() => api.rsvp(s.id), 'You are on the list.')); bs.append(b); }
     else if (s.iRsvped && s.status === 'scheduled') {
@@ -568,6 +595,39 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     return p;
   }
 
+  // Direct public lookup is independent of Discover's filters and pages. Hashes remain
+  // intact; the shell owns the dialog/detail history entries and Back behavior.
+  async function openFromHash({ authChanged = false } = {}) {
+    let hash = location.hash;
+    if (!hash) {
+      try {
+        const saved = sessionStorage.getItem('uavzones.public-session');
+        if (publicSessionFromHash(saved)) { hash = saved; resumePublic = true; history.replaceState(history.state, '', location.pathname + location.search + hash); }
+      } catch { /* memory only */ }
+    }
+    if (!hash.startsWith('#flight-session=')) { publicSeq++; publicHash = null; return redeemFromHash(); }
+    if (hash === publicHash && signedIn() === publicAuth && !(authChanged && resumePublic)) return;
+    if (authChanged && !resumePublic && !dlg.open) return;
+    publicHash = hash; publicAuth = signedIn(); resumePublic = false;
+    try { sessionStorage.removeItem('uavzones.public-session'); } catch { /* ignore */ }
+    const id = publicSessionFromHash(hash);
+    if (!dlg.open) open('discover', { publicLink: true });
+    if (exploring) endExplore();
+    const seq = ++publicSeq;
+    detail = { id, publicLink: true, loading: !!id, fallback: null }; view = 'detail'; paint();
+    if (!id) return;
+    try {
+      const row = await api.getPublic(id);
+      if (seq !== publicSeq || !dlg.open) return;
+      if (row) openDetail(asSession(row), true);
+      else { detail.loading = false; paint(); }
+    } catch {
+      if (seq !== publicSeq || !dlg.open) return;
+      detail.loading = false; paint();
+    }
+  }
+  window.addEventListener('hashchange', () => openFromHash());
+
   // ---- links: #session=TOKEN
   let prompted = false;
   async function redeemFromHash() {
@@ -588,14 +648,15 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
 
   // ---- public
   function open(sec = 'discover', opts = {}) {
+    publicSeq++;
     if (exploring) endExplore();
     section = sec === 'detail' ? 'mine' : sec; view = 'list'; detail = null; message = ''; editing = null; reporting = null;
     if (opts.near) pub = { ...pub, near: String(opts.near) };
     if (!dlg.open) { opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : opener; dlg.showModal(); fit(); for (const fn of showListeners) fn(); }
     paint();
-    if (signedIn()) loadMine({ quiet: mine.status === 'ready' }).then(() => { if (opts.id) { const s = mine.sessions.find((x) => x.id === opts.id) ?? opts.fallback; if (s) openDetail(s); } });
+    if (!opts.publicLink && signedIn()) loadMine({ quiet: mine.status === 'ready' }).then(() => { if (opts.id) { const s = mine.sessions.find((x) => x.id === opts.id) ?? opts.fallback; if (s) openDetail(s); } });
     else if (opts.id && opts.fallback) openDetail(opts.fallback);
-    if (section === 'discover' || opts.id) loadPublic().then(() => { if (opts.id && !detail) { const p = pub.list.find((x) => x.id === opts.id) ?? opts.fallback; if (p) openDetail(p.status ? p : asSession(p)); } });
+    if (!opts.publicLink && (section === 'discover' || opts.id)) loadPublic().then(() => { if (opts.id && !detail) { const p = pub.list.find((x) => x.id === opts.id) ?? opts.fallback; if (p) openDetail(p.status ? p : asSession(p)); } });
     dlg.querySelector('.ses-tab[aria-selected=true]')?.focus();
     onOpen?.(tabs, opts);
   }
@@ -606,7 +667,8 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
   handle.onChange(() => {
     const now = signedIn();
     if (now !== was) { was = now; if (now) refreshSummary(true); else reset(); }
-    redeemFromHash();
+    if (now !== publicAuth && (location.hash.startsWith('#flight-session=') || resumePublic)) openFromHash({ authChanged: true });
+    else if (!location.hash.startsWith('#flight-session=')) redeemFromHash();
   });
 
   // ---- the map button (below the other left-hand buttons)
@@ -629,7 +691,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     summary: summaryNow,
     onSummary: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
     setNearby(on) { savePrefs({ sessionsNearby: !!on }); return loadNearby().then(summaryDone); },
-    redeemFromHash,
+    redeemFromHash, openFromHash,
     // Review 01 S10.5 (NAV-07): used only by shell/nav.js, to keep the shell's current destination in sync with the dialog closing by its
     // own means (✕, Escape, an outside tap), and to give a session's full-screen detail one browser-history entry (Back returns to the
     // list). Harmless if never called; nothing here duplicates the dialog's own Escape/back() handling above.

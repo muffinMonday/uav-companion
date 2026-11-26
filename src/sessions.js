@@ -166,6 +166,11 @@ export const linkUrl = (token, base) => `${base}#session=${token}`;
 /** The token of a `#session=` hash, or null. */
 export const tokenFromHash = (hash) => { const m = /^#session=([A-Za-z0-9]{32,100})$/.exec(hash || ''); return m ? m[1] : null; };
 
+/** Public links name one occurrence, never a series or an invitation token. */
+const uuid = (value) => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+export const publicSessionUrl = (id, base) => uuid(id) ? `${new URL(base).origin}${new URL(base).pathname}#flight-session=${id}` : null;
+export const publicSessionFromHash = (hash) => { const m = /^#flight-session=(.*)$/.exec(hash || ''); return m && uuid(m[1]) ? m[1] : null; };
+
 const list = (rows, clean) => (Array.isArray(rows) ? rows.map(clean).filter(Boolean) : []);
 /** session_xp_rates() as { hostBase, hostPerAttendee } (whole numbers, 0 or more), or null. */
 const whole = (v) => (Number.isInteger(v) && v >= 0 && v <= 100000 ? v : null);
@@ -208,6 +213,12 @@ export function createSessions(client) {
       if (f.from) args.p_from = f.from;
       if (f.until) args.p_until = f.until;
       return list(await rpc('list_public_sessions', args), cleanPublic);
+    },
+    /** One eligible public occurrence, available without sign-in. */
+    async getPublic(id) {
+      if (!uuid(id)) return null;
+      const rows = await rpc('get_public_session', { p_id: id });
+      return cleanPublic(Array.isArray(rows) ? rows[0] : null);
     },
     /** The host reward the database pays: { hostBase, hostPerAttendee } (XP), or null when the database does not say. */
     async xpRates() { return cleanRates(await rpc('session_xp_rates')); },
