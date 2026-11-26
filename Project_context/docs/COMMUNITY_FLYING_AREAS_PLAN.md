@@ -145,18 +145,43 @@ The HTML/main.js refactor is complete. Before implementation, reconcile the prop
 ### 12.2 Eligibility and one-time policy
 
 - One reward at most per `community_areas.id`, on approval of its first published revision.
-- Later revisions, re-approvals, retries, moderator changes and duplicate calls must not generate another reward for the same area, even if the administrator changes the slider or checkbox later.
-- A rejected submission earns nothing. If it is later corrected and approved as the same area, it may receive its one initial reward.
+- For the first publication, award at most once for the initial area contribution.
+- For an already-published area, a **materially improved revision may independently earn one reward** when approved. Each revision can be rewarded at most once; retries, concurrent moderation, re-approval and duplicate calls for that same revision cannot create another award.
+- A rejected or withdrawn revision earns nothing. If corrected and resubmitted, only the eventual approved revision is eligible; the earlier rejected/withdrawn revision is never paid.
+- Revisions that are merely cosmetic or do not materially improve the area's usefulness should be approved without XP. The administrator makes this judgement and may untick the reward checkbox.
 - A newly created area that duplicates another area is a separate candidate only if an administrator explicitly approves it and elects to award XP; consider duplicate detection/moderation separately, not as an automatic geometry-merging feature.
 - Unpublishing an area later does not automatically claw back XP. Fraud or abuse can be handled through the existing administrator XP adjustment mechanism with a reason; do not silently mutate or delete the original ledger row.
-- No XP for private drafts, pending submissions, self-approval (if the submitter is an administrator), or edits to an already-published area in the MVP.
+- No XP for private drafts, pending submissions, self-approval (if the submitter is an administrator), or a revision that is not materially useful. The reward applies to the contributor who submitted the specific approved revision, not automatically to the area's original creator.
+
+### 12.2a What qualifies as a material improvement — PROPOSED MODERATION GUIDANCE
+
+Examples of improvements that may merit XP when supported by credible local knowledge or evidence:
+
+- **Boundary correction:** fixing an inaccurate, incomplete or misleading polygon boundary; moving vertices to better reflect the actual usable site.
+- **Coverage completion:** adding a genuinely missing part of the same flying area or correcting an omitted section. Do not split disconnected places into one area merely to inflate coverage; the MVP geometry type remains Polygon unless separately approved.
+- **Removal of false coverage:** trimming parts incorrectly shown as usable, such as inaccessible land, buildings, water, fenced/private property or other unsuitable portions. A smaller, more accurate area can be a valuable improvement.
+- **Material site-information correction:** updating the description with useful, verifiable practical information that materially changes a pilot's understanding of the location, such as access limitations, landowner permission requirements, operating-hour constraints or significant site hazards. The existing form only has a name and description; do not add new structured fields or photos as part of this XP change.
+- **Evidence-backed revalidation:** updating an area when its physical layout or access conditions have changed, with a clear explanation of what changed and why the new revision is more reliable.
+
+Examples that should normally be approved without XP:
+
+- Spelling, punctuation, formatting or cosmetic name changes.
+- Re-submitting identical or nearly identical geometry without a substantive explanation.
+- Tiny vertex adjustments that do not improve practical accuracy.
+- Rewording a description without adding useful information.
+- Unsupported speculation, duplicate areas or changes that make the area less accurate or less safe to interpret.
+
+The admin should see a concise revision diff/summary (old versus proposed geometry and text) before deciding. The contributor's free-text explanation is supporting context, not proof by itself. XP is not automatically calculated from polygon size, vertex count, number of edits or the amount of text changed.
+
+**Safety boundary:** community-area edits remain recommendations, never regulatory clearance. A revision must not erase, override or weaken official airspace restrictions or point-check results. Where a proposed change concerns permission to access private land or fly at a site, require credible supporting context and retain the standard community disclaimer.
 
 ### 12.3 Backend and ledger design
 
 - Add a dedicated XP source, proposed name `community_area`, to the `xp_ledger.source` constraint and the internal `award_xp()` allowlist through a new migration. Follow the current `PROGRESSION.md` instructions for introducing a source.
 - The approval RPC must validate the submitted reward amount server-side: only 100, 200, 300, 400 or 500 are accepted when the reward checkbox is enabled. Never trust the client slider alone.
 - Award only inside the same security-definer transaction that successfully approves and publishes the first revision. Derive the recipient from the server-stored submitter/owner; never accept a target user ID from the client.
-- Use a deterministic unique reference, proposed `area:<community_area_id>`, with the existing `(user_id, source, ref)` ledger uniqueness as a second idempotency guard. Also enforce/check the one-award-per-area rule so changing ownership or retrying cannot pay twice.
+- Use a deterministic unique reference per contribution, proposed `area-revision:<revision_id>`, with the existing `(user_id, source, ref)` ledger uniqueness as an idempotency guard. Enforce at most one award per revision, while allowing distinct materially improved revisions to earn separate rewards.
+- Add an internal `submitted_by`/contributor identity to each revision (or an equivalent immutable server-side attribution field). The existing area-level `owner_id` alone is insufficient to identify the person who submitted a later improvement. Never expose this identity through public RPCs. Apply the account-deletion anonymization policy to revision-level identities as well.
 - Call the existing internal `award_xp()`; do not write `xp_ledger` or `user_xp` directly. Existing ledger triggers must continue to update totals and rank progression.
 - Record the actor, recipient, selected amount and area reference in the ledger. Extend the `area.approve` audit event metadata with whether XP was awarded and the amount, without exposing the submitter publicly. The approval, ledger entry and audit event must commit or roll back together.
 - Keep `award_xp()` and all direct ledger writes inaccessible to client roles. Only the admin-only approval RPC can request this reward.
@@ -175,9 +200,10 @@ Add/extend database tests to prove:
 
 - Only an administrator can approve and award; guests, submitters and organisers without admin authority cannot.
 - Approval without the reward option publishes normally and creates no XP row.
-- Approval with the reward option creates exactly one `community_area` ledger row for the correct submitter.
-- Repeated RPC calls, concurrent approval attempts, retries and later revisions cannot duplicate the reward.
-- Rejected, withdrawn, pending, private and already-published revision cases do not earn XP.
+- Initial approval with the reward option creates exactly one `community_area` ledger row for the initial contributor.
+- A materially improved revision can earn one separate award for that revision's submitter; two distinct approved revisions may each earn once.
+- Repeated RPC calls, concurrent approval attempts, retries and re-approval of the same revision cannot duplicate its reward.
+- Rejected, withdrawn, pending, private, self-approved and cosmetic-only revisions do not earn XP.
 - The XP ledger trigger updates totals/rank correctly; the admin audit record and ledger amount agree.
 - A failed approval transaction cannot leave a published area without its corresponding requested reward, or an XP award for an unapproved area.
 - Public RPCs never expose contributor identity, XP award metadata or moderation internals.
@@ -190,4 +216,4 @@ Add/extend database tests to prove:
 - Do not display contributor XP details on the public map or public area popup. The contributor may see the resulting XP through the existing private progression history; avoid adding a separate reward history UI.
 - Update `PROGRESSION.md`, `DATABASE.md`, `DECISIONS.md`, `CURRENT_STATUS.md` and the audit documentation when implementation is approved.
 
-**Open owner decision:** confirm the standard reward amount (50 XP is the current proposal) and whether the optional admin checkbox should default to enabled or disabled. No implementation is authorized by this proposed section.
+**Approved policy:** the same optional 100–500 XP slider applies to the first accepted contribution and to each materially improved, accepted revision. Each approved revision can receive at most one award. The checkbox is enabled by default; the slider starts at 100 XP. The admin decides whether the improvement merits a reward and selects its amount. The examples and non-qualifying cases above guide that decision; they do not create automatic XP eligibility. No implementation is authorized by this proposed section.
