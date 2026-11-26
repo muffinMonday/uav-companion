@@ -135,16 +135,17 @@ The HTML/main.js refactor is complete. Before implementation, reconcile the prop
 
 ### 12.1 Admin approval workflow
 
-- Add an optional `Award contribution XP` control to the administrator's approval action.
-- The control is available only when approving a submission/revision; rejecting, withdrawing or merely editing a record never awards XP.
-- The administrator can approve and publish without awarding XP (for example, a duplicate, marginal or low-value contribution). The admin-only review interface may identify the submitter; public area responses and public map UI must remain anonymous.
-- Show the exact reward amount beside the control before confirmation. Do not allow an arbitrary per-review amount in the MVP; use one centrally configured standard reward to keep awards consistent.
-- The feature remains optional and does not affect whether geometry is published. A contribution can be approved with no XP.
+- Add an `Award contribution XP` checkbox to the administrator's approval action. It is **enabled by default**; the administrator can untick it to approve and publish without a reward (for example, a duplicate, marginal or low-value contribution).
+- When enabled, show an admin-controlled slider for the reward amount: **100–500 XP, in 100 XP increments** (100, 200, 300, 400 or 500 XP). The initial slider value is **100 XP** as the conservative default; the administrator may increase it for an especially useful contribution.
+- Show the selected amount beside the slider and in the final confirmation before approval.
+- The controls are available only when approving a submission/revision; rejecting, withdrawing or merely editing a record never awards XP.
+- The admin-only review interface may identify the submitter; public area responses and public map UI must remain anonymous.
+- The reward remains optional and does not affect whether geometry is published. An administrator can approve with the checkbox off.
 
 ### 12.2 Eligibility and one-time policy
 
-- The recommended MVP policy is one reward at most per `community_areas.id`, on approval of its first published revision.
-- Later revisions, re-approvals, retries, moderator changes and duplicate calls must not generate another reward for the same area.
+- One reward at most per `community_areas.id`, on approval of its first published revision.
+- Later revisions, re-approvals, retries, moderator changes and duplicate calls must not generate another reward for the same area, even if the administrator changes the slider or checkbox later.
 - A rejected submission earns nothing. If it is later corrected and approved as the same area, it may receive its one initial reward.
 - A newly created area that duplicates another area is a separate candidate only if an administrator explicitly approves it and elects to award XP; consider duplicate detection/moderation separately, not as an automatic geometry-merging feature.
 - Unpublishing an area later does not automatically claw back XP. Fraud or abuse can be handled through the existing administrator XP adjustment mechanism with a reason; do not silently mutate or delete the original ledger row.
@@ -153,17 +154,20 @@ The HTML/main.js refactor is complete. Before implementation, reconcile the prop
 ### 12.3 Backend and ledger design
 
 - Add a dedicated XP source, proposed name `community_area`, to the `xp_ledger.source` constraint and the internal `award_xp()` allowlist through a new migration. Follow the current `PROGRESSION.md` instructions for introducing a source.
+- The approval RPC must validate the submitted reward amount server-side: only 100, 200, 300, 400 or 500 are accepted when the reward checkbox is enabled. Never trust the client slider alone.
 - Award only inside the same security-definer transaction that successfully approves and publishes the first revision. Derive the recipient from the server-stored submitter/owner; never accept a target user ID from the client.
 - Use a deterministic unique reference, proposed `area:<community_area_id>`, with the existing `(user_id, source, ref)` ledger uniqueness as a second idempotency guard. Also enforce/check the one-award-per-area rule so changing ownership or retrying cannot pay twice.
 - Call the existing internal `award_xp()`; do not write `xp_ledger` or `user_xp` directly. Existing ledger triggers must continue to update totals and rank progression.
-- Record the actor, recipient, amount, reason and area reference in the ledger. Extend the `area.approve` audit event metadata with whether XP was awarded and the amount, without exposing the submitter publicly. The approval, ledger entry and audit event must commit or roll back together.
+- Record the actor, recipient, selected amount and area reference in the ledger. Extend the `area.approve` audit event metadata with whether XP was awarded and the amount, without exposing the submitter publicly. The approval, ledger entry and audit event must commit or roll back together.
 - Keep `award_xp()` and all direct ledger writes inaccessible to client roles. Only the admin-only approval RPC can request this reward.
 - Account deletion retains approved geometry but follows existing progression deletion rules for the contributor's XP account; do not create a separate identity or permanent XP record for anonymized contributors.
 
-### 12.4 Reward amount — owner decision required
+### 12.4 Reward amount — owner decision recorded
 
-- Proposed starting value: **50 XP per qualifying first approval**, configurable centrally rather than hard-coded in the UI or supplied by the administrator per submission.
-- This is a proposal, not an approved number. Confirm the amount before implementation. It should be large enough to recognize a useful contribution but not so large that users are incentivized to submit many marginal areas.
+- **Approved control:** an admin slider from **100 to 500 XP**, stepping by **100 XP**.
+- **Approved default:** the `Award contribution XP` checkbox is enabled by default.
+- **Initial slider value:** **100 XP**, chosen as the conservative starting value; the admin may select a higher amount up to 500 XP for a particularly useful contribution.
+- The amount is chosen per qualifying first approval, is stored in the immutable XP ledger row and cannot be changed by editing or re-approving the area.
 
 ### 12.5 Tests
 
