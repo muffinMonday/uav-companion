@@ -115,6 +115,8 @@ for (const who of ['guest', 'c', 'b']) {
   ({ ctx, p } = await open(who, { hash: '#flight-session=' + farS, ...(who === 'guest' ? { vp: { width: 360, height: 740 }, mobile: true } : {}) }));
   await p.waitForSelector(body + ' [data-act=share]');
   ok(/Far away fly-in/.test(await txt(p, body)) && await p.locator(hub + '[open]').count() === 1, who + ' opens the specific public occurrence directly');
+  const shareRect = await p.locator('[data-act=share]').boundingBox(), navRect = await p.locator(body + ' [data-act=navigate]').boundingBox();
+  ok(Math.abs(shareRect.y - navRect.y) < 1 && Math.abs(shareRect.height - navRect.height) < 1 && await p.locator('[data-act=share] svg').count() === 1, who + ' sees an icon Share button beside Navigate at the same height');
   ok(who === 'guest' ? await p.locator(body + ' [data-act=signin]').count() === 1 : await p.locator(body + ' [data-act=rsvp]').count() === 1, who + ' keeps the existing RSVP/sign-in flow');
   if (who === 'b') ok(await p.locator('#ses-manage').count() === 1, 'public link preserves host management controls');
   if (who === 'guest') {
