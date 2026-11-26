@@ -217,3 +217,57 @@ Add/extend database tests to prove:
 - Update `PROGRESSION.md`, `DATABASE.md`, `DECISIONS.md`, `CURRENT_STATUS.md` and the audit documentation when implementation is approved.
 
 **Approved policy:** the same optional 100–500 XP slider applies to the first accepted contribution and to each materially improved, accepted revision. Each approved revision can receive at most one award. The checkbox is enabled by default; the slider starts at 100 XP. The admin decides whether the improvement merits a reward and selects its amount. The examples and non-qualifying cases above guide that decision; they do not create automatic XP eligibility. No implementation is authorized by this proposed section.
+
+## 13. Proposed flying-spot attributes — OWNER REVIEW
+
+**Design principle:** Geometry answers where the community-recommended area is. A small set of structured attributes should explain what the location is like, what activities it may suit, whether public access or landowner permission is required, what hazards contributors have observed, and how recent the information is. These attributes are community observations, not verified flight permission or regulatory status.
+
+### 13.1 Recommended MVP fields
+
+Keep the existing name (required, 1–80 characters) and description (optional, up to 500 characters). Add the following structured fields to each submitted revision:
+
+| Attribute | Requirement | Suggested values / behavior | Why it matters |
+|---|---|---|---|
+| Site environment | Required single-select | Open field, park/recreation area, beach/coast, open water, hill/high ground, woodland/green space, built-up/urban space, other, unknown | Gives a quick sense of the physical setting. |
+| Suitable activity | Optional multi-select | FPV freestyle, cinematic, cruising/general multirotor, long-range, fixed-wing, other / not sure | Helps users assess whether the space matches their intended type of flying. These are community suitability tags, not legal permission or a safety rating. |
+| Access / permission | Required single-select | Public access (subject to local rules), permission required, private/restricted access, unknown / not verified | Prevents a map pin from implying that the public may enter or launch there. Never infer landowner or park permission from the fact that a spot is mapped. |
+| Ground / launch surface | Optional single-select | Grass, paved/concrete, dirt, sand, rock, mixed, unknown | Useful for take-off/landing practicality and equipment choice. |
+| Known site hazards | Optional multi-select | People/crowds, roads/traffic, power lines, trees/structures, water, wildlife, uneven/obstructed ground, nearby official airspace restrictions, other, none reported, unknown | Surfaces practical hazards. “None reported” must not be presented as “hazard-free”; keep it distinct from “unknown”. |
+| Last observed | Optional date | Date the contributor last personally visited or checked the site; do not default it to submission date | Lets users judge freshness instead of treating old observations as current. |
+
+Name and description remain the primary text. If “other” is selected for a categorical field, allow a short bounded clarification in the description rather than adding many free-text columns.
+
+### 13.2 Presentation
+
+- Show the environment and access/permission status prominently in the public area detail.
+- Show suitable-activity and ground-surface tags as secondary information.
+- Show known hazards clearly, without alarmist styling. If access is “permission required”, “private/restricted” or “unknown”, display that prominently and do not imply walk-in access.
+- Show “Last observed [date]” where supplied; otherwise show “Last observation date not provided”. Do not substitute the last edit, approval or publication date.
+- Keep the regulatory disclaimer visible: community recommendations do not establish permission to enter land or permission to fly. Users must check current official restrictions and local conditions.
+- Public map pins should remain visually subordinate to official airspace layers. Attributes must never change point-check verdicts, airspace colors or legal classifications.
+- Public output remains anonymous and must not expose contributor, reviewer or XP information.
+
+### 13.3 Fields deliberately deferred from MVP
+
+Do not add these unless separately approved:
+
+- Photos, videos, comments, ratings, likes, votes or popularity scores.
+- Live weather, wind readings, crowd estimates or live occupancy.
+- Detailed frequency/interference reports or claims of RF-clearance.
+- Exact opening hours, contact details, landowner names or personal contact information.
+- Automatic “safe to fly”, legality, permission or suitability scores.
+- Separate amenity inventories (parking, toilets, shops, charging) unless user feedback later demonstrates a clear need.
+- Arbitrary user-defined tag systems.
+
+These are prone to becoming stale, require more moderation, can expose personal information, or risk making a community observation look like an authoritative safety assessment.
+
+### 13.4 Data and moderation implications
+
+- Store these attributes with the immutable revision, not only on the parent area, so a revised submission captures the exact attributes the administrator reviewed and approved.
+- Validate all enum values and date formats on both client and server. Bound any additional text; render it as text, never HTML.
+- The admin review view must compare the currently published revision with the proposed revision's geometry and structured attributes.
+- Changes to access status, hazards, environment or activity tags are reviewable revision changes. They may qualify as material improvements under Section 12, but XP remains an explicit admin decision; field changes do not automatically earn XP.
+- Missing or unknown attributes must remain unknown. Do not infer “public access”, “no hazards” or activity suitability from geometry, basemap labels or other users' submissions.
+- Keep the attribute set intentionally small. Do not introduce a general custom-schema or user-defined taxonomy engine in the MVP.
+
+**Open owner decisions:** confirm the proposed MVP field set and whether “other” should be available for environment, activity and hazard categories. This section is a design proposal and does not authorize implementation.
