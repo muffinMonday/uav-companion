@@ -1,3 +1,7 @@
+## 2026-11-27 - Community Flying Areas Phase 1 released
+- Private local polygons/rectangles, point editing, Pilot setup spots, validated GeoJSON import/export, and My flying areas in More tools are live. Source `5f59089`; gh-pages `a7634ed`; successful Pages run `45915229886`; live HTML and 10 referenced JS/CSS assets match the build. Existing accounts, feature flags, custom domain and all 33 airspace regions retained; no backend change.
+- Phase 1: 203 unit checks and 99 browser checks pass, including 99 against the production build. Full regression: 191/212 suites passing, 21 failures; unit baseline comparisons and residual limits in `CURRENT_STATUS.md`. Further phases remain unstarted.
+
 ## 2026-11-26 - Profile visible on first open
 - Reposition the account panel when asynchronous progression/Steam content or section toggles change its size. A delayed first progression response now stays within the viewport, with the same geometry as a cached reopen on desktop, tablet, unfolded phone and folded phone (24 regression checks). No styling, backend or region-data changes.
 

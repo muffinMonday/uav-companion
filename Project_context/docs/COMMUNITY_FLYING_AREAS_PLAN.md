@@ -1,14 +1,14 @@
 # Community Flying Areas — Approved Product Specification and Implementation Backlog
 
-**Status:** PHASE 1 (local authoring) IMPLEMENTED on `main` 2026-11-27, NOT DEPLOYED; Phases 2 to 6 NOT STARTED. Section 0 has the evidence.  
+**Status:** PHASE 1 (local authoring) DEPLOYED 2026-11-27 UTC; Phases 2 to 6 NOT STARTED. Section 0 has the evidence.
 **Decision date:** 2026-11-13; discussion baseline refreshed 2026-11-27.  
 **Review baseline:** `main` at `91df30d65562b32c63c051babfd0a34e9707b17c` (PR #15 merge).  
-**Authorization:** Backlog/design edits only on this branch. Feature implementation, hosted migrations, implementation commits/merges and production deployment require separate explicit owner approval.  
+**Authorization:** Phase 1 implementation and its production deployment were explicitly authorized and are complete (section 0). Phases 2–6, hosted migrations and further feature releases require separate explicit owner approval.
 **Architecture dependency:** The HTML/main.js refactor is complete. Before implementation, reconcile proposed paths and initialization seams against the current `src/components/`, `src/app/`, `Project_context/docs/MODULES.md` and source code.
 
 ## 0. Implementation status (updated 2026-11-27)
 
-**Phase 1 — Local drawing and storage: IMPLEMENTED, tested locally, committed to `main`; not deployed.** Authorization for this work: implement, test, build, commit and push to `main`; no deploy, no hosted migration, no public submission. The owner reviews before any further phase.
+**Phase 1 — Local drawing and storage: DEPLOYED (2026-11-27 UTC).** Original implementation authorization covered implement/test/build/commit/push only. The owner subsequently explicitly requested deployment of the latest Phase 1 changes. Source `5f59089`, gh-pages `a7634ed`, bundle `main-Biy7hNXK.js`; [Pages run](https://github.com/muffinMonday/uav-companion/actions/runs/45915229886) succeeded. Live HTML and 10 referenced JS/CSS assets match the production build; all 33 regions and existing live flags/accounts retained. Phase 1 production browser checks 99/0; full regression 191/212 passing (21 failures, details and baseline comparisons in `CURRENT_STATUS.md`). No hosted migration or public submission. Real-device review remains; further phases need separate owner authorization.
 
 | Item | State |
 |---|---|
