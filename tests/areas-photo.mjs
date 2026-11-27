@@ -254,6 +254,54 @@ ok(ownImg?.w > 0 && ownImg.src.startsWith('blob:') && /photo/i.test(await p.loca
 await p.screenshot({ path: `${SHOTS}/owner-local-panel.png` });
 await ctx.close();
 
+// ======================================================= photo form presentation: empty state, hidden picker, preview, removal, modes, keyboard
+const PV = '#area-photo-file';
+const boxed = (sel) => p.evaluate((x) => { const e = document.querySelector(x); if (!e) return null; const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return { w: r.width, h: r.height, display: cs.display, visibility: cs.visibility }; }, sel);
+const shown = (sel) => p.evaluate((x) => { const e = document.querySelector(x); if (!e) return false; const cs = getComputedStyle(e); const r = e.getBoundingClientRect(); return cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 0 && r.height > 0; }, sel);
+const dlgImgs = () => p.locator(`${SUBD} img.area-photo-preview`).count();
+({ ctx, p } = await open('b', { areas: [local('aForm1', 'Form Park', 103.97, 1.31)] }));
+await openPanel(p); await p.locator(`${PANEL} [data-act=submit]`).first().click(); await p.waitForSelector(SUBD);
+await p.locator(`${SUBD} .area-photo-modes input[value=new]`).check(); await p.waitForTimeout(100);
+ok(await p.locator(`${SUBD} .area-photo-empty`).count() === 1 && /No photo selected/.test(await p.locator(`${SUBD} .area-photo-empty`).innerText()), 'empty state: a placeholder that says "No photo selected"');
+ok(await dlgImgs() === 0, 'empty state: no <img> at all (no broken-image box, no empty strip)');
+ok(await p.evaluate(() => getComputedStyle(document.querySelector('.area-photo-preview') ?? document.createElement('img')).display) !== 'block', 'the [hidden] rule is not overridden by the preview style');
+const picker = await boxed(PV);
+ok(picker && picker.w <= 1 && picker.h <= 1, `the native file control is not drawn (${picker?.w}x${picker?.h})`);
+ok(await shown('#area-photo-caption') === false && await shown(`${SUBD} [data-act=photo-clear]`) === false, 'caption and Remove photo are hidden until a photo is selected');
+ok(await shown(`${SUBD} [data-act=photo-choose]`) === true, 'the styled "Choose photo" button is visible');
+await p.focus(`${SUBD} [data-act=photo-choose]`); ok(await p.evaluate(() => document.activeElement?.dataset.act === 'photo-choose'), 'the button takes keyboard focus');
+await p.keyboard.press('Tab'); ok(await p.evaluate(() => document.activeElement?.tagName !== 'INPUT' || document.activeElement.type !== 'file'), 'the native file control is not in the tab order');
+await choose(p, 'bad.gif', 'image/gif', Buffer.from('GIF89a'));
+ok(await dlgImgs() === 0 && await p.locator(`${SUBD} .area-photo-empty`).count() === 1 && /Only JPEG, PNG and WebP/.test(await p.locator(`${SUBD} .area-photo-msg`).innerText()), 'an invalid file leaves the empty state and says why');
+await choose(p, 'ok.png', 'image/png', IMG); await p.waitForSelector(`${SUBD} img.area-photo-preview`);
+const pimg = await p.locator(`${SUBD} img.area-photo-preview`).evaluate((i) => ({ w: i.naturalWidth, h: i.naturalHeight, fit: getComputedStyle(i).objectFit, maxw: getComputedStyle(i).maxWidth }));
+ok(pimg.w === 800 && pimg.h === 600 && pimg.fit === 'contain', `a valid photo shows as a processed preview with its aspect ratio (${pimg.w}x${pimg.h}, object-fit ${pimg.fit})`);
+ok(await p.locator(`${SUBD} .area-photo-empty`).count() === 0 && await shown(`${SUBD} [data-act=photo-clear]`) === true && await shown('#area-photo-caption') === true && /Choose another photo/.test(await p.locator(`${SUBD} [data-act=photo-choose]`).innerText()), 'with a photo: placeholder gone, Remove photo and caption shown, button says Choose another photo');
+await p.screenshot({ path: `${SHOTS}/form-preview.png` });
+await p.locator(`${SUBD} [data-act=photo-clear]`).click(); await p.waitForTimeout(200);
+ok(await dlgImgs() === 0 && await p.locator(`${SUBD} .area-photo-empty`).count() === 1 && await shown(`${SUBD} [data-act=photo-clear]`) === false && await shown('#area-photo-caption') === false, 'Remove photo returns to the empty state, with the picker and no preview');
+ok(await p.locator(`${SUBD} .area-photo-modes input[value=none]`).isChecked(), 'after removal the mode is the one before the photo (No photo)');
+await choose(p, 'again.png', 'image/png', IMG); await p.waitForSelector(`${SUBD} img.area-photo-preview`);
+await p.locator(`${SUBD} .area-photo-modes input[value=new]`).check(); await p.waitForTimeout(100);
+ok(await dlgImgs() === 1, 'choosing "Add a photo" again keeps the selected photo ready');
+await p.locator(`${SUBD} .area-photo-modes input[value=none]`).check(); await p.waitForTimeout(100);
+ok(await dlgImgs() === 0 && await p.locator(`${SUBD} .area-photo-empty`).count() === 1 && /No photo with this area/.test(await p.locator(`${SUBD} .area-photo-empty`).innerText()), 'switching to "No photo" shows the matching empty state, never an empty image');
+await ctx.close();
+
+// revision with a published photo: keep / replace / remove
+({ ctx, p } = await open('b', { areas: [approvedLocal('Keeper Park', 103.9)] }));
+await withHash(p, 'Keeper Park 3'); await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1200); await p.locator('#name-dlg-skip').click({ timeout: 1500 }).catch(() => {});
+await openPanel(p); await p.locator(`${PANEL} [data-act=submit]`).first().click(); await p.waitForSelector(SUBD);
+await p.waitForSelector(`${SUBD} .area-photo-modes input[value=keep]`, { timeout: 8000 });
+ok(/Your current photo stays/.test(await p.locator(`${SUBD} .area-photo-empty`).innerText()) && await shown(`${SUBD} [data-act=photo-choose]`) === false, 'revision in Keep mode: the current photo is described, and there is no picker to get in the way');
+await p.locator(`${SUBD} .area-photo-modes input[value=new]`).check(); await p.waitForTimeout(100);
+ok(await shown(`${SUBD} [data-act=photo-choose]`) === true && /No photo selected/.test(await p.locator(`${SUBD} .area-photo-empty`).innerText()), 'Replace: the picker appears and the empty state reads "No photo selected"');
+await choose(p, 'rep.png', 'image/png', IMG); await p.waitForSelector(`${SUBD} img.area-photo-preview`);
+await p.locator(`${SUBD} [data-act=photo-clear]`).click(); await p.waitForTimeout(200);
+ok(await p.locator(`${SUBD} .area-photo-modes input[value=keep]`).isChecked() && await dlgImgs() === 0 && await shown(`${SUBD} [data-act=photo-choose]`) === false, 'removing a replacement returns to Keep the current photo');
+await p.screenshot({ path: `${SHOTS}/form-revision.png` });
+await ctx.close();
+
 // ======================================================= layouts
 for (const [w, h] of [[320, 640], [390, 780]]) {
   ({ ctx, p } = await open('b', { vp: { width: w, height: h }, touch: true, areas: [local('aPh', 'Phone Park', 103.95, 1.3)] }));

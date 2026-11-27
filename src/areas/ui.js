@@ -129,31 +129,75 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
     const privacy = el('p', 'area-note', 'The name, description, outline and setup spots are sent, with your account so you can track and withdraw it. Do not put personal information in the name or description.');
     const disc = el('p', 'area-note area-disclaimer', DISCLAIMER);
     const limit = el('p', 'area-note', `You can have up to ${MAX_PENDING} submissions waiting for review at once.`);
-    // ---- optional location photo: chosen and processed here, uploaded only when the submission is confirmed
-    const photo = { mode: 'none', prepared: null, caption: '', staged: null, current: null, ready: !rv };
+    // ---- optional location photo: chosen and processed here, uploaded only when the submission is confirmed.
+    // One state object; syncPhoto() draws every part of the section from it (picker, preview or placeholder, caption, buttons, status), so they cannot disagree.
+    const photo = { mode: 'none', baseMode: 'none', prepared: null, url: null, caption: '', staged: null, current: null, ready: !rv };
     const photoBox = el('fieldset', 'area-photo'); photoBox.append(el('legend', 'area-label', 'Photo (optional)'));
     const photoMsg = el('p', 'area-note area-photo-msg'); photoMsg.setAttribute('role', 'status');
-    const fileIn = el('input'); fileIn.type = 'file'; fileIn.accept = PHOTO.types.join(','); fileIn.id = 'area-photo-file'; fileIn.setAttribute('aria-label', 'Choose a photo of the place');
+    // The native file control stays in the DOM (it is what opens the picker) but is not drawn and is not in the tab order: the styled button below is the one control people use.
+    const fileIn = el('input', 'area-photo-file'); fileIn.type = 'file'; fileIn.accept = PHOTO.types.join(','); fileIn.id = 'area-photo-file'; fileIn.tabIndex = -1; fileIn.setAttribute('aria-hidden', 'true');
+    const chooseB = el('button', 'btn area-photo-choose', 'Choose photo'); chooseB.type = 'button'; chooseB.dataset.act = 'photo-choose';
+    chooseB.addEventListener('click', () => fileIn.click());
+    const clearB = el('button', 'btn', 'Remove photo'); clearB.type = 'button'; clearB.dataset.act = 'photo-clear'; clearB.hidden = true;
+    const photoActions = el('div', 'area-photo-actions'); photoActions.append(chooseB, clearB);
+    const slot = el('div', 'area-photo-slot');
     const capIn = el('input'); capIn.type = 'text'; capIn.id = 'area-photo-caption'; capIn.maxLength = PHOTO.maxCaption; capIn.placeholder = 'Describe the photo for people who cannot see it (optional)'; capIn.setAttribute('aria-label', 'Photo caption (optional, up to 120 characters)');
-    const preview = el('img', 'area-photo-preview'); preview.alt = 'Preview of the chosen photo'; preview.hidden = true;
-    const clearB = el('button', 'btn', 'Remove chosen photo'); clearB.type = 'button'; clearB.dataset.act = 'photo-clear'; clearB.hidden = true;
-    const modeBox = el('div', 'area-photo-modes'); modeBox.hidden = true;
-    const setMode = (m) => { photo.mode = m; photo.staged = null; for (const r of modeBox.querySelectorAll('input')) r.checked = r.value === m; const chooser = m === 'new'; fileIn.hidden = !chooser && rv; capIn.hidden = !(chooser && photo.prepared); }
-    const radio = (value, label) => { const l = el('label', 'area-check'); const r = el('input'); r.type = 'radio'; r.name = 'area-photo-mode'; r.value = value; r.checked = photo.mode === value; r.addEventListener('change', () => { setMode(value); refreshGo(); }); l.append(r, el('span', '', label)); return l; };
-    const drawModes = () => { modeBox.replaceChildren(...(photo.current ? [radio('keep', 'Keep the current photo' + (photo.current.caption ? ` (“${photo.current.caption}”)` : ''))] : []), radio('new', photo.current ? 'Replace it with a new photo' : 'Add a photo'), radio('none', photo.current ? 'Remove the photo' : 'No photo')); modeBox.hidden = false; };
+    const modeBox = el('div', 'area-photo-modes');
+    const hint = el('p', 'area-note area-photo-hint', 'JPEG, PNG or WebP, up to 5 MB. It is resized on your device and uploaded only when you press Submit.');
+
+    const PHOTO_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-4.5-7.5 7"/></svg>';
+    /** What the empty slot says, for the current mode. */
+    function placeholder() {
+      const d = el('div', 'area-photo-empty');
+      const ic = el('span', 'area-photo-empty-icon'); ic.innerHTML = PHOTO_ICON; // constant markup
+      let title, sub;
+      if (photo.mode === 'keep') { title = 'Your current photo stays'; sub = 'It is kept with this area unless you choose otherwise.'; }
+      else if (photo.mode === 'none') { title = rv ? 'This version will have no photo' : 'No photo with this area'; sub = rv ? 'The published photo is removed when an administrator approves this change.' : 'You can add one before you submit.'; }
+      else { title = 'No photo selected'; sub = 'Choose a photo of the place. Show the place, not people.'; }
+      d.append(ic, el('strong', '', title), el('small', '', sub));
+      return d;
+    }
+    function setPrepared(r) { if (photo.url) URL.revokeObjectURL(photo.url); photo.prepared = r; photo.url = URL.createObjectURL(r.blob); }
+    function clearPrepared() { if (photo.url) URL.revokeObjectURL(photo.url); photo.url = null; photo.prepared = null; }
+    /** Draws the whole section from the state. The only place that shows or hides the picker, preview, caption and remove button. */
+    function syncPhoto() {
+      const chooser = photo.mode === 'new';
+      const picked = chooser && !!photo.prepared; // a newly selected photo is active
+      if (picked) {
+        if (slot.firstChild?.tagName !== 'IMG' || slot.firstChild.src !== photo.url) {
+          const img = el('img', 'area-photo-preview'); img.alt = 'Preview of the chosen photo'; img.decoding = 'async'; img.src = photo.url; slot.replaceChildren(img);
+        }
+      } else slot.replaceChildren(placeholder());
+      chooseB.hidden = !chooser;
+      chooseB.textContent = picked ? 'Choose another photo' : 'Choose photo';
+      clearB.hidden = !picked;
+      capIn.hidden = !picked;
+      for (const r of modeBox.querySelectorAll('input')) r.checked = r.value === photo.mode;
+    }
+    const setMode = (m) => { if (photo.mode !== m) photo.staged = null; photo.mode = m; syncPhoto(); };
+    const radio = (value, label) => { const l = el('label', 'area-check'); const r = el('input'); r.type = 'radio'; r.name = 'area-photo-mode'; r.value = value; r.checked = photo.mode === value; r.addEventListener('change', () => { if (value !== 'new') photo.baseMode = value; setMode(value); refreshGo(); }); l.append(r, el('span', '', label)); return l; };
+    const drawModes = () => { modeBox.replaceChildren(...(photo.current ? [radio('keep', 'Keep the current photo' + (photo.current.caption ? ` (“${photo.current.caption}”)` : ''))] : []), radio('new', photo.current ? 'Replace it with a new photo' : 'Add a photo'), radio('none', photo.current ? 'Remove the photo' : 'No photo')); };
     fileIn.addEventListener('change', async () => {
       const f = fileIn.files?.[0]; fileIn.value = ''; if (!f) return;
-      photoMsg.textContent = 'Preparing the photo…'; const r = await prepareImage(f);
-      if (!r.ok) { photoMsg.textContent = r.message; return; }
-      if (preview.dataset.url) URL.revokeObjectURL(preview.dataset.url);
-      preview.dataset.url = URL.createObjectURL(r.blob); preview.src = preview.dataset.url; preview.hidden = false; clearB.hidden = false;
-      photo.prepared = r; photo.staged = null; setMode('new'); photoMsg.textContent = `Ready: ${r.width} × ${r.height} px, ${Math.round(r.bytes / 1024)} KB. It is uploaded only when you press Submit.`; refreshGo();
+      photoMsg.textContent = 'Preparing the photo…';
+      const r = await prepareImage(f);
+      if (!r.ok) { photoMsg.textContent = r.message; return; } // a refused file changes nothing
+      if (photo.mode !== 'new') photo.baseMode = photo.mode;
+      setPrepared(r); photo.staged = null;
+      setMode('new');
+      photoMsg.textContent = `Ready: ${r.width} × ${r.height} px, ${Math.round(r.bytes / 1024)} KB. It is uploaded only when you press Submit.`;
+      refreshGo();
     });
     capIn.addEventListener('input', () => { photo.caption = capIn.value; photo.staged = null; });
-    clearB.addEventListener('click', () => { photo.prepared = null; photo.staged = null; preview.hidden = true; clearB.hidden = true; capIn.hidden = true; capIn.value = ''; photo.caption = ''; photoMsg.textContent = ''; setMode(rv && photo.current ? 'keep' : 'none'); refreshGo(); });
-    photoBox.append(el('p', 'area-note', PHOTO_WARNING), modeBox, fileIn, preview, clearB, capIn, photoMsg);
-    capIn.hidden = true;
-    if (rv) { fileIn.hidden = true; photoMsg.textContent = 'Checking whether this area has a published photo…'; submit.myAreaPhoto(submit.isRevision(a) ? (a.submission?.areaId ?? null) : null).then((cur) => { photo.current = cur; photo.mode = cur ? 'keep' : 'none'; photo.ready = true; drawModes(); setMode(photo.mode); photoMsg.textContent = ''; refreshGo(); }).catch(() => { photoMsg.textContent = 'Could not check the current photo. Close this window and try again: submitting now could remove it.'; }); }
+    clearB.addEventListener('click', () => {
+      clearPrepared(); photo.caption = ''; capIn.value = ''; photo.staged = null;
+      setMode(photo.baseMode && photo.baseMode !== 'new' ? photo.baseMode : (photo.current ? 'keep' : 'none'));
+      photoMsg.textContent = '';
+      modeBox.querySelector('input:checked')?.focus(); // the button that had focus is gone
+      refreshGo();
+    });
+    photoBox.append(el('p', 'area-note', PHOTO_WARNING), hint, modeBox, slot, photoActions, capIn, photoMsg, fileIn);
+    if (rv) { photoMsg.textContent = 'Checking whether this area has a published photo…'; submit.myAreaPhoto(submit.isRevision(a) ? (a.submission?.areaId ?? null) : null).then((cur) => { photo.current = cur; photo.mode = cur ? 'keep' : 'none'; photo.baseMode = photo.mode; photo.ready = true; drawModes(); setMode(photo.mode); photoMsg.textContent = ''; refreshGo(); }).catch(() => { photoMsg.textContent = 'Could not check the current photo. Close this window and try again: submitting now could remove it.'; }); }
     else { drawModes(); setMode('none'); }
     const photoArg = () => (photo.mode === 'new' && photo.prepared ? { mode: 'new', blob: photo.prepared.blob, mime: photo.prepared.mime, caption: photo.caption, get staged() { return photo.staged; }, set staged(v) { photo.staged = v; } } : photo.mode === 'keep' ? { mode: 'keep' } : null);
     const ack = el('label', 'area-ack'); const cb = el('input'); cb.type = 'checkbox'; cb.id = 'area-ack'; ack.append(cb, el('span', '', ' I have read this: it is a community recommendation, not flight authorization.'));
@@ -173,7 +217,7 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
       else { err.replaceChildren(el('p', '', r.message)); refreshGo(); if (r.code === 'signed-out') { submit.intent.set(a.id); } }
       paint();
     });
-    dlg.addEventListener('close', () => { if (preview.dataset.url) URL.revokeObjectURL(preview.dataset.url); dlg.remove(); });
+    dlg.addEventListener('close', () => { if (photo.url) URL.revokeObjectURL(photo.url); dlg.remove(); });
     form.append(h, what, privacy, disc, limit, photoBox, ack, err, actions); dlg.append(form); document.body.append(dlg);
     showModalQuiet(dlg);
   }
