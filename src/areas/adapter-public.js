@@ -1,7 +1,7 @@
-// Community flying areas: the PUBLIC data adapter for the shared details panel (details.js). Phase 4 (public discovery) is NOT built or deployed: this adapter only
-// accepts an already validated approved-area record, and today the only callers are tests with mocked fixtures. There is no production lookup here.
+// Community flying areas: the PUBLIC data adapter for the shared details panel (details.js). Phase 4 (public discovery) is deployed: public-api.js fetches records and this adapter only
+// accepts an already validated approved-area record; every record from the server is re-validated here before it is drawn or opened.
 //
-// MINIMUM FUTURE PUBLIC API CONTRACT (for the Phase 4 backend; nothing below exists on the hosted project):
+// PUBLIC API CONTRACT (implemented by list_public_areas / get_public_area, migration 20261127140000; last_observed_on is not returned, no column records it):
 //   A read-only function returns only rows whose current revision is approved AND published (the server enforces it, the client re-checks):
 //     { area_id uuid, revision_id uuid, status 'approved', published true, name, description, geometry (GeoJSON Polygon, same limits as core.js), spots [...],
 //       area_m2, approved_at, last_observed_on? (date, only if a reviewer recorded one), attribution null | { display_name, avatar } }
