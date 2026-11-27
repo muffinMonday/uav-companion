@@ -28,7 +28,8 @@ export const weatherId = (view) => `${view.key}@${view.centre[1].toFixed(4)},${v
  * @param {object} o  map, store, layer, submit, ops (see adapter-private), draw ({isBusy}), host (poi's external host), weatherButton, showWeather
  */
 export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () => false, host, weatherButton, showWeather, publicAreas = null, toast = () => {}, photoUrl = () => null }) {
-  let current = null;     // { view, render, hostApi } for the open panel
+  let current = null;
+  let ownSeq = 0, ownUrl = null; // the owner's photo: only the latest request may fill its place; the blob URL is revoked when replaced     // { view, render, hostApi } for the open panel
   let publicView_ = null; // the open public view (a fixture today), kept so "View flying area" can come back to it
   const wxItems = () => (current ? [{ id: weatherId(current.view), lat: current.view.centre[1], lon: current.view.centre[0] }] : []);
   const mw = createMarkerWeather({ getItems: wxItems, onChange: () => current?.renderWeather?.(), storageKey: WX_KEY });
@@ -153,7 +154,30 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
     }
 
     /** The contributor's photo of an approved, published area: loaded by its id from the access-checking function (the private bucket has no public address). Alt text is the caption, else a plain fallback. */
+    /** The owner's own approved area (their local copy is what they tap): the public photo is not on the page, so it is read here with the owner's session (an <img> cannot send one). */
+    function ownPhotoEl(view) {
+      const fig = el('figure', 'area-photo-fig'); fig.dataset.photo = 'own';
+      fig.append(el('small', 'area-hint', 'Loading the photo…'));
+      const seq = ++ownSeq;
+      submit.myAreaPhoto(view.area.submission.areaId).then(async (p) => {
+        if (seq !== ownSeq) return;
+        if (!p) { fig.replaceChildren(el('small', 'area-hint', 'No photo on the published version.')); return; }
+        const r = await submit.backend.fetchPhoto?.(p.id);
+        if (seq !== ownSeq) return;
+        if (!(r?.data instanceof Blob)) { fig.replaceChildren(el('small', 'area-hint', 'The photo is not available.')); return; }
+        if (ownUrl) URL.revokeObjectURL(ownUrl);
+        ownUrl = URL.createObjectURL(r.data);
+        const img = el('img', 'area-photo-img'); img.src = ownUrl; img.alt = photoAlt(view.area.name, p.caption); img.decoding = 'async';
+        if (p.width && p.height) { img.width = p.width; img.height = p.height; }
+        fig.replaceChildren(img);
+        if (p.caption) fig.append(el('figcaption', '', p.caption));
+      }).catch(() => { if (seq === ownSeq) fig.replaceChildren(el('small', 'area-hint', 'The photo could not be loaded.')); });
+      return fig;
+    }
+
     function photoEl(view) {
+      // the owner's local copy of an approved area: read the photo with the owner's own session
+      if (view.context === 'public-approved' && view.key === `area:${view.area.id}` && view.area.submission?.areaId) return ownPhotoEl(view);
       const p = view.photo, url = p ? photoUrl(p.id) : null;
       if (!p || !url) return null;
       const fig = el('figure', 'area-photo-fig'); fig.dataset.photo = p.id;

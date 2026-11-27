@@ -244,6 +244,16 @@ await p.locator(`${PANEL} [data-act=submit]`).first().click(); await p.waitForSe
 ok(/Could not check the current photo/.test(await p.locator(`${SUBD} .area-photo-msg`).innerText()) && await p.locator(`${SUBD} [data-act=confirm-submit]`).isDisabled(), 'if the current photo cannot be checked, Submit stays disabled (a revision could otherwise remove it unseen)');
 await ctx.close();
 
+// ======================================================= the owner sees the photo of their own approved area (their local copy hides the public one)
+({ ctx, p } = await open('b', { areas: [approvedLocal('Keeper Park', 103.9)] }));
+await openPanel(p);
+await p.locator(`${PANEL} [data-act=show]`).first().click(); await p.waitForSelector('#marker-host .area-pop', { timeout: 8000 });
+await p.waitForFunction(() => document.querySelector('#marker-host .area-photo-fig img')?.naturalWidth > 0, null, { timeout: 8000 }).catch(() => {});
+const ownImg = await p.locator('#marker-host .area-photo-fig img').evaluate((i) => ({ w: i.naturalWidth, src: i.src })).catch(() => null);
+ok(ownImg?.w > 0 && ownImg.src.startsWith('blob:') && /photo/i.test(await p.locator('#marker-host').innerText()), 'the owner of an approved area sees its photo in the panel of their local copy (read with their own session)');
+await p.screenshot({ path: `${SHOTS}/owner-local-panel.png` });
+await ctx.close();
+
 // ======================================================= layouts
 for (const [w, h] of [[320, 640], [390, 780]]) {
   ({ ctx, p } = await open('b', { vp: { width: w, height: h }, touch: true, areas: [local('aPh', 'Phone Park', 103.95, 1.3)] }));
