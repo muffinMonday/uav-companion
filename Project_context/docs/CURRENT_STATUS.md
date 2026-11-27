@@ -1,4 +1,11 @@
-## Latest: owner photo view fix DEPLOYED (2026-11-28 UTC)
+## Latest: photo form polish, CARTO dark basemap and darker community shading DEPLOYED (2026-11-28 UTC)
+- **Release:** main `cd3f269` (earlier today: photo form `81f1cb6`, inverted-map fallback `3dbe451`), gh-pages `b44c4c3120ae`, bundle `main-Sfm-scSE.js`. Frontend only; preflight 33 regions, 0 added, 0 removed.
+- **Photo form:** root cause of the empty image box was `.area-photo-preview{display:block}` overriding `[hidden]`; the native file input was never hidden. One state object (`syncPhoto` in `areas/ui.js`) now drives the styled Choose photo button, the placeholder or processed preview, caption, Remove photo and status; `areas-photo` 56/0.
+- **Dark basemap:** WP Go Maps (`tiles.wpgmaps.com`) stopped serving the production site (per-site monthly quota). Replaced by CARTO `dark_all` raster tiles with a public API key that CARTO restricts to the site domain (rejected from other origins, including localhost): `VITE_CARTO_API_KEY` in `.env.development.local` (gitignored), read by `scripts/deploy-live.js` for the build. No key or failed tiles: dark mode shows the standard OSM tiles inverted by CSS (`.base-tiles-inverted`). Privacy notices now name CARTO. Verified on production: 24/24 tiles HTTP 200 from `basemaps.cartocdn.com`, no watermark, attribution shows CARTO and OpenStreetMap. Tests `layers` 158/0, `theme` 21/0.
+- **Community area shading:** fill opacity raised (light .30, dark .24, draft .38, selected .44 light / .36 dark).
+- **Owner to-do:** confirm the CARTO key never appears in git (it is only in the ignored env file and the deployed bundle); consider rotating the key, since it was pasted in a chat. Quota limits of the CARTO plan are unconfirmed.
+
+## Earlier (superseded by the entry above): Latest: owner photo view fix DEPLOYED (2026-11-28 UTC)
 - **Release:** main `fb9b623`, gh-pages `b38334ddd6d9`, bundle `main-D8RGPXv8.js` (served at https://uavcompanion.com/). Frontend only; no migration or function change. Preflight 33 regions, 0 added, 0 removed.
 - **Change:** an approved area held as a local copy now shows its published photo, loaded with the owner's session (the public map hides the public copy in that browser).
 - **Tests:** `areas-photo` 38/0 (new owner-panel check), `areas-details`, `areas-attributes`, `areas-admin`, `areas-public` no failures.
