@@ -1,0 +1,30 @@
+name: Community area photo cleanup
+
+# Calls the area-photo-cleanup edge function once a day: it deletes abandoned staged photos (24 hours), photos of rejected or withdrawn
+# revisions (7 days), and photos of superseded or unpublished revisions (30 days). Needs the repository secret AREA_PHOTO_CLEANUP_SECRET
+# (same value as the Supabase secret AREA_PHOTO_CLEANUP_SECRET). Uploads also run a small cleanup batch, so this is a safety net.
+# Triggers: schedule and manual only, never pull requests.
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call area-photo-cleanup
+        env:
+          CLEANUP_SECRET: ${{ secrets.AREA_PHOTO_CLEANUP_SECRET }}
+        run: |
+          if [ -z "$CLEANUP_SECRET" ]; then echo "AREA_PHOTO_CLEANUP_SECRET is not set"; exit 1; fi
+          code=$(curl -sS -o body.json -w '%{http_code}' --max-time 120 -X POST \
+            -H "x-cleanup-secret: $CLEANUP_SECRET" \
+            https://tgptrtcuaryyyfzhrffm.supabase.co/functions/v1/area-photo-cleanup)
+          echo "HTTP $code"
+          # counts only (deleted, shared, failed); no user data is in the response
+          if [ "$code" = "200" ]; then cat body.json; echo; fi
+          case "$code" in 2??) ;; *) exit 1 ;; esac

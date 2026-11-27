@@ -14,6 +14,7 @@ import { validateArea, validateAttributes } from './core.js';
 import { areaCentre } from './geo.js';
 import { AVATARS } from '../avatars.js';
 import { CONTEXT_BADGE } from './status.js';
+import { cleanPhoto } from './api.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const isDate = (s) => typeof s === 'string' && !Number.isNaN(Date.parse(s));
@@ -37,7 +38,7 @@ export function publicView(rec) {
   return {
     key: `area:${area.id}`, context: 'public-approved', caption: 'Community flying area', badge: CONTEXT_BADGE['public-approved'],
     byline: who ? { profileRow: who } : { text: 'Community contributor' }, status: null,
-    area, centre: areaCentre(area.geometry.coordinates[0]),
+    area, centre: areaCentre(area.geometry.coordinates[0]), photo: cleanPhoto(rec.photo), // { id, width, height, caption } of the published revision, or null; the image itself is fetched by id from the access-checking function
     dates: { modified: isDate(rec.approved_at) ? rec.approved_at : null, modifiedLabel: 'Approved', observed: v.area.attributes.observed_on ?? null },
     actions: [],
   };

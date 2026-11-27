@@ -1818,3 +1818,8 @@ dialog.area-dialog::backdrop{background:rgba(0,0,0,.4)}
 .area-admin-xp-row{display:flex;align-items:center;gap:var(--sp-3)}.area-admin-xp-row input{flex:1}.area-admin-xp{font-weight:var(--fw-semibold);min-width:64px;text-align:right}
 .area-admin-confirm{border:2px solid var(--accent);border-radius:var(--radius-sm);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-2)}.area-admin-confirm p{margin:0}
 .area-admin-quote{margin:0;padding-left:var(--sp-3);border-left:3px solid var(--line);overflow-wrap:anywhere;white-space:pre-wrap}
+/* location photo (submit dialog, details panel, review) */
+.area-photo{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--sp-2);min-width:0}.area-photo input[type=file]{font:inherit;max-width:100%}.area-photo input[type=text]{font:inherit;box-sizing:border-box;width:100%;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--bg);color:var(--fg)}
+.area-photo-preview,.area-photo-img{display:block;width:100%;max-width:100%;height:auto;max-height:260px;object-fit:contain;border-radius:var(--radius-sm);background:var(--surface-2,var(--surface));border:1px solid var(--line)}
+.area-photo-modes{display:flex;flex-direction:column;gap:2px}.area-photo-msg{min-height:1.2em}
+.area-photo-fig{margin:0;display:flex;flex-direction:column;gap:4px}.area-photo-fig figcaption{font-size:var(--fs-small);color:var(--muted);overflow-wrap:anywhere}

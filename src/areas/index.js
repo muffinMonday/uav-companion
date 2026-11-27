@@ -38,7 +38,7 @@ export function initAreas({ map, toast, panel = null, isBusy = () => false, stor
   const adminBackend = { ...backendUsed, rpc: async (fn, args, o) => { const r = await backendUsed.rpc(fn, args, o); if (/^(review|unpublish)_community_area$/.test(fn)) publicAreas.invalidate(); return r; } };
   const admin = createAdminUI({ map, backend: adminBackend, toast }); // administrator review panel: reachable only while the account is an administrator
   ui = createAreasUI({ map, store, layer, draw, toast, panel, submit, admin, recovery: createRecovery({ store, backend: backendUsed }), openDetails: (id) => details?.open(id), closeDetails: () => details?.close() });
-  const details = host ? createAreaDetails({ map, store, layer, submit, ops: ui.ops, isBusy: () => draw.isBusy() || isBusy(), host, weatherButton, showWeather, publicAreas, toast }) : null;
+  const details = host ? createAreaDetails({ map, store, layer, submit, ops: ui.ops, isBusy: () => draw.isBusy() || isBusy(), host, weatherButton, showWeather, publicAreas, toast, photoUrl: (id) => backendUsed.photoUrl?.(id) ?? null }) : null;
   // Explorer (Explore tab, "Flying areas"): public summary list beyond the viewport; "Show on map" opens the same details panel
   const explorer = createAreasExplorer({ api: createExploreApi(backendUsed), map, showOnMap: (id, before) => (details ? details.showPublicById(id, before) : Promise.resolve(false)), toast });
   return { isBusy: () => draw.isBusy(), store, layer, publicAreas, explorer, draw, submit, details, admin, open: ui.open, close: ui.close, handleMapClick: (e) => details?.handleMapClick(e) ?? false };

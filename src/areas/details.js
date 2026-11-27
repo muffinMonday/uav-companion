@@ -13,6 +13,7 @@ import { profileTrigger } from '../profile-popover.js';
 import { onPopupSwipe } from '../swipe.js';
 import { formatArea, SPOT_LABELS, ENVIRONMENTS, ACCESS, ACTIVITIES, SURFACES, HAZARDS } from './core.js';
 import { SPOT_ICONS, DISCLAIMER } from './layer.js';
+import { photoAlt } from './photo.js';
 import { privateView } from './adapter-private.js';
 import { publicView } from './adapter-public.js';
 import { pickArea } from './geo.js';
@@ -26,7 +27,7 @@ export const weatherId = (view) => `${view.key}@${view.centre[1].toFixed(4)},${v
 /**
  * @param {object} o  map, store, layer, submit, ops (see adapter-private), draw ({isBusy}), host (poi's external host), weatherButton, showWeather
  */
-export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () => false, host, weatherButton, showWeather, publicAreas = null, toast = () => {} }) {
+export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () => false, host, weatherButton, showWeather, publicAreas = null, toast = () => {}, photoUrl = () => null }) {
   let current = null;     // { view, render, hostApi } for the open panel
   let publicView_ = null; // the open public view (a fixture today), kept so "View flying area" can come back to it
   const wxItems = () => (current ? [{ id: weatherId(current.view), lat: current.view.centre[1], lon: current.view.centre[0] }] : []);
@@ -97,6 +98,7 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
       root.append(row);
       if (view.status) { const st = el('p', 'area-status', view.status); st.dataset.status = view.context; root.append(st); }
       if (a.description) { root.append(el('h4', 'area-h', 'Description')); root.append(el('p', 'area-desc', a.description)); }
+      { const ph = photoEl(view); if (ph) root.append(el('h4', 'area-h', 'Photo'), ph); }
       root.append(el('h4', 'area-h', 'Site details'), siteEl(view));
       root.append(el('h4', 'area-h', 'Weather forecast'), weatherBox); renderWeather();
       root.append(el('h4', 'area-h', `Pilot setup spots (${a.spots.length})`), spotsEl(view));
@@ -148,6 +150,19 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
       if (!at.observed_on) box.append(el('small', 'area-attr-observed', 'Last observation date not provided.'));
       if (view.context === 'private' && (!at.environment || !at.access)) box.append(el('small', 'area-hint', 'Choose the site environment and the access / permission status (Edit) to be able to submit this area.'));
       return box;
+    }
+
+    /** The contributor's photo of an approved, published area: loaded by its id from the access-checking function (the private bucket has no public address). Alt text is the caption, else a plain fallback. */
+    function photoEl(view) {
+      const p = view.photo, url = p ? photoUrl(p.id) : null;
+      if (!p || !url) return null;
+      const fig = el('figure', 'area-photo-fig'); fig.dataset.photo = p.id;
+      const img = el('img', 'area-photo-img'); img.alt = photoAlt(view.area.name, p.caption); img.loading = 'lazy'; img.decoding = 'async'; img.referrerPolicy = 'no-referrer';
+      if (p.width && p.height) { img.width = p.width; img.height = p.height; }
+      img.addEventListener('error', () => { fig.replaceChildren(el('small', 'area-hint', 'The photo is not available.')); });
+      img.src = url; fig.append(img);
+      if (p.caption) fig.append(el('figcaption', '', p.caption));
+      return fig;
     }
 
     function spotsEl(view) {

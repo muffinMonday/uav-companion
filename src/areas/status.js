@@ -10,7 +10,7 @@ export function submissionLine(st) {
     case 'sending': return 'Submitting…';
     case 'unsent': return 'Not submitted yet: the last attempt did not finish. Your draft is safe; you can submit again.';
     case 'pending': return rev ? `Change pending review${on}.${live} An administrator will look at it; you can withdraw it until then.${edited}` : `Pending review${on}. An administrator will look at it; you can withdraw it until then.${edited}`;
-    case 'approved': return st.changed && st.sub?.areaId ? `Approved${on}. You have changes that are not submitted: the published version is unchanged until you submit them and an administrator approves.` : `Approved${on}.${edited}`;
+    case 'approved': return st.changed && st.sub?.areaId ? `Approved${on}.${st.sub?.reason ? ' ' + st.sub.reason + '.' : ''} You have changes that are not submitted: the published version is unchanged until you submit them and an administrator approves.` : `Approved${on}.${st.sub?.reason ? ' ' + st.sub.reason + (/[.!?]$/.test(st.sub.reason) ? '' : '.') : ''}${edited}`;
     case 'rejected': return `${rev ? 'Change not approved' : 'Not approved'}${on}.${rev ? live : ''}${st.sub?.reason ? ' Reason: ' + st.sub.reason : ''}${edited}`;
     case 'withdrawn': return `${rev ? 'Change withdrawn' : 'Withdrawn'}${on}.${rev ? live : ''} Your draft stays here; you can submit it again.${edited}`;
     case 'missing': return 'Submitted earlier, but not found for the account you are signed in with. You can submit it again.';

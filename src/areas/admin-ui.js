@@ -38,7 +38,9 @@ export function createAdminUI({ map, backend, toast }) {
   const overlay = L.layerGroup().addTo(map);
   const listeners = new Set();
   let admin = false, isOpen = false, tab = 'pending', items = [], next = null, loading = false, failed = '', sel = null, confirm = null, token = 0, republish = false;
-  let award = true, amount = XP_DEFAULT, reason = '';
+  let award = true, amount = XP_DEFAULT, reason = '', dropPhoto = false, dropWhy = '';
+  const photos = new Map(); // photo id -> { status: 'loading' | 'ready' | 'error', url } (the preview is read with the administrator's own session; the object URLs are revoked when the review closes)
+  const forgetPhotos = () => { for (const p of photos.values()) if (p.url) URL.revokeObjectURL(p.url); photos.clear(); };
 
   const root = el('div', 'areas-panel areas-admin-panel'); root.id = 'areas-admin-panel'; root.hidden = true;
   root.setAttribute('role', 'region'); root.setAttribute('aria-label', 'Review community flying areas');
@@ -67,20 +69,22 @@ export function createAdminUI({ map, backend, toast }) {
     const p = L.polygon(item.ring.map((c) => [c[1], c[0]]), { className: 'community-area', interactive: false }).addTo(overlay);
     map.fitBounds(p.getBounds(), { padding: [40, 40], maxZoom: 18 });
   }
-  function open(it) { sel = it; confirm = null; republish = false; award = !it.own; amount = XP_DEFAULT; reason = ''; paint(); }
-  function back() { sel = null; confirm = null; republish = false; overlay.clearLayers(); paint(); }
+  function open(it) { sel = it; confirm = null; republish = false; dropPhoto = false; dropWhy = ''; forgetPhotos(); award = !it.own; amount = XP_DEFAULT; reason = ''; paint(); }
+  function back() { sel = null; confirm = null; republish = false; dropPhoto = false; dropWhy = ''; forgetPhotos(); overlay.clearLayers(); paint(); }
 
   async function decide(kind) { // kind: 'approve' | 'reject' | 'unpublish'
     const it = sel; if (!it) return;
     try {
-      if (kind === 'unpublish') { await api.unpublish(it, reason); toast(`“${it.name}” is no longer published. Its history is kept.`, 7000); }
+      if (kind === 'removephoto') { const r = await api.removePhoto(it, reason); toast(r.purged ? 'Photo removed. It is no longer served and the file has been deleted.' : 'Photo removed. It is no longer served; the file will be deleted by the next cleanup run.', 8000); }
+      else if (kind === 'unpublish') { await api.unpublish(it, reason); toast(`“${it.name}” is no longer published. Its history is kept.`, 7000); }
       else {
-        const r = await api.review(it, kind, { reason, award, amount, republish });
+        const r = await api.review(it, kind, { reason: kind === 'approve' && dropPhoto ? dropWhy : reason, award, amount, republish, dropPhoto: kind === 'approve' && dropPhoto });
         if (!r.changed) toast('That decision was already recorded.', 5000);
+        else if (kind === 'approve' && dropPhoto) toast('Approved and published without the photo. The contributor can see why.' + (r.xpAwarded ? ` ${r.xp} XP awarded.` : ''), 8000);
         else if (kind === 'approve') toast(r.xpAwarded ? `Approved and published. ${r.xp} XP awarded to the contributor.` : 'Approved and published. No XP awarded.', 8000);
         else toast('Rejected. The contributor can see your reason.', 7000);
       }
-      sel = null; confirm = null; overlay.clearLayers(); await load();
+      sel = null; confirm = null; dropPhoto = false; dropWhy = ''; forgetPhotos(); overlay.clearLayers(); await load();
     } catch (e) {
       if (e.code === 'area_unpublished') { republish = true; confirm = 'approve'; paint(); return; } // an unpublished area is only republished by an explicit second confirmation
       confirm = null; toast(e.message, 8000);
@@ -105,6 +109,24 @@ export function createAdminUI({ map, backend, toast }) {
     return li;
   }
 
+  /** The photo of this version (state, caption) with a preview loaded through the administrator's session. */
+  function photoBlock(it) {
+    const sec = el('div', 'area-admin-photo'); sec.dataset.photo = it.photo ? it.photo.id : 'none';
+    if (!it.photo) { sec.append(el('p', 'area-note', 'Photo: none.')); return sec; }
+    const st = { attached: 'attached to this version', rejected: 'not published (left out or rejected)', removed: 'removed' }[it.photo.state] ?? it.photo.state;
+    sec.append(el('p', 'area-note', `Photo: ${st}. Check it for faces, number plates, private interiors, personal details and anything unrelated to the place.`));
+    const id = it.photo.id, pc = photos.get(id);
+    if (!pc) {
+      photos.set(id, { status: 'loading', url: null });
+      api.loadPhoto(id).then((url) => { if (!photos.has(id)) { if (url) URL.revokeObjectURL(url); return; } photos.set(id, { status: url ? 'ready' : 'error', url }); if (sel?.photo?.id === id) paint(); })
+        .catch(() => { if (photos.has(id)) { photos.set(id, { status: 'error', url: null }); if (sel?.photo?.id === id) paint(); } });
+      sec.append(el('p', 'area-note', 'Loading the photo…'));
+    } else if (pc.status === 'loading') sec.append(el('p', 'area-note', 'Loading the photo…'));
+    else if (pc.status === 'error') sec.append(el('p', 'areas-warn', 'The photo could not be loaded.'));
+    else { const fig = el('figure', 'area-photo-fig'); const img = el('img', 'area-photo-img'); img.src = pc.url; img.alt = it.photo.caption || 'Photo submitted with this area (no caption given)'; fig.append(img); if (it.photo.caption) fig.append(el('figcaption', '', it.photo.caption)); sec.append(fig); }
+    return sec;
+  }
+
   function detail() {
     const it = sel, own = it.own, pending = it.status === 'pending' && tab === 'pending';
     const box = el('div', 'area-admin-detail');
@@ -121,6 +143,7 @@ export function createAdminUI({ map, backend, toast }) {
     box.append(b('Show on the map', () => show(it), { act: 'show-map' }));
     box.append(el('div', 'area-admin-desc', it.description || 'No description.'));
     { const sd = el('ul', 'area-admin-attrs'); sd.setAttribute('aria-label', 'Site details'); for (const [label, value] of attributeLines(it.attributes)) sd.append(el('li', value ? '' : 'is-unset', `${label}: ${value ?? 'not provided'}`)); box.append(sd); }
+    box.append(photoBlock(it));
     if (it.spots.length) { const ul = el('ul', 'area-admin-spots'); for (const s of it.spots) ul.append(el('li', '', `${SPOT_LABELS[s.type] ?? s.type}${s.note ? ': ' + s.note : ''} (${s.coordinates[1].toFixed(5)}, ${s.coordinates[0].toFixed(5)})`)); box.append(ul); }
     box.append(el('p', 'areas-note', 'A community area is a recommendation, never flight authorization, and never changes an official airspace result.'));
     if (own) box.append(el('p', 'areas-warn', 'This is your own submission: it can be approved or rejected, but it cannot earn you XP.'));
@@ -138,12 +161,19 @@ export function createAdminUI({ map, backend, toast }) {
       out.hidden = !cb.checked;
       const note = el('textarea'); note.id = 'area-approve-note'; note.rows = 2; note.maxLength = MAX_REASON; note.placeholder = 'Optional note kept with the decision'; note.addEventListener('input', () => { reason = note.value; });
       ap.append(lab, el('div', 'area-admin-xp-row'), note);
+      if (it.photo?.state === 'attached') {
+        const dl = el('label', 'area-ack'); const dc = el('input'); dc.type = 'checkbox'; dc.id = 'area-drop-photo'; dc.checked = dropPhoto; dl.append(dc, el('span', '', ' Approve the area without its photo'));
+        const dw = el('textarea'); dw.id = 'area-drop-why'; dw.rows = 2; dw.maxLength = 400; dw.value = dropWhy; dw.hidden = !dropPhoto; dw.placeholder = 'Why the photo is left out (required, the contributor sees it)'; dw.addEventListener('input', () => { dropWhy = dw.value; });
+        dc.addEventListener('change', () => { dropPhoto = dc.checked; dw.hidden = !dropPhoto; });
+        ap.append(dl, dw, el('p', 'area-note', 'The photo is never published; the area is. This decision is recorded and the contributor is told in their list.'));
+      }
       ap.querySelector('.area-admin-xp-row').append(sl, out);
       if (it.published) ap.append(el('p', 'area-note', 'A revision earns XP only when it materially improves the area (a corrected boundary, a missing part, useful site information). Untick it for cosmetic or identical-in-effect changes.'));
       ap.append(el('p', 'area-note', 'XP is a judgement of value: untick it for a duplicate, cosmetic or marginal contribution. It never decides whether the area is published.'));
       ap.append(b('Approve…', () => {
         const w = checkReward(award, amount, own); const r = checkReason(reason, false);
         if (!w.ok || !r.ok) { toast(w.message || r.message, 6000); return; }
+        if (dropPhoto) { const d = checkReason(dropWhy, true); if (!d.ok || d.text.length > 400) { toast(d.ok ? 'The reason can be at most 400 characters.' : 'Give the reason the photo is left out: the contributor will see it.', 6000); return; } }
         confirm = 'approve'; paint();
       }, { cls: 'btn primary', act: 'approve' }));
       const rj = el('fieldset', 'area-admin-reject'); rj.append(el('legend', 'area-label', 'Reject'));
@@ -157,6 +187,13 @@ export function createAdminUI({ map, backend, toast }) {
       }, { cls: 'btn danger', act: 'reject' }));
       box.append(ap, rj);
     } else if (tab === 'published') {
+      if (it.photo?.state === 'attached') {
+        const rp = el('fieldset', 'area-admin-reject'); rp.append(el('legend', 'area-label', 'Remove the photo (urgent)'));
+        const pw = el('textarea'); pw.id = 'area-photo-remove-why'; pw.rows = 2; pw.maxLength = MAX_REASON; pw.placeholder = 'Reason (required, kept in the audit trail)';
+        const pe = el('div', 'area-errors'); pe.setAttribute('role', 'alert');
+        rp.append(pw, pe, el('p', 'area-note', 'The photo stops being served on the next request and its file is deleted at once. The area and its outline stay published.'), b('Remove photo…', () => { const r = checkReason(pw.value, true); if (!r.ok) { pe.textContent = r.message; return; } reason = r.text; confirm = 'removephoto'; paint(); }, { cls: 'btn danger', act: 'remove-photo' }));
+        box.append(rp);
+      }
       const un = el('fieldset', 'area-admin-reject'); un.append(el('legend', 'area-label', 'Unpublish'));
       const why = el('textarea'); why.id = 'area-unpublish-reason'; why.rows = 3; why.maxLength = MAX_REASON; why.placeholder = 'Reason (required)';
       const rerr = el('div', 'area-errors'); rerr.setAttribute('role', 'alert');
@@ -171,8 +208,10 @@ export function createAdminUI({ map, backend, toast }) {
     if (confirm === 'approve') {
       const w = checkReward(award, amount, it.own);
       if (republish) c.append(el('p', 'areas-warn area-admin-republish', 'This area was unpublished by an administrator. Approving this change will publish it again.'));
+      if (dropPhoto) c.append(el('p', 'areas-warn area-admin-dropphoto', `The photo will NOT be published. The contributor will see: “Approved without the photo: ${dropWhy.trim()}”.`));
       c.append(el('p', '', it.published ? `Approve this change and replace the published version of “${it.published.name}”?` : `Approve and publish “${it.name}”?`), el('p', 'area-admin-xp-line', w.award ? `${w.amount} XP will be awarded to ${it.contributorName || 'the contributor'}.` : 'No XP will be awarded.'));
-    } else if (confirm === 'reject') c.append(el('p', '', `Reject “${it.name}”?`), el('p', 'area-note', 'The contributor will see this reason:'), el('blockquote', 'area-admin-quote', reason));
+    } else if (confirm === 'removephoto') c.append(el('p', '', `Remove the photo of “${it.name}”?`), el('p', 'area-note', 'It stops being served now and its file is deleted. Reason (kept in the audit trail): ' + reason));
+    else if (confirm === 'reject') c.append(el('p', '', `Reject “${it.name}”?`), el('p', 'area-note', 'The contributor will see this reason:'), el('blockquote', 'area-admin-quote', reason));
     else c.append(el('p', '', `Unpublish “${it.name}”?`), el('p', 'area-note', 'Reason (kept with the area): ' + reason));
     const row = el('div', 'area-item-actions');
     row.append(b('Confirm', (e) => { e.currentTarget.disabled = true; decide(confirm); }, { cls: 'btn primary', act: 'confirm' }), b('Cancel', () => { confirm = null; republish = false; paint(); }, { act: 'cancel' }));
@@ -200,7 +239,7 @@ export function createAdminUI({ map, backend, toast }) {
   function set(on) {
     if (on && !admin) return;
     if (on === isOpen) return;
-    isOpen = on; sel = null; confirm = null; overlay.clearLayers(); paint();
+    isOpen = on; sel = null; confirm = null; dropPhoto = false; dropWhy = ''; forgetPhotos(); overlay.clearLayers(); paint();
     if (on) { tab = 'pending'; items = []; next = null; load(); }
   }
   backend.onChange?.(() => refreshRole());

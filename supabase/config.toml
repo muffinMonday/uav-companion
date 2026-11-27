@@ -38,3 +38,14 @@ verify_jwt = false
 # One driving route between two itinerary stops (cache first, then HeiGIT with a server-side key): a signed-in session is required.
 [functions.route-leg]
 verify_jwt = true
+
+# Optional location photos of community flying areas. area-photo-upload: a signed-in session is required. area-photo: the platform check is off because an <img> cannot send a token; the function asks the database
+# who may see the photo (public only for the published revision, owner, administrator) and answers 404 otherwise. area-photo-cleanup: called by a scheduler with a secret, or by an administrator; the function checks both.
+[functions.area-photo-upload]
+verify_jwt = true
+
+[functions.area-photo]
+verify_jwt = false
+
+[functions.area-photo-cleanup]
+verify_jwt = false
