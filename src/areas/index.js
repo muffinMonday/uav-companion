@@ -8,6 +8,7 @@ import { createAreasUI } from './ui.js';
 import { createSubmitController } from './submit.js';
 import { createCloudBackend } from './api.js';
 import { createAreaDetails } from './details.js';
+import { createAdminUI } from './admin-ui.js';
 
 /**
  * @param {object} o
@@ -25,7 +26,9 @@ export function initAreas({ map, toast, panel = null, isBusy = () => false, stor
   let ui = null;
   const draw = createDrawController({ map, store, layer, toast, isBusy, onEnd: () => ui?.open() });
   const submit = createSubmitController({ store, backend: backend ?? createCloudBackend(() => null) });
-  ui = createAreasUI({ map, store, layer, draw, toast, panel, submit, openDetails: (id) => details?.open(id), closeDetails: () => details?.close() });
+  const backendUsed = backend ?? createCloudBackend(() => null);
+  const admin = createAdminUI({ map, backend: backendUsed, toast }); // administrator review panel: reachable only while the account is an administrator
+  ui = createAreasUI({ map, store, layer, draw, toast, panel, submit, admin, openDetails: (id) => details?.open(id), closeDetails: () => details?.close() });
   const details = host ? createAreaDetails({ map, store, layer, submit, ops: ui.ops, isBusy: () => draw.isBusy() || isBusy(), host, weatherButton, showWeather }) : null;
-  return { isBusy: () => draw.isBusy(), store, layer, draw, submit, details, open: ui.open, close: ui.close, handleMapClick: (e) => details?.handleMapClick(e) ?? false };
+  return { isBusy: () => draw.isBusy(), store, layer, draw, submit, details, admin, open: ui.open, close: ui.close, handleMapClick: (e) => details?.handleMapClick(e) ?? false };
 }

@@ -258,3 +258,15 @@ ok(gone === 0 && same(await feat(A), ['t-open', 'first-flight']) && (await unloc
 const dRow = (await sql(`select amount, reason, actor from public.xp_ledger where user_id = $1 and reason = 'Large deduction'`, [D]))[0];
 ok(dRow && dRow.amount === -2900 && dRow.actor === null && await total(D) === 100, "deleting an administrator's account keeps the adjustments they made (amount and reason) with the actor cleared");
 ok(/append-only/.test(await fails(`update public.xp_ledger set actor = null, amount = amount + 1 where user_id = '${D}'`) ?? '') && /append-only/.test(await fails(`update public.xp_ledger set actor = '${A}' where user_id = '${D}' and reason = 'Large deduction'`) ?? ''), 'but the ledger still refuses any other change');
+
+// Phase 3 (20261127130000_community_area_moderation.sql): the 'community_area' source joins the allowlist; every earlier source and rule is unchanged
+{
+  const pay = (u, amt, ref, src = 'community_area') => fails(`select public.award_xp('${u}', ${amt}, '${src}', '${ref}')`);
+  const b0 = await total(D);
+  ok((await pay(D, 100, 'area-revision:t1')) === null && await total(D) === b0 + 100, "award_xp accepts source 'community_area' and the total follows");
+  ok((await sql(`select public.award_xp('${D}', 100, 'community_area', 'area-revision:t1') as r`))[0].r === null && await total(D) === b0 + 100, 'the same ledger key cannot pay twice');
+  ok(/only an administrator adjustment/.test(await pay(D, -50, 'area-revision:t2') ?? ''), 'a community_area award can never lower XP');
+  ok(/invalid award source/.test(await pay(D, 10, 'x', 'bogus') ?? ''), 'unknown sources are still refused');
+  ok(/permission denied/.test(await refused(db, A, `select public.award_xp('${D}', 100, 'community_area', 'area-revision:t3')`) ?? ''), 'a signed-in client (even an administrator) still cannot call award_xp');
+  ok((await pay(D, 10, 'hour:77', 'sim')) === null && (await pay(D, 10, 'session:abc', 'hosting')) === null, 'the earlier sources still award');
+}
