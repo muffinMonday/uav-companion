@@ -1,4 +1,10 @@
-## Latest: Community Flying Areas optional location photo DEPLOYED (2026-11-28 UTC; owner-authorized after review)
+## Latest: owner photo view fix DEPLOYED (2026-11-28 UTC)
+- **Release:** main `fb9b623`, gh-pages `b38334ddd6d9`, bundle `main-D8RGPXv8.js` (served at https://uavcompanion.com/). Frontend only; no migration or function change. Preflight 33 regions, 0 added, 0 removed.
+- **Change:** an approved area held as a local copy now shows its published photo, loaded with the owner's session (the public map hides the public copy in that browser).
+- **Tests:** `areas-photo` 38/0 (new owner-panel check), `areas-details`, `areas-attributes`, `areas-admin`, `areas-public` no failures.
+- **Not verified:** a signed-in check in the live app (owner to confirm on the uploading account).
+
+## Earlier (superseded by the entry above): Latest: Community Flying Areas optional location photo DEPLOYED (2026-11-28 UTC; owner-authorized after review)
 - **Release:** main merge `70ef04a` (feature `504211a`), gh-pages `f71b826d1587`, bundle `main-Csi6h1R_.js` (contains the photo chooser). Order: secrets (`AREA_PHOTO_CLEANUP_SECRET` in Supabase and as a repository secret, set by the owner), migration `20261128100000` applied (dry run listed only it; follow-up up to date), functions `area-photo-upload`, `area-photo`, `area-photo-cleanup` deployed, then `deploy:live` (flags unchanged; preflight 33 regions, 0 added, 0 removed).
 - **Live checks (anonymous):** `area-photo` returns 404 for a random and a malformed id with the same body; `area-photo-upload` without a session 401; `area-photo-cleanup` without or with a wrong secret 401; bucket `area-photos` exists and is private (`public: false`, read-only SQL), its public URL and anonymous listing return nothing; `area_photo_access` is not callable by a client (42501); `list_public_areas` returns `photo: null` for the existing approved areas. **Not yet verified:** a real signed-in upload, preview, approval and public display of a photo, and the first scheduled cleanup run (owner: upload one real photo, then Actions > Community area photo cleanup > Run workflow).
 - Rollback: frontend gh-pages `813bb5fd73cf`; backend steps in DATABASE.md (Optional location photo).
