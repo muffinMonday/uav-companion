@@ -429,7 +429,7 @@ Allow each submitted community-area revision to include **zero or one photo** sh
 
 Setup spots remain subordinate point annotations included in the parent area's immutable revision. They are submitted, reviewed, published and unpublished together with the parent revision. No separate moderation, public identity or XP mechanism is introduced.
 
-### 13.8 Structured site attributes — OWNER-APPROVED (2026-11-27); IMPLEMENTED on branch `claude/community-areas-stage4-attributes` (commit `a497f19`), NOT merged, NOT released
+### 13.8 Structured site attributes — OWNER-APPROVED (2026-11-27); IMPLEMENTED (commit `a497f19`), merged to `main`; deployment status in `CURRENT_STATUS.md`
 The owner approved the section 13.1 field set exactly as written and "Other" for environment, activities and hazards. Implementation, tests and documentation are on that branch (migration `20261127180000_community_area_attributes.sql`, not applied to production). Releasing it needs the owner (hosted migration, then `deploy:live`).
 
 ### 13.9 Optional location photo — RECOMMENDED TECHNICAL DESIGN, AWAITING OWNER APPROVAL (no photo code exists)

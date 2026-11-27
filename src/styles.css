@@ -1792,6 +1792,12 @@ dialog.area-dialog{width:min(480px,calc(100vw - 32px));max-height:calc(100% - 32
 dialog.area-dialog::backdrop{background:rgba(0,0,0,.4)}
 .area-form{display:flex;flex-direction:column;gap:var(--sp-3)}.area-dlg-title{margin:0;font-size:var(--fs-head)}.area-note{margin:0;font-size:var(--fs-small);color:var(--muted)}
 .area-field{display:flex;flex-direction:column;gap:4px}.area-label{font-size:var(--fs-small);font-weight:var(--fw-semibold)}
+/* site details (Stage 4) */
+.area-site{display:flex;flex-direction:column;gap:var(--sp-3)}.area-site-h{margin:0;font-size:var(--fs-body)}.area-site .area-hint{margin:0}.area-field select{font:inherit;box-sizing:border-box;width:100%;min-height:40px;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--bg);color:var(--fg)}
+.area-checks{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;min-width:0}.area-check{display:flex;gap:8px;align-items:center;min-height:36px}.area-check input{flex:none;width:18px;height:18px;margin:0}
+.area-attr-tags{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.area-attr-tags li{padding:2px 8px;border:1px solid var(--line);border-radius:999px;font-size:var(--fs-small);background:var(--surface-2,var(--surface))}
+.area-attr-prominent{display:flex;flex-direction:column;gap:2px;padding:var(--sp-2) var(--sp-3);border:1px solid var(--line);border-left:4px solid var(--community);border-radius:var(--radius-sm)}.area-attr-prominent.is-caution{border-left-color:var(--warn,var(--danger))}
+.area-attr-sec{display:flex;flex-direction:column;gap:4px}.area-attr-sec h4{margin:0;font-size:var(--fs-small);color:var(--muted);font-weight:var(--fw-semibold)}
 .area-field input,.area-field textarea,.area-spot-row input{font:inherit;box-sizing:border-box;width:100%;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--bg);color:var(--fg)}
 .area-count{align-self:flex-end;font-size:var(--fs-meta);color:var(--muted)}
 .area-sub{margin:0;font-size:var(--fs-body)}.area-spots{display:flex;flex-direction:column;gap:var(--sp-2)}

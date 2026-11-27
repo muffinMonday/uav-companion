@@ -1,7 +1,16 @@
 // Community flying areas, Phase 3: the client side of the moderation functions (supabase/migrations/20261127130000_community_area_moderation.sql).
 // Presentation only: every function re-checks has_role(auth.uid(), 'admin') on the server, so hiding the screen from non-administrators is a convenience, not the
 // protection. Nothing here names a reviewer, contributor or XP recipient: the server derives all three.
-import { validateArea } from './core.js';
+import { validateArea, validateAttributes, ENVIRONMENTS, ACCESS, ACTIVITIES, SURFACES, HAZARDS } from './core.js';
+
+/** Site attributes of a server record: a damaged object is read as "not provided" (the reviewer still sees the area). */
+const attrsOf = (raw) => { const a = validateAttributes(raw); return a.ok ? a.attributes : {}; };
+/** One line per field for the review screen: label and value text, or null when the field is not provided. */
+export function attributeLines(at) {
+  const a = at ?? {}, list = (m, v) => (v ?? []).map((x) => m[x] ?? x).join(', ');
+  return [['Site environment', a.environment ? ENVIRONMENTS[a.environment] : null], ['Access / permission', a.access ? ACCESS[a.access] : null], ['Suitable activities', a.activities ? list(ACTIVITIES, a.activities) : null],
+    ['Ground / launch surface', a.surface ? SURFACES[a.surface] : null], ['Known hazards', a.hazards ? list(HAZARDS, a.hazards) : null], ['Last observed', a.observed_on ?? null]];
+}
 import { isUuid, STATUSES } from './api.js';
 
 export const XP_AMOUNTS = [100, 200, 300, 400, 500];
@@ -14,9 +23,9 @@ const iso = (v) => (typeof v === 'string' && v.length <= 40 && !Number.isNaN(Dat
 /** The version a proposed revision would replace (item.published from the server), or null when there is none or it is not well formed. */
 export function cleanPublished(r) {
   if (!r || typeof r !== 'object' || typeof r.name !== 'string') return null;
-  const v = validateArea({ name: r.name, description: typeof r.description === 'string' ? r.description : '', geometry: r.geometry, spots: Array.isArray(r.spots) ? r.spots : [], drawKind: r.draw_kind === 'rectangle' ? 'rectangle' : 'polygon' });
+  const v = validateArea({ name: r.name, description: typeof r.description === 'string' ? r.description : '', geometry: r.geometry, spots: Array.isArray(r.spots) ? r.spots : [], drawKind: r.draw_kind === 'rectangle' ? 'rectangle' : 'polygon', attributes: attrsOf(r.attributes) });
   if (!v.ok) return null;
-  return { revisionNo: Number.isInteger(r.revision_no) && r.revision_no >= 1 ? r.revision_no : 1, name: r.name.slice(0, 80), description: typeof r.description === 'string' ? r.description.slice(0, 500) : '', ring: v.area.geometry.coordinates[0], spots: v.area.spots, areaM2: Number.isFinite(r.area_m2) ? r.area_m2 : v.area.areaM2 };
+  return { revisionNo: Number.isInteger(r.revision_no) && r.revision_no >= 1 ? r.revision_no : 1, name: r.name.slice(0, 80), description: typeof r.description === 'string' ? r.description.slice(0, 500) : '', ring: v.area.geometry.coordinates[0], spots: v.area.spots, attributes: v.area.attributes, areaM2: Number.isFinite(r.area_m2) ? r.area_m2 : v.area.areaM2 };
 }
 
 /** A short plain-language list of what a proposed revision changes against the published version (the moderator still looks at the shapes). */
@@ -29,6 +38,8 @@ export function describeChanges(item) {
   const same = p.ring && item.ring && JSON.stringify(p.ring) === JSON.stringify(item.ring);
   if (!same) { const d = (item.areaM2 ?? 0) - (p.areaM2 ?? 0); out.push(`Outline changed (${d === 0 ? 'same size' : (d > 0 ? '+' : '−') + Math.round(Math.abs(d)).toLocaleString('en-GB') + ' m²'})`); }
   if (JSON.stringify(p.spots) !== JSON.stringify(item.spots)) out.push(`Setup spots changed (${p.spots.length} → ${item.spots.length})`);
+  const pa = attributeLines(p.attributes), na = attributeLines(item.attributes);
+  pa.forEach(([label, was], i) => { const now = na[i][1]; if (was !== now) out.push(`${label}: ${was ?? 'not provided'} → ${now ?? 'not provided'}`); });
   return out.length ? out : ['No visible difference'];
 }
 
@@ -37,12 +48,12 @@ export function cleanItem(r) {
   if (!r || typeof r !== 'object' || !isUuid(r.revision_id) || !isUuid(r.area_id) || !STATUSES.includes(r.status)) return null;
   const submittedAt = iso(r.submitted_at);
   if (!submittedAt || typeof r.name !== 'string') return null;
-  const v = validateArea({ name: r.name, description: typeof r.description === 'string' ? r.description : '', geometry: r.geometry, spots: Array.isArray(r.spots) ? r.spots : [], drawKind: r.draw_kind === 'rectangle' ? 'rectangle' : 'polygon' });
+  const v = validateArea({ name: r.name, description: typeof r.description === 'string' ? r.description : '', geometry: r.geometry, spots: Array.isArray(r.spots) ? r.spots : [], drawKind: r.draw_kind === 'rectangle' ? 'rectangle' : 'polygon', attributes: attrsOf(r.attributes) });
   const code = typeof r.contributor_code === 'string' && /^[0-9a-f]{10}$/.test(r.contributor_code) ? r.contributor_code : '';
   return {
     revisionId: r.revision_id, areaId: r.area_id, revisionNo: Number.isInteger(r.revision_no) && r.revision_no >= 1 ? r.revision_no : 1, status: r.status,
     name: r.name.slice(0, 80), description: typeof r.description === 'string' ? r.description.slice(0, 500) : '',
-    ring: v.ok ? v.area.geometry.coordinates[0] : null, spots: v.ok ? v.area.spots : [], valid: v.ok, drawKind: r.draw_kind === 'rectangle' ? 'rectangle' : 'polygon',
+    ring: v.ok ? v.area.geometry.coordinates[0] : null, spots: v.ok ? v.area.spots : [], attributes: attrsOf(r.attributes), valid: v.ok, drawKind: r.draw_kind === 'rectangle' ? 'rectangle' : 'polygon',
     areaM2: Number.isFinite(r.area_m2) ? r.area_m2 : (v.ok ? v.area.areaM2 : 0), submittedAt,
     contributorName: typeof r.contributor_name === 'string' ? Array.from(r.contributor_name).slice(0, 40).join('') : '', contributorCode: code,
     own: r.own === true, hasPublished: r.has_published === true, published: cleanPublished(r.published),

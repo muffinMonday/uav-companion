@@ -2,7 +2,7 @@
 // More tools menu folds it into a row like the other map tools (map-tool-labels.js). Everything is local: nothing is sent, nothing needs an account.
 import L from 'leaflet';
 import { el } from '../cards.js';
-import { formatArea, SPOT_LABELS } from './core.js';
+import { formatArea, SPOT_LABELS, attributesComplete } from './core.js';
 import { DISCLAIMER } from './layer.js';
 import { MAX_IMPORT_BYTES } from './store.js';
 import { MAX_PENDING } from './api.js';
@@ -81,6 +81,7 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
       const sst = submit.state(a);
       const line = submissionLine(sst);
       if (line) { const sl = el('div', 'area-item-status ' + sst.kind, line); sl.dataset.status = sst.kind; li.append(sl); }
+      if (submit.eligible(a) && !attributesComplete(a.attributes)) { const nd = el('div', 'area-item-status needs-attrs', 'Needed before you can submit: the site environment and the access / permission status. Press Edit, then fill in Site details (Unknown is a valid answer).'); nd.dataset.status = 'needs-attributes'; li.append(nd); }
       const row = el('div', 'area-item-actions');
       if (withdrawId === a.id) {
         row.append(el('span', 'area-confirm', 'Withdraw this submission? Your draft stays here.'), b('Withdraw', async () => { withdrawId = null; const r = await submit.withdraw(a.id); toast(r.ok ? 'Submission withdrawn. Your draft is kept.' : r.message, 6000); paint(); }, { cls: 'btn danger', act: 'confirm-withdraw' }), b('Keep submitted', () => { withdrawId = null; paint(); }, { act: 'keep-submission' }));
@@ -106,6 +107,7 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
   function startSubmit(id) {
     const a = store.get(id);
     if (!a || !submit.eligible(a)) return;
+    if (!attributesComplete(a.attributes)) { toast('Before submitting, choose the site environment and the access / permission status: Edit the area, then fill in Site details.', 9000); return; } // Unknown is a valid choice
     if (!submit.backend.available()) { toast('Submitting needs an account, which this version of the app does not have.', 7000); return; }
     if (!submit.backend.signedIn()) {
       submit.intent.set(id);

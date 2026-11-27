@@ -398,7 +398,7 @@ await ctx.close();
 // ================= Phase 2: submit for review (account backend is an in-page double; no request reaches Supabase)
 {
   const ring = [[103.8, 1.3], [103.81, 1.3], [103.81, 1.31], [103.8, 1.31], [103.8, 1.3]];
-  const rec = (id, name) => ({ id, name, description: 'Open <i>grass</i>', drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [ring] }, spots: [], created: '2026-11-01T00:00:00.000Z', updated: '2026-11-01T00:00:00.000Z' });
+  const rec = (id, name) => ({ id, name, description: 'Open <i>grass</i>', drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [ring] }, spots: [], attributes: { environment: 'open_field', access: 'unknown' }, created: '2026-11-01T00:00:00.000Z', updated: '2026-11-01T00:00:00.000Z' });
   const seed = { [KEY]: JSON.stringify({ v: 1, areas: [rec('abrowser1', 'Seeded <b>park</b>'), rec('abrowser2', 'Second')] }) };
   ({ ctx, p } = await open({ storage: seed, backend: true }));
   await openPanel(p);
@@ -465,7 +465,7 @@ await ctx.close();
   await p.screenshot({ path: `${shots}/phase2-list.png` });
 }
 await ctx.close();
-({ ctx, p } = await open({ vp: { width: 390, height: 780 }, touch: true, storage: { [KEY]: JSON.stringify({ v: 1, areas: [{ id: 'abrowser1', name: 'Phone', description: '', drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [[[103.8, 1.3], [103.81, 1.3], [103.81, 1.31], [103.8, 1.31], [103.8, 1.3]]] }, spots: [], created: '2026-11-01T00:00:00.000Z', updated: '2026-11-01T00:00:00.000Z' }] }), 'be': '1' }, backend: true }));
+({ ctx, p } = await open({ vp: { width: 390, height: 780 }, touch: true, storage: { [KEY]: JSON.stringify({ v: 1, areas: [{ id: 'abrowser1', name: 'Phone', description: '', attributes: { environment: 'open_field', access: 'unknown' }, drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [[[103.8, 1.3], [103.81, 1.3], [103.81, 1.31], [103.8, 1.31], [103.8, 1.3]]] }, spots: [], created: '2026-11-01T00:00:00.000Z', updated: '2026-11-01T00:00:00.000Z' }] }), 'be': '1' }, backend: true }));
 {
   await p.evaluate(() => { __be.signed = true; });
   await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(700);
@@ -482,7 +482,7 @@ await ctx.close();
 {
   const ring = [[103.8, 1.3], [103.81, 1.3], [103.81, 1.31], [103.8, 1.31], [103.8, 1.3]];
   const AREA = '11111111-1111-4111-8111-111111111111', REV = '22222222-2222-4222-8222-222222222222';
-  const rec = { id: 'aapproved', name: 'Approved park', description: 'Open grass', drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [ring] }, spots: [], created: '2026-11-01T00:00:00.000Z', updated: '2026-11-01T00:00:00.000Z',
+  const rec = { id: 'aapproved', name: 'Approved park', description: 'Open grass', drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [ring] }, spots: [], attributes: { environment: 'open_field', access: 'unknown' }, created: '2026-11-01T00:00:00.000Z', updated: '2026-11-01T00:00:00.000Z',
     submission: { status: 'approved', key: 'k'.repeat(20), contentHash: '0'.repeat(8), areaId: AREA, revisionId: REV, revisionNo: 1, submittedAt: '2026-11-10T10:00:00.000Z' } };
   ({ ctx, p } = await open({ storage: { [KEY]: JSON.stringify({ v: 1, areas: [rec] }) }, backend: true }));
   await p.evaluate(([area, rev]) => { sessionStorage.setItem('be_seen', JSON.stringify({ seeded: { area_id: area, revision_id: rev, revision_no: 1, status: 'approved', submitted_at: '2026-11-10T10:00:00.000Z' } })); __be.signed = true; __be.fire(); }, [AREA, REV]); // the account already knows the approved revision

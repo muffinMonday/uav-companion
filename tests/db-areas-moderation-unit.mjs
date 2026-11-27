@@ -12,7 +12,7 @@ const q = async (sql, params = []) => (await db.query(sql, params)).rows;
 const J = (o) => JSON.stringify(o);
 let keyN = 0;
 const sq = (x = 103.8, y = 1.3, d = 0.01) => [[x, y], [x + d, y], [x + d, y + d], [x, y + d]];
-const pay = (over = {}, verts = sq()) => ({ idempotency_key: 'mod-' + String(++keyN).padStart(12, '0'), name: 'Park', description: 'Open grass', draw_kind: 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(verts)] }, spots: [{ type: 'shelter', note: 'Pavilion', coordinates: [verts[0][0] + 0.005, verts[0][1] + 0.005] }], ...over });
+const pay = (over = {}, verts = sq()) => ({ idempotency_key: 'mod-' + String(++keyN).padStart(12, '0'), name: 'Park', description: 'Open grass', draw_kind: 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(verts)] }, spots: [{ type: 'shelter', note: 'Pavilion', coordinates: [verts[0][0] + 0.005, verts[0][1] + 0.005] }], attributes: { environment: 'open_field', access: 'unknown' }, ...over });
 const submit = async (uid, over = {}, verts) => (await as(db, uid, 'select public.submit_community_area($1::jsonb) as r', [J(pay(over, verts))]))[0].r;
 const call = async (uid, fn, args) => (await as(db, uid, `select public.${fn} as r`, args))[0].r;
 const review = (uid, rid, decision, reason = null, award = false, amt = null) => call(uid, 'review_community_area($1, $2, $3, $4, $5)', [rid, decision, reason, award, amt]);

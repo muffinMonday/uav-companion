@@ -5,6 +5,7 @@ export const PAGE = 20;
 export const MAX_OFFSET = 500;   // the server refuses a larger offset; the screen asks the person to refine the search instead
 export const MAX_QUERY = 60;
 export const RADII = [10, 25, 100];
+import { validateAttributes } from './core.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const num = (v) => typeof v === 'number' && Number.isFinite(v);
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -29,7 +30,7 @@ export function cleanItem(r) {
   if (!c || !num(c.lat) || !num(c.lng) || Math.abs(c.lat) > 90 || Math.abs(c.lng) > 180) return null;
   const d = r.distance_km;
   if (d !== null && d !== undefined && !(num(d) && d >= 0)) return null;
-  return { areaId: r.area_id, name: Array.from(r.name.trim()).slice(0, 80).join(''), areaM2: r.area_m2, spotCount: r.spot_count, approvedAt: typeof r.approved_at === 'string' && !Number.isNaN(Date.parse(r.approved_at)) ? r.approved_at : null, center: { lat: c.lat, lng: c.lng }, distanceKm: d ?? null };
+  return { areaId: r.area_id, name: Array.from(r.name.trim()).slice(0, 80).join(''), areaM2: r.area_m2, spotCount: r.spot_count, approvedAt: typeof r.approved_at === 'string' && !Number.isNaN(Date.parse(r.approved_at)) ? r.approved_at : null, center: { lat: c.lat, lng: c.lng }, distanceKm: d ?? null, attributes: (() => { const a = validateAttributes(r.attributes); return a.ok ? a.attributes : {}; })() };
 }
 
 const CODES = /(invalid_filter|invalid_query|invalid_center|invalid_radius|invalid_limit|invalid_offset)/;

@@ -15,7 +15,7 @@ const key = () => 'key-' + String(++keyN).padStart(12, '0');
 const sq = (x = 103.8, y = 1.3, d = 0.01) => [[x, y], [x + d, y], [x + d, y + d], [x, y + d]];
 const circle = (n, r = 0.005) => Array.from({ length: n }, (_, i) => [103.8 + r * Math.cos(2 * Math.PI * i / n), 1.3 + r * Math.sin(2 * Math.PI * i / n)]);
 const ringOf = (verts) => (verts.some((p) => !Array.isArray(p) || p.some((n) => typeof n !== 'number' || Math.abs(n) > 1e6)) ? [...verts, verts[0]] : closeRing(verts));
-const pay = (over = {}, verts = sq()) => ({ idempotency_key: key(), name: 'Park', description: 'Open grass', draw_kind: 'polygon', geometry: { type: 'Polygon', coordinates: [ringOf(verts)] }, spots: [], ...over });
+const pay = (over = {}, verts = sq()) => ({ idempotency_key: key(), name: 'Park', description: 'Open grass', draw_kind: 'polygon', geometry: { type: 'Polygon', coordinates: [ringOf(verts)] }, spots: [], attributes: { environment: 'open_field', access: 'unknown' }, ...over });
 const STRICT = new Set(); // accounts whose pending count the tests manage themselves; every other account is kept below the five-pending limit
 const submit = async (uid, p) => {
   if (!STRICT.has(uid) && (await count('community_area_revisions', `contributor_id = '${uid}' and status = 'pending'`)) >= 4) await q(`update public.community_area_revisions set status = 'withdrawn' where contributor_id = '${uid}' and status = 'pending'`);
@@ -220,7 +220,7 @@ for (let i = 0; i < 80; i++) { // convex shapes around the 25 km2 limit at assor
 }
 cases.push(sq(), sq(0, 0, 1e-7), sq(0, 0, 2e-7), sq(0, 0, 3e-6), [[0, 0], [1e-7, 0], [0, 1e-7]]);
 for (const verts of cases) {
-  const rec = { name: 'P', geometry: { type: 'Polygon', coordinates: [verts.concat([verts[0]])] } };
+  const rec = { name: 'P', geometry: { type: 'Polygon', coordinates: [verts.concat([verts[0]])] }, attributes: { environment: 'open_field', access: 'unknown' } };
   const js = validateArea(rec);
   const sql = await as(db, A, 'select public.submit_community_area($1::jsonb) as r', [J({ ...rec, idempotency_key: key() })]).then(() => null, (e) => e.message);
   total++;

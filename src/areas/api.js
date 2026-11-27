@@ -19,11 +19,13 @@ export function newKey() {
 
 /** The payload the server accepts for a validated local area (core.js record). Contains nothing about the person. */
 export function buildPayload(area, key) {
-  return {
+  const p = {
     idempotency_key: key, name: area.name, description: area.description ?? '', draw_kind: area.drawKind,
     geometry: { type: 'Polygon', coordinates: [area.geometry.coordinates[0].map((p) => [p[0], p[1]])] },
     spots: (area.spots ?? []).map((s) => ({ type: s.type, note: s.note ?? '', coordinates: [s.coordinates[0], s.coordinates[1]] })),
   };
+  if (area.attributes && Object.keys(area.attributes).length) p.attributes = JSON.parse(JSON.stringify(area.attributes)); // left out when empty, so the fingerprint of an area without site details is unchanged
+  return p;
 }
 
 /** A short fingerprint (FNV-1a) of what would be submitted: it only tells "changed since submitted" and "same content as the failed attempt"; the server decides. */
@@ -56,6 +58,7 @@ const INVALID = {
   'self-intersection': 'The outline crosses or touches itself.', degenerate: 'The points are in a line: the shape has no area.', 'too-large': 'The area is larger than 25 km².',
   holes: 'Polygons with holes are not supported.', geometry: 'The shape must be one polygon.', 'too-many-spots': 'An area can have at most 10 setup spots.',
   'bad-spot-type': 'A setup spot has an unknown type.', 'spot-outside': 'A setup spot is outside the area.', 'bad-note': 'A setup spot note is too long.', 'payload-size': 'The area is too large to submit.',
+  attributes: 'The site details are not valid.', 'attributes-required': 'Choose the site environment and the access / permission status.',
 };
 
 /** Turns whatever failed into { code, message, retryable }. `retryable` means the request may or may not have reached the server, so the same key must be used again. */

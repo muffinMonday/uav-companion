@@ -11,7 +11,7 @@ const J = (o) => JSON.stringify(o);
 let keyN = 0;
 const key = () => 'rev-' + String(++keyN).padStart(12, '0');
 const sq = (x = 103.8, y = 1.3, d = 0.01) => [[x, y], [x + d, y], [x + d, y + d], [x, y + d]];
-const pay = (over = {}, verts = sq()) => ({ idempotency_key: key(), name: 'Park', description: 'Open grass', draw_kind: 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(verts)] }, spots: [{ type: 'shelter', note: 'Pavilion', coordinates: [verts[0][0] + 0.004, verts[0][1] + 0.004] }], ...over });
+const pay = (over = {}, verts = sq()) => ({ idempotency_key: key(), name: 'Park', description: 'Open grass', draw_kind: 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(verts)] }, spots: [{ type: 'shelter', note: 'Pavilion', coordinates: [verts[0][0] + 0.004, verts[0][1] + 0.004] }], attributes: { environment: 'open_field', access: 'unknown' }, ...over });
 const submit = async (uid, over = {}, verts) => (await as(db, uid, 'select public.submit_community_area($1::jsonb) as r', [J(pay(over, verts))]))[0].r;
 const revise = async (uid, aid, over = {}, verts) => (await as(db, uid, 'select public.submit_community_revision($1, $2::jsonb) as r', [aid, J(pay(over, verts))]))[0].r;
 const reviseErr = async (uid, aid, p) => (await refused(db, uid, 'select public.submit_community_revision($1, $2::jsonb)', [aid, J(p)])) ?? '';
