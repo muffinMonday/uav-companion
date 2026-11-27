@@ -11,7 +11,7 @@ export function attributeLines(at) {
   return [['Site environment', a.environment ? ENVIRONMENTS[a.environment] : null], ['Access / permission', a.access ? ACCESS[a.access] : null], ['Suitable activities', a.activities ? list(ACTIVITIES, a.activities) : null],
     ['Ground / launch surface', a.surface ? SURFACES[a.surface] : null], ['Known hazards', a.hazards ? list(HAZARDS, a.hazards) : null], ['Last observed', a.observed_on ?? null]];
 }
-import { isUuid, STATUSES } from './api.js';
+import { isUuid, STATUSES, cleanPhoto } from './api.js';
 
 export const XP_AMOUNTS = [100, 200, 300, 400, 500];
 export const XP_DEFAULT = 100;
@@ -25,7 +25,7 @@ export function cleanPublished(r) {
   if (!r || typeof r !== 'object' || typeof r.name !== 'string') return null;
   const v = validateArea({ name: r.name, description: typeof r.description === 'string' ? r.description : '', geometry: r.geometry, spots: Array.isArray(r.spots) ? r.spots : [], drawKind: r.draw_kind === 'rectangle' ? 'rectangle' : 'polygon', attributes: attrsOf(r.attributes) });
   if (!v.ok) return null;
-  return { revisionNo: Number.isInteger(r.revision_no) && r.revision_no >= 1 ? r.revision_no : 1, name: r.name.slice(0, 80), description: typeof r.description === 'string' ? r.description.slice(0, 500) : '', ring: v.area.geometry.coordinates[0], spots: v.area.spots, attributes: v.area.attributes, areaM2: Number.isFinite(r.area_m2) ? r.area_m2 : v.area.areaM2 };
+  return { photo: cleanPhoto(r.photo), revisionNo: Number.isInteger(r.revision_no) && r.revision_no >= 1 ? r.revision_no : 1, name: r.name.slice(0, 80), description: typeof r.description === 'string' ? r.description.slice(0, 500) : '', ring: v.area.geometry.coordinates[0], spots: v.area.spots, attributes: v.area.attributes, areaM2: Number.isFinite(r.area_m2) ? r.area_m2 : v.area.areaM2 };
 }
 
 /** A short plain-language list of what a proposed revision changes against the published version (the moderator still looks at the shapes). */
@@ -38,6 +38,7 @@ export function describeChanges(item) {
   const same = p.ring && item.ring && JSON.stringify(p.ring) === JSON.stringify(item.ring);
   if (!same) { const d = (item.areaM2 ?? 0) - (p.areaM2 ?? 0); out.push(`Outline changed (${d === 0 ? 'same size' : (d > 0 ? '+' : '−') + Math.round(Math.abs(d)).toLocaleString('en-GB') + ' m²'})`); }
   if (JSON.stringify(p.spots) !== JSON.stringify(item.spots)) out.push(`Setup spots changed (${p.spots.length} → ${item.spots.length})`);
+  { const a = p.photo, b = item.photo; if (!a && b) out.push('Photo: added'); else if (a && !b) out.push('Photo: removed (the new version has none)'); else if (a && b) out.push(a.sha && a.sha === b.sha ? 'Photo: kept (the same photo)' : 'Photo: replaced'); }
   const pa = attributeLines(p.attributes), na = attributeLines(item.attributes);
   pa.forEach(([label, was], i) => { const now = na[i][1]; if (was !== now) out.push(`${label}: ${was ?? 'not provided'} → ${now ?? 'not provided'}`); });
   return out.length ? out : ['No visible difference'];
@@ -56,7 +57,7 @@ export function cleanItem(r) {
     ring: v.ok ? v.area.geometry.coordinates[0] : null, spots: v.ok ? v.area.spots : [], attributes: attrsOf(r.attributes), valid: v.ok, drawKind: r.draw_kind === 'rectangle' ? 'rectangle' : 'polygon',
     areaM2: Number.isFinite(r.area_m2) ? r.area_m2 : (v.ok ? v.area.areaM2 : 0), submittedAt,
     contributorName: typeof r.contributor_name === 'string' ? Array.from(r.contributor_name).slice(0, 40).join('') : '', contributorCode: code,
-    own: r.own === true, hasPublished: r.has_published === true, published: cleanPublished(r.published),
+    own: r.own === true, hasPublished: r.has_published === true, published: cleanPublished(r.published), photo: cleanPhoto(r.photo),
   };
 }
 
@@ -89,6 +90,7 @@ const FAILS = {
   not_found: 'That submission no longer exists.', not_published: 'That area is not published.', reason_required: 'A reason is required (at most 500 characters).',
   invalid_xp_amount: 'Choose 100, 200, 300, 400 or 500 XP.', self_award_not_allowed: 'You cannot award yourself XP.', no_recipient: 'This contributor no longer has an account, so no XP can be awarded.',
   invalid_decision: 'That decision is not valid.', already_awarded: 'XP for this revision was already awarded.',
+  no_photo: 'This version has no photo.', photo_reason_required: 'Give a reason of at most 400 characters: the contributor will see it.',
   area_unpublished: 'This area was unpublished by an administrator. Approving this change would publish it again: confirm that to continue.',
 };
 export function describeAdminError(e) {
@@ -114,13 +116,23 @@ export function createAdminApi(backend) {
     async listPublished(cursor = null, limit = PAGE) { return cleanPage(await call('list_published_community_areas', { p_cursor: cursor, p_limit: limit })); },
     /** decision 'approve' | 'reject'. Validates like the server before sending. */
     /** `republish` is the explicit decision to put an area that was unpublished back on the public map by approving a pending change to it (the server refuses without it). */
-    async review(item, decision, { reason = '', award = false, amount = null, republish = false } = {}) {
+    async review(item, decision, { reason = '', award = false, amount = null, republish = false, dropPhoto = false } = {}) {
       const r = checkReason(reason, decision === 'reject'); if (!r.ok) throw { code: 'reason_required', message: r.message, retryable: false };
       const w = decision === 'approve' ? checkReward(award, amount, item.own) : { ok: true, award: false, amount: null };
       if (!w.ok) throw { code: 'invalid_xp_amount', message: w.message, retryable: false };
-      const d = await call('review_community_area', { p_revision_id: item.revisionId, p_decision: decision, p_reason: r.text || null, p_award_xp: w.award, p_xp_amount: w.amount, ...(republish && decision === 'approve' ? { p_republish: true } : {}) });
+      const d = await call('review_community_area', { p_revision_id: item.revisionId, p_decision: decision, p_reason: r.text || null, p_award_xp: w.award, p_xp_amount: w.amount, ...(republish && decision === 'approve' ? { p_republish: true } : {}), ...(dropPhoto && decision === 'approve' ? { p_drop_photo: true } : {}) });
       if (!d || !['approved', 'rejected'].includes(d.status)) throw { code: 'bad-response', message: 'The server answered in an unexpected way. Refresh the list.', retryable: true };
       return { status: d.status, changed: d.changed === true, xpAwarded: d.xp_awarded === true, xp: Number.isFinite(d.xp) ? d.xp : 0 };
+    },
+    /** Reads one photo (administrator preview) as a Blob URL; null when it cannot be read. The caller revokes the URL. */
+    async loadPhoto(id) { if (!isUuid(id) || !backend.fetchPhoto) return null; const r = await backend.fetchPhoto(id); return r?.data instanceof Blob ? URL.createObjectURL(r.data) : null; },
+    /** Urgent removal of the photo of a published area: revoked in the database at once, then the object is purged without waiting for the scheduled cleanup. -> { removed, purged } */
+    async removePhoto(item, reason) {
+      const r = checkReason(reason, true); if (!r.ok) throw { code: 'reason_required', message: r.message, retryable: false };
+      const d = await call('remove_area_photo', { p_area_id: item.areaId, p_reason: r.text });
+      if (!d || d.removed !== true) throw { code: 'bad-response', message: 'The server answered in an unexpected way. Refresh the list.', retryable: true };
+      let purged = false; try { const p = await backend.purgePhotos?.([d.photo_id]); purged = !!p && !p.error; } catch { purged = false; }
+      return { removed: true, purged };
     },
     async unpublish(item, reason) {
       const r = checkReason(reason, true); if (!r.ok) throw { code: 'reason_required', message: r.message, retryable: false };

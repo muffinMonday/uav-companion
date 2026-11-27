@@ -68,7 +68,7 @@ ok(ids(await list(B, VIEW)).join() === s1.area_id, 'a signed-in user gets the sa
 ok(ids(await list(null, { west: 120, south: 30, east: 121, north: 31 })).join() === s6.area_id, 'a viewport elsewhere returns only the areas inside it');
 ok(ids(await list(null, { west: 10, south: 10, east: 11, north: 11 })).length === 0 && (await list(null, { west: 10, south: 10, east: 11, north: 11 })).next_cursor === null, 'an empty result is a safe empty page');
 const rec = g.areas[0];
-const KEYS = ['approved_at', 'area_id', 'area_m2', 'attributes', 'attribution', 'description', 'geometry', 'name', 'published', 'revision_id', 'spots', 'status'];
+const KEYS = ['approved_at', 'area_id', 'area_m2', 'attributes', 'attribution', 'description', 'geometry', 'name', 'photo', 'published', 'revision_id', 'spots', 'status'];
 ok(Object.keys(rec).sort().join() === KEYS.join() && rec.status === 'approved' && rec.published === true, 'the record has exactly the public contract keys');
 ok(rec.revision_id === s1.revision_id && rec.name === 'Marina Park' && rec.spots.length === 1 && rec.geometry.type === 'Polygon' && rec.area_m2 > 0 && !!rec.approved_at, 'content comes from the published revision');
 const dump = J(g);

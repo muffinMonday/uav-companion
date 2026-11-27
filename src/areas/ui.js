@@ -8,6 +8,7 @@ import { MAX_IMPORT_BYTES } from './store.js';
 import { MAX_PENDING } from './api.js';
 import { showModalQuiet } from '../touch.js';
 import { createRecoverUI } from './recover-ui.js';
+import { prepareImage, PHOTO, PHOTO_WARNING } from './photo.js';
 
 import { submissionLine, deleteWarning } from './status.js';
 export { submissionLine };
@@ -128,24 +129,52 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
     const privacy = el('p', 'area-note', 'The name, description, outline and setup spots are sent, with your account so you can track and withdraw it. Do not put personal information in the name or description.');
     const disc = el('p', 'area-note area-disclaimer', DISCLAIMER);
     const limit = el('p', 'area-note', `You can have up to ${MAX_PENDING} submissions waiting for review at once.`);
+    // ---- optional location photo: chosen and processed here, uploaded only when the submission is confirmed
+    const photo = { mode: 'none', prepared: null, caption: '', staged: null, current: null, ready: !rv };
+    const photoBox = el('fieldset', 'area-photo'); photoBox.append(el('legend', 'area-label', 'Photo (optional)'));
+    const photoMsg = el('p', 'area-note area-photo-msg'); photoMsg.setAttribute('role', 'status');
+    const fileIn = el('input'); fileIn.type = 'file'; fileIn.accept = PHOTO.types.join(','); fileIn.id = 'area-photo-file'; fileIn.setAttribute('aria-label', 'Choose a photo of the place');
+    const capIn = el('input'); capIn.type = 'text'; capIn.id = 'area-photo-caption'; capIn.maxLength = PHOTO.maxCaption; capIn.placeholder = 'Describe the photo for people who cannot see it (optional)'; capIn.setAttribute('aria-label', 'Photo caption (optional, up to 120 characters)');
+    const preview = el('img', 'area-photo-preview'); preview.alt = 'Preview of the chosen photo'; preview.hidden = true;
+    const clearB = el('button', 'btn', 'Remove chosen photo'); clearB.type = 'button'; clearB.dataset.act = 'photo-clear'; clearB.hidden = true;
+    const modeBox = el('div', 'area-photo-modes'); modeBox.hidden = true;
+    const setMode = (m) => { photo.mode = m; photo.staged = null; for (const r of modeBox.querySelectorAll('input')) r.checked = r.value === m; const chooser = m === 'new'; fileIn.hidden = !chooser && rv; capIn.hidden = !(chooser && photo.prepared); }
+    const radio = (value, label) => { const l = el('label', 'area-check'); const r = el('input'); r.type = 'radio'; r.name = 'area-photo-mode'; r.value = value; r.checked = photo.mode === value; r.addEventListener('change', () => { setMode(value); refreshGo(); }); l.append(r, el('span', '', label)); return l; };
+    const drawModes = () => { modeBox.replaceChildren(...(photo.current ? [radio('keep', 'Keep the current photo' + (photo.current.caption ? ` (“${photo.current.caption}”)` : ''))] : []), radio('new', photo.current ? 'Replace it with a new photo' : 'Add a photo'), radio('none', photo.current ? 'Remove the photo' : 'No photo')); modeBox.hidden = false; };
+    fileIn.addEventListener('change', async () => {
+      const f = fileIn.files?.[0]; fileIn.value = ''; if (!f) return;
+      photoMsg.textContent = 'Preparing the photo…'; const r = await prepareImage(f);
+      if (!r.ok) { photoMsg.textContent = r.message; return; }
+      if (preview.dataset.url) URL.revokeObjectURL(preview.dataset.url);
+      preview.dataset.url = URL.createObjectURL(r.blob); preview.src = preview.dataset.url; preview.hidden = false; clearB.hidden = false;
+      photo.prepared = r; photo.staged = null; setMode('new'); photoMsg.textContent = `Ready: ${r.width} × ${r.height} px, ${Math.round(r.bytes / 1024)} KB. It is uploaded only when you press Submit.`; refreshGo();
+    });
+    capIn.addEventListener('input', () => { photo.caption = capIn.value; photo.staged = null; });
+    clearB.addEventListener('click', () => { photo.prepared = null; photo.staged = null; preview.hidden = true; clearB.hidden = true; capIn.hidden = true; capIn.value = ''; photo.caption = ''; photoMsg.textContent = ''; setMode(rv && photo.current ? 'keep' : 'none'); refreshGo(); });
+    photoBox.append(el('p', 'area-note', PHOTO_WARNING), modeBox, fileIn, preview, clearB, capIn, photoMsg);
+    capIn.hidden = true;
+    if (rv) { fileIn.hidden = true; photoMsg.textContent = 'Checking whether this area has a published photo…'; submit.myAreaPhoto(submit.isRevision(a) ? (a.submission?.areaId ?? null) : null).then((cur) => { photo.current = cur; photo.mode = cur ? 'keep' : 'none'; photo.ready = true; drawModes(); setMode(photo.mode); photoMsg.textContent = ''; refreshGo(); }).catch(() => { photoMsg.textContent = 'Could not check the current photo. Close this window and try again: submitting now could remove it.'; }); }
+    else { drawModes(); setMode('none'); }
+    const photoArg = () => (photo.mode === 'new' && photo.prepared ? { mode: 'new', blob: photo.prepared.blob, mime: photo.prepared.mime, caption: photo.caption, get staged() { return photo.staged; }, set staged(v) { photo.staged = v; } } : photo.mode === 'keep' ? { mode: 'keep' } : null);
     const ack = el('label', 'area-ack'); const cb = el('input'); cb.type = 'checkbox'; cb.id = 'area-ack'; ack.append(cb, el('span', '', ' I have read this: it is a community recommendation, not flight authorization.'));
     const err = el('div', 'area-errors'); err.setAttribute('role', 'alert');
     const go = el('button', 'btn primary', rv ? 'Submit changes' : 'Submit for review'); go.type = 'submit'; go.dataset.act = 'confirm-submit'; go.disabled = true;
     const cancel = el('button', 'btn', 'Cancel'); cancel.type = 'button'; cancel.dataset.act = 'cancel-submit';
     const actions = el('div', 'area-dlg-actions'); actions.append(go, cancel);
-    cb.addEventListener('change', () => { go.disabled = !cb.checked || submit.isBusy(a.id); });
+    const refreshGo = () => { go.disabled = !cb.checked || submit.isBusy(a.id) || !photo.ready || (photo.mode === 'new' && !photo.prepared); };
+    cb.addEventListener('change', refreshGo);
     cancel.addEventListener('click', () => dlg.close());
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!cb.checked || submit.isBusy(a.id)) return;
+      if (!cb.checked || submit.isBusy(a.id) || !photo.ready) return;
       go.disabled = true; err.replaceChildren();
-      const r = await submit.submit(a.id);
+      const r = await submit.submit(a.id, { photo: photoArg() });
       if (r.ok) { dlg.close(); toast(r.status === 'pending' ? 'Submitted for review. Your private draft is kept.' : 'Submission recorded. Your private draft is kept.', 7000); }
-      else { err.replaceChildren(el('p', '', r.message)); go.disabled = !cb.checked; if (r.code === 'signed-out') { submit.intent.set(a.id); } }
+      else { err.replaceChildren(el('p', '', r.message)); refreshGo(); if (r.code === 'signed-out') { submit.intent.set(a.id); } }
       paint();
     });
-    dlg.addEventListener('close', () => dlg.remove());
-    form.append(h, what, privacy, disc, limit, ack, err, actions); dlg.append(form); document.body.append(dlg);
+    dlg.addEventListener('close', () => { if (preview.dataset.url) URL.revokeObjectURL(preview.dataset.url); dlg.remove(); });
+    form.append(h, what, privacy, disc, limit, photoBox, ack, err, actions); dlg.append(form); document.body.append(dlg);
     showModalQuiet(dlg);
   }
   /** After signing in: reopen the dialog for the area the person wanted to submit (they still have to acknowledge and confirm). */

@@ -8,6 +8,12 @@ export const STATUSES = ['pending', 'approved', 'rejected', 'withdrawn'];
 export const MAX_PENDING = 5;
 
 const isoOrNull = (v) => (typeof v === 'string' && v.length <= 40 && !Number.isNaN(Date.parse(v)) ? v : null);
+/** A photo reference from the server -> { id, width, height, caption } or null. The storage key never reaches the client. */
+export function cleanPhoto(p) {
+  if (!p || typeof p !== 'object' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(p.id))) return null;
+  const n = (v) => (Number.isInteger(v) && v >= 1 && v <= 4000 ? v : null);
+  return { id: p.id, width: n(p.width), height: n(p.height), caption: typeof p.caption === 'string' ? Array.from(p.caption.trim()).slice(0, 120).join('') : '', state: typeof p.state === 'string' ? p.state : null, sha: typeof p.sha256 === 'string' && /^[0-9a-f]{64}$/.test(p.sha256) ? p.sha256 : null };
+}
 export const isUuid = (v) => typeof v === 'string' && UUID.test(v);
 export const isKey = (v) => typeof v === 'string' && KEY.test(v);
 
@@ -18,13 +24,15 @@ export function newKey() {
 }
 
 /** The payload the server accepts for a validated local area (core.js record). Contains nothing about the person. */
-export function buildPayload(area, key) {
+/** `photo`: { mode: 'new', id } (a staged photo), { mode: 'keep' } (a revision keeps the published photo) or null/{ mode: 'none' } (no photo: a revision then removes the published one). */
+export function buildPayload(area, key, photo = null) {
   const p = {
     idempotency_key: key, name: area.name, description: area.description ?? '', draw_kind: area.drawKind,
     geometry: { type: 'Polygon', coordinates: [area.geometry.coordinates[0].map((p) => [p[0], p[1]])] },
     spots: (area.spots ?? []).map((s) => ({ type: s.type, note: s.note ?? '', coordinates: [s.coordinates[0], s.coordinates[1]] })),
   };
   if (area.attributes && Object.keys(area.attributes).length) p.attributes = JSON.parse(JSON.stringify(area.attributes)); // left out when empty, so the fingerprint of an area without site details is unchanged
+  if (photo?.mode === 'new' && isUuid(photo.id)) p.photo_id = photo.id; else if (photo?.mode === 'keep') p.keep_photo = true;
   return p;
 }
 
@@ -58,7 +66,7 @@ const INVALID = {
   'self-intersection': 'The outline crosses or touches itself.', degenerate: 'The points are in a line: the shape has no area.', 'too-large': 'The area is larger than 25 km².',
   holes: 'Polygons with holes are not supported.', geometry: 'The shape must be one polygon.', 'too-many-spots': 'An area can have at most 10 setup spots.',
   'bad-spot-type': 'A setup spot has an unknown type.', 'spot-outside': 'A setup spot is outside the area.', 'bad-note': 'A setup spot note is too long.', 'payload-size': 'The area is too large to submit.',
-  attributes: 'The site details are not valid.', 'attributes-required': 'Choose the site environment and the access / permission status.',
+  photo: 'The photo choice is not valid.', attributes: 'The site details are not valid.', 'attributes-required': 'Choose the site environment and the access / permission status.',
 };
 
 /** Turns whatever failed into { code, message, retryable }. `retryable` means the request may or may not have reached the server, so the same key must be used again. */
@@ -70,6 +78,8 @@ export function describeError(e) {
   if (/idempotency_conflict/.test(raw)) return { code: 'conflict', message: 'This submission was changed after an earlier attempt. Press Submit again to send the current version.', retryable: false };
   if (/not_published/.test(raw)) return { code: 'not-published', message: 'This area is no longer published, so it cannot be changed. Your draft stays here.', retryable: false };
   if (/revision_pending/.test(raw)) return { code: 'revision-pending', message: 'A change to this area is already waiting for review. Wait for a decision or withdraw it first.', retryable: false };
+  if (/photo_not_found/.test(raw)) return { code: 'photo-not-found', message: 'The photo is no longer available. Choose it again.', retryable: false, photoGone: true };
+  if (/no_photo_to_keep/.test(raw)) return { code: 'no-photo-to-keep', message: 'This area has no published photo to keep. Choose a photo or none.', retryable: false };
   if (/identical_to_rejected/.test(raw)) return { code: 'identical-to-rejected', message: 'This is identical to a version an administrator already declined. Change something first, taking the reason you were given into account.', retryable: false };
   if (/no_change/.test(raw)) return { code: 'no-change', message: 'This is identical to the published version. Change something first.', retryable: false };
   if (/not_withdrawable/.test(raw)) return { code: 'not-withdrawable', message: 'This submission can no longer be withdrawn.', retryable: false };
@@ -91,7 +101,33 @@ export function createCloudBackend(getHandle) {
     /** `opts.signal` (an AbortSignal) cancels the request where the client supports it (public viewport loading). */
     rpc: (fn, args, opts) => { const b = h().adapter.client.rpc(fn, args); return opts?.signal && typeof b.abortSignal === 'function' ? b.abortSignal(opts.signal) : b; },
     onChange: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
+    /** Optional location photos: the Edge Functions. photoUrl is the public address of one photo (an <img> cannot send a token); fetchPhoto reads one with the person's own session (owner or administrator preview). */
+    functionsUrl: () => { const u = h()?.adapter?.client?.functions?.url; return u ? String(u).replace(/\/+$/, '') : null; },
+    photoUrl(id) { const b = this.functionsUrl(); return b && isUuid(id) ? `${b}/area-photo?id=${encodeURIComponent(id)}` : null; },
+    async upload(blob, mime, caption) { return fnCall(h(), 'area-photo-upload', { body: blob, headers: { 'Content-Type': mime, 'X-Caption': encodeURIComponent(caption || '') } }); },
+    async fetchPhoto(id) { // not functions.invoke: it would read an image as text. A plain fetch with the person's own access token.
+      const client = h()?.adapter?.client, url = this.photoUrl(id);
+      if (!client || !url) return { error: { code: 'unavailable', message: 'Photos need an account.' } };
+      try {
+        const { data } = await client.auth.getSession(); const token = data?.session?.access_token;
+        const r = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: 'no-store' });
+        return r.ok ? { data: await r.blob() } : { error: { code: r.status === 404 ? 'not-found' : 'network', message: 'The photo is not available.' } };
+      } catch { return { error: { code: 'network', message: 'Could not reach the server.' } }; }
+    },
+    async purgePhotos(ids) { return fnCall(h(), 'area-photo-cleanup', { body: { photo_ids: ids } }); },
   };
+}
+
+/** One Edge Function call through the signed-in client -> { data } or { error: { code, message } } (the answer's own code and message; never database text). */
+async function fnCall(handle, name, opts) {
+  const client = handle?.adapter?.client;
+  if (!client?.functions) return { error: { code: 'unavailable', message: 'Photos need an account.' } };
+  try {
+    const { data, error } = await client.functions.invoke(name, opts);
+    if (!error) return { data };
+    let body = null; try { body = await error.context?.json?.(); } catch { body = null; }
+    return { error: { code: body?.code ?? 'network', message: typeof body?.error === 'string' ? body.error : 'Could not reach the server. Try again.' } };
+  } catch { return { error: { code: 'network', message: 'Could not reach the server. Try again.' } }; }
 }
 
 /** The three functions with validated results; failures throw { code, message, retryable }. */
@@ -123,6 +159,16 @@ export function createAreasApi(backend) {
       if (typeof d !== 'object' || !isUuid(d.area_id) || d.revision_id !== revisionId || !STATUSES.includes(d.status)) throw { code: 'bad-response', message: 'The server answered in an unexpected way. Try again.', retryable: true };
       return d;
     },
+    /** Uploads one processed photo (Blob) -> { photoId, width, height, caption }; throws { code, message, retryable } (code is the server's: type, metadata, size, dimensions, caption, too_many_staged, daily_limit, network...). */
+    async uploadPhoto(blob, mime, caption = '') {
+      const r = await backend.upload(blob, mime, caption);
+      if (r.error) throw { code: r.error.code, message: r.error.message, retryable: r.error.code === 'network' };
+      const d = r.data;
+      if (!d || !isUuid(d.photo_id)) throw { code: 'bad-response', message: 'The server answered in an unexpected way. Try again.', retryable: true };
+      return { photoId: d.photo_id, width: d.width, height: d.height, caption: typeof d.caption === 'string' ? d.caption : '' };
+    },
+    /** The photo the contributor's published area shows (to keep it in a revision), or null. */
+    async myAreaPhoto(areaId) { if (!isUuid(areaId)) return null; const d = await call('get_my_area_photo', { p_area_id: areaId }); return cleanPhoto(d); },
     async list() { const d = await call('list_my_community_areas', {}); return Array.isArray(d) ? d.map(cleanListRow).filter(Boolean) : []; },
     async withdraw(revisionId) {
       const d = await call('withdraw_community_revision', { p_revision_id: revisionId });

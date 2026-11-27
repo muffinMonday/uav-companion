@@ -26,7 +26,7 @@ export function entryLine(e) {
   const l = e.latest, on = l.submittedAt ? ` · submitted ${when(l.submittedAt)}` : '';
   const pub = e.live ? ' The published version is live.' : e.everApproved ? ' It is not currently published.' : '';
   switch (l.status) {
-    case 'approved': return e.live ? `Approved and published${on}.` : `Approved${on}. It is not currently published.`;
+    case 'approved': { const why = l.reason ? ` ${l.reason}${/[.!?]$/.test(l.reason) ? '' : '.'}` : ''; return (e.live ? `Approved and published${on}.` : `Approved${on}. It is not currently published.`) + why; }
     case 'pending': return `${l.revisionNo > 1 ? 'Change pending review' : 'Pending review'}${on}.${pub}`;
     case 'rejected': return `${l.revisionNo > 1 ? 'Change not approved' : 'Not approved'}${on}.${pub}${l.reason ? ' Reason: ' + l.reason : ''}`;
     case 'withdrawn': return `${l.revisionNo > 1 ? 'Change withdrawn' : 'Withdrawn'}${on}.${pub}`;

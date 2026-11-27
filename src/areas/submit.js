@@ -35,7 +35,11 @@ export function createSubmitController({ store, backend, storage = (() => { try 
     return s.status === 'approved' && !!s.areaId && !!s.contentHash && s.contentHash !== contentHash(area);
   };
 
-  async function submit(id) {
+  const sigs = new Map(); // area id -> the photo choice of the last attempt (a retry with another choice must not reuse the key)
+  /**
+   * `photo` (optional): { mode: 'new', blob, mime, caption, staged? } (uploaded first, once: `staged` is kept on this object for retries), { mode: 'keep' } or null (no photo: a revision then removes the published one).
+   */
+  async function submit(id, { photo = null } = {}) {
     if (busy.has(id)) return { ok: false, code: 'busy', message: 'Already sending.' };
     const area = store.get(id);
     if (!area) return { ok: false, code: 'not-found', message: 'That area no longer exists.' };
@@ -44,17 +48,26 @@ export function createSubmitController({ store, backend, storage = (() => { try 
     if (!backend.available()) return { ok: false, code: 'unavailable', message: 'Submitting needs an account, which this version of the app does not have.' };
     if (!backend.signedIn()) return { ok: false, code: 'signed-out', message: 'Sign in to submit.' };
     busy.add(id); notify();
+    let ref = null;
+    if (photo?.mode === 'new') {
+      try { if (!photo.staged) photo.staged = await api.uploadPhoto(photo.blob, photo.mime, photo.caption ?? ''); }
+      catch (e) { busy.delete(id); notify(); return { ok: false, code: e.code ?? 'error', message: e.message ?? 'The photo could not be uploaded.', photo: true }; }
+      ref = { mode: 'new', id: photo.staged.photoId };
+    } else if (photo?.mode === 'keep') ref = { mode: 'keep' };
+    const sig = ref ? JSON.stringify(ref) : '';
     const previous = area.submission;
     const target = revisionTarget(area);
     const link = target ? { areaId: target, revision: true } : {};
     const hash = contentHash(area);
-    const key = previous?.status === 'unsent' && previous.key && previous.contentHash === hash ? previous.key : newKey();
+    const key = previous?.status === 'unsent' && previous.key && previous.contentHash === hash && (sigs.get(id) ?? '') === sig ? previous.key : newKey();
+    sigs.set(id, sig);
     store.setSubmission(id, { status: 'unsent', key, contentHash: hash, ...link }); // before the request: a reload or a dropped connection keeps the key for the retry
     try {
-      const r = target ? await api.submitRevision(target, buildPayload(area, key)) : await api.submit(buildPayload(area, key));
+      const r = target ? await api.submitRevision(target, buildPayload(area, key, ref)) : await api.submit(buildPayload(area, key, ref));
       store.setSubmission(id, { status: r.status, key, contentHash: hash, areaId: r.areaId, revisionId: r.revisionId, revisionNo: r.revisionNo, submittedAt: r.submittedAt, ...(target ? { revision: true } : {}) });
       return { ok: true, replayed: r.replayed, status: r.status };
     } catch (e) {
+      if (e.photoGone && photo) photo.staged = null; // the staged photo expired or was used: upload it again on the next attempt
       if (!e.retryable) store.setSubmission(id, previous && (previous.status !== 'unsent' || previous.revision) ? previous : null); // a definite refusal: forget this attempt's key
       return { ok: false, code: e.code ?? 'error', message: e.message ?? 'Could not submit.' };
     } finally { busy.delete(id); notify(); }
@@ -106,5 +119,5 @@ export function createSubmitController({ store, backend, storage = (() => { try 
     },
   };
 
-  return { state, eligible, isRevision, submit, withdraw, refresh, intent, isBusy: (id) => busy.has(id), onChange: (f) => { listeners.add(f); return () => listeners.delete(f); }, backend };
+  return { state, eligible, isRevision, submit, withdraw, refresh, intent, myAreaPhoto: (areaId) => api.myAreaPhoto(areaId), isBusy: (id) => busy.has(id), onChange: (f) => { listeners.add(f); return () => listeners.delete(f); }, backend };
 }

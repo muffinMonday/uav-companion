@@ -37,6 +37,7 @@ const BACKEND = () => {
         const r = hit ?? { area_id: args.p_area_id, revision_id: crypto.randomUUID(), revision_no: 2 + Object.keys(seen).length, status: 'pending', submitted_at: new Date().toISOString(), replayed: false };
         seen[k] = { ...r, replayed: true }; ss('be_seen', JSON.stringify(seen)); return { data: r };
       }
+      if (fn === 'get_my_area_photo') return { data: null };
       if (fn === 'list_my_community_areas') return { data: Object.values(seen).map((r) => ({ ...r, name: 'x', reviewed_at: null, review_reason: null, published: false })) };
       if (fn === 'withdraw_community_revision') { for (const k of Object.keys(seen)) if (seen[k].revision_id === args.p_revision_id) seen[k].status = 'withdrawn'; ss('be_seen', JSON.stringify(seen)); return { data: { revision_id: args.p_revision_id, status: 'withdrawn', changed: true } }; }
       return { error: { message: 'unknown' } };
