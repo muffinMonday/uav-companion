@@ -1754,7 +1754,7 @@ body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + var(-
 .areas-panel.sheet{position:fixed;left:0;right:0;top:auto;bottom:0;width:auto;max-height:70vh;border-radius:var(--radius) var(--radius) 0 0;border-bottom:0;padding-bottom:calc(var(--sp-3) + env(safe-area-inset-bottom,0px));z-index:var(--z-sheet)}
 .areas-head{display:flex;align-items:center;justify-content:space-between}.areas-title{font-size:var(--fs-title)}
 .areas-close{border:0;background:none;font-size:22px;line-height:1;min-width:36px;min-height:36px;color:var(--fg);cursor:pointer}
-.areas-intro,.areas-warn,.areas-empty,.area-hint{margin:0;font-size:var(--fs-small);color:var(--muted)}.areas-warn{color:var(--danger)}
+.areas-intro,.areas-note,.areas-warn,.areas-empty,.area-hint{margin:0;font-size:var(--fs-small);color:var(--muted)}.areas-warn{color:var(--danger)}
 .areas-actions,.area-item-actions{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center}
 .areas-show{display:flex;gap:var(--sp-2);align-items:center;font-size:var(--fs-small)}
 .areas-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--sp-2)}
@@ -1762,6 +1762,8 @@ body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + var(-
 .area-item-name{font-weight:var(--fw-semibold);overflow-wrap:anywhere}.area-item-meta,.area-item-desc{font-size:var(--fs-meta);color:var(--muted);overflow-wrap:anywhere}
 .area-item-actions .btn{padding:4px 10px;min-height:32px;font-size:var(--fs-small)}.area-confirm{font-size:var(--fs-small)}
 .btn.danger{border-color:var(--danger);color:var(--danger)}
+.area-item-status{font-size:var(--fs-meta);color:var(--muted);overflow-wrap:anywhere}.area-item-status.pending{color:var(--fg)}.area-item-status.unsent,.area-item-status.missing{color:var(--danger)}
+.area-ack{display:flex;gap:var(--sp-2);align-items:flex-start;font-size:var(--fs-small)}.area-ack input{margin-top:3px}
 dialog.area-dialog{width:min(480px,calc(100vw - 32px));max-height:calc(100% - 32px);overflow-y:auto;padding:var(--sp-4);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-2)}
 dialog.area-dialog::backdrop{background:rgba(0,0,0,.4)}
 .area-form{display:flex;flex-direction:column;gap:var(--sp-3)}.area-dlg-title{margin:0;font-size:var(--fs-head)}.area-note{margin:0;font-size:var(--fs-small);color:var(--muted)}

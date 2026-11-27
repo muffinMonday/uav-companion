@@ -13,9 +13,34 @@ const POIS = { v: 1, items: [{ id: 'poi1', type: 'photo', name: 'Marina', note: 
 const b = await chromium.launch({ channel: CHANNEL });
 const requests = [];
 
-async function open({ vp = { width: 1300, height: 850 }, touch = false, dark = false, storage = {}, once = true } = {}) {
+// Phase 2: an in-page double of the account backend (src/areas/api.js createCloudBackend) so no request reaches Supabase. State lives in sessionStorage so it survives a reload.
+const BACKEND = () => {
+  const ss = (k, v) => { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); } catch { return null; } };
+  const be = { calls: [], signIns: 0, failNext: 0, delay: 0, rows: [], listeners: new Set(),
+    get signed() { return ss('be_signed') === '1'; }, set signed(v) { ss('be_signed', v ? '1' : '0'); },
+    fire() { for (const f of be.listeners) f(); } };
+  globalThis.__be = be;
+  globalThis.__uavAreasBackend = {
+    available: () => true, signedIn: () => be.signed, signIn: () => { be.signIns++; }, onChange: (f) => { be.listeners.add(f); return () => be.listeners.delete(f); }, fire: () => be.fire(),
+    rpc: async (fn, args) => {
+      be.calls.push({ fn, args: JSON.parse(JSON.stringify(args)) });
+      if (be.delay) await new Promise((r) => setTimeout(r, be.delay));
+      if (be.failNext > 0) { be.failNext--; return { error: { message: 'Failed to fetch' } }; }
+      const seen = JSON.parse(ss('be_seen') ?? '{}');
+      if (fn === 'submit_community_area') {
+        const k = args.p_payload.idempotency_key; const hit = seen[k];
+        const r = hit ?? { area_id: crypto.randomUUID(), revision_id: crypto.randomUUID(), revision_no: 1, status: 'pending', submitted_at: new Date().toISOString(), replayed: false };
+        seen[k] = { ...r, replayed: true }; ss('be_seen', JSON.stringify(seen)); return { data: r };
+      }
+      if (fn === 'list_my_community_areas') return { data: Object.values(seen).map((r) => ({ ...r, name: 'x', reviewed_at: null, review_reason: null, published: false })) };
+      if (fn === 'withdraw_community_revision') { for (const k of Object.keys(seen)) if (seen[k].revision_id === args.p_revision_id) seen[k].status = 'withdrawn'; ss('be_seen', JSON.stringify(seen)); return { data: { revision_id: args.p_revision_id, status: 'withdrawn', changed: true } }; }
+      return { error: { message: 'unknown' } };
+    } };
+};
+async function open({ vp = { width: 1300, height: 850 }, touch = false, dark = false, storage = {}, once = true, backend = false } = {}) {
   const ctx = await b.newContext({ viewport: vp, hasTouch: touch, isMobile: touch, colorScheme: dark ? 'dark' : 'light', reducedMotion: 'reduce', acceptDownloads: true });
   await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap|wpgmaps)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  if (backend) await ctx.addInitScript(BACKEND);
   await ctx.addInitScript(([seen, st, pois]) => {
     if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
     localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: false, welcomed: true, seen }));
@@ -359,6 +384,89 @@ await ctx.close();
   // hold check works again after the session
   await act(p, 'close', panel).tap();
   await p.screenshot({ path: `${shots}/phone-saved.png` });
+}
+await ctx.close();
+
+// ================= Phase 2: submit for review (account backend is an in-page double; no request reaches Supabase)
+{
+  const ring = [[103.8, 1.3], [103.81, 1.3], [103.81, 1.31], [103.8, 1.31], [103.8, 1.3]];
+  const rec = (id, name) => ({ id, name, description: 'Open <i>grass</i>', drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [ring] }, spots: [], created: '2026-11-01T00:00:00.000Z', updated: '2026-11-01T00:00:00.000Z' });
+  const seed = { [KEY]: JSON.stringify({ v: 1, areas: [rec('abrowser1', 'Seeded <b>park</b>'), rec('abrowser2', 'Second')] }) };
+  ({ ctx, p } = await open({ storage: seed, backend: true }));
+  await openPanel(p);
+  const item = (id) => p.locator(`${panel} .area-item[data-id="${id}"]`);
+  const ack = '#area-ack', dlg = 'dialog.area-submit-dialog';
+  ok(await item('abrowser1').locator('[data-act="submit"]').count() === 1 && await item('abrowser1').locator('[data-status]').count() === 0, 'saved areas offer Submit for review; no status yet');
+  ok(await p.locator('[data-act="draw-polygon"]').count() === 1 && await p.locator('[data-act="draw-rect"]').count() === 1 && await item('abrowser1').locator('[data-act="edit"],[data-act="duplicate"],[data-act="delete"],[data-act="show"],[data-act="export"]').count() === 5 && await p.locator('[data-act="import"],[data-act="export-all"]').count() === 2, 'Phase 1 actions are all still there');
+  ok(/at once/.test(await p.$eval('.areas-note', (e) => e.textContent)) && /5/.test(await p.$eval('.areas-note', (e) => e.textContent)), 'the panel explains the five-pending limit');
+  // guest: sign-in flow, intent kept, nothing sent
+  await item('abrowser1').locator('[data-act="submit"]').click();
+  ok(await p.evaluate(() => __be.signIns) === 1 && await p.locator(dlg).count() === 0 && await p.evaluate(() => __be.calls.length) === 0, 'a guest pressing Submit is sent to sign in; no dialog, no request');
+  ok(await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.areas.intent')).areaId) === 'abrowser1', 'the sign-in intent is kept (area id and time only)');
+  // sign in -> the dialog reopens for that area; nothing is submitted by itself
+  await p.evaluate(() => { __be.signed = true; __be.fire(); });
+  await p.waitForSelector(`${dlg}[open]`);
+  ok(await p.evaluate(() => __be.calls.filter((c) => c.fn === 'submit_community_area').length) === 0, 'after sign-in the dialog is offered; nothing is sent yet');
+  ok(await p.evaluate(() => localStorage.getItem('uavzones.v1.areas.intent')) === null, 'the intent is used up');
+  ok(await p.locator(`${dlg} strong`).textContent() === 'Seeded <b>park</b>' && await p.locator(`${dlg} b`).count() === 0 && await p.locator(`${panel} .area-item-name b`).count() === 0, 'user text is rendered as text, never markup');
+  ok(/not flight authorization/i.test(await p.$eval(`${dlg} .area-disclaimer`, (e) => e.textContent)) && /5 submissions/.test(await p.$eval(dlg, (e) => e.textContent)), 'the disclaimer and the limit are shown');
+  ok(await p.locator(`${dlg} [data-act="confirm-submit"]`).isDisabled(), 'Submit stays disabled until the disclaimer is acknowledged');
+  await p.screenshot({ path: `${shots}/phase2-dialog.png` });
+  await p.check(ack); ok(await p.locator(`${dlg} [data-act="confirm-submit"]`).isEnabled(), 'ticking the acknowledgement enables Submit');
+  // a network failure keeps the draft; the retry uses the same key
+  await p.evaluate(() => { __be.failNext = 1; });
+  await p.locator(`${dlg} [data-act="confirm-submit"]`).click(); await p.waitForTimeout(250);
+  ok(await p.locator(dlg).count() === 1 && /Could not reach the server/.test(await p.$eval(`${dlg} .area-errors`, (e) => e.textContent)), 'a failed submission shows an error and keeps the dialog');
+  let st = await stored(p);
+  ok(st.areas.length === 2 && st.areas[0].name === 'Seeded <b>park</b>' && st.areas[0].submission.status === 'unsent' && /^[A-Za-z0-9_-]{16,64}$/.test(st.areas[0].submission.key), 'the local draft is intact and holds the retry key');
+  const key1 = st.areas[0].submission.key;
+  await p.locator(`${dlg} [data-act="confirm-submit"]`).click(); await p.waitForSelector(dlg, { state: 'detached' });
+  const subs = await p.evaluate(() => __be.calls.filter((c) => c.fn === 'submit_community_area'));
+  ok(subs.length === 2 && subs[0].args.p_payload.idempotency_key === key1 && subs[1].args.p_payload.idempotency_key === key1, 'the retry reused the same idempotency key');
+  ok(!Object.keys(subs[1].args.p_payload).some((k) => /owner|contributor|user|email/i.test(k)) && JSON.stringify(subs[1].args).indexOf('abrowser1') < 0, 'the request names no person and not the local id');
+  const line = await item('abrowser1').locator('[data-status="pending"]').textContent();
+  ok(/Pending review/.test(line) && /submitted \d{1,2} \w{3} 20\d\d/.test(line), 'the area shows "Pending review" with the submission date');
+  ok(await item('abrowser1').locator('[data-act="submit"]').count() === 0 && await item('abrowser1').locator('[data-act="withdraw"]').count() === 1, 'a pending area offers Withdraw, not Submit');
+  st = await stored(p);
+  ok(st.areas[0].submission.status === 'pending' && /^[0-9a-f-]{36}$/.test(st.areas[0].submission.revisionId) && st.areas.length === 2, 'the local-to-server link is stored with the draft');
+  // reload: link survives; sign-out keeps drafts
+  await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(700);
+  if (await p.locator('#panel').isVisible()) await p.click('#panel-close');
+  await openPanel(p);
+  ok(/Pending review/.test(await item('abrowser1').locator('[data-status]').textContent()), 'after a reload the area still shows its submission');
+  await p.evaluate(() => { __be.signed = false; __be.fire(); }); await p.waitForTimeout(150);
+  ok(await item('abrowser1').count() === 1 && await item('abrowser2').count() === 1 && (await stored(p)).areas.length === 2 && /Pending review/.test(await item('abrowser1').locator('[data-status]').textContent()), 'signing out keeps every local draft and its status');
+  // duplicate does not inherit the submission
+  await item('abrowser1').locator('[data-act="duplicate"]').click(); await p.waitForTimeout(150);
+  const dup = (await stored(p)).areas.find((a) => /^Copy of/.test(a.name));
+  ok(dup && dup.submission === null, 'a duplicated area does not inherit the submission');
+  // withdraw (signed out: refused politely; signed in: works and keeps the draft)
+  await item('abrowser1').locator('[data-act="withdraw"]').click(); await p.locator(`${panel} [data-act="confirm-withdraw"]`).click(); await p.waitForTimeout(200);
+  ok(/pending/i.test(await item('abrowser1').locator('[data-status]').textContent()) && await p.evaluate(() => __be.calls.filter((c) => c.fn === 'withdraw_community_revision').length) === 0, 'signed out: withdrawal is refused and nothing is sent');
+  await p.evaluate(() => { __be.signed = true; __be.fire(); }); await p.waitForTimeout(200);
+  await openPanel(p);
+  await item('abrowser1').locator('[data-act="withdraw"]').click(); await p.locator(`${panel} [data-act="confirm-withdraw"]`).click(); await p.waitForTimeout(250);
+  ok(/Withdrawn/.test(await item('abrowser1').locator('[data-status]').textContent()) && (await stored(p)).areas.length === 3 && await item('abrowser1').locator('[data-act="submit"]').count() === 1, 'withdrawing keeps the draft and allows submitting again');
+  // double press: one request
+  await p.evaluate(() => { __be.calls.length = 0; __be.delay = 300; });
+  await item('abrowser2').locator('[data-act="submit"]').click(); await p.waitForSelector(`${dlg}[open]`); await p.check(ack);
+  await p.evaluate(() => { const b = document.querySelector('dialog.area-submit-dialog [data-act="confirm-submit"]'); b.click(); b.click(); b.click(); });
+  await p.waitForSelector(dlg, { state: 'detached' });
+  ok(await p.evaluate(() => __be.calls.filter((c) => c.fn === 'submit_community_area').length) === 1, 'repeated presses while a request is in flight send one request');
+  // an unavailable-account build, and the dialog on a phone
+  await p.screenshot({ path: `${shots}/phase2-list.png` });
+}
+await ctx.close();
+({ ctx, p } = await open({ vp: { width: 390, height: 780 }, touch: true, storage: { [KEY]: JSON.stringify({ v: 1, areas: [{ id: 'abrowser1', name: 'Phone', description: '', drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [[[103.8, 1.3], [103.81, 1.3], [103.81, 1.31], [103.8, 1.31], [103.8, 1.3]]] }, spots: [], created: '2026-11-01T00:00:00.000Z', updated: '2026-11-01T00:00:00.000Z' }] }), 'be': '1' }, backend: true }));
+{
+  await p.evaluate(() => { __be.signed = true; });
+  await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(700);
+  if (await p.locator('#panel').isVisible()) await p.click('#panel-close');
+  await openPanel(p);
+  await p.locator(`${panel} [data-act="submit"]`).tap(); await p.waitForSelector('dialog.area-submit-dialog[open]');
+  const r = await p.$eval('dialog.area-submit-dialog', (e) => { const x = e.getBoundingClientRect(); return { l: x.left, r: x.right, t: x.top, b: x.bottom }; });
+  ok(r.l >= 0 && r.r <= 390 && r.t >= 0 && r.b <= 780, 'phone: the submit dialog fits the screen');
+  await p.screenshot({ path: `${shots}/phase2-phone-dialog.png` });
 }
 await ctx.close();
 

@@ -15,6 +15,22 @@ const newId = () => 'a' + Date.now().toString(36) + Math.random().toString(36).s
 const nowIso = () => new Date().toISOString();
 const isIso = (s) => typeof s === 'string' && s.length <= 40 && !Number.isNaN(Date.parse(s));
 
+/** Server-submission reference kept on a local record (Phase 2). Never exported, imported, duplicated or synced; null when absent or damaged. */
+export const SUBMISSION_STATUSES = ['unsent', 'pending', 'approved', 'rejected', 'withdrawn', 'missing'];
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function cleanSubmission(raw) {
+  if (!raw || typeof raw !== 'object' || !SUBMISSION_STATUSES.includes(raw.status)) return null;
+  const key = typeof raw.key === 'string' && /^[A-Za-z0-9_-]{16,64}$/.test(raw.key) ? raw.key : null;
+  const out = { status: raw.status, key, contentHash: typeof raw.contentHash === 'string' && /^[0-9a-f]{8}$/.test(raw.contentHash) ? raw.contentHash : null };
+  if (raw.areaId !== undefined && raw.areaId !== null) { if (!UUID.test(raw.areaId)) return null; out.areaId = raw.areaId; }
+  if (raw.revisionId !== undefined && raw.revisionId !== null) { if (!UUID.test(raw.revisionId)) return null; out.revisionId = raw.revisionId; }
+  if (Number.isInteger(raw.revisionNo) && raw.revisionNo >= 1 && raw.revisionNo < 1e6) out.revisionNo = raw.revisionNo;
+  if (isIso(raw.submittedAt)) out.submittedAt = raw.submittedAt;
+  if (typeof raw.reason === 'string' && raw.reason) out.reason = raw.reason.slice(0, 500);
+  if (raw.status !== 'unsent' && !out.revisionId) return null; // every status but "not sent yet" names the server's revision
+  return out;
+}
+
 function defaultStorage() { try { return globalThis.localStorage ?? null; } catch { return null; } }
 
 /** `storage`: anything with getItem/setItem (tests pass a fake); default localStorage. */
@@ -40,7 +56,7 @@ export function createAreaStore({ storage = defaultStorage() } = {}) {
       const r = validateArea(rec);
       if (!r.ok || !rec.id || typeof rec.id !== 'string' || seen.has(rec.id)) { dropped++; continue; }
       seen.add(rec.id);
-      areas.push({ ...r.area, id: rec.id, created: isIso(rec.created) ? rec.created : nowIso(), updated: isIso(rec.updated) ? rec.updated : nowIso() });
+      areas.push({ ...r.area, id: rec.id, created: isIso(rec.created) ? rec.created : nowIso(), updated: isIso(rec.updated) ? rec.updated : nowIso(), submission: cleanSubmission(rec.submission) });
     }
     dropped += Math.max(0, data.areas.length - MAX_AREAS);
     if (dropped) { keepBackup(raw); recovered = { reason: 'invalid-records', dropped }; }
@@ -68,7 +84,7 @@ export function createAreaStore({ storage = defaultStorage() } = {}) {
       const r = validateArea(draft);
       if (!r.ok) return r;
       const t = nowIso();
-      const area = { ...r.area, id: newId(), created: t, updated: t };
+      const area = { ...r.area, id: newId(), created: t, updated: t, submission: null }; // a new record never inherits a submission (duplicate, import)
       areas.push(area); persist();
       return { ok: true, errors: [], area: copy(area) };
     },
@@ -89,6 +105,15 @@ export function createAreaStore({ storage = defaultStorage() } = {}) {
       const name = cleanText('Copy of ' + old.name, { max: NAME_MAX }).value || 'Copy';
       const clipped = Array.from(name).slice(0, NAME_MAX).join('');
       return this.add({ ...copy(old), name: clipped, spots: old.spots.map(({ id: _drop, ...s }) => s) });
+    },
+    /** Sets or clears (null) the server-submission reference of a local area without touching its content or its updated time. -> true when stored. */
+    setSubmission(id, sub) {
+      const a = find(id);
+      if (!a) return false;
+      const c = sub === null ? null : cleanSubmission(sub);
+      if (sub !== null && !c) return false;
+      a.submission = c; persist();
+      return true;
     },
     remove(id) {
       const i = areas.findIndex((a) => a.id === id);

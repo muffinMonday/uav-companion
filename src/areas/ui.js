@@ -5,6 +5,25 @@ import { el } from '../cards.js';
 import { formatArea, SPOT_LABELS } from './core.js';
 import { DISCLAIMER } from './layer.js';
 import { MAX_IMPORT_BYTES } from './store.js';
+import { MAX_PENDING } from './api.js';
+import { showModalQuiet } from '../touch.js';
+
+const fmtDate = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
+/** The plain-language line under a saved area for its submission state, or null. All text is set with textContent by the caller. */
+export function submissionLine(st) {
+  const on = st.sub?.submittedAt ? ` · submitted ${fmtDate(st.sub.submittedAt)}` : '';
+  const edited = st.changed ? ' The draft has changed since: the submitted version is unchanged.' : '';
+  switch (st.kind) {
+    case 'sending': return 'Submitting…';
+    case 'unsent': return 'Not submitted yet: the last attempt did not finish. Your draft is safe; you can submit again.';
+    case 'pending': return `Pending review${on}. An administrator will look at it; you can withdraw it until then.${edited}`;
+    case 'approved': return `Approved${on}.${edited}`;
+    case 'rejected': return `Not approved${on}.${st.sub?.reason ? ' Reason: ' + st.sub.reason : ''}${edited}`;
+    case 'withdrawn': return `Withdrawn${on}. Your draft stays here; you can submit it again.${edited}`;
+    case 'missing': return 'Submitted earlier, but not found for the account you are signed in with. You can submit it again.';
+    default: return null;
+  }
+}
 
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6.5 14 4l5 6-2 8-9 2-3-7z" stroke-dasharray="3 2.5"/></svg>';
 
@@ -15,9 +34,9 @@ export function download(name, text, type = 'application/geo+json') {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-export function createAreasUI({ map, store, layer, draw, toast, panel }) {
+export function createAreasUI({ map, store, layer, draw, toast, panel, submit }) {
   const container = map.getContainer();
-  let isOpen = false, btn = null, confirmId = null, shown = true;
+  let isOpen = false, btn = null, confirmId = null, withdrawId = null, shown = true;
 
   const root = el('div', 'areas-panel'); root.id = 'areas-panel'; root.hidden = true;
   root.setAttribute('role', 'region'); root.setAttribute('aria-label', 'My flying areas');
@@ -50,6 +69,7 @@ export function createAreasUI({ map, store, layer, draw, toast, panel }) {
     const head = el('div', 'areas-head');
     head.append(el('strong', 'areas-title', 'My flying areas'), b('×', () => set(false), { cls: 'areas-close', act: 'close', aria: 'Close My flying areas' }));
     const intro = el('p', 'areas-intro', 'Draw places you recommend for flying. They stay in this browser, private to you, and do not change any point check. ' + DISCLAIMER);
+    const note = el('p', 'areas-note', `Submit for review is optional and needs an account. Up to ${MAX_PENDING} submissions can wait for review at once.`);
     const st = store.status();
     const warn = st.warning ? el('p', 'areas-warn', st.warning) : null;
     const rec = st.recovered ? el('p', 'areas-warn', st.recovered.dropped ? `${st.recovered.dropped} saved area(s) could not be read and were left out; the original data is kept in this browser.` : 'The saved areas could not be read; the original data is kept in this browser and the list starts empty.') : null;
@@ -66,8 +86,13 @@ export function createAreasUI({ map, store, layer, draw, toast, panel }) {
       const meta = [formatArea(a.areaM2 ?? 0), a.spots.length ? `${a.spots.length} setup spot${a.spots.length === 1 ? '' : 's'}` : null, a.drawKind].filter(Boolean).join(' · ');
       li.append(el('div', 'area-item-name', a.name), el('div', 'area-item-meta', meta));
       if (a.description) li.append(el('div', 'area-item-desc', a.description));
+      const sst = submit.state(a);
+      const line = submissionLine(sst);
+      if (line) { const sl = el('div', 'area-item-status ' + sst.kind, line); sl.dataset.status = sst.kind; li.append(sl); }
       const row = el('div', 'area-item-actions');
-      if (confirmId === a.id) {
+      if (withdrawId === a.id) {
+        row.append(el('span', 'area-confirm', 'Withdraw this submission? Your draft stays here.'), b('Withdraw', async () => { withdrawId = null; const r = await submit.withdraw(a.id); toast(r.ok ? 'Submission withdrawn. Your draft is kept.' : r.message, 6000); paint(); }, { cls: 'btn danger', act: 'confirm-withdraw' }), b('Keep submitted', () => { withdrawId = null; paint(); }, { act: 'keep-submission' }));
+      } else if (confirmId === a.id) {
         row.append(el('span', 'area-confirm', 'Delete this area?'), b('Delete', () => { store.remove(a.id); confirmId = null; toast('Area deleted.'); paint(); }, { cls: 'btn danger', act: 'confirm-delete' }), b('Keep', () => { confirmId = null; paint(); }, { act: 'keep' }));
       } else {
         row.append(b('Show', () => { layer.select(a.id); layer.fit(a.id); if (matchMedia('(max-width: 520px)').matches) set(false); }, { act: 'show', aria: `Show ${a.name} on the map` }),
@@ -75,10 +100,67 @@ export function createAreasUI({ map, store, layer, draw, toast, panel }) {
           b('Duplicate', () => { const r = store.duplicate(a.id); toast(r.ok ? 'Duplicated.' : r.errors[0].message); }, { act: 'duplicate', aria: `Duplicate ${a.name}` }),
           b('Export', () => download(`${a.name.replace(/[^\w.-]+/g, '-').slice(0, 40) || 'area'}.geojson`, JSON.stringify(store.toGeoJSON([a.id]), null, 2)), { act: 'export', aria: `Export ${a.name}` }),
           b('Delete', () => { confirmId = a.id; paint(); }, { act: 'delete', aria: `Delete ${a.name}` }));
+        if (submit.eligible(a) || sst.kind === 'sending') {
+          const sb = b(sst.kind === 'sending' ? 'Submitting…' : 'Submit for review', () => startSubmit(a.id), { cls: 'btn primary', act: 'submit', aria: `Submit ${a.name} for review` });
+          if (sst.kind === 'sending') { sb.disabled = true; sb.setAttribute('aria-busy', 'true'); }
+          row.append(sb);
+        } else if (sst.kind === 'pending') row.append(b('Withdraw', () => { withdrawId = a.id; paint(); }, { act: 'withdraw', aria: `Withdraw ${a.name}` }));
       }
       li.append(row); list.append(li);
     }
-    root.replaceChildren(head, intro, ...(warn ? [warn] : []), ...(rec ? [rec] : []), make, showLabel, list, fileIn);
+    root.replaceChildren(head, intro, note, ...(warn ? [warn] : []), ...(rec ? [rec] : []), make, showLabel, list, fileIn);
+  }
+  /** Submit pressed: a guest is sent to sign in (and the wish is kept); a signed-in person gets the acknowledgement dialog. Nothing is sent until that is confirmed. */
+  function startSubmit(id) {
+    const a = store.get(id);
+    if (!a || !submit.eligible(a)) return;
+    if (!submit.backend.available()) { toast('Submitting needs an account, which this version of the app does not have.', 7000); return; }
+    if (!submit.backend.signedIn()) {
+      submit.intent.set(id);
+      toast('Sign in to submit. Your area stays saved here; you will come back to this step.', 8000);
+      submit.backend.signIn();
+      return;
+    }
+    openSubmitDialog(a);
+  }
+  function openSubmitDialog(a) {
+    document.querySelector('dialog.area-submit-dialog')?.remove();
+    const dlg = el('dialog', 'area-dialog area-submit-dialog'); dlg.setAttribute('aria-labelledby', 'area-submit-title');
+    const form = el('form', 'area-form'); form.method = 'dialog'; form.noValidate = true;
+    const h = el('h2', 'area-dlg-title', 'Submit for review'); h.id = 'area-submit-title';
+    const what = el('p', 'area-note'); what.append('Send ', el('strong', '', a.name), ' to the administrators for review. Your private copy stays in this browser either way.');
+    const privacy = el('p', 'area-note', 'The name, description, outline and setup spots are sent, with your account so you can track and withdraw it. Do not put personal information in the name or description.');
+    const disc = el('p', 'area-note area-disclaimer', DISCLAIMER);
+    const limit = el('p', 'area-note', `You can have up to ${MAX_PENDING} submissions waiting for review at once.`);
+    const ack = el('label', 'area-ack'); const cb = el('input'); cb.type = 'checkbox'; cb.id = 'area-ack'; ack.append(cb, el('span', '', ' I have read this: it is a community recommendation, not flight authorization.'));
+    const err = el('div', 'area-errors'); err.setAttribute('role', 'alert');
+    const go = el('button', 'btn primary', 'Submit for review'); go.type = 'submit'; go.dataset.act = 'confirm-submit'; go.disabled = true;
+    const cancel = el('button', 'btn', 'Cancel'); cancel.type = 'button'; cancel.dataset.act = 'cancel-submit';
+    const actions = el('div', 'area-dlg-actions'); actions.append(go, cancel);
+    cb.addEventListener('change', () => { go.disabled = !cb.checked || submit.isBusy(a.id); });
+    cancel.addEventListener('click', () => dlg.close());
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!cb.checked || submit.isBusy(a.id)) return;
+      go.disabled = true; err.replaceChildren();
+      const r = await submit.submit(a.id);
+      if (r.ok) { dlg.close(); toast(r.status === 'pending' ? 'Submitted for review. Your private draft is kept.' : 'Submission recorded. Your private draft is kept.', 7000); }
+      else { err.replaceChildren(el('p', '', r.message)); go.disabled = !cb.checked; if (r.code === 'signed-out') { submit.intent.set(a.id); } }
+      paint();
+    });
+    dlg.addEventListener('close', () => dlg.remove());
+    form.append(h, what, privacy, disc, limit, ack, err, actions); dlg.append(form); document.body.append(dlg);
+    showModalQuiet(dlg);
+  }
+  /** After signing in: reopen the dialog for the area the person wanted to submit (they still have to acknowledge and confirm). */
+  function resumeIntent() {
+    if (!submit.backend.signedIn()) return;
+    const id = submit.intent.take();
+    if (!id) return;
+    const a = store.get(id);
+    if (!a || !submit.eligible(a) || draw.isBusy()) return;
+    set(true);
+    openSubmitDialog(a);
   }
   function begin(opts) {
     if (!draw.start(opts)) return;
@@ -92,7 +174,8 @@ export function createAreasUI({ map, store, layer, draw, toast, panel }) {
   function set(on) {
     if (on === isOpen) return;
     if (on && draw.isBusy()) return;
-    isOpen = on; confirmId = null; paint();
+    isOpen = on; confirmId = null; withdrawId = null; paint();
+    if (on) submit.refresh();
     if (on) root.querySelector('[data-act="draw-polygon"]')?.focus({ preventScroll: true });
     else if (btn && document.activeElement !== document.body && root.contains(document.activeElement)) btn.focus({ preventScroll: true });
   }
@@ -112,8 +195,12 @@ export function createAreasUI({ map, store, layer, draw, toast, panel }) {
   });
   new Control().addTo(map);
   store.onChange(() => { if (isOpen) paint(); });
+  submit.onChange(() => { if (isOpen) paint(); });
+  let wasIn = submit.backend.signedIn();
+  submit.backend.onChange?.(() => { const now = submit.backend.signedIn(); if (now === wasIn) return; wasIn = now; if (now) { submit.refresh(); resumeIntent(); } else if (isOpen) paint(); });
   addEventListener('resize', () => { if (isOpen) paint(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen && root.contains(document.activeElement)) { e.stopPropagation(); set(false); } }, true);
   paint();
+  setTimeout(resumeIntent, 0); // a return from sign-in (the page reloaded)
   return { open: () => set(true), close: () => set(false), get isOpen() { return isOpen; }, button: () => btn };
 }
