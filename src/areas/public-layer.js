@@ -8,10 +8,9 @@
 import L from 'leaflet';
 import { SPOT_LABELS } from './core.js';
 import { spotsShown, pickArea } from './geo.js';
-import { AREA_STYLE, ensurePanes, toLatLngs, spotIcon, spotPopup } from './layer.js';
+import { AREA_STYLE, ensurePanes, toLatLngs, spotIcon, spotPopup, popupOptions } from './layer.js';
 import { createPublicLoader, createPublicApi, viewportQuery } from './public-api.js';
 
-const POPUP = { closeOnClick: false, autoPan: true, className: 'area-popup-wrap', maxWidth: 280, autoPanPaddingTopLeft: [60, 70], autoPanPaddingBottomRight: [24, 90] };
 export const DEBOUNCE_MS = 450;
 export const LOADING_DELAY_MS = 700; // the loading note appears only when a request is slow
 
@@ -50,7 +49,7 @@ export function createPublicAreas({ map, store, backend, onView = null, enabled 
         const ll = L.latLng(s.coordinates[1], s.coordinates[0]);
         if (!b.contains(ll)) continue;
         const m = L.marker(ll, { icon: spotIcon(s.type), keyboard: true, title: SPOT_LABELS[s.type], alt: SPOT_LABELS[s.type] });
-        m.bindPopup(() => spotPopup(s, v.area, { onView: onView ? () => { map.closePopup(); onView(v.areaId); } : null }), POPUP);
+        m.bindPopup(() => spotPopup(s, v.area, { onView: onView ? () => { map.closePopup(); onView(v.areaId); } : null }), popupOptions());
         m.addTo(spots);
       }
     }

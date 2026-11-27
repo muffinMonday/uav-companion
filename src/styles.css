@@ -1742,10 +1742,12 @@ body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + var(-
 .area-spot{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;background:var(--surface);color:var(--community);border:2px solid var(--community);box-shadow:var(--shadow-pin);box-sizing:border-box}
 .area-spot svg{width:17px;height:17px}
 .area-spot.out{border-color:var(--danger);color:var(--danger)}
-.area-popup{max-width:260px}.area-popup p{margin:6px 0 0}.area-popup-disclaimer{color:var(--muted);font-size:var(--fs-meta)}
+.area-popup{box-sizing:border-box;max-width:100%;padding:16px;display:flex;flex-direction:column;gap:12px;overflow-wrap:anywhere}.area-popup p{margin:0}.area-popup-disclaimer{color:var(--muted);font-size:var(--fs-meta)}
+/* spot popup only (Leaflet content margin is 0 app-wide): 16 px inner padding, 12 px between sections, room for the close button, never wider than the screen */
+.area-popup-wrap .leaflet-popup-content{max-width:calc(100vw - 48px)!important;box-sizing:border-box}.area-popup-wrap .area-popup-head{padding-right:20px}.area-popup-wrap .area-popup-disclaimer{padding-bottom:4px}
 .area-popup-head{display:flex;align-items:center;gap:8px}.area-popup-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;border-radius:7px;border:2px solid var(--community);color:var(--community);box-sizing:border-box}.area-popup-icon svg{width:17px;height:17px}
 .area-popup-parent{color:var(--muted);font-size:var(--fs-small)}
-.area-popup-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.area-popup-actions .btn,.area-popup-actions .map-action{min-height:40px}
+.area-popup-actions{display:flex;flex-wrap:wrap;gap:8px}.area-popup-actions .btn,.area-popup-actions .map-action{min-height:40px}
 .community-area.is-selected{fill-opacity:.26!important}
 .areas-public-note{position:absolute;left:50%;bottom:calc(52px + var(--shell-nav-bottom-h,0px));transform:translateX(-50%);z-index:var(--z-live-chip);max-width:min(80vw,320px);padding:4px 10px;border-radius:var(--radius-pill,999px);background:color-mix(in srgb,var(--surface) 92%,transparent);color:var(--muted);border:1px solid var(--line);font-size:var(--fs-small);pointer-events:none;text-align:center}
 .areas-public-note[hidden]{display:none}

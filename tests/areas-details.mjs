@@ -220,5 +220,21 @@ await p.touchscreen.tap(bb3.x + bb3.width * 0.5, bb3.y + bb3.height * 0.5); awai
 ok(['side', 'bottom'].includes(await p.locator(MH).getAttribute('data-mode')) && await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `foldable 840 px: ${await p.locator(MH).getAttribute('data-mode')} mode, no horizontal scroll`);
 await ctx.close();
 
+// ================= spot popup layout: 16 px padding, 12 px section gap, room under the disclaimer, no clipping at any width
+for (const [w, h, touch] of [[320, 640, true], [390, 780, true], [840, 800, true], [1300, 850, false]]) {
+  ({ ctx, p } = await open({ vp: { width: w, height: h }, touch, areas: [{ ...A, spots: [spot('spotA1', 'shelter', 103.803, 1.303, 'Covered pavilion with picnic tables and a very_long_unbroken_word_to_check_wrapping_behaviour')] }] }));
+  await p.locator('.area-spot').first().click(); await p.waitForSelector('.area-popup'); await p.waitForTimeout(500);
+  const m = await p.evaluate(() => {
+    const q = document.querySelector('.area-popup'), cs = getComputedStyle(q), r = q.getBoundingClientRect(), d = q.querySelector('.area-popup-disclaimer').getBoundingClientRect(), wr = q.closest('.leaflet-popup-content-wrapper').getBoundingClientRect(), kids = [...q.children].map((c) => c.getBoundingClientRect());
+    return { pad: [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft], gap: kids.slice(1).map((k, i) => Math.round(k.top - kids[i].bottom)), under: Math.round(wr.bottom - d.bottom), sw: q.scrollWidth - q.clientWidth, left: r.left, right: r.right, doc: document.documentElement.scrollWidth - innerWidth, vw: innerWidth };
+  });
+  ok(m.pad.every((v) => v === '16px'), `${w}px: popup padding 16 px (${m.pad.join(' ')})`);
+  ok(m.gap.length > 0 && m.gap.every((g) => g >= 12 && g <= 16), `${w}px: 12 to 16 px between sections (${m.gap.join(',')})`);
+  ok(m.under >= 16, `${w}px: room under the disclaimer (${m.under} px)`);
+  ok(m.sw <= 0 && m.left >= 0 && m.right <= m.vw && m.doc <= 0, `${w}px: no clipping or horizontal overflow (scroll ${m.sw}, ${Math.round(m.left)}..${Math.round(m.right)} of ${m.vw})`);
+  if (w === 320 || w === 1300) await p.screenshot({ path: `${shots}/spot-popup-${w}.png` });
+  await ctx.close();
+}
+
 await b.close();
 ok(errs.length === 0, 'no page errors: ' + errs.slice(0, 3).join(' | '));

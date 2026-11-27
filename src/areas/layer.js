@@ -55,7 +55,11 @@ export function spotPopup(spot, area, { onView = null } = {}) {
   return box;
 }
 
-const POPUP = { closeOnClick: false, autoPan: true, className: 'area-popup-wrap', maxWidth: 280, autoPanPaddingTopLeft: [60, 70], autoPanPaddingBottomRight: [24, 90] };
+/** Spot popup options, read when the popup opens: never wider than the screen minus its margins, and a small left autopan margin on very narrow screens. */
+export const popupOptions = () => {
+  const w = globalThis.innerWidth || 390;
+  return { closeOnClick: false, autoPan: true, className: 'area-popup-wrap', maxWidth: Math.max(200, Math.min(280, w - 48)), autoPanPaddingTopLeft: [w < 400 ? 16 : 60, 70], autoPanPaddingBottomRight: [16, 90] };
+};
 
 export function createAreaLayer(map, store) {
   ensurePanes(map);
@@ -82,7 +86,7 @@ export function createAreaLayer(map, store) {
       if (a.id === hiddenId) continue;
       for (const s of a.spots) {
         const m = L.marker([s.coordinates[1], s.coordinates[0]], { icon: spotIcon(s.type), keyboard: true, title: SPOT_LABELS[s.type], alt: SPOT_LABELS[s.type] });
-        m.bindPopup(() => spotPopup(s, a, { onView: onView ? () => { map.closePopup(); onView(a.id); } : null }), POPUP);
+        m.bindPopup(() => spotPopup(s, a, { onView: onView ? () => { map.closePopup(); onView(a.id); } : null }), popupOptions());
         m.addTo(spots); markers.set(s.id, m);
       }
     }
