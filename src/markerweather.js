@@ -43,10 +43,10 @@ export function rainOutlook(e) {
   return { kind: 'none', hours: list };
 }
 
-function loadCache() {
+function loadCache(key = KEY) {
   const empty = { lastBulk: null, items: {} };
   try {
-    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
+    const d = JSON.parse(localStorage.getItem(key) || 'null');
     if (!d || typeof d.items !== 'object' || !d.items) return empty;
     const items = {};
     for (const [id, e] of Object.entries(d.items)) {
@@ -64,14 +64,14 @@ export function formatWhen(ms) {
   return d.toDateString() === now.toDateString() ? time : `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })} ${time}`;
 }
 
-export function createMarkerWeather({ getItems, onChange }) {
-  let cache = loadCache();
+export function createMarkerWeather({ getItems, onChange, storageKey = KEY }) {
+  let cache = loadCache(storageKey);
   let running = false, failed = false;
   const loading = new Set();
   const pending = new Set();
 
   const isOn = () => getPrivacy().autoWeather;
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ v: 1, ...cache })); } catch { /* storage blocked: cache lives for this page only */ } };
+  const save = () => { try { localStorage.setItem(storageKey, JSON.stringify({ v: 1, ...cache })); } catch { /* storage blocked: cache lives for this page only */ } };
   const emit = () => onChange?.();
   const ids = () => getItems().map((i) => i.id);
 
