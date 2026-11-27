@@ -150,5 +150,28 @@ const Q1 = viewportQuery(V), Q2 = viewportQuery({ west: 104.5, south: 1.25, east
   ok(cleanAttribution({ display_name: '  ' }) === null && cleanAttribution(null) === null, 'an empty name gives no attribution');
 }
 
+// ---- Phase 5: a response that was in flight cannot restore an unpublished or superseded record
+{
+  // an api that ignores the abort signal, as a misbehaving transport might
+  const data = records.slice(0, 3); let release; const gate = new Promise((r) => { release = r; });
+  const api = { available: () => true, async list() { await gate; return { areas: data, next: null }; } };
+  const L = createPublicLoader({ api });
+  const pending = L.load(Q1); await flush();
+  L.forget(id(2)); release();
+  const r = await pending;
+  ok(r && r.views.length === 2 && r.views.every((v) => v.areaId !== id(2)), 'forget() during a request: the late response does not bring the area back');
+  ok((await L.load(Q1)).views.every((v) => v.areaId !== id(2)), '...and the cached entry does not contain it either');
+}
+{
+  const data = records.slice(0, 3); let release; const gate = new Promise((r) => { release = r; }); let calls = 0;
+  const api = { available: () => true, async list() { calls++; if (calls === 1) await gate; return { areas: calls === 1 ? data : data.slice(0, 1), next: null }; } };
+  const L = createPublicLoader({ api });
+  const old = L.load(Q1); await flush();
+  L.clear(); // a moderation decision: everything before it is out of date
+  release();
+  ok((await old) === null && L.size() === 0, 'clear() during a request: the late response is dropped and nothing is cached from it');
+  ok((await L.load(Q1)).views.length === 1, '...the next load reads the current state');
+}
+
 console.log(fails ? `\n${fails} FAILED` : '\nall passed');
 process.exit(fails ? 1 : 0);

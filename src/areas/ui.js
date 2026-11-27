@@ -8,7 +8,7 @@ import { MAX_IMPORT_BYTES } from './store.js';
 import { MAX_PENDING } from './api.js';
 import { showModalQuiet } from '../touch.js';
 
-import { submissionLine } from './status.js';
+import { submissionLine, deleteWarning } from './status.js';
 export { submissionLine };
 
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6.5 14 4l5 6-2 8-9 2-3-7z" stroke-dasharray="3 2.5"/></svg>';
@@ -81,7 +81,7 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
       if (withdrawId === a.id) {
         row.append(el('span', 'area-confirm', 'Withdraw this submission? Your draft stays here.'), b('Withdraw', async () => { withdrawId = null; const r = await submit.withdraw(a.id); toast(r.ok ? 'Submission withdrawn. Your draft is kept.' : r.message, 6000); paint(); }, { cls: 'btn danger', act: 'confirm-withdraw' }), b('Keep submitted', () => { withdrawId = null; paint(); }, { act: 'keep-submission' }));
       } else if (confirmId === a.id) {
-        row.append(el('span', 'area-confirm', 'Delete this area?'), b('Delete', () => { store.remove(a.id); confirmId = null; toast('Area deleted.'); paint(); }, { cls: 'btn danger', act: 'confirm-delete' }), b('Keep', () => { confirmId = null; paint(); }, { act: 'keep' }));
+        row.append(el('span', 'area-confirm', deleteWarning(a.submission)), b('Delete', () => { store.remove(a.id); confirmId = null; toast('Area deleted.'); paint(); }, { cls: 'btn danger', act: 'confirm-delete' }), b('Keep', () => { confirmId = null; paint(); }, { act: 'keep' }));
       } else {
         row.append(b('Show', () => { layer.fit(a.id); if (openDetails) { openDetails(a.id); set(false); } else { layer.select(a.id); if (matchMedia('(max-width: 520px)').matches) set(false); } }, { act: 'show', aria: `Show ${a.name} on the map` }),
           b('Edit', () => begin({ areaId: a.id }), { act: 'edit', aria: `Edit ${a.name}` }),
@@ -89,7 +89,7 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
           b('Export', () => download(`${a.name.replace(/[^\w.-]+/g, '-').slice(0, 40) || 'area'}.geojson`, JSON.stringify(store.toGeoJSON([a.id]), null, 2)), { act: 'export', aria: `Export ${a.name}` }),
           b('Delete', () => { confirmId = a.id; paint(); }, { act: 'delete', aria: `Delete ${a.name}` }));
         if (submit.eligible(a) || sst.kind === 'sending') {
-          const sb = b(sst.kind === 'sending' ? 'Submitting…' : 'Submit for review', () => startSubmit(a.id), { cls: 'btn primary', act: 'submit', aria: `Submit ${a.name} for review` });
+          const rv = submit.isRevision(a), sb = b(sst.kind === 'sending' ? 'Submitting…' : rv ? 'Submit changes' : 'Submit for review', () => startSubmit(a.id), { cls: 'btn primary', act: 'submit', aria: rv ? `Submit changes to ${a.name} for review` : `Submit ${a.name} for review` });
           if (sst.kind === 'sending') { sb.disabled = true; sb.setAttribute('aria-busy', 'true'); }
           row.append(sb);
         } else if (sst.kind === 'pending') row.append(b('Withdraw', () => { withdrawId = a.id; paint(); }, { act: 'withdraw', aria: `Withdraw ${a.name}` }));
@@ -115,14 +115,16 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
     document.querySelector('dialog.area-submit-dialog')?.remove();
     const dlg = el('dialog', 'area-dialog area-submit-dialog'); dlg.setAttribute('aria-labelledby', 'area-submit-title');
     const form = el('form', 'area-form'); form.method = 'dialog'; form.noValidate = true;
-    const h = el('h2', 'area-dlg-title', 'Submit for review'); h.id = 'area-submit-title';
-    const what = el('p', 'area-note'); what.append('Send ', el('strong', '', a.name), ' to the administrators for review. Your private copy stays in this browser either way.');
+    const rv = submit.isRevision(a);
+    const h = el('h2', 'area-dlg-title', rv ? 'Submit changes for review' : 'Submit for review'); h.id = 'area-submit-title';
+    const what = el('p', 'area-note'); if (rv) what.append('Send your changes to ', el('strong', '', a.name), ' to the administrators for review. The published version stays visible to everyone, unchanged, until an administrator approves your change; if it is rejected or you withdraw it, nothing public changes.');
+    else what.append('Send ', el('strong', '', a.name), ' to the administrators for review. Your private copy stays in this browser either way.');
     const privacy = el('p', 'area-note', 'The name, description, outline and setup spots are sent, with your account so you can track and withdraw it. Do not put personal information in the name or description.');
     const disc = el('p', 'area-note area-disclaimer', DISCLAIMER);
     const limit = el('p', 'area-note', `You can have up to ${MAX_PENDING} submissions waiting for review at once.`);
     const ack = el('label', 'area-ack'); const cb = el('input'); cb.type = 'checkbox'; cb.id = 'area-ack'; ack.append(cb, el('span', '', ' I have read this: it is a community recommendation, not flight authorization.'));
     const err = el('div', 'area-errors'); err.setAttribute('role', 'alert');
-    const go = el('button', 'btn primary', 'Submit for review'); go.type = 'submit'; go.dataset.act = 'confirm-submit'; go.disabled = true;
+    const go = el('button', 'btn primary', rv ? 'Submit changes' : 'Submit for review'); go.type = 'submit'; go.dataset.act = 'confirm-submit'; go.disabled = true;
     const cancel = el('button', 'btn', 'Cancel'); cancel.type = 'button'; cancel.dataset.act = 'cancel-submit';
     const actions = el('div', 'area-dlg-actions'); actions.append(go, cancel);
     cb.addEventListener('change', () => { go.disabled = !cb.checked || submit.isBusy(a.id); });

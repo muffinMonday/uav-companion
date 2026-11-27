@@ -6,7 +6,7 @@
 //   context: 'private' | 'pending' | 'rejected' | 'withdrawn' | 'public-approved'
 //   actions: [{ act, label, primary?, danger?, confirm?, run() }]  `confirm`: the panel asks that sentence first. Editing never touches a submitted revision: only the local draft changes.
 import { areaCentre } from './geo.js';
-import { submissionLine, CONTEXT_BADGE } from './status.js';
+import { submissionLine, badgeFor, deleteWarning } from './status.js';
 
 const CONTEXT_OF = { pending: 'pending', rejected: 'rejected', withdrawn: 'withdrawn', approved: 'public-approved' }; // none, unsent, sending and missing stay private
 
@@ -29,8 +29,10 @@ export function privateView({ store, submit, ops }, id) {
       act({ act: 'export', label: 'Export', run: () => ops.exportOne(id) });
       break;
     case 'approved':
+      if (submit.eligible(a)) act({ act: 'submit', label: 'Submit changes for review', primary: true, run: () => ops.startSubmit(id) }); // the draft differs from what was approved: a revision
       act({ act: 'export', label: 'Export', run: () => ops.exportOne(id) });
       act({ act: 'edit', label: 'Edit local copy', confirm: `The approved version is published and stays as it is. ${keepNote} Edit your private copy?`, run: () => ops.edit(id) });
+      act({ act: 'delete', label: 'Delete local copy', danger: true, confirm: deleteWarning(st.sub), run: () => ops.remove(id) });
       break;
     case 'sending':
       break;
@@ -42,7 +44,7 @@ export function privateView({ store, submit, ops }, id) {
     }
   }
   return {
-    key: `area:${a.id}`, context, caption: 'My flying area', badge: st.kind === 'sending' ? 'Submitting…' : CONTEXT_BADGE[context],
+    key: `area:${a.id}`, context, caption: 'My flying area', badge: st.kind === 'sending' ? 'Submitting…' : badgeFor(context, st.sub),
     byline: { text: 'Created by you' }, status: submissionLine(st),
     area: a, centre: areaCentre(a.geometry.coordinates[0]),
     dates: { modified: a.updated ?? null, observed: null }, // the last time the DRAFT was edited, never a physical visit

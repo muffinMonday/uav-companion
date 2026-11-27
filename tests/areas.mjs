@@ -32,6 +32,11 @@ const BACKEND = () => {
         const r = hit ?? { area_id: crypto.randomUUID(), revision_id: crypto.randomUUID(), revision_no: 1, status: 'pending', submitted_at: new Date().toISOString(), replayed: false };
         seen[k] = { ...r, replayed: true }; ss('be_seen', JSON.stringify(seen)); return { data: r };
       }
+      if (fn === 'submit_community_revision') {
+        const k = args.p_payload.idempotency_key; const hit = seen[k];
+        const r = hit ?? { area_id: args.p_area_id, revision_id: crypto.randomUUID(), revision_no: 2 + Object.keys(seen).length, status: 'pending', submitted_at: new Date().toISOString(), replayed: false };
+        seen[k] = { ...r, replayed: true }; ss('be_seen', JSON.stringify(seen)); return { data: r };
+      }
       if (fn === 'list_my_community_areas') return { data: Object.values(seen).map((r) => ({ ...r, name: 'x', reviewed_at: null, review_reason: null, published: false })) };
       if (fn === 'withdraw_community_revision') { for (const k of Object.keys(seen)) if (seen[k].revision_id === args.p_revision_id) seen[k].status = 'withdrawn'; ss('be_seen', JSON.stringify(seen)); return { data: { revision_id: args.p_revision_id, status: 'withdrawn', changed: true } }; }
       return { error: { message: 'unknown' } };
@@ -472,6 +477,48 @@ await ctx.close();
   await p.screenshot({ path: `${shots}/phase2-phone-dialog.png` });
 }
 await ctx.close();
+
+// ================= Phase 5: a revision of an approved area (account backend is an in-page double)
+{
+  const ring = [[103.8, 1.3], [103.81, 1.3], [103.81, 1.31], [103.8, 1.31], [103.8, 1.3]];
+  const AREA = '11111111-1111-4111-8111-111111111111', REV = '22222222-2222-4222-8222-222222222222';
+  const rec = { id: 'aapproved', name: 'Approved park', description: 'Open grass', drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [ring] }, spots: [], created: '2026-11-01T00:00:00.000Z', updated: '2026-11-01T00:00:00.000Z',
+    submission: { status: 'approved', key: 'k'.repeat(20), contentHash: '0'.repeat(8), areaId: AREA, revisionId: REV, revisionNo: 1, submittedAt: '2026-11-10T10:00:00.000Z' } };
+  ({ ctx, p } = await open({ storage: { [KEY]: JSON.stringify({ v: 1, areas: [rec] }) }, backend: true }));
+  await p.evaluate(([area, rev]) => { sessionStorage.setItem('be_seen', JSON.stringify({ seeded: { area_id: area, revision_id: rev, revision_no: 1, status: 'approved', submitted_at: '2026-11-10T10:00:00.000Z' } })); __be.signed = true; __be.fire(); }, [AREA, REV]); // the account already knows the approved revision
+  await openPanel(p);
+  const item = p.locator(panel + ' .area-item[data-id="aapproved"]');
+  const writes = () => p.evaluate(() => __be.calls.filter((c) => !/^(list|get)_/.test(c.fn)).length);
+  ok((await item.locator('[data-act="submit"]').textContent()) === 'Submit changes' && /not submitted/.test(await item.locator('[data-status]').textContent()), 'an approved area with an edited draft offers "Submit changes" and says the published version is unchanged');
+  await item.locator('[data-act="submit"]').click(); await p.waitForSelector('dialog.area-submit-dialog[open]');
+  ok(/Submit changes for review/.test(await p.locator('dialog.area-submit-dialog .area-dlg-title').textContent()) && /published version stays visible to everyone/.test(await p.locator('dialog.area-submit-dialog').textContent()), 'the dialog is for changes and says the published version stays visible');
+  await p.check('#area-ack'); await p.click('dialog.area-submit-dialog [data-act="confirm-submit"]'); await p.waitForSelector('dialog.area-submit-dialog', { state: 'detached' });
+  const rc = await p.evaluate(() => __be.calls.filter((c) => c.fn === 'submit_community_revision' || c.fn === 'submit_community_area'));
+  ok(rc.length === 1 && rc[0].fn === 'submit_community_revision' && rc[0].args.p_area_id === AREA && !('area_id' in rc[0].args.p_payload), 'one request, to submit_community_revision, for the approved area');
+  const st = (await stored(p)).areas[0];
+  ok(st.submission.status === 'pending' && st.submission.revision === true && st.submission.areaId === AREA && (await stored(p)).areas.length === 1, 'the local link is the pending revision of the same area; still one local area');
+  ok(/Change pending review/.test(await item.locator('[data-status]').textContent()) && /published version stays live/.test(await item.locator('[data-status]').textContent()), 'the list says a change is pending and the published version stays live');
+  await item.locator('[data-act="show"]').click(); await p.waitForSelector('#marker-host .area-pop');
+  ok(/Change pending review/.test(await p.locator('#marker-host .area-chip').textContent()) && await p.locator('#marker-host [data-act="submit"]').count() === 0 && await p.locator('#marker-host [data-act="delete"]').count() === 0, 'details: "Change pending review", no Submit and no Delete while pending');
+  await p.locator('#marker-host [data-act="withdraw"]').click(); await p.locator('#marker-host [data-act="confirm-withdraw"]').click(); await p.waitForTimeout(500);
+  const w = (await stored(p)).areas[0].submission;
+  ok(w.status === 'withdrawn' && w.revision === true && w.areaId === AREA, 'withdrawing keeps the revision flag and the area link');
+  ok(/Change withdrawn/.test(await p.locator('#marker-host .area-chip').textContent()) && await p.locator('#marker-host [data-act="submit"]').count() === 1, 'details: "Change withdrawn" and Resubmit is offered');
+  await p.locator('#marker-host [data-act="submit"]').click(); await p.waitForSelector('dialog.area-submit-dialog[open]');
+  await p.check('#area-ack'); await p.click('dialog.area-submit-dialog [data-act="confirm-submit"]'); await p.waitForSelector('dialog.area-submit-dialog', { state: 'detached' });
+  ok(await p.evaluate(() => __be.calls.filter((c) => c.fn === 'submit_community_revision').length) === 2 && await p.evaluate(() => __be.calls.filter((c) => c.fn === 'submit_community_area').length) === 0, 'the corrected resubmission is another revision of the same area; no new area is created');
+  await p.screenshot({ path: shots + '/phase5-revision.png' });
+  await ctx.close();
+  ({ ctx, p } = await open({ storage: { [KEY]: JSON.stringify({ v: 1, areas: [rec] }) }, backend: true }));
+  await openPanel(p);
+  await p.locator(panel + ' .area-item[data-id="aapproved"] [data-act="delete"]').click();
+  ok(/published community area stays public/.test(await p.locator(panel + ' .area-confirm').textContent()), 'list: deleting an approved local copy says the public area stays');
+  await p.locator(panel + ' [data-act="keep"]').click();
+  ok((await stored(p)).areas.length === 1 && await writes() === 0, 'keeping it changes nothing and sends nothing');
+  await p.locator(panel + ' .area-item[data-id="aapproved"] [data-act="delete"]').click(); await p.locator(panel + ' [data-act="confirm-delete"]').click();
+  ok((await stored(p)).areas.length === 0 && await writes() === 0, 'confirming removes only the local copy; no server call (nothing is unpublished or withdrawn)');
+  await ctx.close();
+}
 
 // ================= nothing leaves the browser
 {

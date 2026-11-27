@@ -136,7 +136,7 @@ await ctx.close();
 // ================= lifecycle states (guest, no account) and the actions each allows
 const sub = (status, extra = {}) => ({ status, key: 'k'.repeat(20), contentHash: '0'.repeat(8), areaId: UUID(1), revisionId: UUID(2), revisionNo: 1, submittedAt: '2026-11-10T10:00:00.000Z', ...extra });
 const states = [['pending', sub('pending'), 'pending', 'edit,withdraw,export', /Pending review/], ['rejected', sub('rejected', { reason: 'Too close to a school' }), 'rejected', 'submit,edit,export,delete', /Too close to a school/],
-  ['withdrawn', sub('withdrawn'), 'withdrawn', 'submit,edit,export,delete', /Withdrawn/], ['approved', sub('approved'), 'public-approved', 'export,edit', /Approved community area/]];
+  ['withdrawn', sub('withdrawn'), 'withdrawn', 'submit,edit,export,delete', /Withdrawn/], ['approved', sub('approved'), 'public-approved', 'submit,export,edit,delete', /Approved community area/]]; // the fixture's hash differs from the draft, so it counts as changed since approval: a revision can be submitted
 for (const [name, s, context, expected, text] of states) {
   ({ ctx, p } = await open({ areas: [rec('area' + name, 'State ' + name, sq(103.8, 1.3, 0.01), { submission: s })], backend: true }));
   await tapShape(p, 0.5, 0.5); await p.waitForSelector(`${MH} .area-pop`);
@@ -150,7 +150,14 @@ for (const [name, s, context, expected, text] of states) {
     await p.locator(`${MH} [data-act="edit"]`).click(); await p.locator(`${MH} [data-act="confirm-edit"]`).click(); await p.waitForTimeout(400);
     ok(!(await shown(p)) && await p.locator('.area-bar:not([hidden])').count() === 1 && before === await p.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('uavzones.v1.areas')).areas[0].submission)), 'pending: confirmed Edit opens the editor; the submission reference is unchanged');
   }
-  if (name === 'approved') { await p.screenshot({ path: `${shots}/desktop-approved-private.png` }); }
+  if (name === 'approved') {
+    await p.screenshot({ path: `${shots}/desktop-approved-private.png` });
+    ok(/Submit changes for review/.test(await p.locator(`${MH} [data-act="submit"]`).textContent()) && /not submitted/.test(await txt(p, '.area-status, .area-pop')), 'approved with an edited draft: "Submit changes for review", and the status says the published version is unchanged');
+    await p.locator(`${MH} [data-act="delete"]`).click();
+    ok(/published community area stays public/.test(await txt(p, '.area-confirm')), 'approved: deleting the local copy asks first and says the public area stays');
+    await p.locator(`${MH} [data-act="cancel"]`).click();
+    ok(await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.areas')).areas.length) === 1, 'approved: cancelling keeps the local copy');
+  }
   await ctx.close();
 }
 

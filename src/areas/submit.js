@@ -22,7 +22,17 @@ export function createSubmitController({ store, backend, storage = (() => { try 
     return { kind: sub.status, changed: sub.status !== 'unsent' && !!sub.contentHash && sub.contentHash !== contentHash(area), sub };
   }
   /** A saved area can be submitted when it has no live submission (never sent, a failed attempt, withdrawn, rejected, or not found for this account). */
-  const eligible = (area) => !busy.has(area.id) && (!area.submission || ['unsent', 'withdrawn', 'rejected', 'missing'].includes(area.submission.status));
+  /** The published area this submission would change, or null for a brand-new area. A revision is only ever proposed for an area the contributor got approved before (or a pending/rejected change to it). */
+  const revisionTarget = (area) => { const s = area.submission; return s?.areaId && (s.revision || s.status === 'approved') ? s.areaId : null; };
+  const isRevision = (area) => !!revisionTarget(area);
+  /** A saved area can be submitted when it has no live submission (never sent, a failed attempt, withdrawn, rejected, or not found for this account), or, once approved, when the draft has changed since (a revision). */
+  const eligible = (area) => {
+    if (busy.has(area.id)) return false;
+    const s = area.submission;
+    if (!s) return true;
+    if (['unsent', 'withdrawn', 'rejected', 'missing'].includes(s.status)) return true;
+    return s.status === 'approved' && !!s.areaId && !!s.contentHash && s.contentHash !== contentHash(area);
+  };
 
   async function submit(id) {
     if (busy.has(id)) return { ok: false, code: 'busy', message: 'Already sending.' };
@@ -33,15 +43,17 @@ export function createSubmitController({ store, backend, storage = (() => { try 
     if (!backend.signedIn()) return { ok: false, code: 'signed-out', message: 'Sign in to submit.' };
     busy.add(id); notify();
     const previous = area.submission;
+    const target = revisionTarget(area);
+    const link = target ? { areaId: target, revision: true } : {};
     const hash = contentHash(area);
     const key = previous?.status === 'unsent' && previous.key && previous.contentHash === hash ? previous.key : newKey();
-    store.setSubmission(id, { status: 'unsent', key, contentHash: hash }); // before the request: a reload or a dropped connection keeps the key for the retry
+    store.setSubmission(id, { status: 'unsent', key, contentHash: hash, ...link }); // before the request: a reload or a dropped connection keeps the key for the retry
     try {
-      const r = await api.submit(buildPayload(area, key));
-      store.setSubmission(id, { status: r.status, key, contentHash: hash, areaId: r.areaId, revisionId: r.revisionId, revisionNo: r.revisionNo, submittedAt: r.submittedAt });
+      const r = target ? await api.submitRevision(target, buildPayload(area, key)) : await api.submit(buildPayload(area, key));
+      store.setSubmission(id, { status: r.status, key, contentHash: hash, areaId: r.areaId, revisionId: r.revisionId, revisionNo: r.revisionNo, submittedAt: r.submittedAt, ...(target ? { revision: true } : {}) });
       return { ok: true, replayed: r.replayed, status: r.status };
     } catch (e) {
-      if (!e.retryable) store.setSubmission(id, previous && previous.status !== 'unsent' ? previous : null); // a definite refusal: forget this attempt's key
+      if (!e.retryable) store.setSubmission(id, previous && (previous.status !== 'unsent' || previous.revision) ? previous : null); // a definite refusal: forget this attempt's key
       return { ok: false, code: e.code ?? 'error', message: e.message ?? 'Could not submit.' };
     } finally { busy.delete(id); notify(); }
   }
@@ -92,5 +104,5 @@ export function createSubmitController({ store, backend, storage = (() => { try 
     },
   };
 
-  return { state, eligible, submit, withdraw, refresh, intent, isBusy: (id) => busy.has(id), onChange: (f) => { listeners.add(f); return () => listeners.delete(f); }, backend };
+  return { state, eligible, isRevision, submit, withdraw, refresh, intent, isBusy: (id) => busy.has(id), onChange: (f) => { listeners.add(f); return () => listeners.delete(f); }, backend };
 }

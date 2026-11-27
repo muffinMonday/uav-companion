@@ -11,6 +11,27 @@ export const PAGE = 20;
 
 const iso = (v) => (typeof v === 'string' && v.length <= 40 && !Number.isNaN(Date.parse(v)) ? v : null);
 
+/** The version a proposed revision would replace (item.published from the server), or null when there is none or it is not well formed. */
+export function cleanPublished(r) {
+  if (!r || typeof r !== 'object' || typeof r.name !== 'string') return null;
+  const v = validateArea({ name: r.name, description: typeof r.description === 'string' ? r.description : '', geometry: r.geometry, spots: Array.isArray(r.spots) ? r.spots : [], drawKind: r.draw_kind === 'rectangle' ? 'rectangle' : 'polygon' });
+  if (!v.ok) return null;
+  return { revisionNo: Number.isInteger(r.revision_no) && r.revision_no >= 1 ? r.revision_no : 1, name: r.name.slice(0, 80), description: typeof r.description === 'string' ? r.description.slice(0, 500) : '', ring: v.area.geometry.coordinates[0], spots: v.area.spots, areaM2: Number.isFinite(r.area_m2) ? r.area_m2 : v.area.areaM2 };
+}
+
+/** A short plain-language list of what a proposed revision changes against the published version (the moderator still looks at the shapes). */
+export function describeChanges(item) {
+  const p = item.published;
+  if (!p) return [];
+  const out = [];
+  if (p.name !== item.name) out.push(`Name: “${p.name}” → “${item.name}”`);
+  if (p.description !== item.description) out.push(p.description ? (item.description ? 'Description changed' : 'Description removed') : 'Description added');
+  const same = p.ring && item.ring && JSON.stringify(p.ring) === JSON.stringify(item.ring);
+  if (!same) { const d = (item.areaM2 ?? 0) - (p.areaM2 ?? 0); out.push(`Outline changed (${d === 0 ? 'same size' : (d > 0 ? '+' : '−') + Math.round(Math.abs(d)).toLocaleString('en-GB') + ' m²'})`); }
+  if (JSON.stringify(p.spots) !== JSON.stringify(item.spots)) out.push(`Setup spots changed (${p.spots.length} → ${item.spots.length})`);
+  return out.length ? out : ['No visible difference'];
+}
+
 /** One moderation item from list_pending_community_areas / list_published_community_areas, or null when it is not a well-formed item. */
 export function cleanItem(r) {
   if (!r || typeof r !== 'object' || !isUuid(r.revision_id) || !isUuid(r.area_id) || !STATUSES.includes(r.status)) return null;
@@ -24,7 +45,7 @@ export function cleanItem(r) {
     ring: v.ok ? v.area.geometry.coordinates[0] : null, spots: v.ok ? v.area.spots : [], valid: v.ok, drawKind: r.draw_kind === 'rectangle' ? 'rectangle' : 'polygon',
     areaM2: Number.isFinite(r.area_m2) ? r.area_m2 : (v.ok ? v.area.areaM2 : 0), submittedAt,
     contributorName: typeof r.contributor_name === 'string' ? Array.from(r.contributor_name).slice(0, 40).join('') : '', contributorCode: code,
-    own: r.own === true, hasPublished: r.has_published === true,
+    own: r.own === true, hasPublished: r.has_published === true, published: cleanPublished(r.published),
   };
 }
 

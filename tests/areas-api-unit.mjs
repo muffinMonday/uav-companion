@@ -132,4 +132,39 @@ const mk = (opts) => { const store = createAreaStore({ storage: mem() }); const 
   store2.m[INTENT_KEY] = '{bad'; ok(c2.intent.take() === null, 'a damaged intent is ignored');
 }
 { const api = createAreasApi({ rpc: async () => ({ data: { weird: 1 } }) }); let e; try { await api.submit({}); } catch (x) { e = x; } ok(e?.code === 'bad-response', 'an unexpected response is not trusted'); }
+
+// ---- Phase 5: revisions of a published area
+{
+  const U3 = '33333333-3333-4333-8333-333333333333';
+  ok(describeError({ message: 'not_published' }).code === 'not-published' && describeError({ message: 'revision_pending' }).code === 'revision-pending' && describeError({ message: 'no_change' }).code === 'no-change', 'revision errors are named');
+  ok(cleanSubmission({ status: 'pending', areaId: U1, revisionId: U2, revision: true })?.revision === true && cleanSubmission({ status: 'unsent', revision: true })?.revision === undefined, 'the revision flag needs an area id');
+  const calls = []; let n = 0;
+  const rpc = async (fn, args) => { calls.push({ fn, args }); if (fn === 'submit_community_revision') return { data: { area_id: args.p_area_id, revision_id: U3, revision_no: 2 + n++, status: 'pending', submitted_at: '2026-11-28T10:00:00Z', replayed: false } }; if (fn === 'withdraw_community_revision') return { data: { revision_id: args.p_revision_id, status: 'withdrawn', changed: true } }; if (fn === 'list_my_community_areas') return { data: [] }; return { error: { message: 'unknown' } }; };
+  const store = createAreaStore({ storage: mem() }); const id = store.add(draft()).area.id;
+  const ctl = createSubmitController({ store, backend: { available: () => true, signedIn: () => true, signIn() {}, rpc, onChange: () => () => {} }, storage: mem() });
+  store.setSubmission(id, { status: 'approved', key: 'k-abcdefghijklmnop', contentHash: contentHash(store.get(id)), areaId: U1, revisionId: U2, revisionNo: 1, submittedAt: '2026-11-27T10:00:00.000Z' });
+  ok(!ctl.eligible(store.get(id)), 'an approved area with an unchanged draft cannot be resubmitted');
+  store.update(id, { ...draft(), description: 'Better description' });
+  ok(ctl.eligible(store.get(id)) && ctl.isRevision(store.get(id)), 'once the draft differs from the approved version it can be submitted as a revision');
+  const r = await ctl.submit(id);
+  const a = store.get(id);
+  ok(r.ok && calls.length === 1 && calls[0].fn === 'submit_community_revision' && calls[0].args.p_area_id === U1 && !('area_id' in calls[0].args.p_payload), 'the revision goes to submit_community_revision with the known area id outside the payload');
+  ok(a.submission.status === 'pending' && a.submission.revision === true && a.submission.areaId === U1 && a.submission.revisionId === U3 && a.submission.revisionNo === 2, 'the local link now points at the pending revision, flagged as a revision');
+  ok(!ctl.eligible(a) && !(await ctl.submit(id)).ok && calls.length === 1, 'a pending revision blocks another submission');
+  ok((await ctl.withdraw(id)).ok && store.get(id).submission.status === 'withdrawn' && store.get(id).submission.revision === true && store.get(id).submission.areaId === U1, 'withdrawing keeps the area link and the revision flag');
+  store.update(id, { ...draft(), description: 'Corrected again' });
+  const r2 = await ctl.submit(id);
+  ok(r2.ok && calls[calls.length - 1].fn === 'submit_community_revision' && calls[calls.length - 1].args.p_area_id === U1 && store.get(id).submission.revisionNo === 3, 'a corrected resubmission after a withdrawal is a new revision of the same area, never a new area');
+  const be2 = { available: () => true, signedIn: () => true, signIn() {}, rpc: async () => ({ error: { message: 'not_published' } }), onChange: () => () => {} };
+  const st2 = createAreaStore({ storage: mem() }); const id2 = st2.add(draft()).area.id;
+  st2.setSubmission(id2, { status: 'rejected', key: 'k-abcdefghijklmnop', contentHash: 'deadbeef', areaId: U1, revisionId: U2, revision: true });
+  const c2 = createSubmitController({ store: st2, backend: be2, storage: mem() });
+  const r3 = await c2.submit(id2);
+  ok(!r3.ok && r3.code === 'not-published' && st2.get(id2).submission.status === 'rejected' && st2.get(id2).submission.revision === true, 'a refusal (area no longer published) leaves the rejected revision and its link in place');
+  const st3 = createAreaStore({ storage: mem() }); const id3 = st3.add(draft()).area.id; const seen = [];
+  st3.setSubmission(id3, { status: 'rejected', key: 'k-abcdefghijklmnop', contentHash: 'deadbeef', areaId: U1, revisionId: U2 });
+  const c3 = createSubmitController({ store: st3, backend: { available: () => true, signedIn: () => true, signIn() {}, rpc: async (fn) => { seen.push(fn); return { data: { area_id: U3, revision_id: U2, revision_no: 1, status: 'pending', submitted_at: '2026-11-28T10:00:00Z', replayed: false } }; }, onChange: () => () => {} }, storage: mem() });
+  await c3.submit(id3);
+  ok(seen[0] === 'submit_community_area' && !c3.isRevision(st3.get(id3)), 'a rejected first submission is resubmitted as before (new area; nothing public existed)');
+}
 process.exit(fails ? 1 : 0);

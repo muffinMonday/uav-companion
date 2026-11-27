@@ -82,7 +82,8 @@ export function createPublicApi(backend) {
 export function createPublicLoader({ api, now = Date.now, ttl = TTL_MS, maxCache = MAX_CACHE, maxPages = MAX_PAGES, pageSize = PAGE_SIZE }) {
   const cache = new Map();    // key -> { t, views, truncated }
   const inflight = new Map(); // key -> { promise, ctrl }
-  let seq = 0, activeKey = null;
+  let seq = 0, activeKey = null, epoch = 0, tick = 0;
+  const forgotten = new Map(); // areaId -> tick of the last forget(): a response that began before it must not bring the area back
 
   const prune = () => {
     const t = now();
@@ -117,7 +118,13 @@ export function createPublicLoader({ api, now = Date.now, ttl = TTL_MS, maxCache
       // a request for another viewport is obsolete the moment this one starts
       for (const [k, r] of inflight) if (k !== key) { r.ctrl.abort(); inflight.delete(k); }
       const ctrl = typeof AbortController === 'function' ? new AbortController() : { signal: undefined, abort() {} };
-      const promise = fetchAll(q, ctrl.signal).then((r) => { cache.set(key, { t: now(), ...r }); prune(); return r; }).finally(() => { if (inflight.get(key)?.promise === promise) inflight.delete(key); });
+      const born = epoch, started = tick;
+      const promise = fetchAll(q, ctrl.signal).then((r0) => {
+        // a response that outlived clear() is dropped, and one that began before forget(id) loses that area: it can only describe the world as it was
+        if (born !== epoch) return { views: [], truncated: false, stale: true };
+        const r = { ...r0, views: r0.views.filter((v) => !(forgotten.get(v.areaId) > started)) };
+        cache.set(key, { t: now(), ...r }); prune(); return r;
+      }).finally(() => { if (inflight.get(key)?.promise === promise) inflight.delete(key); });
       promise.catch(() => {}); // a cancelled or failed run with no waiter left must not surface as an unhandled rejection
       run = { promise, ctrl };
       inflight.set(key, run);
@@ -126,15 +133,19 @@ export function createPublicLoader({ api, now = Date.now, ttl = TTL_MS, maxCache
     let r;
     try { r = await run.promise; } catch (e) { if (mine !== seq) return null; if (e?.code === 'aborted') return null; throw e; }
     if (mine !== seq) return null; // a newer request was made while this one was in flight
+    if (r.stale) return null;
     return { views: r.views, truncated: r.truncated, cached: false };
   }
 
   return {
     load,
     /** Drops one area from every cached viewport (it was found to be unpublished): a stale entry can never bring it back. */
-    forget(areaId) { for (const v of cache.values()) v.views = v.views.filter((x) => x.areaId !== areaId); },
+    forget(areaId) {
+      forgotten.set(areaId, ++tick); if (forgotten.size > 200) forgotten.delete(forgotten.keys().next().value);
+      for (const v of cache.values()) v.views = v.views.filter((x) => x.areaId !== areaId);
+    },
     /** Drops every cached viewport and cancels what is in flight (a moderation decision, sign-in or sign-out). */
-    clear() { cache.clear(); for (const r of inflight.values()) r.ctrl.abort(); inflight.clear(); seq++; },
+    clear() { cache.clear(); for (const r of inflight.values()) r.ctrl.abort(); inflight.clear(); seq++; epoch++; forgotten.clear(); },
     size: () => cache.size,
     activeKey: () => activeKey,
   };

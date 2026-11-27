@@ -65,6 +65,9 @@ export function describeError(e) {
   if (m) return { code: 'invalid', detail: m[1], message: `The server did not accept this area: ${INVALID[m[1]] ?? 'it is not valid.'} Edit it and try again.`, retryable: false };
   if (/pending_limit_reached/.test(raw)) return { code: 'limit', message: `You already have ${MAX_PENDING} submissions waiting for review. Withdraw one or wait for a decision, then submit again.`, retryable: false };
   if (/idempotency_conflict/.test(raw)) return { code: 'conflict', message: 'This submission was changed after an earlier attempt. Press Submit again to send the current version.', retryable: false };
+  if (/not_published/.test(raw)) return { code: 'not-published', message: 'This area is no longer published, so it cannot be changed. Your draft stays here.', retryable: false };
+  if (/revision_pending/.test(raw)) return { code: 'revision-pending', message: 'A change to this area is already waiting for review. Wait for a decision or withdraw it first.', retryable: false };
+  if (/no_change/.test(raw)) return { code: 'no-change', message: 'This is identical to the published version. Change something first.', retryable: false };
   if (/not_withdrawable/.test(raw)) return { code: 'not-withdrawable', message: 'This submission can no longer be withdrawn.', retryable: false };
   if (/not_found/.test(raw)) return { code: 'not-found', message: 'This submission was not found for the account you are signed in with.', retryable: false };
   if (/not signed in|JWT|28000|401/.test(raw)) return { code: 'signed-out', message: 'Your session has ended. Sign in again, then retry.', retryable: false };
@@ -99,6 +102,13 @@ export function createAreasApi(backend) {
     async submit(payload) {
       const r = cleanSubmitResult(await call('submit_community_area', { p_payload: payload }));
       if (!r) throw { code: 'bad-response', message: 'The server answered in an unexpected way. Try again.', retryable: true };
+      return r;
+    },
+    /** A new revision of the contributor's own published area (submit_community_revision). The result has the same shape as submit(). */
+    async submitRevision(areaId, payload) {
+      if (!isUuid(areaId)) throw { code: 'not-found', message: 'This area was not found for the account you are signed in with.', retryable: false };
+      const r = cleanSubmitResult(await call('submit_community_revision', { p_area_id: areaId, p_payload: payload }));
+      if (!r || r.areaId !== areaId) throw { code: 'bad-response', message: 'The server answered in an unexpected way. Try again.', retryable: true };
       return r;
     },
     async list() { const d = await call('list_my_community_areas', {}); return Array.isArray(d) ? d.map(cleanListRow).filter(Boolean) : []; },
