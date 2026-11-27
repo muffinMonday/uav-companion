@@ -404,7 +404,7 @@ await ctx.close();
   ok(/at once/.test(await p.$eval('.areas-note', (e) => e.textContent)) && /5/.test(await p.$eval('.areas-note', (e) => e.textContent)), 'the panel explains the five-pending limit');
   // guest: sign-in flow, intent kept, nothing sent
   await item('abrowser1').locator('[data-act="submit"]').click();
-  ok(await p.evaluate(() => __be.signIns) === 1 && await p.locator(dlg).count() === 0 && await p.evaluate(() => __be.calls.length) === 0, 'a guest pressing Submit is sent to sign in; no dialog, no request');
+  ok(await p.evaluate(() => __be.signIns) === 1 && await p.locator(dlg).count() === 0 && await p.evaluate(() => __be.calls.filter((c) => !/^(list|get)_public_area/.test(c.fn)).length) === 0, 'a guest pressing Submit is sent to sign in; no dialog, no request (public reads of Phase 4 aside)');
   ok(await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.areas.intent')).areaId) === 'abrowser1', 'the sign-in intent is kept (area id and time only)');
   // sign in -> the dialog reopens for that area; nothing is submitted by itself
   await p.evaluate(() => { __be.signed = true; __be.fire(); });
@@ -475,7 +475,7 @@ await ctx.close();
 
 // ================= nothing leaves the browser
 {
-  const bad = requests.filter((r) => /\.supabase\.(co|in)|\/rest\/v1\/|\/rpc\/|\/functions\/v1\//i.test(r.url) || r.method !== 'GET'); // (local source files named supabase.js are not requests to Supabase)
+  const bad = requests.filter((r) => /\.supabase\.(co|in)|\/rest\/v1\/|\/rpc\/|\/functions\/v1\//i.test(r.url) || r.method !== 'GET').filter((r) => !/\/rpc\/(list_public_areas|get_public_area)\b/.test(r.url)); // Phase 4: the two public read functions are the only permitted Supabase requests (local source files named supabase.js are not requests to Supabase)
   for (const r of bad.slice(0, 5)) console.log('   suspicious: ' + r.method + ' ' + r.url.slice(0, 120));
   ok(bad.length === 0, `no request to Supabase and no non-GET request left the page during authoring (${requests.length} requests, ${bad.length} suspicious)`);
 }

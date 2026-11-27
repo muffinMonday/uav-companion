@@ -118,8 +118,10 @@ const opensShareLink = /^#import=/.test(location.hash); // read before fromHash(
 ai.fromHash();
 const areasHandle = { h: null }; // the account handle, once the cloud code has loaded
 const areasBackend = globalThis.__uavAreasBackend ?? createCloudBackend(() => areasHandle.h); // (the override is for tests)
-const areas = initAreas({ map, toast, panel, isBusy: () => poi.isBusy(), backend: areasBackend, host: poi.externalHost, weatherButton, showWeather }); // My flying areas (local drafts), a folded map tool; while one is being drawn, areas.isBusy() keeps holds, right-clicks and Inspect from checking a spot
-if (globalThis.__uavAreasExpose) globalThis.__uavAreas = areas; // (tests: reach the public-area fixtures entry point)
+const areas = initAreas({ map, toast, panel, isBusy: () => poi.isBusy(), backend: areasBackend, host: poi.externalHost, weatherButton, showWeather, publicEnabled: !prefs.communityAreasOff }); // My flying areas (local drafts), a folded map tool; while one is being drawn, areas.isBusy() keeps holds, right-clicks and Inspect from checking a spot
+{ const box = $('show-community-areas'); if (box) { box.checked = !prefs.communityAreasOff; box.addEventListener('change', (e) => { areas.publicAreas.setVisible(e.target.checked); savePrefs({ communityAreasOff: e.target.checked ? null : true }); }); } } // Layers card: approved public community areas, on unless switched off
+areas.publicAreas.start(); // online viewport loading of approved community areas; nothing is requested while the layer is off
+if (globalThis.__uavAreasExpose) globalThis.__uavAreas = { ...areas, map }; // (tests: reach the public-area fixtures entry point)
 const cross = initCrosshair(map); // a crosshair at the centre of the map (the button goes under the marker-details button)
 // the zone verdict for where I am now (the position is read once, when the button is pressed)
 const checkHere = () => locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ });

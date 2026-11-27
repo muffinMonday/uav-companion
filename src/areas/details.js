@@ -15,6 +15,7 @@ import { formatArea, SPOT_LABELS } from './core.js';
 import { SPOT_ICONS, DISCLAIMER } from './layer.js';
 import { privateView } from './adapter-private.js';
 import { publicView } from './adapter-public.js';
+import { pickArea } from './geo.js';
 
 const WX_KEY = 'uavzones.v1.wxcache.areas'; // apart from the markers' own forecast cache
 const fmtDate = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
@@ -25,7 +26,7 @@ export const weatherId = (view) => `${view.key}@${view.centre[1].toFixed(4)},${v
 /**
  * @param {object} o  map, store, layer, submit, ops (see adapter-private), draw ({isBusy}), host (poi's external host), weatherButton, showWeather
  */
-export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () => false, host, weatherButton, showWeather }) {
+export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () => false, host, weatherButton, showWeather, publicAreas = null, toast = () => {} }) {
   let current = null;     // { view, render, hostApi } for the open panel
   let publicView_ = null; // the open public view (a fixture today), kept so "View flying area" can come back to it
   const wxItems = () => (current ? [{ id: weatherId(current.view), lat: current.view.centre[1], lon: current.view.centre[0] }] : []);
@@ -145,7 +146,7 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
       const p = el('p', 'area-byline'); p.dataset.byline = by.profileRow ? 'named' : 'text';
       if (by.profileRow) {
         const who = el('span', 'area-who'); who.append(avatarEl(by.profileRow.avatar, by.profileRow.display_name, 24), el('span', '', by.profileRow.display_name));
-        p.append('Shared by ', profileTrigger(who, by.profileRow));
+        p.append('Shared by ', profileTrigger(who, by.profileRow, 'Chose to be shown on approved community flying areas.'));
       } else p.textContent = by.text;
       return p;
     }
@@ -161,11 +162,11 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
     latlngOf: (key) => { const v = current?.view?.key === key ? current.view : viewOf(key); return v ? { lat: v.centre[1], lng: v.centre[0] } : null; },
     onOpen(key) {
       const v = viewOf(key); if (!v) return;
-      if (publicView_?.key === key) layer.setExtra(publicView_.area); else layer.setExtra(null);
+      if (publicView_?.key === key) { layer.setExtra(publicView_.area); publicAreas?.skip(publicView_.area.id.slice(4)); } else { layer.setExtra(null); publicAreas?.skip(null); }
       layer.select(v.area.id);
       mw.prune([weatherId(v), ...store.list().map((a) => weatherId(privateView({ store, submit, ops }, a.id)))]); // forget forecasts of deleted or reshaped areas
     },
-    onClose() { layer.select(null); layer.setExtra(null); current = null; publicView_ = null; },
+    onClose() { layer.select(null); layer.setExtra(null); publicAreas?.skip(null); current = null; publicView_ = null; },
     returnFocusTo: () => document.querySelector('#areas-panel:not([hidden]) .area-item .btn') ?? null,
   };
   host.register(provider);
@@ -184,6 +185,17 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
     publicView_ = v; host.open(v.key);
     return true;
   }
+  /** Opens a public area from the public layer's view, at once from what was fetched for the viewport, then re-reads it from the server: a contributor's attribution change or an unpublication since the viewport was fetched shows up now. */
+  function openPublicArea(pv) {
+    if (!pv || !openPublic(pv.record)) return false;
+    const id = pv.areaId, key = `area:pub-${id}`;
+    publicAreas?.api.get(id).then((rec) => {
+      if (host.id() !== key) return;
+      if (!rec || !publicView(rec)) { publicAreas.forget(id); host.close(); toast('This community flying area is no longer published.'); return; }
+      publicView_ = publicView(rec); layer.setExtra(publicView_.area); current?.render();
+    }).catch(() => { /* offline: the details already shown stay */ });
+    return true;
+  }
   layer.setOnView((areaId) => { if (!open(areaId) && publicView_?.area.id === areaId) host.open(publicView_.key); });
 
   // keep the open panel current: an edit, a status change, a deletion
@@ -195,9 +207,12 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
     if (isBusy()) return false;
     if (e.originalEvent?.target?.closest?.('.area-vtx, .area-spot, .leaflet-popup, .leaflet-control, .marker-host')) return false;
     const a = layer.areaAt(e.latlng.wrap());
-    if (!a) return false;
-    if (host.id() !== `area:${a.id}`) open(a.id);
+    if (a) { if (host.id() !== `area:${a.id}`) open(a.id); return true; }
+    if (publicView_ && host.id() === publicView_.key && pickArea([publicView_.area], e.latlng.lng, e.latlng.lat)) return true; // a tap inside the public area that is already open keeps it open
+    const p = publicAreas?.areaAt(e.latlng.wrap()); // an approved public area (never a private draft), shown in the same panel
+    if (!p) return false;
+    if (host.id() !== `area:pub-${p.areaId}`) openPublicArea(p);
     return true;
   }
-  return { open, openPublic, close: () => host.close(), handleMapClick, isOpen: () => host.id()?.startsWith?.('area:') ?? false, id: () => host.id() };
+  return { open, openPublic, openPublicArea, close: () => host.close(), handleMapClick, isOpen: () => host.id()?.startsWith?.('area:') ?? false, id: () => host.id() };
 }

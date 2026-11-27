@@ -81,7 +81,8 @@ export function createCloudBackend(getHandle) {
     available: () => !!h()?.adapter?.client,
     signedIn: () => !!h()?.sync?.status?.().session,
     signIn: () => h()?.open?.(),
-    rpc: (fn, args) => h().adapter.client.rpc(fn, args),
+    /** `opts.signal` (an AbortSignal) cancels the request where the client supports it (public viewport loading). */
+    rpc: (fn, args, opts) => { const b = h().adapter.client.rpc(fn, args); return opts?.signal && typeof b.abortSignal === 'function' ? b.abortSignal(opts.signal) : b; },
     onChange: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
   };
 }

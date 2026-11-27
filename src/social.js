@@ -8,9 +8,9 @@ export function createSocial(client) {
     return data;
   };
   return {
-    /** The caller's profile { display_name, friend_code, accepts_requests, show_online, avatar, bio, location, interests, share_profile, named }, created on first use; a name sets or changes it. */
+    /** The caller's profile { display_name, friend_code, accepts_requests, show_online, avatar, bio, location, interests, share_profile, community_attribution, named }, created on first use; a name sets or changes it. */
     profile: (name) => rpc('ensure_profile', name === undefined ? {} : { p_display_name: name }),
-    /** Changes the profile fields from a patch ({ avatar, bio, location, interests, share_profile, display_name }; null clears). Returns the profile. */
+    /** Changes the profile fields from a patch ({ avatar, bio, location, interests, share_profile, community_attribution, display_name }; null clears). Returns the profile. */
     updateProfile: (patch) => rpc('update_profile', { p_patch: patch }),
     /** The first-login answer: a name, or null to keep the default. Either way the profile is marked as named and the person is not asked again. Returns the profile. */
     chooseName: (name) => rpc('choose_name', { p_display_name: name ?? null }),

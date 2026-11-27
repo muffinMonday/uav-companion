@@ -9,6 +9,7 @@ import { createSubmitController } from './submit.js';
 import { createCloudBackend } from './api.js';
 import { createAreaDetails } from './details.js';
 import { createAdminUI } from './admin-ui.js';
+import { createPublicAreas } from './public-layer.js';
 
 /**
  * @param {object} o
@@ -20,15 +21,20 @@ import { createAdminUI } from './admin-ui.js';
  * @param {() => boolean} [o.isBusy]      true while a marker is being placed or edited: drawing will not start then
  * @returns {{ isBusy: () => boolean, store, open: () => void, close: () => void, draw }}
  */
-export function initAreas({ map, toast, panel = null, isBusy = () => false, storage, backend = null, host = null, weatherButton, showWeather } = {}) {
+export function initAreas({ map, toast, panel = null, isBusy = () => false, storage, backend = null, host = null, weatherButton, showWeather, publicEnabled = true } = {}) {
   const store = createAreaStore(storage ? { storage } : undefined);
   const layer = createAreaLayer(map, store);
   let ui = null;
   const draw = createDrawController({ map, store, layer, toast, isBusy, onEnd: () => ui?.open() });
   const submit = createSubmitController({ store, backend: backend ?? createCloudBackend(() => null) });
   const backendUsed = backend ?? createCloudBackend(() => null);
-  const admin = createAdminUI({ map, backend: backendUsed, toast }); // administrator review panel: reachable only while the account is an administrator
+  // Public discovery (Phase 4): approved areas for the current viewport, online only, drawn apart from the local drafts. Nothing is requested until start().
+  const publicAreas = createPublicAreas({ map, store, backend: backendUsed, enabled: publicEnabled, onView: (id) => details?.openPublicArea(publicAreas.find(id)) });
+  publicAreas.mountNote();
+  // a moderation decision changes what is public: the next public query must not be served from the cache
+  const adminBackend = { ...backendUsed, rpc: async (fn, args, o) => { const r = await backendUsed.rpc(fn, args, o); if (/^(review|unpublish)_community_area$/.test(fn)) publicAreas.invalidate(); return r; } };
+  const admin = createAdminUI({ map, backend: adminBackend, toast }); // administrator review panel: reachable only while the account is an administrator
   ui = createAreasUI({ map, store, layer, draw, toast, panel, submit, admin, openDetails: (id) => details?.open(id), closeDetails: () => details?.close() });
-  const details = host ? createAreaDetails({ map, store, layer, submit, ops: ui.ops, isBusy: () => draw.isBusy() || isBusy(), host, weatherButton, showWeather }) : null;
-  return { isBusy: () => draw.isBusy(), store, layer, draw, submit, details, admin, open: ui.open, close: ui.close, handleMapClick: (e) => details?.handleMapClick(e) ?? false };
+  const details = host ? createAreaDetails({ map, store, layer, submit, ops: ui.ops, isBusy: () => draw.isBusy() || isBusy(), host, weatherButton, showWeather, publicAreas, toast }) : null;
+  return { isBusy: () => draw.isBusy(), store, layer, publicAreas, draw, submit, details, admin, open: ui.open, close: ui.close, handleMapClick: (e) => details?.handleMapClick(e) ?? false };
 }
