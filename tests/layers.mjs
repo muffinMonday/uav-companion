@@ -153,10 +153,15 @@ for (const width of [390, 800, 1300]) {
   await p.evaluate(() => { const layer = __native.layers()[0]; layer.setUrl(layer._url + '?failure-test=1'); });
   await p.waitForFunction(() => __native.layers().length === 1 && __native.layers()[0]._url.includes('tile.openstreetmap.org') && !__native.layers()[0].isLoading());
   ok(await p.evaluate(() => { const credit = __native.map.attributionControl.getContainer().textContent; return credit.includes('OpenStreetMap') && !credit.includes('Go Tiles'); }), `${width}: fallback removes the dark provider credit`);
+  ok(await p.evaluate(() => { const c = __native.layers()[0]._container; return c.classList.contains('base-tiles-inverted') && getComputedStyle(c).filter.includes('invert'); }), `${width}: after the dark source fails, dark mode shows the standard tiles inverted (not a bright map)`);
   const requestsAtFailure = darkRequests;
   await p.evaluate(() => { __native.theme.setTheme('light'); __native.theme.setTheme('dark'); });
   await p.waitForTimeout(200);
   ok(darkRequests === requestsAtFailure && await saved(p) === 'osm', `${width}: quota failure falls back once, retaining the basemap preference`);
+  await p.evaluate(() => __native.theme.setTheme('light')); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => { const c = __native.layers()[0]._container; return !c.classList.contains('base-tiles-inverted') && getComputedStyle(c).filter === 'none'; }), `${width}: back in light mode the inversion is removed`);
+  await p.evaluate(() => __native.theme.setTheme('dark')); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => __native.layers()[0]._container.classList.contains('base-tiles-inverted')), `${width}: and returns when dark mode comes back (same fallback tiles, no new request)`);
   ok(before === await p.evaluate(() => __native.state()), `${width}: center, zoom, rotation, marker, route and controls survive every switch/fallback`);
   ok(await p.evaluate(() => __native.map.hasLayer(__native.overlay) && __native.map.hasLayer(__native.marker) && __native.map.hasLayer(__native.route) && __native.overlay._container.isConnected && getComputedStyle(__native.overlay._container).filter === 'none'), `${width}: airspace canvas, markers and route stay attached and unfiltered`);
   // Unload releases the subscription and pending tile requests.

@@ -79,12 +79,16 @@ export function createMap(initial = {}) {
     old.layer.off();
   };
   const refreshBase = () => {
-    const tiles = baseTiles(selectedBase, darkFailed ? 'light' : currentTheme());
+    const theme = currentTheme();
+    const tiles = baseTiles(selectedBase, darkFailed ? 'light' : theme);
     const isDark = tiles[0] === DARK_OSM[0];
-    if (pending?.url === tiles[0]) return;
+    const wantInverted = darkFailed && theme === 'dark' && selectedBase === 'osm';
+    if (pending?.url === tiles[0]) { base?.getContainer?.()?.classList.toggle('base-tiles-inverted', wantInverted); return; }
     cancelPending();
-    if (base?._url === tiles[0]) return;
+    if (base?._url === tiles[0]) { base.getContainer?.()?.classList.toggle('base-tiles-inverted', wantInverted); return; } // same tiles, only the dark treatment changed
     const layer = L.tileLayer(tiles[0], { ...tiles[1], opacity: base ? 0 : 1 });
+    // the native dark source failed (quota, outage): dark mode then shows the standard OSM tiles inverted by CSS (.base-tiles-inverted in styles.css) instead of a bright map; the class is a toggle on the container, the className option stays 'base-tiles'
+    layer.on('add', () => layer.getContainer?.()?.classList.toggle('base-tiles-inverted', darkFailed && currentTheme() === 'dark' && selectedBase === 'osm'));
     const job = { layer, url: tiles[0], timer: null };
     pending = job;
     const finish = () => {
