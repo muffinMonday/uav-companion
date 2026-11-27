@@ -83,8 +83,8 @@ for (const vp of VPS) {
   await p.keyboard.press('Enter'); await p.waitForSelector('#more-tools-menu .more-row[data-tool=sessions]'); await p.focus('#more-tools-menu .more-row[data-tool=sessions]'); await p.keyboard.press('Enter'); await p.waitForSelector(hub + '[open]'); await p.waitForSelector(hub + ' .ses-row', { timeout: 5000 }); await p.waitForTimeout(300);
   ok(inside(await rect(p, hub), w, h), `${tag}: the hub dialog is inside the viewport`);
   ok(inside(await rect(p, '.ses-hub-head h2'), w, h) && inside(await rect(p, '#ses-hub-close'), w, h), `${tag}: the title and the close button are inside the viewport`);
-  const tabsOk = await p.evaluate(([w, h, touch]) => [...document.querySelectorAll('.ses-tab')].every((t) => { const r = t.getBoundingClientRect(); return r.left >= -0.5 && r.right <= w + 0.5 && r.bottom <= h + 0.5 && r.height >= (touch ? 44 : 30); }), [w, h, touch]);
-  ok(tabsOk, `${tag}: the three tabs are inside the viewport` + (touch ? ' and at least 44 px tall' : ''));
+  const tabsOk = await p.evaluate(([w, h, touch]) => [...document.querySelectorAll('.ses-tab')].every((t) => { t.scrollIntoView({ inline: 'nearest', block: 'nearest' }); const r = t.getBoundingClientRect(); return r.left >= -0.5 && r.right <= w + 0.5 && r.bottom <= h + 0.5 && r.height >= (touch ? 44 : 30); }), [w, h, touch]);
+  ok(tabsOk, `${tag}: the four tabs can each be brought inside the viewport (the strip scrolls sideways)` + (touch ? ' and at least 44 px tall' : ''));
   ok(await noSideways(p), `${tag}: nothing scrolls sideways`);
   const sheet = touch && (w <= 900 || h <= 520);
   const dr = await rect(p, hub);

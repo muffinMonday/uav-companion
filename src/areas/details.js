@@ -197,6 +197,19 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
     }).catch(() => { /* offline: the details already shown stay */ });
     return true;
   }
+  /**
+   * Explorer: reads one area as it is published right now, calls beforeOpen (the Explore dialog steps aside), brings the whole area into view and opens the panel, which centres it
+   * in the free part of the map. -> false when the area is no longer published (it is dropped from the public caches); throws when offline.
+   */
+  async function showPublicById(areaId, beforeOpen = () => {}) {
+    const rec = await publicAreas?.api.get(areaId);
+    const v = rec ? publicView(rec) : null;
+    if (!v) { publicAreas?.forget(areaId); return false; }
+    beforeOpen();
+    const ring = v.area.geometry.coordinates[0], lats = ring.map((p) => p[1]), lngs = ring.map((p) => p[0]);
+    map.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]], { maxZoom: 17, padding: [48, 48], animate: false });
+    return openPublic(rec);
+  }
   layer.setOnView((areaId) => { if (!open(areaId) && publicView_?.area.id === areaId) host.open(publicView_.key); });
 
   // keep the open panel current: an edit, a status change, a deletion
@@ -215,5 +228,5 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
     if (host.id() !== `area:pub-${p.areaId}`) openPublicArea(p);
     return true;
   }
-  return { open, openPublic, openPublicArea, close: () => host.close(), handleMapClick, isOpen: () => host.id()?.startsWith?.('area:') ?? false, id: () => host.id() };
+  return { open, openPublic, openPublicArea, showPublicById, close: () => host.close(), handleMapClick, isOpen: () => host.id()?.startsWith?.('area:') ?? false, id: () => host.id() };
 }

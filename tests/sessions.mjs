@@ -96,7 +96,7 @@ await p.click('.more-btn');
 ok(await p.evaluate(() => { const v = document.querySelector('.sessions-btn svg'); const c = getComputedStyle(v); return c.fill === 'none' && c.stroke !== 'none'; }), 'its icon is still drawn as an outline, not a filled block');
 await openHub(p);
 ok(/No public sessions match/.test(await txt(p, body)) && await p.locator('#ses-new').count() === 1, 'Discover with nothing public says so, and anyone signed in can plan a session');
-ok(await p.locator(hub + ' .ses-tab').count() === 3 && await p.locator(hub + ' .ses-tab[aria-selected=true]').textContent().then((t) => /Discover/.test(t)), 'three tabs: Discover, My sessions, Invitations');
+ok(await p.locator(hub + ' .ses-tab').count() === 4 && await p.locator(hub + ' .ses-tab[aria-selected=true]').textContent().then((t) => /Discover/.test(t)), 'four tabs: Discover, My sessions, Invitations, Flying areas');
 await goTab(p, 'mine');
 ok(/not hosting anything upcoming/.test(await txt(p, body)) && /not joined/.test(await txt(p, body)), 'My sessions: nothing hosted, nothing joined');
 await p.keyboard.press('Escape'); await p.waitForTimeout(200);

@@ -21,11 +21,12 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 const btn = (label, cls = 'btn small') => { const b = el('button', cls, label); b.type = 'button'; return b; };
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>';
 const NEAR_KM = 10, PAGE = 20, SUMMARY_MS = 300000, PENDING = 'uavzones.session-link';
-const SECTIONS = [['discover', 'Discover'], ['mine', 'My sessions'], ['invites', 'Invitations']];
+const SECTIONS_BASE = [['discover', 'Discover'], ['mine', 'My sessions'], ['invites', 'Invitations']];
 const asSession = (p) => ({ ...p, status: 'scheduled', visibility: 'public', iRsvped: false, myAttended: false, canManage: false, canVerify: false, isHost: false, invited: false });
 
 /** `handle` is what initSyncUI returns (handle.adapter.client, handle.sync.status().session). Returns the hub: { open(section, opts), reload(), reset(), summary(), setNearby(on), onSummary(fn), redeemFromHash(), button }. */
-export function initSessionsHub({ handle, map, toast, panel, onOpen = null, markers = () => [] }) {
+export function initSessionsHub({ handle, map, toast, panel, onOpen = null, markers = () => [], areasExplorer = null }) {
+  const SECTIONS = areasExplorer ? [...SECTIONS_BASE, ['areas', 'Flying areas']] : SECTIONS_BASE; // Community Flying Areas explorer (public, read-only): its own section beside the sessions ones
   const api = createSessions(handle.adapter.client);
   const signedIn = () => !!handle.sync.status().session;
   const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; } })();
@@ -326,7 +327,7 @@ export function initSessionsHub({ handle, map, toast, panel, onOpen = null, mark
     paintTabs(); tabs.hidden = view !== 'list';
     const frag = el('div', 'ses-hub-inner');
     if (message) { const m = el('p', 'hint ses-message', message); m.setAttribute('role', 'status'); frag.append(m); }
-    if (view === 'create') drawCreate(frag); else if (view === 'detail') drawDetail(frag); else if (section === 'discover') drawDiscover(frag); else if (section === 'mine') drawMine(frag); else drawInvites(frag);
+    if (view === 'create') drawCreate(frag); else if (view === 'detail') drawDetail(frag); else if (section === 'discover') drawDiscover(frag); else if (section === 'mine') drawMine(frag); else if (section === 'areas') areasExplorer.draw(frag, { repaint: paint, close: () => dlg.close() }); else drawInvites(frag);
     body.setAttribute('aria-label', SECTIONS.find((x) => x[0] === section)[1]);
     body.replaceChildren(frag); body.scrollTop = keep;
     for (const fn of viewListeners) fn(view !== 'list'); // S10.5/NAV-07: a session's full-screen detail (or the New session form) is a "stacked" view
