@@ -37,7 +37,7 @@ export function createAdminUI({ map, backend, toast }) {
   const container = map.getContainer();
   const overlay = L.layerGroup().addTo(map);
   const listeners = new Set();
-  let admin = false, isOpen = false, tab = 'pending', items = [], next = null, loading = false, failed = '', sel = null, confirm = null, token = 0;
+  let admin = false, isOpen = false, tab = 'pending', items = [], next = null, loading = false, failed = '', sel = null, confirm = null, token = 0, republish = false;
   let award = true, amount = XP_DEFAULT, reason = '';
 
   const root = el('div', 'areas-panel areas-admin-panel'); root.id = 'areas-admin-panel'; root.hidden = true;
@@ -67,21 +67,22 @@ export function createAdminUI({ map, backend, toast }) {
     const p = L.polygon(item.ring.map((c) => [c[1], c[0]]), { className: 'community-area', interactive: false }).addTo(overlay);
     map.fitBounds(p.getBounds(), { padding: [40, 40], maxZoom: 18 });
   }
-  function open(it) { sel = it; confirm = null; award = !it.own; amount = XP_DEFAULT; reason = ''; paint(); }
-  function back() { sel = null; confirm = null; overlay.clearLayers(); paint(); }
+  function open(it) { sel = it; confirm = null; republish = false; award = !it.own; amount = XP_DEFAULT; reason = ''; paint(); }
+  function back() { sel = null; confirm = null; republish = false; overlay.clearLayers(); paint(); }
 
   async function decide(kind) { // kind: 'approve' | 'reject' | 'unpublish'
     const it = sel; if (!it) return;
     try {
       if (kind === 'unpublish') { await api.unpublish(it, reason); toast(`“${it.name}” is no longer published. Its history is kept.`, 7000); }
       else {
-        const r = await api.review(it, kind, { reason, award, amount });
+        const r = await api.review(it, kind, { reason, award, amount, republish });
         if (!r.changed) toast('That decision was already recorded.', 5000);
         else if (kind === 'approve') toast(r.xpAwarded ? `Approved and published. ${r.xp} XP awarded to the contributor.` : 'Approved and published. No XP awarded.', 8000);
         else toast('Rejected. The contributor can see your reason.', 7000);
       }
       sel = null; confirm = null; overlay.clearLayers(); await load();
     } catch (e) {
+      if (e.code === 'area_unpublished') { republish = true; confirm = 'approve'; paint(); return; } // an unpublished area is only republished by an explicit second confirmation
       confirm = null; toast(e.message, 8000);
       if (e.code === 'not_pending' || e.code === 'not_found' || e.code === 'not_published') { sel = null; overlay.clearLayers(); await load(); } else paint();
     }
@@ -168,11 +169,12 @@ export function createAdminUI({ map, backend, toast }) {
     const c = el('div', 'area-admin-confirm'); c.setAttribute('role', 'alertdialog'); c.setAttribute('aria-label', 'Confirm decision');
     if (confirm === 'approve') {
       const w = checkReward(award, amount, it.own);
+      if (republish) c.append(el('p', 'areas-warn area-admin-republish', 'This area was unpublished by an administrator. Approving this change will publish it again.'));
       c.append(el('p', '', it.published ? `Approve this change and replace the published version of “${it.published.name}”?` : `Approve and publish “${it.name}”?`), el('p', 'area-admin-xp-line', w.award ? `${w.amount} XP will be awarded to ${it.contributorName || 'the contributor'}.` : 'No XP will be awarded.'));
     } else if (confirm === 'reject') c.append(el('p', '', `Reject “${it.name}”?`), el('p', 'area-note', 'The contributor will see this reason:'), el('blockquote', 'area-admin-quote', reason));
     else c.append(el('p', '', `Unpublish “${it.name}”?`), el('p', 'area-note', 'Reason (kept with the area): ' + reason));
     const row = el('div', 'area-item-actions');
-    row.append(b('Confirm', (e) => { e.currentTarget.disabled = true; decide(confirm); }, { cls: 'btn primary', act: 'confirm' }), b('Cancel', () => { confirm = null; paint(); }, { act: 'cancel' }));
+    row.append(b('Confirm', (e) => { e.currentTarget.disabled = true; decide(confirm); }, { cls: 'btn primary', act: 'confirm' }), b('Cancel', () => { confirm = null; republish = false; paint(); }, { act: 'cancel' }));
     c.append(row); return c;
   }
 

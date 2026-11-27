@@ -107,6 +107,28 @@ export function createAreaStore({ storage = defaultStorage() } = {}) {
       const clipped = Array.from(name).slice(0, NAME_MAX).join('');
       return this.add({ ...copy(old), name: clipped, spots: old.spots.map(({ id: _drop, ...s }) => s) });
     },
+    /**
+     * Recovery: stores a draft rebuilt from the person's own server copy together with its submission reference, as one new record, or (replaceId) in place of an existing one
+     * (its id and created time are kept). Never creates a second local record for the same server area. `submission` must name the server area and revision (cleanSubmission).
+     * -> { ok, errors, area, code } where code is 'duplicate' (existingId says which), 'bad-submission', 'not-found' or 'too-many-areas' on a refusal.
+     */
+    restore(draft, submission, { replaceId = null } = {}) {
+      const c = cleanSubmission(submission);
+      const refuse = (code, message, extra = {}) => ({ ok: false, code, errors: [{ code, message }], area: null, ...extra });
+      if (!c || !c.areaId || !c.revisionId) return refuse('bad-submission', 'The server copy could not be used.');
+      const clash = areas.find((a) => a.submission?.areaId === c.areaId && a.id !== replaceId);
+      if (clash) return refuse('duplicate', 'This area is already on this device.', { existingId: clash.id });
+      const old = replaceId ? find(replaceId) : null;
+      if (replaceId && !old) return refuse('not-found', 'That area no longer exists.');
+      if (!old && areas.length >= MAX_AREAS) return refuse('too-many-areas', `You can keep at most ${MAX_AREAS} areas in this browser.`);
+      const r = validateArea(draft);
+      if (!r.ok) return r;
+      const t = nowIso();
+      if (old) { Object.assign(old, r.area, { id: old.id, created: old.created, updated: t, submission: c }); persist(); return { ok: true, errors: [], area: copy(old) }; }
+      const area = { ...r.area, id: newId(), created: t, updated: t, submission: c };
+      areas.push(area); persist();
+      return { ok: true, errors: [], area: copy(area) };
+    },
     /** Sets or clears (null) the server-submission reference of a local area without touching its content or its updated time. -> true when stored. */
     setSubmission(id, sub) {
       const a = find(id);

@@ -10,6 +10,7 @@ import { createCloudBackend } from './api.js';
 import { createAreaDetails } from './details.js';
 import { createAdminUI } from './admin-ui.js';
 import { createPublicAreas } from './public-layer.js';
+import { createRecovery } from './recover.js';
 import { createExploreApi } from './explorer-api.js';
 import { createAreasExplorer } from './explorer.js';
 
@@ -36,7 +37,7 @@ export function initAreas({ map, toast, panel = null, isBusy = () => false, stor
   // a moderation decision changes what is public: the next public query must not be served from the cache
   const adminBackend = { ...backendUsed, rpc: async (fn, args, o) => { const r = await backendUsed.rpc(fn, args, o); if (/^(review|unpublish)_community_area$/.test(fn)) publicAreas.invalidate(); return r; } };
   const admin = createAdminUI({ map, backend: adminBackend, toast }); // administrator review panel: reachable only while the account is an administrator
-  ui = createAreasUI({ map, store, layer, draw, toast, panel, submit, admin, openDetails: (id) => details?.open(id), closeDetails: () => details?.close() });
+  ui = createAreasUI({ map, store, layer, draw, toast, panel, submit, admin, recovery: createRecovery({ store, backend: backendUsed }), openDetails: (id) => details?.open(id), closeDetails: () => details?.close() });
   const details = host ? createAreaDetails({ map, store, layer, submit, ops: ui.ops, isBusy: () => draw.isBusy() || isBusy(), host, weatherButton, showWeather, publicAreas, toast }) : null;
   // Explorer (Explore tab, "Flying areas"): public summary list beyond the viewport; "Show on map" opens the same details panel
   const explorer = createAreasExplorer({ api: createExploreApi(backendUsed), map, showOnMap: (id, before) => (details ? details.showPublicById(id, before) : Promise.resolve(false)), toast });

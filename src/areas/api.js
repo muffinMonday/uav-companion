@@ -47,7 +47,7 @@ export function cleanListRow(r) {
   if (!r || typeof r !== 'object' || !isUuid(r.revision_id) || !isUuid(r.area_id) || !STATUSES.includes(r.status)) return null;
   const submittedAt = isoOrNull(r.submitted_at);
   if (!submittedAt) return null;
-  return { areaId: r.area_id, revisionId: r.revision_id, revisionNo: Number.isInteger(r.revision_no) ? r.revision_no : 1, status: r.status, submittedAt, reviewedAt: isoOrNull(r.reviewed_at), reason: typeof r.review_reason === 'string' ? r.review_reason.slice(0, 500) : '', published: r.published === true };
+  return { areaId: r.area_id, revisionId: r.revision_id, name: typeof r.name === 'string' ? Array.from(r.name.trim()).slice(0, 80).join('') : '', revisionNo: Number.isInteger(r.revision_no) ? r.revision_no : 1, status: r.status, submittedAt, reviewedAt: isoOrNull(r.reviewed_at), reason: typeof r.review_reason === 'string' ? r.review_reason.slice(0, 500) : '', published: r.published === true };
 }
 
 const INVALID = {
@@ -67,6 +67,7 @@ export function describeError(e) {
   if (/idempotency_conflict/.test(raw)) return { code: 'conflict', message: 'This submission was changed after an earlier attempt. Press Submit again to send the current version.', retryable: false };
   if (/not_published/.test(raw)) return { code: 'not-published', message: 'This area is no longer published, so it cannot be changed. Your draft stays here.', retryable: false };
   if (/revision_pending/.test(raw)) return { code: 'revision-pending', message: 'A change to this area is already waiting for review. Wait for a decision or withdraw it first.', retryable: false };
+  if (/identical_to_rejected/.test(raw)) return { code: 'identical-to-rejected', message: 'This is identical to a version an administrator already declined. Change something first, taking the reason you were given into account.', retryable: false };
   if (/no_change/.test(raw)) return { code: 'no-change', message: 'This is identical to the published version. Change something first.', retryable: false };
   if (/not_withdrawable/.test(raw)) return { code: 'not-withdrawable', message: 'This submission can no longer be withdrawn.', retryable: false };
   if (/not_found/.test(raw)) return { code: 'not-found', message: 'This submission was not found for the account you are signed in with.', retryable: false };
@@ -110,6 +111,14 @@ export function createAreasApi(backend) {
       const r = cleanSubmitResult(await call('submit_community_revision', { p_area_id: areaId, p_payload: payload }));
       if (!r || r.areaId !== areaId) throw { code: 'bad-response', message: 'The server answered in an unexpected way. Try again.', retryable: true };
       return r;
+    },
+    /** One of the caller's OWN revisions with its full content (get_my_community_revision), or null when it is not theirs or does not exist. */
+    async myRevision(revisionId) {
+      if (!isUuid(revisionId)) return null;
+      const d = await call('get_my_community_revision', { p_revision_id: revisionId });
+      if (d === null || d === undefined) return null;
+      if (typeof d !== 'object' || !isUuid(d.area_id) || d.revision_id !== revisionId || !STATUSES.includes(d.status)) throw { code: 'bad-response', message: 'The server answered in an unexpected way. Try again.', retryable: true };
+      return d;
     },
     async list() { const d = await call('list_my_community_areas', {}); return Array.isArray(d) ? d.map(cleanListRow).filter(Boolean) : []; },
     async withdraw(revisionId) {

@@ -7,6 +7,7 @@ import { DISCLAIMER } from './layer.js';
 import { MAX_IMPORT_BYTES } from './store.js';
 import { MAX_PENDING } from './api.js';
 import { showModalQuiet } from '../touch.js';
+import { createRecoverUI } from './recover-ui.js';
 
 import { submissionLine, deleteWarning } from './status.js';
 export { submissionLine };
@@ -20,7 +21,8 @@ export function download(name, text, type = 'application/geo+json') {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-export function createAreasUI({ map, store, layer, draw, toast, panel, submit, openDetails = null, closeDetails = null, admin = null }) {
+export function createAreasUI({ map, store, layer, draw, toast, panel, submit, openDetails = null, closeDetails = null, admin = null, recovery = null }) {
+  const recoverUI = recovery ? createRecoverUI({ recovery, toast, onRecovered: (a) => { layer.fit?.(a.id); } }) : null;
   const container = map.getContainer();
   let isOpen = false, btn = null, confirmId = null, withdrawId = null, shown = true;
 
@@ -62,6 +64,8 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
     const make = el('div', 'areas-actions');
     make.append(b('Draw polygon', () => begin({ kind: 'polygon' }), { cls: 'btn primary', act: 'draw-polygon' }), b('Draw rectangle', () => begin({ kind: 'rectangle' }), { cls: 'btn primary', act: 'draw-rect' }),
       b('Import GeoJSON', () => fileIn.click(), { act: 'import' }), b('Export all', () => exportAll(), { act: 'export-all' }));
+    const rcv = recoverUI && submit.backend.available() ? el('div', 'areas-actions') : null; // reading the account's own submissions: signed-in only, never sends anything
+    if (rcv) rcv.append(b('Recover my submitted areas', () => { if (!submit.backend.signedIn()) { toast('Sign in to recover the areas you submitted.', 6000); submit.backend.signIn(); return; } recoverUI.open(); }, { act: 'recover' }));
     const adm = admin?.isAdmin() ? el('div', 'areas-actions') : null; // presentation only: the server checks the role on every moderation call
     if (adm) adm.append(b('Review submissions (administrator)', () => { set(false); admin.open(); }, { cls: 'btn primary', act: 'admin-review' }));
     const showLabel = el('label', 'areas-show'); const cb = el('input'); cb.type = 'checkbox'; cb.checked = shown; cb.id = 'areas-show-cb';
@@ -96,7 +100,7 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
       }
       li.append(row); list.append(li);
     }
-    root.replaceChildren(head, intro, note, ...(warn ? [warn] : []), ...(rec ? [rec] : []), make, ...(adm ? [adm] : []), showLabel, list, fileIn);
+    root.replaceChildren(head, intro, note, ...(warn ? [warn] : []), ...(rec ? [rec] : []), make, ...(rcv ? [rcv] : []), ...(adm ? [adm] : []), showLabel, list, fileIn);
   }
   /** Submit pressed: a guest is sent to sign in (and the wish is kept); a signed-in person gets the acknowledgement dialog. Nothing is sent until that is confirmed. */
   function startSubmit(id) {

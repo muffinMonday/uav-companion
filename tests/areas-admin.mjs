@@ -37,6 +37,7 @@ const BACKEND = ([signed, admin, total]) => {
       if (fn === 'review_community_area') {
         const i = be.pending.findIndex((x) => x.revision_id === args.p_revision_id);
         if (be.stale || i < 0) { if (i >= 0) be.pending.splice(i, 1); return { error: { message: 'not_pending' } }; }
+        if (be.unpub && args.p_decision === 'approve' && args.p_republish !== true) return { error: { message: 'area_unpublished' } };
         const it = be.pending.splice(i, 1)[0];
         if (args.p_decision === 'approve') be.published.push({ ...it, status: 'approved' });
         return { data: { status: args.p_decision === 'approve' ? 'approved' : 'rejected', changed: true, xp_awarded: args.p_award_xp, xp: args.p_award_xp ? args.p_xp_amount : 0 } };
@@ -164,6 +165,22 @@ for (const [label, signed, admin] of [['guest', 0, 0], ['signed-in non-administr
   await p.waitForFunction(() => !document.querySelector('#areas-admin-panel .area-admin-detail'));
   ok(!(await p.$$eval(`${AP} .area-item-name`, (n) => n.some((x) => x.textContent.startsWith('<img')))), 'a stale decision (already decided elsewhere) returns to a refreshed list');
   await p.evaluate(() => { globalThis.__be.stale = false; });
+
+  // an unpublished area is republished only by a second, explicit confirmation
+  await p.evaluate(() => { globalThis.__be.unpub = true; });
+  const before = (await calls(p, 'review_community_area')).length;
+  await p.locator(`${AP} .area-admin-item`).first().locator('[data-act="open"]').click();
+  await p.locator('#area-award').uncheck(); await p.click(`${AP} [data-act="approve"]`); await p.click(`${AP} [data-act="confirm"]`);
+  await p.waitForSelector(`${AP} .area-admin-republish`);
+  const rv4 = (await calls(p, 'review_community_area')).slice(before);
+  ok(rv4.length === 1 && !('p_republish' in rv4[0].args) && /unpublished by an administrator/.test(await p.locator(`${AP} .area-admin-republish`).textContent()) && await p.locator(`${AP} .area-admin-detail`).count() === 1, 'the server refusal opens a second confirmation that says the approval will publish the area again; nothing was decided');
+  await p.click(`${AP} [data-act="cancel"]`);
+  ok((await calls(p, 'review_community_area')).length === before + 1, 'cancelling the second confirmation sends nothing more');
+  await p.click(`${AP} [data-act="approve"]`); await p.click(`${AP} [data-act="confirm"]`); await p.waitForSelector(`${AP} .area-admin-republish`);
+  await p.click(`${AP} [data-act="confirm"]`); await p.waitForFunction(() => !document.querySelector('#areas-admin-panel .area-admin-detail'));
+  const rv5 = (await calls(p, 'review_community_area')).at(-1);
+  ok(rv5.args.p_republish === true && rv5.args.p_decision === 'approve', 'only the second, explicit confirmation sends p_republish = true');
+  await p.evaluate(() => { globalThis.__be.unpub = false; });
 
   // published tab and unpublish
   await p.click(`${AP} [data-act="tab-published"]`);

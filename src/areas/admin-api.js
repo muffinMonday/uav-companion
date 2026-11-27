@@ -78,6 +78,7 @@ const FAILS = {
   not_found: 'That submission no longer exists.', not_published: 'That area is not published.', reason_required: 'A reason is required (at most 500 characters).',
   invalid_xp_amount: 'Choose 100, 200, 300, 400 or 500 XP.', self_award_not_allowed: 'You cannot award yourself XP.', no_recipient: 'This contributor no longer has an account, so no XP can be awarded.',
   invalid_decision: 'That decision is not valid.', already_awarded: 'XP for this revision was already awarded.',
+  area_unpublished: 'This area was unpublished by an administrator. Approving this change would publish it again: confirm that to continue.',
 };
 export function describeAdminError(e) {
   const raw = String(e?.message ?? e ?? '');
@@ -101,11 +102,12 @@ export function createAdminApi(backend) {
     async listPending(cursor = null, limit = PAGE) { return cleanPage(await call('list_pending_community_areas', { p_cursor: cursor, p_limit: limit })); },
     async listPublished(cursor = null, limit = PAGE) { return cleanPage(await call('list_published_community_areas', { p_cursor: cursor, p_limit: limit })); },
     /** decision 'approve' | 'reject'. Validates like the server before sending. */
-    async review(item, decision, { reason = '', award = false, amount = null } = {}) {
+    /** `republish` is the explicit decision to put an area that was unpublished back on the public map by approving a pending change to it (the server refuses without it). */
+    async review(item, decision, { reason = '', award = false, amount = null, republish = false } = {}) {
       const r = checkReason(reason, decision === 'reject'); if (!r.ok) throw { code: 'reason_required', message: r.message, retryable: false };
       const w = decision === 'approve' ? checkReward(award, amount, item.own) : { ok: true, award: false, amount: null };
       if (!w.ok) throw { code: 'invalid_xp_amount', message: w.message, retryable: false };
-      const d = await call('review_community_area', { p_revision_id: item.revisionId, p_decision: decision, p_reason: r.text || null, p_award_xp: w.award, p_xp_amount: w.amount });
+      const d = await call('review_community_area', { p_revision_id: item.revisionId, p_decision: decision, p_reason: r.text || null, p_award_xp: w.award, p_xp_amount: w.amount, ...(republish && decision === 'approve' ? { p_republish: true } : {}) });
       if (!d || !['approved', 'rejected'].includes(d.status)) throw { code: 'bad-response', message: 'The server answered in an unexpected way. Refresh the list.', retryable: true };
       return { status: d.status, changed: d.changed === true, xpAwarded: d.xp_awarded === true, xp: Number.isFinite(d.xp) ? d.xp : 0 };
     },
