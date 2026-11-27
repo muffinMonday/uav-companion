@@ -15,7 +15,8 @@ import { initPanel } from './panel.js';
 import { initControls } from './controls.js';
 import { initHoldCheck, HOLD_MS } from './holdcheck.js';
 import { initInspect } from './inspect.js';
-import { initAreas } from './areas/index.js'; // community flying areas, Phase 1: local drawing only; never read by the point check
+import { initAreas } from './areas/index.js'; // community flying areas: local drawing (Phase 1) and explicit signed-in submission (Phase 2); never read by the point check
+import { createCloudBackend } from './areas/api.js';
 import { initDashboard } from './dashboard.js';
 import { initSplash } from './splash.js';
 import { initMapMoreTools } from './map-more-tools.js';
@@ -115,7 +116,9 @@ const trips = initTripsUI({ poi, panel, toast, checkPoint, zoneSummary });      
 const ai = initAI({ map, toast, panel, poi });  // paste an AI's itinerary, or open a share link, then preview and add
 const opensShareLink = /^#import=/.test(location.hash); // read before fromHash() clears it
 ai.fromHash();
-const areas = initAreas({ map, toast, panel, isBusy: () => poi.isBusy() }); // My flying areas (local drafts), a folded map tool; while one is being drawn, areas.isBusy() keeps holds, right-clicks and Inspect from checking a spot
+const areasHandle = { h: null }; // the account handle, once the cloud code has loaded
+const areasBackend = globalThis.__uavAreasBackend ?? createCloudBackend(() => areasHandle.h); // (the override is for tests)
+const areas = initAreas({ map, toast, panel, isBusy: () => poi.isBusy(), backend: areasBackend }); // My flying areas (local drafts), a folded map tool; while one is being drawn, areas.isBusy() keeps holds, right-clicks and Inspect from checking a spot
 const cross = initCrosshair(map); // a crosshair at the centre of the map (the button goes under the marker-details button)
 // the zone verdict for where I am now (the position is read once, when the button is pressed)
 const checkHere = () => locate.request().then((ll) => showCheck(ll, 'Your location', { zoom: 15 })).catch(() => { /* the location control has said why */ });
@@ -139,7 +142,7 @@ function routeAccount(h) {
   poi.routeRouter.setBackend(backend);
   h.onChange(() => { const now = !!h.sync.status().session; if (now !== had) { had = now; poi.routeRouter.resetFailures(); poi.routeRouter.setBackend(backend); } });
 }
-initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; h.onChange(() => cloud.refresh?.()); routeAccount(h); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); cloud.sessions = initSessionsHub({ handle: h, map, toast, panel, onOpen: (tabs, opts) => helpRef.h.hubHint(tabs, opts), markers: () => poi.store.items().filter((i) => i.type !== 'home').map((i) => ({ name: i.name, lat: i.lat, lon: i.lon })) }); privacyUI.bindArrival(cloud.sessions.arrival); cloud.sessions.onSummary(() => cloud.refresh?.()); shellNav?.bindSessions(cloud.sessions); cloud.sessions.openFromHash(); cloud.sessions.refresh(); initFriendsUI({ panel, handle: h, toast, cloud }); cloud.account = initAccountUI({ handle: h, panel, toast, cloud }); splash.refresh(); cloud.refresh?.(); } }).catch((e) => log.warn('sync', 'cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
+initSyncUI({ store: poi.store, toast }).then((h) => { if (h) { cloud.handle = h; areasHandle.h = h; h.onChange(() => cloud.refresh?.()); h.onChange(() => areasBackend.fire?.()); areasBackend.fire?.(); routeAccount(h); initPresence({ handle: h }); initPartyUI({ handle: h, store: poi.store, panel, toast, cloud, map }); trips.setParty(cloud.party); cloud.sessions = initSessionsHub({ handle: h, map, toast, panel, onOpen: (tabs, opts) => helpRef.h.hubHint(tabs, opts), markers: () => poi.store.items().filter((i) => i.type !== 'home').map((i) => ({ name: i.name, lat: i.lat, lon: i.lon })) }); privacyUI.bindArrival(cloud.sessions.arrival); cloud.sessions.onSummary(() => cloud.refresh?.()); shellNav?.bindSessions(cloud.sessions); cloud.sessions.openFromHash(); cloud.sessions.refresh(); initFriendsUI({ panel, handle: h, toast, cloud }); cloud.account = initAccountUI({ handle: h, panel, toast, cloud }); splash.refresh(); cloud.refresh?.(); } }).catch((e) => log.warn('sync', 'cloud copy unavailable', e)); // What's new, the next trip, a backup reminder and the guide, along the bottom of the map
 
 const checkAt = (latlng) => showCheck(latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`).catch((e) => { log.warn('map', 'point check failed', e); toast('Point check failed. Check your connection and try again.'); });
 // A quick click on blank map only closes windows. Holding still for 2 s, a right-click, or Enter on the focused map checks a spot.
