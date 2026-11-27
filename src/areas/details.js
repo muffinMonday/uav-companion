@@ -11,7 +11,7 @@ import { getWindLimit } from '../weather.js';
 import { avatarEl } from '../avatars.js';
 import { profileTrigger } from '../profile-popover.js';
 import { onPopupSwipe } from '../swipe.js';
-import { formatArea, SPOT_LABELS } from './core.js';
+import { formatArea, SPOT_LABELS, ENVIRONMENTS, ACCESS, ACTIVITIES, SURFACES, HAZARDS } from './core.js';
 import { SPOT_ICONS, DISCLAIMER } from './layer.js';
 import { privateView } from './adapter-private.js';
 import { publicView } from './adapter-public.js';
@@ -97,6 +97,7 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
       root.append(row);
       if (view.status) { const st = el('p', 'area-status', view.status); st.dataset.status = view.context; root.append(st); }
       if (a.description) { root.append(el('h4', 'area-h', 'Description')); root.append(el('p', 'area-desc', a.description)); }
+      root.append(el('h4', 'area-h', 'Site details'), siteEl(view));
       root.append(el('h4', 'area-h', 'Weather forecast'), weatherBox); renderWeather();
       root.append(el('h4', 'area-h', `Pilot setup spots (${a.spots.length})`), spotsEl(view));
       root.append(bylineEl(view.byline), el('p', 'area-disclaimer', DISCLAIMER));
@@ -124,6 +125,28 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
         b.addEventListener('click', () => { if (a.confirm) { confirming = a.act; render(); root.querySelector('[data-act^="confirm-"]')?.focus({ preventScroll: true }); } else a.run(); });
         box.append(b);
       }
+      return box;
+    }
+
+    /**
+     * Site details: environment and access first and plainly (access other than "public" is marked, and a missing one says "not provided", never "public"); activities and surface as
+     * secondary tags; hazards without alarm ("None reported" is not "hazard-free"); the observation date or its absence. Text only. Nothing here changes a point check.
+     */
+    function siteEl(view) {
+      const at = view.area.attributes ?? {}, box = el('div', 'area-site-view'); box.dataset.site = 'details';
+      const line = (label, value, cls = '') => { const d = el('div', 'area-attr-prominent ' + cls); d.append(el('small', 'area-attr-label', label), el('strong', '', value)); return d; };
+      box.append(line('Site environment', at.environment ? ENVIRONMENTS[at.environment] : 'Not provided'));
+      const open = at.access === 'public';
+      const acc = line('Access / permission', at.access ? ACCESS[at.access] : 'Not provided', open ? '' : 'is-caution'); acc.dataset.access = at.access ?? 'none';
+      if (!open) acc.append(el('small', '', 'Do not assume you may enter this place or fly here. Check who controls the land and the current rules.'));
+      else acc.append(el('small', '', 'Subject to local rules. Not a permission to fly.'));
+      box.append(acc);
+      const tags = (title, map, values) => { if (!values?.length) return; const s = el('div', 'area-attr-sec'); s.append(el('h4', '', title)); const ul = el('ul', 'area-attr-tags'); for (const v of values) ul.append(el('li', '', map[v] ?? v)); s.append(ul); box.append(s); };
+      tags('Suitable activities (community tags, not a safety rating)', ACTIVITIES, at.activities);
+      if (at.surface) tags('Ground / launch surface', SURFACES, [at.surface]);
+      tags('Known hazards (contributor observations)', HAZARDS, at.hazards);
+      if (!at.observed_on) box.append(el('small', 'area-attr-observed', 'Last observation date not provided.'));
+      if (view.context === 'private' && (!at.environment || !at.access)) box.append(el('small', 'area-hint', 'Choose the site environment and the access / permission status (Edit) to be able to submit this area.'));
       return box;
     }
 

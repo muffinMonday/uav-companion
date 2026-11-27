@@ -171,7 +171,7 @@ export function toGeoJSON(list) {
     features.push({
       type: 'Feature',
       geometry: { type: 'Polygon', coordinates: [a.geometry.coordinates[0].map((p) => [p[0], p[1]])] },
-      properties: { kind: GEOJSON_KIND, v: 1, id: a.id, name: a.name, description: a.description, drawKind: a.drawKind, created: a.created, updated: a.updated },
+      properties: { kind: GEOJSON_KIND, v: 1, id: a.id, name: a.name, description: a.description, drawKind: a.drawKind, created: a.created, updated: a.updated, ...(a.attributes && Object.keys(a.attributes).length ? { attributes: a.attributes } : {}) },
     });
     for (const s of a.spots) features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.coordinates[0], s.coordinates[1]] }, properties: { kind: SPOT_KIND, areaId: a.id, type: s.type, note: s.note } });
   }
@@ -211,7 +211,7 @@ export function parseGeoJSON(text) {
     const v = validateVertices(openRing(ring));
     if (!v.ok) { skipped.push({ index, reason: v.errors[0].message }); return; }
     const name = props.name ?? props.title;
-    const item = { sourceIndex: index, name, description: props.description, drawKind: props.drawKind === 'rectangle' && v.vertices.length === 4 ? 'rectangle' : 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(v.vertices)] }, spots: [] };
+    const item = { sourceIndex: index, name, description: props.description, drawKind: props.drawKind === 'rectangle' && v.vertices.length === 4 ? 'rectangle' : 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(v.vertices)] }, spots: [], attributes: props.attributes };
     if (typeof props.id === 'string') byId.set(props.id, item);
     areas.push(item);
   });

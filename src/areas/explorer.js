@@ -6,7 +6,7 @@
 //   - States: loading, empty, error with Try again, refused search, "refine the search" at the paging limit. A stale response (an older search) is dropped.
 import { el } from '../cards.js';
 import { parseCoordinates } from '../coordparse.js';
-import { formatArea } from './core.js';
+import { formatArea, ENVIRONMENTS, ACCESS } from './core.js';
 import { buildFilter, PAGE, MAX_OFFSET, RADII } from './explorer-api.js';
 
 const btn = (label, cls = 'btn small') => { const b = el('button', cls, label); b.type = 'button'; return b; };
@@ -62,6 +62,12 @@ export function createAreasExplorer({ api, map, showOnMap, toast = () => {} }) {
     const top = el('div', 'ses-top'); top.append(el('b', 'ses-title', it.name)); r.append(top);
     const meta = [Number.isFinite(it.distanceKm) ? `About ${it.distanceKm < 1 ? 'under 1' : it.distanceKm.toFixed(1)} km away` : '', formatArea(it.areaM2), it.spotCount ? `${it.spotCount} setup spot${it.spotCount === 1 ? '' : 's'}` : 'No setup spots mapped'].filter(Boolean);
     r.append(el('small', 'ses-count', meta.join(' · ')));
+    { // approved site details (environment and access only; the rest is in the details panel). Access that is not public is marked; a missing one is not shown as public.
+      const tags = el('ul', 'area-attr-tags area-ex-attrs'); const at = it.attributes ?? {};
+      if (at.environment) tags.append(el('li', '', ENVIRONMENTS[at.environment]));
+      if (at.access) { const li = el('li', at.access === 'public' ? '' : 'is-caution', ACCESS[at.access]); li.dataset.access = at.access; tags.append(li); }
+      if (tags.children.length) r.append(tags);
+    }
     const bs = el('div', 'btn-row'); const b = btn('Show on map'); b.dataset.act = 'show-area';
     b.addEventListener('click', async () => {
       b.disabled = true;

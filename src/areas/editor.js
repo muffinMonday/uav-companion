@@ -21,9 +21,11 @@ export function createEditor({ kind = 'polygon', area = null } = {}) {
     spots: area ? area.spots.map((s) => ({ ...s, id: s.id ?? spotId(), coordinates: [...s.coordinates] })) : [],
     closed: !!area,           // the outline is complete (rectangle: both corners placed; polygon: Finish pressed)
     name: area?.name ?? '', description: area?.description ?? '',
+    attributes: area?.attributes ? JSON.parse(JSON.stringify(area.attributes)) : {},
   };
   let history = [];           // snapshots before each change, for undo
-  let baseline = JSON.stringify([st.vertices, st.spots, st.name, st.description]);
+  const snapshot = () => JSON.stringify([st.vertices, st.spots, st.name, st.description, st.attributes]);
+  let baseline = snapshot();
 
   const push = () => { history.push(snap(st)); if (history.length > 200) history.shift(); };
   const result = (ok, message = null) => ({ ok, message });
@@ -34,10 +36,13 @@ export function createEditor({ kind = 'polygon', area = null } = {}) {
     get vertices() { return st.vertices.map((p) => [...p]); },
     get spots() { return st.spots.map((s) => ({ ...s, coordinates: [...s.coordinates] })); },
     get name() { return st.name; }, get description() { return st.description; },
+    get attributes() { return JSON.parse(JSON.stringify(st.attributes)); },
+    /** Replaces the site details (a plain object; validated when saved). */
+    setAttributes(a) { st.attributes = a && typeof a === 'object' ? JSON.parse(JSON.stringify(a)) : {}; },
     setText({ name, description }) { if (name !== undefined) st.name = name; if (description !== undefined) st.description = description; },
     /** Unsaved changes since the session started (or since the last markSaved). */
-    get dirty() { return JSON.stringify([st.vertices, st.spots, st.name, st.description]) !== baseline; },
-    markSaved() { baseline = JSON.stringify([st.vertices, st.spots, st.name, st.description]); },
+    get dirty() { return snapshot() !== baseline; },
+    markSaved() { baseline = snapshot(); },
     get canUndo() { return history.length > 0; },
 
     /** A tap or click at `p` while the outline is being drawn. Rectangle: the first tap is one corner, the second the opposite one. */
@@ -143,7 +148,7 @@ export function createEditor({ kind = 'polygon', area = null } = {}) {
     check() { return validateVertices(st.vertices); },
     /** Everything but the area record's id and times: ready for the store (which validates again). */
     toDraft() {
-      return { name: st.name, description: st.description, drawKind: st.kind, geometry: { type: 'Polygon', coordinates: [[...st.vertices, st.vertices[0]]] }, spots: st.spots.map((s) => ({ ...s })) };
+      return { name: st.name, description: st.description, drawKind: st.kind, geometry: { type: 'Polygon', coordinates: [[...st.vertices, st.vertices[0]]] }, spots: st.spots.map((s) => ({ ...s })), attributes: JSON.parse(JSON.stringify(st.attributes)) };
     },
     /** Full validation of what would be saved, spots included. -> { ok, errors } */
     validate() {

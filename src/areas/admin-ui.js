@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { el } from '../cards.js';
 import { formatArea, SPOT_LABELS } from './core.js';
 import { areaCentre } from './geo.js';
-import { createAdminApi, describeChanges, XP_AMOUNTS, XP_DEFAULT, MAX_REASON, checkReason, checkReward } from './admin-api.js';
+import { createAdminApi, describeChanges, attributeLines, XP_AMOUNTS, XP_DEFAULT, MAX_REASON, checkReason, checkReward } from './admin-api.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const fmtDate = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
@@ -120,6 +120,7 @@ export function createAdminUI({ map, backend, toast }) {
     } else box.append(previewSvg(it.ring, it.spots, { w: 300, h: 190 }));
     box.append(b('Show on the map', () => show(it), { act: 'show-map' }));
     box.append(el('div', 'area-admin-desc', it.description || 'No description.'));
+    { const sd = el('ul', 'area-admin-attrs'); sd.setAttribute('aria-label', 'Site details'); for (const [label, value] of attributeLines(it.attributes)) sd.append(el('li', value ? '' : 'is-unset', `${label}: ${value ?? 'not provided'}`)); box.append(sd); }
     if (it.spots.length) { const ul = el('ul', 'area-admin-spots'); for (const s of it.spots) ul.append(el('li', '', `${SPOT_LABELS[s.type] ?? s.type}${s.note ? ': ' + s.note : ''} (${s.coordinates[1].toFixed(5)}, ${s.coordinates[0].toFixed(5)})`)); box.append(ul); }
     box.append(el('p', 'areas-note', 'A community area is a recommendation, never flight authorization, and never changes an official airspace result.'));
     if (own) box.append(el('p', 'areas-warn', 'This is your own submission: it can be approved or rejected, but it cannot earn you XP.'));

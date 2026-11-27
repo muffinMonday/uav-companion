@@ -2,7 +2,7 @@
 // More tools menu folds it into a row like the other map tools (map-tool-labels.js). Everything is local: nothing is sent, nothing needs an account.
 import L from 'leaflet';
 import { el } from '../cards.js';
-import { formatArea, SPOT_LABELS } from './core.js';
+import { formatArea, SPOT_LABELS, attributesComplete } from './core.js';
 import { DISCLAIMER } from './layer.js';
 import { MAX_IMPORT_BYTES } from './store.js';
 import { MAX_PENDING } from './api.js';
@@ -106,6 +106,7 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
   function startSubmit(id) {
     const a = store.get(id);
     if (!a || !submit.eligible(a)) return;
+    if (!attributesComplete(a.attributes)) { toast('Before submitting, choose the site environment and the access / permission status: Edit the area, then fill in Site details.', 9000); return; } // Unknown is a valid choice
     if (!submit.backend.available()) { toast('Submitting needs an account, which this version of the app does not have.', 7000); return; }
     if (!submit.backend.signedIn()) {
       submit.intent.set(id);

@@ -2,6 +2,7 @@
 // The local draft is never deleted or changed by any of this: only its `submission` reference is. A network failure leaves the draft and its idempotency key,
 // so a retry cannot create a second submission; two presses of the button while one request is in flight are one request.
 import { buildPayload, contentHash, newKey, createAreasApi } from './api.js';
+import { attributesComplete } from './core.js';
 
 export const INTENT_KEY = 'uavzones.v1.areas.intent';
 const INTENT_MS = 30 * 60 * 1000;
@@ -39,6 +40,7 @@ export function createSubmitController({ store, backend, storage = (() => { try 
     const area = store.get(id);
     if (!area) return { ok: false, code: 'not-found', message: 'That area no longer exists.' };
     if (!eligible(area)) return { ok: false, code: 'not-eligible', message: 'This area already has a submission waiting or approved.' };
+    if (!attributesComplete(area.attributes)) return { ok: false, code: 'attributes-required', message: 'Choose the site environment and the access / permission status first (Edit the area, then Save).' };
     if (!backend.available()) return { ok: false, code: 'unavailable', message: 'Submitting needs an account, which this version of the app does not have.' };
     if (!backend.signedIn()) return { ok: false, code: 'signed-out', message: 'Sign in to submit.' };
     busy.add(id); notify();

@@ -162,7 +162,7 @@ for (const [name, s, context, expected, text] of states) {
 }
 
 // ================= public fixtures (mocked approved records; no discovery exists yet)
-const pub = (o = {}) => ({ area_id: UUID(7), status: 'approved', published: true, name: 'Harbour park', description: 'Wide <u>lawn</u>', geometry: { type: 'Polygon', coordinates: [sq(103.8, 1.3, 0.01)] }, spots: [spot('ps1', 'seating', 103.803, 1.303, 'Picnic tables')], approved_at: '2026-11-20T10:00:00Z', last_observed_on: '2026-11-18', attribution: null, ...o });
+const pub = (o = {}) => ({ area_id: UUID(7), status: 'approved', published: true, name: 'Harbour park', description: 'Wide <u>lawn</u>', geometry: { type: 'Polygon', coordinates: [sq(103.8, 1.3, 0.01)] }, spots: [spot('ps1', 'seating', 103.803, 1.303, 'Picnic tables')], approved_at: '2026-11-20T10:00:00Z', attributes: { environment: 'park', access: 'permission', activities: ['fpv', 'cinematic'], surface: 'grass', hazards: ['people', 'water'], observed_on: '2026-11-18' }, attribution: null, ...o });
 ({ ctx, p } = await open({ areas: [] }));
 ok(await p.evaluate((r) => __uavAreas.details.openPublic(r), pub()), 'an approved, published fixture opens');
 await p.waitForSelector(`${MH} .area-pop`); await p.waitForTimeout(500);

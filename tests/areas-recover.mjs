@@ -38,7 +38,7 @@ await db.query(`insert into public.app_roles (user_id, role) values ('${A}', 'ad
 
 let keyN = 0;
 const sq = (x, y, d = 0.004) => [[x, y], [x + d, y], [x + d, y + d], [x, y + d]];
-const body = (name, x, y, d, spots = 1, description = 'Open grass') => ({ idempotency_key: 'rcb-' + String(++keyN).padStart(12, '0'), name, description, draw_kind: 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(sq(x, y, d))] }, spots: Array.from({ length: spots }, (_, i) => ({ type: 'shelter', note: '', coordinates: [x + 0.001 + i * 0.0005, y + 0.001] })) });
+const body = (name, x, y, d, spots = 1, description = 'Open grass') => ({ idempotency_key: 'rcb-' + String(++keyN).padStart(12, '0'), name, description, draw_kind: 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(sq(x, y, d))] }, spots: Array.from({ length: spots }, (_, i) => ({ type: 'shelter', note: '', coordinates: [x + 0.001 + i * 0.0005, y + 0.001] })), attributes: { environment: 'park', access: 'public', hazards: ['water'], observed_on: '2026-11-01' } });
 const sub = (uid, p) => as(db, uid, 'select public.submit_community_area($1::jsonb) as r', [JSON.stringify(p)]).then((r) => r[0].r);
 const rev = (uid, areaId, p) => as(db, uid, 'select public.submit_community_revision($1, $2::jsonb) as r', [areaId, JSON.stringify(p)]).then((r) => r[0].r);
 const review = (rid, d, why = null) => as(db, A, 'select public.review_community_area($1, $2, $3, $4, $5) as r', [rid, d, why, false, null]);
@@ -95,7 +95,7 @@ ok((await localAreas(p)).length === 0 && await marinaRow.locator('[data-act=crea
 calls = [];
 await marinaRow.locator('[data-act=create]').click(); await marinaRow.locator('[data-act=confirm-create]').click(); await p.waitForTimeout(900);
 const loc1 = await localAreas(p);
-ok(loc1.length === 1 && loc1[0].name === 'Marina Lawn v2' && loc1[0].spots.length === 2 && loc1[0].submission.areaId === marina.area_id && loc1[0].submission.revisionId === marinaV2.revision_id && loc1[0].submission.status === 'pending' && loc1[0].submission.revision === true, 'a private local draft linked to the newest revision (the pending change) is created');
+ok(loc1.length === 1 && loc1[0].name === 'Marina Lawn v2' && loc1[0].spots.length === 2 && loc1[0].submission.areaId === marina.area_id && loc1[0].submission.revisionId === marinaV2.revision_id && loc1[0].submission.status === 'pending' && loc1[0].submission.revision === true && loc1[0].attributes?.access === 'public' && loc1[0].attributes.hazards.join() === 'water' && loc1[0].attributes.observed_on === '2026-11-01', 'a private local draft linked to the newest revision (the pending change) is created, with its site details');
 ok(calls.every((c) => !WRITES.test(c)) && calls.some((c) => c === 'get_my_community_revision'), `only reads were made (${[...new Set(calls)].join(', ')})`);
 ok(await p.locator(`${DLG} .area-recover-item`, { hasText: 'Marina Lawn v2' }).locator('[data-act=replace]').count() === 1 && await p.locator(`${DLG} .area-recover-item`, { hasText: 'Marina Lawn v2' }).locator('[data-act=create]').count() === 0, 'the row now says it is on this device and offers Replace instead of a second copy');
 // replace: warns about local edits

@@ -4,7 +4,7 @@
 //   - What is rebuilt is the NEWEST revision the person submitted for an area, as an ordinary private local draft linked to that area and revision (the same `submission`
 //     reference a normal submission leaves), so editing it and pressing Submit changes goes through the usual flow: a new pending revision, the published version untouched.
 //   - Never a second local record for the same server area. If one exists, the person must explicitly choose to replace its content.
-import { validateArea } from './core.js';
+import { validateArea, validateAttributes } from './core.js';
 import { contentHash, createAreasApi } from './api.js';
 
 const when = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
@@ -73,7 +73,7 @@ export function createRecovery({ store, backend }) {
       if (existing && !replace) return { ok: false, code: 'exists', existingId: existing.id, message: 'This area is already on this device.' };
       const rev = await api.myRevision(entry.latest.revisionId);
       if (!rev) return { ok: false, code: 'not-found', message: 'This submission was not found for the account you are signed in with.' };
-      const v = validateArea({ name: rev.name, description: typeof rev.description === 'string' ? rev.description : '', geometry: rev.geometry, spots: Array.isArray(rev.spots) ? rev.spots : [], drawKind: rev.draw_kind === 'rectangle' ? 'rectangle' : 'polygon' });
+      const v = validateArea({ name: rev.name, description: typeof rev.description === 'string' ? rev.description : '', geometry: rev.geometry, spots: Array.isArray(rev.spots) ? rev.spots : [], drawKind: rev.draw_kind === 'rectangle' ? 'rectangle' : 'polygon', attributes: (() => { const a = validateAttributes(rev.attributes); return a.ok ? a.attributes : {}; })() });
       if (!v.ok) return { ok: false, code: 'invalid', message: 'The server copy did not pass the local checks, so it was not restored.' };
       const r = store.restore(v.area, submissionFor(rev, contentHash(v.area)), { replaceId: existing && replace ? existing.id : null });
       if (!r.ok) return { ok: false, code: r.code ?? 'invalid', existingId: r.existingId, message: r.errors?.[0]?.message ?? 'It could not be restored.' };

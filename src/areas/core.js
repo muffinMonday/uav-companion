@@ -177,6 +177,55 @@ export function validateSpots(input, ring) {
   return { ok: errors.length === 0, errors, spots };
 }
 
+// ---- site attributes (Stage 4; plan section 13.1): community observations, never permission or a safety rating. Absent = not provided = unknown. Values mirror the SQL
+// function community_area_attributes (supabase/migrations/20261127180000_community_area_attributes.sql): the server is authoritative.
+export const ENVIRONMENTS = { open_field: 'Open field', park: 'Park / recreation area', beach: 'Beach / coast', water: 'Open water', hill: 'Hill / high ground', woodland: 'Woodland / green space', urban: 'Built-up / urban space', other: 'Other', unknown: 'Unknown' };
+export const ACCESS = { public: 'Public access (subject to local rules)', permission: 'Permission required', restricted: 'Private / restricted access', unknown: 'Unknown / not verified' };
+export const ACTIVITIES = { fpv: 'FPV freestyle', cinematic: 'Cinematic', cruising: 'Cruising / general multirotor', long_range: 'Long-range', fixed_wing: 'Fixed-wing', other: 'Other / not sure' };
+export const SURFACES = { grass: 'Grass', paved: 'Paved / concrete', dirt: 'Dirt', sand: 'Sand', rock: 'Rock', mixed: 'Mixed', unknown: 'Unknown' };
+export const HAZARDS = { people: 'People / crowds', roads: 'Roads / traffic', power_lines: 'Power lines', trees: 'Trees / structures', water: 'Water', wildlife: 'Wildlife', uneven: 'Uneven / obstructed ground', airspace: 'Nearby official airspace restrictions', other: 'Other', none_reported: 'None reported', unknown: 'Unknown' };
+export const OBSERVED_MIN = '2000-01-01';
+const ATTR_KEYS = ['environment', 'access', 'activities', 'surface', 'hazards', 'observed_on'];
+const one = (map) => (v) => typeof v === 'string' && Object.prototype.hasOwnProperty.call(map, v);
+const today = (now = Date.now()) => new Date(now + 24 * 3600e3).toISOString().slice(0, 10); // up to tomorrow (UTC), like the server
+
+/**
+ * Validates and normalises an attributes object -> { ok, errors, attributes }. Only keys that were set are kept; arrays are unique and in the canonical order; empty arrays are dropped;
+ * 'none_reported' and 'unknown' hazards stand alone. Missing, null or {} is valid here (a draft may be incomplete): attributesComplete() says whether it can be submitted.
+ */
+export function validateAttributes(raw, now = Date.now()) {
+  const bad = (m) => ({ ok: false, errors: [err('attributes', m)], attributes: {} });
+  if (raw === undefined || raw === null) return { ok: true, errors: [], attributes: {} };
+  if (typeof raw !== 'object' || Array.isArray(raw)) return bad('The site details are not valid.');
+  if (Object.keys(raw).some((k) => !ATTR_KEYS.includes(k))) return bad('The site details have an unknown field.');
+  const out = {};
+  for (const [k, map, label] of [['environment', ENVIRONMENTS, 'environment'], ['access', ACCESS, 'access status'], ['surface', SURFACES, 'ground surface']]) {
+    const v = raw[k];
+    if (v === undefined || v === null) continue;
+    if (!one(map)(v)) return bad(`The ${label} is not one of the offered choices.`);
+    out[k] = v;
+  }
+  for (const [k, map, label] of [['activities', ACTIVITIES, 'activities'], ['hazards', HAZARDS, 'hazards']]) {
+    const v = raw[k];
+    if (v === undefined || v === null) continue;
+    if (!Array.isArray(v) || v.length > Object.keys(map).length || !v.every(one(map)) || new Set(v).size !== v.length) return bad(`The ${label} are not valid.`);
+    if (k === 'hazards' && v.length > 1 && (v.includes('none_reported') || v.includes('unknown'))) return bad('“None reported” and “Unknown” cannot be combined with other hazards.');
+    const sorted = Object.keys(map).filter((x) => v.includes(x));
+    if (sorted.length) out[k] = sorted;
+  }
+  if (raw.observed_on !== undefined && raw.observed_on !== null) {
+    const d = raw.observed_on;
+    if (typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d) || Number.isNaN(Date.parse(d + 'T00:00:00Z')) || new Date(d + 'T00:00:00Z').toISOString().slice(0, 10) !== d) return bad('The date last observed is not a real date.');
+    if (d < OBSERVED_MIN || d > today(now)) return bad('The date last observed cannot be in the future or before 2000.');
+    out.observed_on = d;
+  }
+  return { ok: true, errors: [], attributes: out };
+}
+
+/** Environment and access status are required to submit (they may be "Unknown", but must be chosen). */
+export const attributesComplete = (a) => !!a && typeof a.environment === 'string' && typeof a.access === 'string';
+export const hasAttributes = (a) => !!a && Object.keys(a).length > 0;
+
 /**
  * Validates and normalises a whole area record (what is stored and exported). Never throws.
  * Input: { id?, name, description?, drawKind?, geometry: { type: 'Polygon', coordinates: [ring] }, spots?, created?, updated? }.
@@ -200,9 +249,11 @@ export function validateArea(rec) {
   }
   const spots = validateSpots(rec.spots, ring);
   errors.push(...spots.errors);
+  const attrs = validateAttributes(rec.attributes);
+  errors.push(...attrs.errors);
   if (errors.length) return { ok: false, errors, area: null };
   const drawKind = DRAW_KINDS.includes(rec.drawKind) ? rec.drawKind : 'polygon';
-  const area = { id: typeof rec.id === 'string' ? rec.id : '', name: name.value, description: desc.value, drawKind, geometry: { type: 'Polygon', coordinates: [ring] }, spots: spots.spots, areaM2: Math.round(areaM2), created: rec.created, updated: rec.updated };
+  const area = { id: typeof rec.id === 'string' ? rec.id : '', name: name.value, description: desc.value, drawKind, geometry: { type: 'Polygon', coordinates: [ring] }, spots: spots.spots, attributes: attrs.attributes, areaM2: Math.round(areaM2), created: rec.created, updated: rec.updated };
   return { ok: true, errors, area };
 }
 

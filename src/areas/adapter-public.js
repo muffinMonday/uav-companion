@@ -1,15 +1,16 @@
 // Community flying areas: the PUBLIC data adapter for the shared details panel (details.js). Phase 4 (public discovery) is deployed: public-api.js fetches records and this adapter only
 // accepts an already validated approved-area record; every record from the server is re-validated here before it is drawn or opened.
 //
-// PUBLIC API CONTRACT (implemented by list_public_areas / get_public_area, migration 20261127140000; last_observed_on is not returned, no column records it):
+// PUBLIC API CONTRACT (implemented by list_public_areas / get_public_area, migration 20261127140000; site attributes since 20261127180000):
 //   A read-only function returns only rows whose current revision is approved AND published (the server enforces it, the client re-checks):
 //     { area_id uuid, revision_id uuid, status 'approved', published true, name, description, geometry (GeoJSON Polygon, same limits as core.js), spots [...],
-//       area_m2, approved_at, last_observed_on? (date, only if a reviewer recorded one), attribution null | { display_name, avatar } }
+//       area_m2, approved_at, attributes (always an object; {} = not provided; keys environment, access, activities, surface, hazards, observed_on: see core.js validateAttributes),
+//       attribution null | { display_name, avatar } }
 //   `attribution` is DERIVED BY THE SERVER at read time from a separate persisted account preference (suggested: profiles.community_attribution boolean not null default false,
 //   labelled "Show my name and avatar on approved community areas"). It is NOT profiles.share_profile and NOT show_online: those do not grant public attribution.
 //   It is non-null only when that preference is true, and then carries only the preset avatar key and display name: never bio, location, interests, friend code, online
 //   status, XP or the user id. No friend-list or trip-member RPC may be used to look up an identity. Pending, rejected, withdrawn and private rows are never returned.
-import { validateArea } from './core.js';
+import { validateArea, validateAttributes } from './core.js';
 import { areaCentre } from './geo.js';
 import { AVATARS } from '../avatars.js';
 import { CONTEXT_BADGE } from './status.js';
@@ -28,7 +29,8 @@ export function cleanAttribution(a) {
 /** -> a view for details.js, or null when the record is not a currently approved, published, valid area. No private action is ever returned. */
 export function publicView(rec) {
   if (!rec || typeof rec !== 'object' || rec.status !== 'approved' || rec.published !== true || !UUID.test(String(rec.area_id))) return null;
-  const v = validateArea({ name: rec.name, description: rec.description, geometry: rec.geometry, spots: rec.spots, drawKind: 'polygon' });
+  const at = validateAttributes(rec.attributes); // a damaged attributes object is shown as "not provided" rather than hiding an otherwise valid area
+  const v = validateArea({ name: rec.name, description: rec.description, geometry: rec.geometry, spots: rec.spots, drawKind: 'polygon', attributes: at.ok ? at.attributes : {} });
   if (!v.ok) return null;
   const area = { ...v.area, id: `pub-${rec.area_id}`, created: isDate(rec.approved_at) ? rec.approved_at : '', updated: null, submission: null };
   const who = cleanAttribution(rec.attribution);
@@ -36,7 +38,7 @@ export function publicView(rec) {
     key: `area:${area.id}`, context: 'public-approved', caption: 'Community flying area', badge: CONTEXT_BADGE['public-approved'],
     byline: who ? { profileRow: who } : { text: 'Community contributor' }, status: null,
     area, centre: areaCentre(area.geometry.coordinates[0]),
-    dates: { modified: isDate(rec.approved_at) ? rec.approved_at : null, modifiedLabel: 'Approved', observed: isDate(rec.last_observed_on) ? rec.last_observed_on : null },
+    dates: { modified: isDate(rec.approved_at) ? rec.approved_at : null, modifiedLabel: 'Approved', observed: v.area.attributes.observed_on ?? null },
     actions: [],
   };
 }

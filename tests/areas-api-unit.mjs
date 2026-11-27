@@ -7,14 +7,14 @@ let fails = 0;
 const ok = (c, m) => { console.log((c ? 'PASS' : 'FAIL') + ' ' + m); if (!c) fails++; };
 const mem = (init = {}) => { const m = { ...init }; return { m, getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; };
 const sq = (x = 103.8, y = 1.3, d = 0.01) => [[x, y], [x + d, y], [x + d, y + d], [x, y + d]];
-const draft = (over = {}) => ({ name: 'Park', description: 'Open grass', drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(sq())] }, spots: [{ type: 'shelter', note: 'hut', coordinates: [103.805, 1.305] }], ...over });
+const draft = (over = {}) => ({ name: 'Park', description: 'Open grass', drawKind: 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(sq())] }, attributes: { environment: 'open_field', access: 'unknown' }, spots: [{ type: 'shelter', note: 'hut', coordinates: [103.805, 1.305] }], ...over });
 const U1 = '11111111-1111-4111-8111-111111111111', U2 = '22222222-2222-4222-8222-222222222222';
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
 // ---- payload and results
 const st0 = createAreaStore({ storage: mem() }); const a0 = st0.add(draft()).area;
 const p = buildPayload(a0, 'k-abcdefghijklmnop');
-ok(Object.keys(p).sort().join() === 'description,draw_kind,geometry,idempotency_key,name,spots', 'the payload has only the allowed fields');
+ok(Object.keys(p).sort().join() === 'attributes,description,draw_kind,geometry,idempotency_key,name,spots', 'the payload has only the allowed fields');
 ok(!/owner|contributor|user|email|id"/.test(JSON.stringify(Object.keys(p))) && !JSON.stringify(p).includes(a0.id), 'the payload carries no identity and not the local id');
 ok(isKey(newKey()) && newKey() !== newKey(), 'generated keys are valid and distinct');
 ok(contentHash(a0) === contentHash(structuredClone(a0)) && contentHash(a0) !== contentHash({ ...a0, name: 'Other' }), 'the content hash follows content');

@@ -9,7 +9,7 @@ const q = async (sql, params = []) => (await db.query(sql, params)).rows;
 const J = (o) => JSON.stringify(o);
 let keyN = 0;
 const sq = (x = 103.8, y = 1.3, d = 0.01) => [[x, y], [x + d, y], [x + d, y + d], [x, y + d]];
-const pay = (over = {}, verts = sq()) => ({ idempotency_key: 'pub-' + String(++keyN).padStart(12, '0'), name: 'Park', description: 'Open grass', draw_kind: 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(verts)] }, spots: [{ type: 'shelter', note: 'Pavilion', coordinates: [verts[0][0] + 0.005, verts[0][1] + 0.005] }], ...over });
+const pay = (over = {}, verts = sq()) => ({ idempotency_key: 'pub-' + String(++keyN).padStart(12, '0'), name: 'Park', description: 'Open grass', draw_kind: 'polygon', geometry: { type: 'Polygon', coordinates: [closeRing(verts)] }, spots: [{ type: 'shelter', note: 'Pavilion', coordinates: [verts[0][0] + 0.005, verts[0][1] + 0.005] }], attributes: { environment: 'open_field', access: 'unknown' }, ...over });
 const call = async (uid, fn, args = []) => (await as(db, uid, `select public.${fn} as r`, args))[0].r;
 const submit = (uid, over = {}, verts) => call(uid, 'submit_community_area($1::jsonb)', [J(pay(over, verts))]);
 const review = (uid, rid, decision, reason = null) => call(uid, 'review_community_area($1, $2, $3, $4, $5)', [rid, decision, reason, false, null]);
@@ -68,7 +68,7 @@ ok(ids(await list(B, VIEW)).join() === s1.area_id, 'a signed-in user gets the sa
 ok(ids(await list(null, { west: 120, south: 30, east: 121, north: 31 })).join() === s6.area_id, 'a viewport elsewhere returns only the areas inside it');
 ok(ids(await list(null, { west: 10, south: 10, east: 11, north: 11 })).length === 0 && (await list(null, { west: 10, south: 10, east: 11, north: 11 })).next_cursor === null, 'an empty result is a safe empty page');
 const rec = g.areas[0];
-const KEYS = ['approved_at', 'area_id', 'area_m2', 'attribution', 'description', 'geometry', 'name', 'published', 'revision_id', 'spots', 'status'];
+const KEYS = ['approved_at', 'area_id', 'area_m2', 'attributes', 'attribution', 'description', 'geometry', 'name', 'published', 'revision_id', 'spots', 'status'];
 ok(Object.keys(rec).sort().join() === KEYS.join() && rec.status === 'approved' && rec.published === true, 'the record has exactly the public contract keys');
 ok(rec.revision_id === s1.revision_id && rec.name === 'Marina Park' && rec.spots.length === 1 && rec.geometry.type === 'Polygon' && rec.area_m2 > 0 && !!rec.approved_at, 'content comes from the published revision');
 const dump = J(g);
