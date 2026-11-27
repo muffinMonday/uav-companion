@@ -8,22 +8,8 @@ import { MAX_IMPORT_BYTES } from './store.js';
 import { MAX_PENDING } from './api.js';
 import { showModalQuiet } from '../touch.js';
 
-const fmtDate = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
-/** The plain-language line under a saved area for its submission state, or null. All text is set with textContent by the caller. */
-export function submissionLine(st) {
-  const on = st.sub?.submittedAt ? ` · submitted ${fmtDate(st.sub.submittedAt)}` : '';
-  const edited = st.changed ? ' The draft has changed since: the submitted version is unchanged.' : '';
-  switch (st.kind) {
-    case 'sending': return 'Submitting…';
-    case 'unsent': return 'Not submitted yet: the last attempt did not finish. Your draft is safe; you can submit again.';
-    case 'pending': return `Pending review${on}. An administrator will look at it; you can withdraw it until then.${edited}`;
-    case 'approved': return `Approved${on}.${edited}`;
-    case 'rejected': return `Not approved${on}.${st.sub?.reason ? ' Reason: ' + st.sub.reason : ''}${edited}`;
-    case 'withdrawn': return `Withdrawn${on}. Your draft stays here; you can submit it again.${edited}`;
-    case 'missing': return 'Submitted earlier, but not found for the account you are signed in with. You can submit it again.';
-    default: return null;
-  }
-}
+import { submissionLine } from './status.js';
+export { submissionLine };
 
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6.5 14 4l5 6-2 8-9 2-3-7z" stroke-dasharray="3 2.5"/></svg>';
 
@@ -34,7 +20,7 @@ export function download(name, text, type = 'application/geo+json') {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-export function createAreasUI({ map, store, layer, draw, toast, panel, submit }) {
+export function createAreasUI({ map, store, layer, draw, toast, panel, submit, openDetails = null, closeDetails = null }) {
   const container = map.getContainer();
   let isOpen = false, btn = null, confirmId = null, withdrawId = null, shown = true;
 
@@ -95,7 +81,7 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit })
       } else if (confirmId === a.id) {
         row.append(el('span', 'area-confirm', 'Delete this area?'), b('Delete', () => { store.remove(a.id); confirmId = null; toast('Area deleted.'); paint(); }, { cls: 'btn danger', act: 'confirm-delete' }), b('Keep', () => { confirmId = null; paint(); }, { act: 'keep' }));
       } else {
-        row.append(b('Show', () => { layer.select(a.id); layer.fit(a.id); if (matchMedia('(max-width: 520px)').matches) set(false); }, { act: 'show', aria: `Show ${a.name} on the map` }),
+        row.append(b('Show', () => { layer.fit(a.id); if (openDetails) { openDetails(a.id); set(false); } else { layer.select(a.id); if (matchMedia('(max-width: 520px)').matches) set(false); } }, { act: 'show', aria: `Show ${a.name} on the map` }),
           b('Edit', () => begin({ areaId: a.id }), { act: 'edit', aria: `Edit ${a.name}` }),
           b('Duplicate', () => { const r = store.duplicate(a.id); toast(r.ok ? 'Duplicated.' : r.errors[0].message); }, { act: 'duplicate', aria: `Duplicate ${a.name}` }),
           b('Export', () => download(`${a.name.replace(/[^\w.-]+/g, '-').slice(0, 40) || 'area'}.geojson`, JSON.stringify(store.toGeoJSON([a.id]), null, 2)), { act: 'export', aria: `Export ${a.name}` }),
@@ -202,5 +188,13 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit })
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen && root.contains(document.activeElement)) { e.stopPropagation(); set(false); } }, true);
   paint();
   setTimeout(resumeIntent, 0); // a return from sign-in (the page reloaded)
-  return { open: () => set(true), close: () => set(false), get isOpen() { return isOpen; }, button: () => btn };
+  /** The same operations the list uses, for the details panel's actions (adapter-private.js). */
+  const ops = {
+    edit: (id) => { begin({ areaId: id }); if (draw.isBusy()) closeDetails?.(); },
+    remove: (id) => { store.remove(id); toast('Area deleted.'); },
+    exportOne: (id) => { const a = store.get(id); if (a) download(`${a.name.replace(/[^\w.-]+/g, '-').slice(0, 40) || 'area'}.geojson`, JSON.stringify(store.toGeoJSON([id]), null, 2)); },
+    startSubmit,
+    withdraw: async (id) => { const r = await submit.withdraw(id); toast(r.ok ? 'Submission withdrawn. Your draft is kept.' : r.message, 6000); },
+  };
+  return { open: () => set(true), close: () => set(false), get isOpen() { return isOpen; }, button: () => btn, ops };
 }

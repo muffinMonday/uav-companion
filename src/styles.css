@@ -1743,6 +1743,26 @@ body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + var(-
 .area-spot svg{width:17px;height:17px}
 .area-spot.out{border-color:var(--danger);color:var(--danger)}
 .area-popup{max-width:260px}.area-popup p{margin:6px 0 0}.area-popup-disclaimer{color:var(--muted);font-size:var(--fs-meta)}
+.area-popup-head{display:flex;align-items:center;gap:8px}.area-popup-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;border-radius:7px;border:2px solid var(--community);color:var(--community);box-sizing:border-box}.area-popup-icon svg{width:17px;height:17px}
+.area-popup-parent{color:var(--muted);font-size:var(--fs-small)}
+.area-popup-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.area-popup-actions .btn,.area-popup-actions .map-action{min-height:40px}
+.community-area.is-selected{fill-opacity:.26!important}
+/* the shared flying-area details panel (src/areas/details.js), in the marker host */
+.area-pop .area-caption{font-size:var(--fs-meta);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.area-pop .area-badges{margin:4px 0}.area-chip{display:inline-block;padding:2px 10px;border-radius:999px;border:1px solid var(--community);color:var(--community);font-size:var(--fs-small);font-weight:var(--fw-semibold)}
+.area-chip.ctx-rejected{border-color:var(--danger);color:var(--danger)}.area-chip.ctx-public-approved{background:var(--community-soft)}
+.area-pop .area-meta,.area-pop .area-byline,.area-pop .area-empty{font-size:var(--fs-small);color:var(--muted)}
+.area-pop .area-h{margin:14px 0 6px;font-size:var(--fs-small);text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.area-pop .area-desc{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.area-pop .area-status{margin:10px 0 0;padding:8px 10px;border-left:3px solid var(--community);background:var(--community-soft);font-size:var(--fs-small)}
+.area-pop .area-actions{margin:10px 0 0}.area-pop .area-secondary .btn{min-height:40px}.area-pop .area-confirm{flex:1 1 100%;font-size:var(--fs-small)}
+.area-spots-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.area-spot-item{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 10px;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);cursor:pointer}
+.area-spot-item:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.area-spot-ic{display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;border-radius:7px;border:2px solid var(--community);color:var(--community);box-sizing:border-box}.area-spot-ic svg{width:17px;height:17px}
+.area-spot-tx{display:flex;flex-direction:column;min-width:0}.area-spot-tx small{color:var(--muted);overflow-wrap:anywhere}
+.area-pop .area-who{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;color:var(--fg)}
+.area-pop .area-disclaimer{margin:14px 0 0;color:var(--muted);font-size:var(--fs-meta)}
 .area-bar{position:fixed;z-index:var(--z-banner);left:50%;top:62px;transform:translateX(-50%);box-sizing:border-box;display:flex;flex-direction:column;gap:var(--sp-2);width:min(560px,calc(100% - 20px));padding:var(--sp-3);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-left:4px solid var(--community);border-radius:var(--radius);box-shadow:var(--shadow-2)}
 .area-bar[hidden],.area-bar-row[hidden]{display:none}
 .area-bar-status{font-size:var(--fs-small);color:var(--muted)}.area-bar-status.bad{color:var(--danger);font-weight:var(--fw-semibold)}

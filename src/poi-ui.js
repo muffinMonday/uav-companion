@@ -1162,13 +1162,23 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
   let markerHost = null; // the adaptive marker host (Review 01 S4, S5); see marker-host.js
   /** Closes the marker window: the host, or (a point check, a live pin) the Leaflet popup those still use. The one place every "close the window" goes through. */
   function closeWindow() { map.closePopup(); markerHost?.close(); }
+  // A second kind of window can share this one host: a provider (src/areas/details.js, community flying areas) owns the ids it claims ("area:<id>") and supplies their content,
+  // map position and focus return; every other id is a saved marker. The host stays the single owner of the lifecycle, placement, recentring, Escape and focus.
+  let ext = null;
+  const extOf = (id) => (ext?.owns?.(id) ? ext : null);
   const hostFor = () => markerHost ??= createMarkerHost({
-    map, panel, build: (id, edit, h) => content.buildContent(id, edit, h), getExpanded: () => expanded,
-    setExpanded: (on) => setWindowMode(on), latlngOf: (id) => markers.get(id)?.getLatLng(),
-    onOpen: (id) => { tagLayer.clearLayers(); pickId = null; viewId = id; relink(); },
-    onClose: (id) => { if (viewId === id) { viewId = null; relink(); } },
-    returnFocusTo: (id) => markers.get(id)?.getElement() ?? null,
+    map, panel, build: (id, edit, h) => (extOf(id) ? ext.build(id, edit, h) : content.buildContent(id, edit, h)), getExpanded: () => expanded,
+    setExpanded: (on) => setWindowMode(on), latlngOf: (id) => (extOf(id) ? ext.latlngOf(id) : markers.get(id)?.getLatLng()),
+    onOpen: (id) => {
+      if (extOf(id)) { tagLayer.clearLayers(); pickId = null; if (viewId) { viewId = null; relink(); } ext.onOpen(id); return; }
+      ext?.onClose?.(); // an area panel is replaced by a marker: its selection goes
+      tagLayer.clearLayers(); pickId = null; viewId = id; relink();
+    },
+    onClose: (id) => { if (extOf(id)) { ext.onClose(id); return; } if (viewId === id) { viewId = null; relink(); } },
+    returnFocusTo: (id) => (extOf(id) ? ext.returnFocusTo?.(id) : markers.get(id)?.getElement()) ?? null,
   });
+  /** The shared host for other windows (see `ext` above): register(provider), open(id), close(), id() (the open id or null). */
+  const externalHost = { register: (p) => { ext = p; }, open: (id) => hostFor().open(id), close: () => markerHost?.close(), id: () => (markerHost?.isOpen() ? markerHost.id() : null) };
 
   function remove(id) {
     const m = markers.get(id);
@@ -1511,6 +1521,7 @@ export function initPOI({ map, toast, checkPoint, zoneSummary, weatherButton, sh
     store,
     route: routeApi,
     closeWindow,
+    externalHost,
     checkin: cin,
     fitTrip,
     /** The trip shown on its own on the map (Trips tab), or null; set it (null clears), and hear about changes. */

@@ -283,18 +283,21 @@ await ctx.close();
   ok(await spotsOnMap(p) === 2, 'the spots are shown on the map at zoom 16');
   await p.locator('.area-spot').first().click(); await p.waitForSelector('.area-popup');
   ok(/Pilot setup spot in “Pavilion rectangle”/.test(await p.locator('.area-popup').innerText()) && /not flight authorization/.test(await p.locator('.area-popup').innerText()), 'a spot popup names its area and carries the disclaimer');
-  // zoom threshold: reload (nothing selected), zoom out below 13
+  // scale threshold (500 m on the 140 px scale bar): reload (nothing selected), zoom out. At this latitude zoom 16 is about 334 m, zoom 15 about 668 m.
   await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(600);
-  ok(await spotsOnMap(p) === 2, 'after a reload the spots show at zoom 16');
+  ok(await spotsOnMap(p) === 2, 'after a reload the spots show at zoom 16 (about 300 m)');
   const z0 = await p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs')).view.zoom); // the save fitted the map to the area, so read where it is
-  ok(z0 >= 13, `the map is at zoom ${z0}`);
-  for (let i = 0; i < z0 - 13; i++) { await p.click('.leaflet-control-zoom-out'); await p.waitForTimeout(350); }
-  ok(await spotsOnMap(p) === 2, 'at zoom 13 the spots are still shown');
+  ok(z0 >= 16, `the map is at zoom ${z0}`);
+  for (let i = 0; i < z0 - 16; i++) { await p.click('.leaflet-control-zoom-out'); await p.waitForTimeout(350); }
+  ok(await spotsOnMap(p) === 2, 'at zoom 16 (the scale bar reads about 300 m) the spots are shown');
   await p.click('.leaflet-control-zoom-out'); await p.waitForFunction(() => document.querySelectorAll('.leaflet-marker-pane .area-spot').length === 0, null, { timeout: 4000 }).catch(() => {});
-  ok(await spotsOnMap(p) === 0 && await p.locator('.community-area').count() >= 1, 'below zoom 13 the spots hide, the outline stays');
-  await p.click('.leaflet-control-zoom-in'); await p.waitForTimeout(300);
-  await openPanel(p); await act(p, 'show', panel).first().click(); await p.waitForTimeout(700);
-  ok(await spotsOnMap(p) === 2, 'Show selects the area: its spots are shown whatever the zoom');
+  ok(await spotsOnMap(p) === 0 && await p.locator('.community-area').count() >= 1, 'at zoom 15 (about 670 m) the spots hide, the outline stays');
+  const bb = await p.locator('.community-area').first().boundingBox();
+  await p.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.waitForSelector('#marker-host .area-pop'); await p.waitForTimeout(500);
+  ok(await spotsOnMap(p) === 0, 'tapping inside the area selects it but does not force its spots onto the map when zoomed out');
+  ok(await p.locator('#marker-host .area-pop').isVisible() && await p.locator('#marker-host .area-spot-item').count() === 2, 'the details panel lists both spots at that zoom');
+  await p.click('.leaflet-control-zoom-in'); await p.waitForTimeout(500);
+  ok(await spotsOnMap(p) === 2, 'zooming back in to about 300 m shows the spots again');
   // area switch off
   await openPanel(p); await p.uncheck('#areas-show-cb');
   ok(await p.locator('.community-area').count() === 0 && await spotsOnMap(p) === 0, 'Show my areas on the map off hides outlines and spots');
