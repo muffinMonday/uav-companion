@@ -1,3 +1,6 @@
+## 2026-11-27 - Community Flying Areas Phase 5 released
+- Contributors can propose changes to an approved area: the published version stays public while a change is pending, rejected or withdrawn, and approval replaces it atomically. The review screen compares both versions. Migration `20261127150000`, main `c1acb89`, gh-pages `fd7d69047506`.
+
 ## 2026-11-27 - Community Flying Areas details panel and spot scale released
 - Shared flying-area details panel, tap-inside-polygon selection, spot popup with Navigate and View flying area, and setup spots shown at 500 m scale or closer. Source `bdf0e50`; gh-pages `0f14d9710f82`; no migration. Preflight 33 regions retained.
 
