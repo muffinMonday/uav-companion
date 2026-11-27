@@ -33,8 +33,8 @@ export function profileView(row) {
  * The draft lives here, not in the card, so redrawing the card (after a save, or switching to the preview and back) does not lose what is being typed.
  */
 export function createProfileEditor({ save, toast, rerender, saved, getName }) {
-  const d = { dirty: false, avatar: null, bio: '', location: '', interests: [], share: true };
-  const take = (p) => { if (d.dirty) return; Object.assign(d, { avatar: p.avatar ?? null, bio: p.bio ?? '', location: p.location ?? '', interests: [...(p.interests ?? [])], share: p.share_profile !== false }); };
+  const d = { dirty: false, avatar: null, bio: '', location: '', interests: [], share: true, attribute: false };
+  const take = (p) => { if (d.dirty) return; Object.assign(d, { avatar: p.avatar ?? null, bio: p.bio ?? '', location: p.location ?? '', interests: [...(p.interests ?? [])], share: p.share_profile !== false, attribute: p.community_attribution === true }); };
   let note = '', foot = null; // foot: the Save button and its message, drawn by the dialog below its own buttons
 
   function card(profile) {
@@ -101,18 +101,24 @@ export function createProfileEditor({ save, toast, rerender, saved, getName }) {
     const cb = el('input'); cb.type = 'checkbox'; cb.id = 'pf-share'; cb.checked = d.share;
     cb.addEventListener('change', () => { d.share = cb.checked; touch(); });
     sw.append(sp, cb); c.append(sw);
+    // separate consent: public attribution on approved community flying areas (off by default; independent of the switch above and of online status)
+    const aw = el('label', 'switch'); const ap = el('span', '', 'Show my name and avatar on approved community areas.');
+    ap.append(el('small', '', 'Off by default. On: your display name and avatar are shown to everyone, including people who are not signed in, on the community flying areas you contributed that a reviewer approved. Nothing else from your profile is shown. Off: they show "Community contributor". You can change this at any time.'));
+    const ab = el('input'); ab.type = 'checkbox'; ab.id = 'pf-attribution'; ab.checked = d.attribute;
+    ab.addEventListener('change', () => { d.attribute = ab.checked; touch(); });
+    aw.append(ap, ab); c.append(aw);
 
     const go = el('button', 'btn primary', 'Save profile'); go.type = 'button'; go.id = 'pf-save';
     go.addEventListener('click', async () => {
       const name = getName?.();
       if (name !== undefined && !name.trim()) { say('Display name cannot be empty.'); return; }
       go.disabled = true; go.textContent = 'Saving…'; c.setAttribute('aria-busy', 'true');
-      const r = await save({ ...(name !== undefined ? { display_name: name } : {}), avatar: d.avatar, bio: d.bio, location: d.location, interests: d.interests, share_profile: d.share });
+      const r = await save({ ...(name !== undefined ? { display_name: name } : {}), avatar: d.avatar, bio: d.bio, location: d.location, interests: d.interests, share_profile: d.share, community_attribution: d.attribute });
       go.disabled = false; go.textContent = 'Save profile'; c.removeAttribute('aria-busy');
       if (r.ok) { d.dirty = false; note = ''; rerender(); toast('Profile saved.'); saved?.(); } else say(r.error);
     });
     foot = el('div', 'pf-foot'); foot.append(go, msg);
     return c;
   }
-  return { card, foot: () => foot, draft: () => ({ avatar: d.avatar, bio: d.bio, location: d.location, interests: [...d.interests], share: d.share }), reset: () => { d.dirty = false; note = ''; }, isDirty: () => d.dirty };
+  return { card, foot: () => foot, draft: () => ({ avatar: d.avatar, bio: d.bio, location: d.location, interests: [...d.interests], share: d.share, attribute: d.attribute }), reset: () => { d.dirty = false; note = ''; }, isDirty: () => d.dirty };
 }

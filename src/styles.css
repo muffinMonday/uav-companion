@@ -1747,6 +1747,8 @@ body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + var(-
 .area-popup-parent{color:var(--muted);font-size:var(--fs-small)}
 .area-popup-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.area-popup-actions .btn,.area-popup-actions .map-action{min-height:40px}
 .community-area.is-selected{fill-opacity:.26!important}
+.areas-public-note{position:absolute;left:50%;bottom:calc(52px + var(--shell-nav-bottom-h,0px));transform:translateX(-50%);z-index:var(--z-live-chip);max-width:min(80vw,320px);padding:4px 10px;border-radius:var(--radius-pill,999px);background:color-mix(in srgb,var(--surface) 92%,transparent);color:var(--muted);border:1px solid var(--line);font-size:var(--fs-small);pointer-events:none;text-align:center}
+.areas-public-note[hidden]{display:none}
 /* the shared flying-area details panel (src/areas/details.js), in the marker host */
 .area-pop .area-caption{font-size:var(--fs-meta);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .area-pop .area-badges{margin:4px 0}.area-chip{display:inline-block;padding:2px 10px;border-radius:999px;border:1px solid var(--community);color:var(--community);font-size:var(--fs-small);font-weight:var(--fw-semibold)}

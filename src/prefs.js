@@ -16,6 +16,7 @@ function sanitize(raw) {
   if (typeof raw.currentTrip === 'string' && raw.currentTrip.length > 0 && raw.currentTrip.length <= 64) out.currentTrip = raw.currentTrip; // checked against the saved trips when used
   if (typeof raw.windowExpanded === 'boolean') out.windowExpanded = raw.windowExpanded;
   if (typeof raw.holdHint === 'boolean') out.holdHint = raw.holdHint;
+  if (raw.communityAreasOff === true) out.communityAreasOff = true; // the public community flying areas layer is hidden (on unless switched off)
   if (raw.showSide === true) out.showSide = true; // show every Side Quest on the map (off: only those of the main stop that is open)
   if (raw.hideTrips === true) out.hideTrips = true; // trip markers, their routes and links are off the map (the top-left toggle)
   if (Array.isArray(raw.tripHidden)) { const ids = [...new Set(raw.tripHidden.filter((x) => typeof x === 'string' && x.length > 0 && x.length <= 64))].slice(-200); if (ids.length) out.tripHidden = ids; } // trips taken off the map by hand (device-local; never part of a trip or a shared trip)
