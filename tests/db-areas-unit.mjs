@@ -233,5 +233,10 @@ ok(areaPairs.length === 1, 'accepted parity shapes were stored');
 const jsArea = validateArea({ name: 'x', geometry: { type: 'Polygon', coordinates: [closeRing(sq())] } }).area.areaM2;
 ok(Math.abs(row.area_m2 - jsArea) <= 1, `stored area equals the client's spherical area (${row.area_m2} vs ${jsArea})`);
 
+// Phase 3 columns: the unpublish record exists, defaults empty, and is not client-writable
+const cols = (await q("select column_name from information_schema.columns where table_name = 'community_areas'")).map((c) => c.column_name);
+ok(cols.includes('unpublished_reason') && cols.includes('unpublished_by') && (await q('select count(*)::int n from public.community_areas where unpublished_reason is not null'))[0].n === 0, 'community_areas holds the unpublish reason and actor, empty until an administrator unpublishes');
+ok(/permission denied/.test((await refused(db, A, "update public.community_areas set unpublished_reason = 'x'")) ?? ''), 'a client cannot write the unpublish record');
+
 await db.close();
 process.exit(fails ? 1 : 0);

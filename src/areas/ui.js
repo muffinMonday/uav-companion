@@ -20,7 +20,7 @@ export function download(name, text, type = 'application/geo+json') {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-export function createAreasUI({ map, store, layer, draw, toast, panel, submit, openDetails = null, closeDetails = null }) {
+export function createAreasUI({ map, store, layer, draw, toast, panel, submit, openDetails = null, closeDetails = null, admin = null }) {
   const container = map.getContainer();
   let isOpen = false, btn = null, confirmId = null, withdrawId = null, shown = true;
 
@@ -62,6 +62,8 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
     const make = el('div', 'areas-actions');
     make.append(b('Draw polygon', () => begin({ kind: 'polygon' }), { cls: 'btn primary', act: 'draw-polygon' }), b('Draw rectangle', () => begin({ kind: 'rectangle' }), { cls: 'btn primary', act: 'draw-rect' }),
       b('Import GeoJSON', () => fileIn.click(), { act: 'import' }), b('Export all', () => exportAll(), { act: 'export-all' }));
+    const adm = admin?.isAdmin() ? el('div', 'areas-actions') : null; // presentation only: the server checks the role on every moderation call
+    if (adm) adm.append(b('Review submissions (administrator)', () => { set(false); admin.open(); }, { cls: 'btn primary', act: 'admin-review' }));
     const showLabel = el('label', 'areas-show'); const cb = el('input'); cb.type = 'checkbox'; cb.checked = shown; cb.id = 'areas-show-cb';
     cb.addEventListener('change', () => { shown = cb.checked; layer.setVisible(shown); }); showLabel.append(cb, el('span', '', 'Show my areas on the map'));
     const list = el('ul', 'areas-list'); list.setAttribute('aria-label', 'Saved areas');
@@ -94,7 +96,7 @@ export function createAreasUI({ map, store, layer, draw, toast, panel, submit, o
       }
       li.append(row); list.append(li);
     }
-    root.replaceChildren(head, intro, note, ...(warn ? [warn] : []), ...(rec ? [rec] : []), make, showLabel, list, fileIn);
+    root.replaceChildren(head, intro, note, ...(warn ? [warn] : []), ...(rec ? [rec] : []), make, ...(adm ? [adm] : []), showLabel, list, fileIn);
   }
   /** Submit pressed: a guest is sent to sign in (and the wish is kept); a signed-in person gets the acknowledgement dialog. Nothing is sent until that is confirmed. */
   function startSubmit(id) {

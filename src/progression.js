@@ -72,13 +72,14 @@ export function describeHistory(item) {
   if (item.source === 'sim') return { title: amt, detail: 'Simulator playtime' };
   if (item.source === 'attendance') return { title: amt, detail: 'Flight session attended' };
   if (item.source === 'hosting') return { title: amt, detail: item.amount < 0 ? 'Flight session hosted (adjusted)' : 'Flight session hosted' };
+  if (item.source === 'community_area') return { title: amt, detail: 'Flying area approved' };
   return { title: amt, detail: item.reason ? 'Adjusted by an administrator: ' + item.reason : 'Adjusted by an administrator' };
 }
 
 /** Makes a page of my_xp_history safe to draw: { items: [{ id, amount, source, reason, createdAt }], next }. */
 export function cleanHistory(raw) {
   const items = Array.isArray(raw?.items) ? raw.items.slice(0, 100).map((x) => (x && Number.isFinite(x.id) && Number.isFinite(x.amount) ? {
-    id: x.id, amount: Math.trunc(x.amount), source: ['sim', 'attendance', 'hosting', 'admin'].includes(x.source) ? x.source : 'admin',
+    id: x.id, amount: Math.trunc(x.amount), source: ['sim', 'attendance', 'hosting', 'community_area', 'admin'].includes(x.source) ? x.source : 'admin',
     reason: typeof x.reason === 'string' ? x.reason.slice(0, 200) : '', createdAt: typeof x.created_at === 'string' ? x.created_at : '',
   } : null)).filter(Boolean) : [];
   return { items, next: Number.isFinite(raw?.next) ? raw.next : null };

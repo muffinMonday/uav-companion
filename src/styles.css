@@ -1795,3 +1795,13 @@ dialog.area-dialog::backdrop{background:rgba(0,0,0,.4)}
 .area-spot-out{flex-basis:100%;color:var(--danger);font-size:var(--fs-meta)}
 .area-errors:empty{display:none}.area-errors{color:var(--danger);font-size:var(--fs-small)}.area-errors p{margin:2px 0}
 .area-dlg-actions{display:flex;gap:var(--sp-2);justify-content:flex-end;flex-wrap:wrap}
+.areas-admin-panel{width:min(400px,calc(100% - 72px))}.areas-admin-panel.sheet{width:auto}
+.area-admin-preview{width:100%;height:auto;max-height:200px;background:var(--surface-2,var(--community-soft));border:1px solid var(--line);border-radius:var(--radius-sm)}
+.area-admin-shape{fill:var(--community-soft);stroke:var(--community);stroke-width:2;stroke-linejoin:round}.area-admin-spot{fill:var(--accent);stroke:var(--surface);stroke-width:1.5}
+.area-admin-detail{display:flex;flex-direction:column;gap:var(--sp-2)}.area-admin-name{font-size:var(--fs-head);overflow-wrap:anywhere}.area-admin-desc{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--fs-body)}
+.area-admin-spots{margin:0;padding-left:var(--sp-4);font-size:var(--fs-small);overflow-wrap:anywhere}
+.area-admin-approve,.area-admin-reject{border:1px solid var(--line);border-radius:var(--radius-sm);padding:var(--sp-2) var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-2);margin:0;min-width:0}
+.area-admin-approve textarea,.area-admin-reject textarea{font:inherit;box-sizing:border-box;width:100%;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--fg)}
+.area-admin-xp-row{display:flex;align-items:center;gap:var(--sp-3)}.area-admin-xp-row input{flex:1}.area-admin-xp{font-weight:var(--fw-semibold);min-width:64px;text-align:right}
+.area-admin-confirm{border:2px solid var(--accent);border-radius:var(--radius-sm);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-2)}.area-admin-confirm p{margin:0}
+.area-admin-quote{margin:0;padding-left:var(--sp-3);border-left:3px solid var(--line);overflow-wrap:anywhere;white-space:pre-wrap}
