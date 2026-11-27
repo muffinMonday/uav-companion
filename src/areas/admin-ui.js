@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { el } from '../cards.js';
 import { formatArea, SPOT_LABELS } from './core.js';
 import { areaCentre } from './geo.js';
-import { createAdminApi, XP_AMOUNTS, XP_DEFAULT, MAX_REASON, checkReason, checkReward } from './admin-api.js';
+import { createAdminApi, describeChanges, XP_AMOUNTS, XP_DEFAULT, MAX_REASON, checkReason, checkReward } from './admin-api.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const fmtDate = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
@@ -90,11 +90,13 @@ export function createAdminUI({ map, backend, toast }) {
   function itemMeta(it) {
     const c = areaCentre(it.ring ?? []);
     return [it.contributorName ? `${it.contributorName}${it.contributorCode ? ' (' + it.contributorCode + ')' : ''}` : 'Contributor unavailable', `submitted ${fmtDate(it.submittedAt)}`, c ? `${c[1].toFixed(4)}, ${c[0].toFixed(4)}` : 'location unavailable', formatArea(it.areaM2),
-      `${it.spots.length} setup spot${it.spots.length === 1 ? '' : 's'}`, `revision ${it.revisionNo}${it.hasPublished ? ' (replaces a published version)' : ''}`];
+      `${it.spots.length} setup spot${it.spots.length === 1 ? '' : 's'}`, it.published ? `proposed change (revision ${it.revisionNo}) to a published area` : `revision ${it.revisionNo}${it.hasPublished ? '' : ' (new area)'}`];
   }
   function card(it) {
     const li = el('li', 'area-item area-admin-item'); li.dataset.revision = it.revisionId;
-    li.append(el('div', 'area-item-name', it.name), el('div', 'area-item-meta', itemMeta(it).join(' · ')));
+    li.append(el('div', 'area-item-name', it.name));
+    if (it.published) { const tag = el('span', 'area-admin-tag', 'Proposed change'); li.querySelector('.area-item-name').append(' ', tag); }
+    li.append(el('div', 'area-item-meta', itemMeta(it).join(' · ')));
     if (it.description) li.append(el('div', 'area-item-desc', it.description.length > 140 ? it.description.slice(0, 140) + '…' : it.description));
     li.append(previewSvg(it.ring, it.spots));
     if (!it.valid) li.append(el('div', 'areas-warn', 'This outline did not pass the local checks; review it carefully.'));
@@ -106,7 +108,15 @@ export function createAdminUI({ map, backend, toast }) {
     const it = sel, own = it.own, pending = it.status === 'pending' && tab === 'pending';
     const box = el('div', 'area-admin-detail');
     box.append(b('← Back to the list', back, { act: 'back' }), el('strong', 'area-admin-name', it.name), el('div', 'area-item-meta', itemMeta(it).join(' · ')));
-    box.append(previewSvg(it.ring, it.spots, { w: 300, h: 190 }));
+    if (it.published) {
+      box.append(el('p', 'areas-warn area-admin-revision', 'This is a proposed change to a published area. The published version stays public until you approve it.'));
+      const ch = el('ul', 'area-admin-changes'); ch.setAttribute('aria-label', 'What changes'); for (const c of describeChanges(it)) ch.append(el('li', '', c)); box.append(ch);
+      const cmp = el('div', 'area-admin-compare');
+      const cur = el('figure', 'area-admin-fig'); cur.dataset.which = 'published'; cur.append(previewSvg(it.published.ring, it.published.spots), el('figcaption', '', `Published now (revision ${it.published.revisionNo}): ${it.published.name}, ${formatArea(it.published.areaM2)}`));
+      const prop = el('figure', 'area-admin-fig'); prop.dataset.which = 'proposed'; prop.append(previewSvg(it.ring, it.spots), el('figcaption', '', `Proposed (revision ${it.revisionNo}): ${it.name}, ${formatArea(it.areaM2)}`));
+      cmp.append(cur, prop); box.append(cmp);
+      if (it.published.description !== it.description) box.append(el('div', 'area-admin-prevdesc', 'Published description: ' + (it.published.description || 'none')));
+    } else box.append(previewSvg(it.ring, it.spots, { w: 300, h: 190 }));
     box.append(b('Show on the map', () => show(it), { act: 'show-map' }));
     box.append(el('div', 'area-admin-desc', it.description || 'No description.'));
     if (it.spots.length) { const ul = el('ul', 'area-admin-spots'); for (const s of it.spots) ul.append(el('li', '', `${SPOT_LABELS[s.type] ?? s.type}${s.note ? ': ' + s.note : ''} (${s.coordinates[1].toFixed(5)}, ${s.coordinates[0].toFixed(5)})`)); box.append(ul); }
@@ -127,6 +137,7 @@ export function createAdminUI({ map, backend, toast }) {
       const note = el('textarea'); note.id = 'area-approve-note'; note.rows = 2; note.maxLength = MAX_REASON; note.placeholder = 'Optional note kept with the decision'; note.addEventListener('input', () => { reason = note.value; });
       ap.append(lab, el('div', 'area-admin-xp-row'), note);
       ap.querySelector('.area-admin-xp-row').append(sl, out);
+      if (it.published) ap.append(el('p', 'area-note', 'A revision earns XP only when it materially improves the area (a corrected boundary, a missing part, useful site information). Untick it for cosmetic or identical-in-effect changes.'));
       ap.append(el('p', 'area-note', 'XP is a judgement of value: untick it for a duplicate, cosmetic or marginal contribution. It never decides whether the area is published.'));
       ap.append(b('Approve…', () => {
         const w = checkReward(award, amount, own); const r = checkReason(reason, false);
@@ -157,7 +168,7 @@ export function createAdminUI({ map, backend, toast }) {
     const c = el('div', 'area-admin-confirm'); c.setAttribute('role', 'alertdialog'); c.setAttribute('aria-label', 'Confirm decision');
     if (confirm === 'approve') {
       const w = checkReward(award, amount, it.own);
-      c.append(el('p', '', `Approve and publish “${it.name}”?`), el('p', 'area-admin-xp-line', w.award ? `${w.amount} XP will be awarded to ${it.contributorName || 'the contributor'}.` : 'No XP will be awarded.'));
+      c.append(el('p', '', it.published ? `Approve this change and replace the published version of “${it.published.name}”?` : `Approve and publish “${it.name}”?`), el('p', 'area-admin-xp-line', w.award ? `${w.amount} XP will be awarded to ${it.contributorName || 'the contributor'}.` : 'No XP will be awarded.'));
     } else if (confirm === 'reject') c.append(el('p', '', `Reject “${it.name}”?`), el('p', 'area-note', 'The contributor will see this reason:'), el('blockquote', 'area-admin-quote', reason));
     else c.append(el('p', '', `Unpublish “${it.name}”?`), el('p', 'area-note', 'Reason (kept with the area): ' + reason));
     const row = el('div', 'area-item-actions');

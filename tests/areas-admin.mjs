@@ -205,6 +205,39 @@ for (const [label, signed, admin] of [['guest', 0, 0], ['signed-in non-administr
   await ctx.close();
 }
 
+// ---- Phase 5: a proposed revision of a published area is marked and compared with what is published now
+{
+  const { ctx, p } = await open({ total: 3 });
+  await p.evaluate(() => {
+    const be = globalThis.__be, cur = be.pending[2];
+    const sq = (x, y, d) => [[x, y], [x + d, y], [x + d, y + d], [x, y + d], [x, y]];
+    be.pending[2] = { ...cur, name: 'Area 3 (bigger)', description: 'A new description', revision_no: 2, has_published: true, area_m2: 260000, geometry: { type: 'Polygon', coordinates: [sq(103.83, 1.3, 0.005)] },
+      published: { revision_id: '00000000-0000-4000-8000-0000000000aa', revision_no: 1, name: 'Area 3', description: 'Description 3', draw_kind: 'polygon', geometry: cur.geometry, spots: cur.spots, area_m2: 190000 } };
+  });
+  await openAreas(p); await p.click('[data-act="admin-review"]');
+  await p.waitForSelector(`${AP}:not([hidden]) .area-admin-item`);
+  const cards = p.locator(`${AP} .area-admin-item`);
+  ok(await cards.nth(2).locator('.area-admin-tag').count() === 1 && await cards.nth(0).locator('.area-admin-tag').count() === 0, 'only the revision card carries the "Proposed change" tag; initial submissions do not');
+  ok((await cards.nth(2).locator('.area-item-meta').textContent()).includes('proposed change (revision 2) to a published area') && (await cards.nth(0).locator('.area-item-meta').textContent()).includes('revision 1 (new area)'), 'the meta line distinguishes a revision from a new area');
+  await cards.nth(2).locator('[data-act="open"]').click();
+  await p.waitForSelector(`${AP} .area-admin-detail`);
+  ok(/proposed change to a published area/i.test(await p.locator(`${AP} .area-admin-revision`).textContent()), 'the review view says the published version stays public until approval');
+  const figs = p.locator(`${AP} .area-admin-fig`);
+  ok(await figs.count() === 2 && (await figs.nth(0).textContent()).includes('Published now (revision 1): Area 3') && (await figs.nth(1).textContent()).includes('Proposed (revision 2): Area 3 (bigger)') && await figs.locator('svg polygon').count() === 2, 'the published version and the proposal are shown side by side');
+  const ch = await p.locator(`${AP} .area-admin-changes li`).allTextContents();
+  ok(ch.some((x) => x.includes('→ “Area 3 (bigger)”')) && ch.some((x) => x === 'Description changed') && ch.some((x) => x.includes('Outline changed (+70,000 m²)')) && !ch.some((x) => x.includes('Setup spots')), 'a plain list says what changed: ' + ch.join(' | '));
+  ok(/materially improves/.test(await p.locator(`${AP} .area-admin-approve`).textContent()), 'XP guidance for revisions is shown at the approve control');
+  await p.click(`${AP} [data-act="approve"]`);
+  ok(/replace the published version of .Area 3./.test(await p.locator(`${AP} .area-admin-confirm`).textContent()), 'the confirmation says it replaces the published version');
+  await p.screenshot({ path: `${shots}/revision.png` });
+  await p.click(`${AP} [data-act="cancel"]`);
+  await p.click(`${AP} [data-act="back"]`);
+  await cards.nth(0).locator('[data-act="open"]').click();
+  await p.waitForSelector(`${AP} .area-admin-detail`);
+  ok(await p.locator(`${AP} .area-admin-compare`).count() === 0 && await p.locator(`${AP} .area-admin-revision`).count() === 0, 'an initial submission has no comparison section');
+  await ctx.close();
+}
+
 ok(!requests.some((r) => !/localhost:5173|data:|blob:/.test(r.url) && r.method !== 'GET'), 'no request left the browser');
 ok(errs.length === 0, 'no page or console errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
 await b.close();

@@ -25,6 +25,7 @@ export function cleanSubmission(raw) {
   if (raw.areaId !== undefined && raw.areaId !== null) { if (!UUID.test(raw.areaId)) return null; out.areaId = raw.areaId; }
   if (raw.revisionId !== undefined && raw.revisionId !== null) { if (!UUID.test(raw.revisionId)) return null; out.revisionId = raw.revisionId; }
   if (Number.isInteger(raw.revisionNo) && raw.revisionNo >= 1 && raw.revisionNo < 1e6) out.revisionNo = raw.revisionNo;
+  if (raw.revision === true && out.areaId) out.revision = true; // a proposed change to an area that was published when it was sent (areaId is that area)
   if (isIso(raw.submittedAt)) out.submittedAt = raw.submittedAt;
   if (typeof raw.reason === 'string' && raw.reason) out.reason = raw.reason.slice(0, 500);
   if (raw.status !== 'unsent' && !out.revisionId) return null; // every status but "not sent yet" names the server's revision

@@ -193,6 +193,7 @@ export function createAreaDetails({ map, store, layer, submit, ops, isBusy = () 
       if (host.id() !== key) return;
       if (!rec || !publicView(rec)) { publicAreas.forget(id); host.close(); toast('This community flying area is no longer published.'); return; }
       publicView_ = publicView(rec); layer.setExtra(publicView_.area); current?.render();
+      if (rec.revision_id !== pv.record?.revision_id) publicAreas.invalidate(); // a replacement was published since the viewport was fetched: reload the layer
     }).catch(() => { /* offline: the details already shown stay */ });
     return true;
   }

@@ -1802,6 +1802,9 @@ dialog.area-dialog::backdrop{background:rgba(0,0,0,.4)}
 .area-admin-shape{fill:var(--community-soft);stroke:var(--community);stroke-width:2;stroke-linejoin:round}.area-admin-spot{fill:var(--accent);stroke:var(--surface);stroke-width:1.5}
 .area-admin-detail{display:flex;flex-direction:column;gap:var(--sp-2)}.area-admin-name{font-size:var(--fs-head);overflow-wrap:anywhere}.area-admin-desc{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--fs-body)}
 .area-admin-spots{margin:0;padding-left:var(--sp-4);font-size:var(--fs-small);overflow-wrap:anywhere}
+.area-admin-tag{display:inline-block;font-size:var(--fs-small);font-weight:var(--fw-semibold);padding:1px 8px;border-radius:999px;border:1px solid var(--community);color:var(--community)}
+.area-admin-compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--sp-2)}.area-admin-fig{margin:0;display:flex;flex-direction:column;gap:var(--sp-1);min-width:0}.area-admin-fig figcaption,.area-admin-prevdesc{font-size:var(--fs-small);overflow-wrap:anywhere}
+.area-admin-changes{margin:0;padding-left:var(--sp-4);font-size:var(--fs-small);overflow-wrap:anywhere}
 .area-admin-approve,.area-admin-reject{border:1px solid var(--line);border-radius:var(--radius-sm);padding:var(--sp-2) var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-2);margin:0;min-width:0}
 .area-admin-approve textarea,.area-admin-reject textarea{font:inherit;box-sizing:border-box;width:100%;padding:8px 10px;border:1px solid var(--control-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--fg)}
 .area-admin-xp-row{display:flex;align-items:center;gap:var(--sp-3)}.area-admin-xp-row input{flex:1}.area-admin-xp{font-weight:var(--fw-semibold);min-width:64px;text-align:right}
