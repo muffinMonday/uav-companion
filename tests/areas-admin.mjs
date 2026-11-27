@@ -48,7 +48,7 @@ const BACKEND = ([signed, admin, total]) => {
 };
 async function open({ vp = { width: 1300, height: 850 }, signed = 1, admin = 1, total = 5 } = {}) {
   const ctx = await b.newContext({ viewport: vp, reducedMotion: 'reduce' });
-  await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap|wpgmaps)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap|wpgmaps|cartocdn)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   await ctx.addInitScript(BACKEND, [signed, admin, total]);
   await ctx.addInitScript(([seen]) => {
     if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';

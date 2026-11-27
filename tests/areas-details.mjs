@@ -22,7 +22,7 @@ const weatherBody = () => { const t = Array.from({ length: 30 }, (_, i) => iso(i
 
 async function open({ vp = { width: 1300, height: 850 }, touch = false, areas = [A], prefs = {}, backend = false, weather = 'ok', zoom = 16 } = {}) {
   const ctx = await b.newContext({ viewport: vp, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce', acceptDownloads: true });
-  await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap|wpgmaps)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap|wpgmaps|cartocdn)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   const wx = [];
   await ctx.route('**/api.open-meteo.com/**', (r) => { wx.push(r.request().url()); return weather === 'ok' ? r.fulfill({ status: 200, contentType: 'application/json', body: weatherBody() }) : r.abort(); });
   await ctx.addInitScript(() => { globalThis.__uavAreasExpose = true; });

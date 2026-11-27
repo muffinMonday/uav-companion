@@ -27,16 +27,18 @@ const BASES = {
 };
 
 // Go Tiles permits keyless website use up to 15,000 tiles/site/month. No billing is enabled.
-// Terms: https://www.wpgmaps.com/go-tiles/terms/ ; endpoint/zoom: https://www.wpgmaps.com/go-tiles/
-const DARK_OSM = ['https://tiles.wpgmaps.com/styles/dark/{z}/{x}/{y}{r}.png', {
-  maxZoom: 19, maxNativeZoom: 20,
-  attribution: '&copy; Go Tiles by WP Go Maps | ' + OSM_CREDIT,
-}];
+// CARTO basemaps (dark_all raster tiles). The API key is a PUBLIC browser key restricted to the site's domain by CARTO (it is rejected from any other origin, including localhost), supplied at build time as
+// VITE_CARTO_API_KEY (see scripts/deploy-live.js). Without a key, or when the tiles fail (quota, outage, a refused origin) dark mode falls back to the standard tiles inverted by CSS. Terms: https://carto.com/legal ; attribution: https://carto.com/attributions
+const CARTO_KEY = (import.meta.env?.VITE_CARTO_API_KEY ?? '').trim();
+const DARK_OSM = CARTO_KEY ? [`https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`, {
+  maxZoom: 19, maxNativeZoom: 19,
+  attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> | ' + OSM_CREDIT,
+}] : null;
 
 /** The tile set for a selected basemap and resolved theme. Other selections retain their original cartography. */
 export function baseTiles(key, theme = 'light') {
   const selected = Object.hasOwn(BASES, key) ? key : 'osm';
-  const [url, opts] = selected === 'osm' && theme === 'dark' ? DARK_OSM : BASES[selected];
+  const [url, opts] = selected === 'osm' && theme === 'dark' && DARK_OSM ? DARK_OSM : BASES[selected]; // no key: the standard tiles (dark mode then inverts them by CSS, see refreshBase)
   return [url, { ...opts, className: 'base-tiles' }];
 }
 
@@ -68,7 +70,7 @@ export function createMap(initial = {}) {
   let base = null, pending = null;
   // A failure disables dark requests for this map's lifetime, including after rapid theme changes.
   // The preference remains untouched; a fresh visit can try the provider again.
-  let darkFailed = false;
+  let darkFailed = !DARK_OSM; // no key = the native dark source is not available from the start
   const cancelPending = () => {
     if (!pending) return;
     const old = pending;
@@ -81,7 +83,7 @@ export function createMap(initial = {}) {
   const refreshBase = () => {
     const theme = currentTheme();
     const tiles = baseTiles(selectedBase, darkFailed ? 'light' : theme);
-    const isDark = tiles[0] === DARK_OSM[0];
+    const isDark = !!DARK_OSM && tiles[0] === DARK_OSM[0];
     const wantInverted = darkFailed && theme === 'dark' && selectedBase === 'osm';
     if (pending?.url === tiles[0]) { base?.getContainer?.()?.classList.toggle('base-tiles-inverted', wantInverted); return; }
     cancelPending();

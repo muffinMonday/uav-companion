@@ -82,7 +82,7 @@ for (const width of [390, 800, 1300]) {
   ({ ctx, p } = await open({ basemap: 'osm', theme: 'system' }, { viewport: { width, height: 850 }, hasTouch: width <= 800, isMobile: width <= 800 }));
   let failDark = false, delayDark = false, darkRequests = 0;
   const held = [];
-  await ctx.route('https://tiles.wpgmaps.com/**', async r => {
+  await ctx.route('https://basemaps.cartocdn.com/**', async r => {
     darkRequests++;
     if (delayDark) { held.push(r); return; }
     await r.fulfill({ status: failDark ? 429 : 200, contentType: 'image/png', headers: { 'cache-control': 'no-store' }, body: failDark ? 'quota exceeded' : PNG });
@@ -109,31 +109,31 @@ for (const width of [390, 800, 1300]) {
   await p.waitForFunction(() => __native.layers().length === 1 && !__native.layers()[0].isLoading());
   await p.waitForFunction(() => !!__native.overlay?._container?.querySelector('canvas'));
   const before = await p.evaluate(() => __native.state());
-  ok(await p.evaluate(() => { const [url, opts] = __native.baseTiles('osm', 'dark'); return url === 'https://tiles.wpgmaps.com/styles/dark/{z}/{x}/{y}{r}.png' && opts.maxZoom === 19 && opts.maxNativeZoom === 20 && __native.map.getMaxZoom() === 19; }), `${width}: documented dark URL/zoom support preserves the app zoom limit`);
+  ok(await p.evaluate(() => { const [url, opts] = __native.baseTiles('osm', 'dark'); return url.startsWith('https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=') && opts.maxZoom === 19 && opts.maxNativeZoom === 19 && __native.map.getMaxZoom() === 19; }), `${width}: documented dark URL/zoom support preserves the app zoom limit`);
   for (const key of ['osm', 'hot', 'cyclosm', 'topo']) {
     let lightLayer;
     for (const mode of ['light', 'dark']) {
       await p.evaluate(([key, mode]) => {
         __native.switchBase(key); __native.theme.setTheme(mode);
         if (key === 'osm' && mode === 'dark') {
-          const dark = __native.layers().find(l => l._url.includes('wpgmaps'));
+          const dark = __native.layers().find(l => l._url.includes('cartocdn'));
           dark.once('load', () => { __native.fadeBacked = __native.layers().some(l => l !== dark && l.options.opacity === 1); });
         }
       }, [key, mode]);
-      const host = key === 'osm' && mode === 'dark' ? 'tiles.wpgmaps.com' : { osm: 'tile.openstreetmap.org', hot: 'tile.openstreetmap.fr', cyclosm: 'tile-cyclosm.openstreetmap.fr', topo: 'tile.opentopomap.org' }[key];
+      const host = key === 'osm' && mode === 'dark' ? 'basemaps.cartocdn.com' : { osm: 'tile.openstreetmap.org', hot: 'tile.openstreetmap.fr', cyclosm: 'tile-cyclosm.openstreetmap.fr', topo: 'tile.opentopomap.org' }[key];
       await p.waitForFunction(host => __native.layers().length === 1 && __native.layers()[0]._url.includes(host) && !__native.layers()[0].isLoading(), host);
       ok(await p.evaluate(() => getComputedStyle(__native.layers()[0]._container).filter === 'none'), `${width}: ${key}/${mode} uses original cartography without a filter`);
       const layerId = await p.evaluate(() => __native.layers()[0]._leaflet_id);
       if (mode === 'light') lightLayer = layerId;
       else if (key !== 'osm') ok(layerId === lightLayer, `${width}: ${key} theme change reuses the existing tiles`);
-      if (key === 'osm' && mode === 'dark') ok(await p.evaluate(() => __native.map.attributionControl.getContainer().textContent.includes('© Go Tiles by WP Go Maps | © OpenStreetMap contributors')), `${width}: required dark attribution is visible`);
+      if (key === 'osm' && mode === 'dark') ok(await p.evaluate(() => __native.map.attributionControl.getContainer().textContent.includes('© CARTO | © OpenStreetMap contributors')), `${width}: required dark attribution is visible`);
       if (key === 'osm' && mode === 'dark') ok(await p.evaluate(() => __native.fadeBacked), `${width}: loaded dark tiles retain backing through Leaflet's tile fade`);
       if (key === 'osm' && mode === 'dark') ok(await p.evaluate(() => { const r = __native.map.attributionControl.getContainer().getBoundingClientRect(); const nav = document.getElementById('shell-nav'); return r.left >= 0 && r.right <= innerWidth && r.bottom <= (nav?.dataset.placement === 'bottom' ? nav.getBoundingClientRect().top : innerHeight); }), `${width}: full attribution clears the bottom navigation`);
     }
   }
   await p.evaluate(() => { __native.switchBase('osm'); __native.theme.setTheme('system'); });
   await p.emulateMedia({ colorScheme: 'dark' });
-  await p.waitForFunction(() => __native.layers().length === 1 && __native.layers()[0]._url.includes('wpgmaps'));
+  await p.waitForFunction(() => __native.layers().length === 1 && __native.layers()[0]._url.includes('cartocdn'));
   ok(true, `${width}: System follows the device to native dark tiles`);
   await p.emulateMedia({ colorScheme: 'light' });
   await p.waitForFunction(() => __native.layers().length === 1 && __native.layers()[0]._url.includes('tile.openstreetmap.org'));
@@ -148,11 +148,11 @@ for (const width of [390, 800, 1300]) {
   ok(true, `${width}: rapid switches cancel stale tile layers`);
   // An already displayed dark map must also fall back if a later pan fails.
   await p.evaluate(() => __native.theme.setTheme('dark'));
-  await p.waitForFunction(() => __native.layers().length === 1 && __native.layers()[0]._url.includes('wpgmaps') && !__native.layers()[0].isLoading());
+  await p.waitForFunction(() => __native.layers().length === 1 && __native.layers()[0]._url.includes('cartocdn') && !__native.layers()[0].isLoading());
   failDark = true;
   await p.evaluate(() => { const layer = __native.layers()[0]; layer.setUrl(layer._url + '?failure-test=1'); });
   await p.waitForFunction(() => __native.layers().length === 1 && __native.layers()[0]._url.includes('tile.openstreetmap.org') && !__native.layers()[0].isLoading());
-  ok(await p.evaluate(() => { const credit = __native.map.attributionControl.getContainer().textContent; return credit.includes('OpenStreetMap') && !credit.includes('Go Tiles'); }), `${width}: fallback removes the dark provider credit`);
+  ok(await p.evaluate(() => { const credit = __native.map.attributionControl.getContainer().textContent; return credit.includes('OpenStreetMap') && !credit.includes('CARTO'); }), `${width}: fallback removes the dark provider credit`);
   ok(await p.evaluate(() => { const c = __native.layers()[0]._container; return c.classList.contains('base-tiles-inverted') && getComputedStyle(c).filter.includes('invert'); }), `${width}: after the dark source fails, dark mode shows the standard tiles inverted (not a bright map)`);
   const requestsAtFailure = darkRequests;
   await p.evaluate(() => { __native.theme.setTheme('light'); __native.theme.setTheme('dark'); });

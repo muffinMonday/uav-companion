@@ -45,7 +45,7 @@ const BACKEND = () => {
 };
 async function open({ vp = { width: 1300, height: 850 }, touch = false, dark = false, storage = {}, once = true, backend = false } = {}) {
   const ctx = await b.newContext({ viewport: vp, hasTouch: touch, isMobile: touch, colorScheme: dark ? 'dark' : 'light', reducedMotion: 'reduce', acceptDownloads: true });
-  await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap|wpgmaps)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  await ctx.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap|wpgmaps|cartocdn)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   if (backend) await ctx.addInitScript(BACKEND);
   await ctx.addInitScript(([seen, st, pois]) => {
     if (sessionStorage.__seeded) return; sessionStorage.__seeded = '1';
@@ -332,7 +332,7 @@ await ctx.close();
 await ctx.close();
 {
   const c2 = await b.newContext({ viewport: { width: 1300, height: 850 }, reducedMotion: 'reduce' });
-  await c2.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap|wpgmaps)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  await c2.route(/^https?:\/\/[^/]*(openstreetmap|opentopomap|wpgmaps|cartocdn)[^/]*\/.*\.png/i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   await c2.addInitScript((seen) => { sessionStorage.__seeded || (localStorage.setItem('uavzones.v1.dash', JSON.stringify({ v: 1, showOnStart: false, welcomed: true, seen })), localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 1.3, lon: 103.82, zoom: 16 }, basemap: 'osm', holdHint: true })), sessionStorage.__seeded = '1');
     const real = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'uavzones.v1.areas') throw new DOMException('full', 'QuotaExceededError'); return real.call(this, k, v); }; }, LATEST_SEEN);
   const q = await c2.newPage(); q.on('pageerror', (e) => errs.push('pageerror ' + e.message));

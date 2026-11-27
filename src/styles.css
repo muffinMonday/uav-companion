@@ -1730,8 +1730,10 @@ body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + var(-
 /* ===== Community flying areas, Phase 1 (src/areas/): local drafts. Purple dashed = a community recommendation, never the teal/red official zones. ===== */
 :root{--community:#7b4fd0;--community-soft:color-mix(in srgb,var(--community) 14%,transparent)}
 :root[data-theme="dark"]{--community:#b69cff}
-.community-area{stroke:var(--community)!important;fill:var(--community)!important;fill-opacity:.14!important;pointer-events:none!important}
-.community-area.is-draft{fill-opacity:.2!important}
+.community-area{stroke:var(--community)!important;fill:var(--community)!important;fill-opacity:.3!important;pointer-events:none!important} /* darker than before so the zones read on the light map too */
+:root[data-theme="dark"] .community-area{fill-opacity:.24!important}
+:root[data-theme="dark"] .community-area.is-draft{fill-opacity:.38!important}
+.community-area.is-draft{fill-opacity:.38!important}
 .community-area.is-bad{stroke:var(--danger)!important;fill:var(--danger)!important}
 .leaflet-bar a.areas-btn.on{color:var(--accent)!important}
 .leaflet-container.is-drawing{cursor:crosshair}
@@ -1748,7 +1750,8 @@ body[data-mh=bottom] .route-summary{bottom:calc(16px + var(--mh-off,0px) + var(-
 .area-popup-head{display:flex;align-items:center;gap:8px}.area-popup-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;border-radius:7px;border:2px solid var(--community);color:var(--community);box-sizing:border-box}.area-popup-icon svg{width:17px;height:17px}
 .area-popup-parent{color:var(--muted);font-size:var(--fs-small)}
 .area-popup-actions{display:flex;flex-wrap:wrap;gap:8px}.area-popup-actions .btn,.area-popup-actions .map-action{min-height:40px}
-.community-area.is-selected{fill-opacity:.26!important}
+.community-area.is-selected{fill-opacity:.44!important}
+:root[data-theme="dark"] .community-area.is-selected{fill-opacity:.36!important}
 .areas-public-note{position:absolute;left:50%;bottom:calc(52px + var(--shell-nav-bottom-h,0px));transform:translateX(-50%);z-index:var(--z-live-chip);max-width:min(80vw,320px);padding:4px 10px;border-radius:var(--radius-pill,999px);background:color-mix(in srgb,var(--surface) 92%,transparent);color:var(--muted);border:1px solid var(--line);font-size:var(--fs-small);pointer-events:none;text-align:center}
 .areas-public-note[hidden]{display:none}
 /* the shared flying-area details panel (src/areas/details.js), in the marker host */
