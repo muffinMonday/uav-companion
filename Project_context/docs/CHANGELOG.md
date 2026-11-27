@@ -1,3 +1,6 @@
+## 2026-11-27 - Community Flying Areas Phase 2 released
+- Signed-in submission of a saved local area for review, with server-side geometry validation, idempotency, five-pending limit, pending status on the local draft, withdrawal, and account-deletion anonymisation. Hosted migrations `20261127100000`, `20261127110000`, `20261127120000` applied to production; frontend from `main` `19f7440`, gh-pages `049e5fc60602`. Live anonymous checks pass; a signed-in submission on production is not yet verified. No moderation or public layer yet (Phases 3 to 4).
+
 ## 2026-11-27 - Community Flying Areas Phase 1 released
 - Private local polygons/rectangles, point editing, Pilot setup spots, validated GeoJSON import/export, and My flying areas in More tools are live. Source `5f59089`; gh-pages `a7634ed`; successful Pages run `45915229886`; live HTML and 10 referenced JS/CSS assets match the build. Existing accounts, feature flags, custom domain and all 33 airspace regions retained; no backend change.
 - Phase 1: 203 unit checks and 99 browser checks pass, including 99 against the production build. Full regression: 191/212 suites passing, 21 failures; unit baseline comparisons and residual limits in `CURRENT_STATUS.md`. Further phases remain unstarted.
