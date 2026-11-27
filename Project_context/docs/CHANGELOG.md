@@ -1,3 +1,6 @@
+## 2026-11-27 - Community Flying Areas details panel and spot scale released
+- Shared flying-area details panel, tap-inside-polygon selection, spot popup with Navigate and View flying area, and setup spots shown at 500 m scale or closer. Source `bdf0e50`; gh-pages `0f14d9710f82`; no migration. Preflight 33 regions retained.
+
 ## 2026-11-27 - Community Flying Areas Phase 2 released
 - Signed-in submission of a saved local area for review, with server-side geometry validation, idempotency, five-pending limit, pending status on the local draft, withdrawal, and account-deletion anonymisation. Hosted migrations `20261127100000`, `20261127110000`, `20261127120000` applied to production; frontend from `main` `19f7440`, gh-pages `049e5fc60602`. Live anonymous checks pass; a signed-in submission on production is not yet verified. No moderation or public layer yet (Phases 3 to 4).
 
