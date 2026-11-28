@@ -124,10 +124,21 @@ export function createMap(initial = {}) {
     // A pending layer must be above the previous tiles, but below all airspace tile layers.
     if (base) base.bringToBack();
   };
-  const switchBase = (key) => { selectedBase = key; refreshBase(); };
+  // A choice that needs new tiles waits briefly, so a quick run of choices (arrow keys through the selector, a theme toggled twice) requests tiles only for the last one instead of
+  // for every layer passed on the way. A choice that needs nothing new (back to the layer already shown, or only the dark treatment) is applied at once.
+  let debounce = null;
+  const BASE_SETTLE_MS = 150;
+  const requestRefresh = () => {
+    clearTimeout(debounce);
+    debounce = null;
+    const url = baseTiles(selectedBase, darkFailed ? 'light' : currentTheme())[0];
+    if (!base || pending?.url === url || base._url === url) { refreshBase(); return; }
+    debounce = setTimeout(() => { debounce = null; refreshBase(); }, BASE_SETTLE_MS);
+  };
+  const switchBase = (key) => { selectedBase = key; requestRefresh(); };
   refreshBase();
-  const stopTheme = onTheme(refreshBase);
-  map.once('unload', () => { stopTheme(); cancelPending(); });
+  const stopTheme = onTheme(requestRefresh);
+  map.once('unload', () => { stopTheme(); clearTimeout(debounce); cancelPending(); });
   /** Metric or imperial scale bar, to match the distance units setting. */
   // Leaflet's scale control only builds the bar for the unit it started with, so switching means replacing the control.
   const setScaleUnits = (units) => {
