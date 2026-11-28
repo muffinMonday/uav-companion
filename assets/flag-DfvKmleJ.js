@@ -1,0 +1,1 @@
+var e=()=>{try{return!0}catch{return!1}};function t(){return e()}var n=null,r=()=>{try{return`synthetic`}catch{return``}};function i(e){let t=n===null?r():n;return t===`1`||t===`synthetic`&&e===`mock`}export{i as n,t};
