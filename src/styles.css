@@ -1836,6 +1836,7 @@ dialog.area-dialog::backdrop{background:rgba(0,0,0,.4)}
 .area-photo-preview{display:block;width:100%;height:auto;max-height:260px;object-fit:contain;border-radius:var(--radius-sm);background:var(--surface-2,var(--surface));border:1px solid var(--line)}
 .area-photo-msg{min-height:1.2em}
 .area-photo-img{display:block;width:100%;max-width:100%;height:auto;max-height:260px;object-fit:contain;border-radius:var(--radius-sm);background:var(--surface-2,var(--surface));border:1px solid var(--line)}
+.area-photo-fig[data-photo] .area-photo-img{object-fit:cover;object-position:center;overflow:hidden}
 .area-photo-fig{margin:0;display:flex;flex-direction:column;gap:4px}.area-photo-fig figcaption{font-size:var(--fs-small);color:var(--muted);overflow-wrap:anywhere}
 
 /* dark mode while the native dark tile source is unavailable (quota or outage): the standard tiles, inverted; only the base layer carries .base-tiles */
