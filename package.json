@@ -14,7 +14,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node tests/run.mjs",
-    "test:unit": "node tests/run.mjs --unit"
+    "test:unit": "node tests/run.mjs --unit",
+    "test:fast": "node tests/run.mjs --tier fast",
+    "test:release": "node tests/run.mjs --tier release"
   },
   "dependencies": {
     "@mapbox/vector-tile": "^3.0.0",

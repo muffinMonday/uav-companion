@@ -20,8 +20,8 @@ function startVite(port, flag) {
   });
 }
 
-const on = await startVite(5192, true);
-const off = await startVite(5193, false);
+const on = await startVite(5206, true);
+const off = await startVite(5207, false);
 const b = await chromium.launch({ channel: CHANNEL, headless: true });
 const errs = [];
 
@@ -38,7 +38,7 @@ async function openApp(url, opts = {}) {
 try {
   // ---- flag OFF: no new shell at all (the production default)
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5193/');
+    const { ctx, p } = await openApp('http://127.0.0.1:5207/');
     ok((await p.locator('#shell-nav').count()) === 0, 'flag off: #shell-nav does not exist (the production default stays the old dock/panel)');
     await ctx.close();
   }
@@ -48,7 +48,7 @@ try {
   // crowd the map search box and Leaflet's top-left controls. It is now a compact icon-only rail (tooltips via the native `title`
   // attribute, aria-label unaffected), and the map's own chrome shifts to clear it (--shell-nav-rail-w, see nav.js/styles.css).
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1400, height: 900 } });
     const nav = p.locator('#shell-nav');
     ok((await nav.count()) === 1, 'flag on: #shell-nav exists');
     ok((await nav.getAttribute('data-placement')) === 'rail', 'desktop: rail placement');
@@ -76,7 +76,7 @@ try {
   // compact top bar (the same button elements and adapters, physically moved - nothing duplicated), so the bottom bar is always
   // exactly the four destinations, and there is still only one bottom toolbar, not two.
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const nav = p.locator('#shell-nav');
     ok((await nav.getAttribute('data-placement')) === 'bottom', 'phone: bottom bar placement');
     const box = await nav.boundingBox();
@@ -106,7 +106,7 @@ try {
   // ---- top-bar collapse (phone): the right arrow folds Layers/Saved Places/Settings/Activity into one icon; tapping that icon expands
   // them again; opening a side panel, or a saved marker's sheet, collapses the bar by itself.
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     await p.evaluate(() => document.querySelector('#splash button')?.click()).catch(() => {});
     const topbar = p.locator('#shell-topbar'), toggle = topbar.locator('.shell-topbar-toggle');
     const shownActions = () => topbar.locator('[data-action]').evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().width > 0).length);
@@ -132,7 +132,7 @@ try {
     });
     const p = await ctx.newPage();
     p.on('pageerror', (e) => errs.push(`marker collapse: pageerror ${e.message}`));
-    await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(800);
+    await p.goto('http://127.0.0.1:5206/', { waitUntil: 'networkidle' }); await p.waitForTimeout(800);
     await p.evaluate(() => document.querySelector('#splash button')?.click()).catch(() => {});
     await p.evaluate(() => document.getElementById('dash-collapse')?.click()); await p.waitForTimeout(400); // the phone dashboard covers the pin until folded
     const pin = await p.evaluate(() => { const e = [...document.querySelectorAll('.poi-pin')].find((x) => x.getAttribute('title') === 'Tower' && x.getBoundingClientRect().width > 0); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
@@ -150,7 +150,7 @@ try {
 
   // ---- U-16: a touch-only tablet (1000x800, hasTouch, no hover) gets the compact rail, icon-only, 44px targets
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1000, height: 800 }, hasTouch: true, isMobile: false });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1000, height: 800 }, hasTouch: true, isMobile: false });
     const nav = p.locator('#shell-nav');
     ok((await nav.getAttribute('data-placement')) === 'rail', 'touch-only tablet (1000px): still a rail, not bottom nav');
     ok((await nav.getAttribute('data-labels')) === 'false', 'U-16: the touch-only tablet rail is icon-only (no visible labels)');
@@ -166,7 +166,7 @@ try {
 
   // ---- A non-touch device in the same 901-1200px band gets the labeled rail instead (the hover/pointer split, not a width-only rule)
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1000, height: 800 }, hasTouch: false, isMobile: false });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1000, height: 800 }, hasTouch: false, isMobile: false });
     const nav = p.locator('#shell-nav');
     ok((await nav.getAttribute('data-labels')) === 'true', 'a mouse/trackpad device at 1000px gets the labeled rail (hover split), not the touch-only compact one');
     await ctx.close();
@@ -174,7 +174,7 @@ try {
 
   // ---- adapter wiring: Trips opens the existing panel on its trips tab; Map closes it; nothing in panel.js/trips-ui.js was changed
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1400, height: 900 } });
     await p.click('#shell-nav [data-dest=trips]');
     ok(await p.isVisible('#panel') && await p.isVisible('#pane-trips'), 'Trips destination opens the existing Trips pane (temporary adapter, MAP/TRIP content unchanged)');
     ok((await p.getAttribute('#shell-nav [data-dest=trips]', 'aria-current')) === 'true', 'Trips shows as the current destination');
@@ -185,7 +185,7 @@ try {
 
   // ---- S10.3: Map's quick actions (Layers, Saved Places) are adapters onto the existing panel tabs, hidden on every other destination
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1400, height: 900 } });
     ok(await p.locator('#shell-nav [data-action=layers]').isHidden() === false, 'Layers action is visible while Map is the current destination (the default)');
     ok(await p.locator('#shell-nav [data-action=places]').isHidden() === false, 'Saved Places action is visible while Map is current');
     await p.click('#shell-nav [data-action=layers]');
@@ -205,9 +205,9 @@ try {
       { id: 't1', name: 'Hubei spring', startDate: iso(2), endDate: iso(5), description: '', color: '#e91e63', created: '2026-01-01T00:00:00.000Z' },
       { id: 't2', name: 'A later trip', startDate: iso(20), endDate: iso(25), description: '', color: '#2196f3', created: '2026-01-02T00:00:00.000Z' },
     ];
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     await ctx.addInitScript(([tr]) => { localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr })); }, [seededTrips]);
-    await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
+    await p.goto('http://127.0.0.1:5206/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
     await p.click('#shell-nav [data-dest=trips]');
     ok(await p.isVisible('#trips-hero .trip-card'), 'TRIP-01: the upcoming trip shows as a hero above the list');
     // Production hotfix: the hero already shows the soonest trip in full; repeating the exact same card as the list's own first entry
@@ -229,7 +229,7 @@ try {
   // ---- S10.9 (outer NAV-07): the panel itself, showing Trips with no detail open, also gets one history entry - Back closes it back to
   // Map, from any entry point (the shell's own Trips button here), not only the inner trip-detail level S10.4 already gave it.
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1400, height: 900 } });
     await p.click('#shell-nav [data-dest=trips]');
     ok(await p.isVisible('#panel') && await p.isVisible('#pane-trips'), 'Trips opens the panel, as before');
     await p.goBack();
@@ -242,14 +242,14 @@ try {
   // ---- S10.9 (NAV-04 row 2): the legacy dock rail and the panel's own tab row are hidden once the new shell is active - every control
   // they reached stays reachable (through a shell destination or a quick action), but the duplicate chrome itself is gone
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1400, height: 900 } });
     ok(await p.isHidden('#dock'), 'the legacy dock rail is hidden while the new shell is active');
     ok(await p.isHidden('.sidepanel .tabs'), 'the panel\'s own tab row is hidden too (Trips/Map Configs/POI are reached through the shell now)');
     ok(await p.locator('#privacy-btn').isVisible() && await p.locator('#panel-close').isVisible(), 'the privacy and close icon buttons beside the tab row are untouched, not part of the removed chrome');
     await ctx.close();
   }
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5193/'); // flag off
+    const { ctx, p } = await openApp('http://127.0.0.1:5207/'); // flag off
     ok(await p.isVisible('#dock') || (await p.locator('#dock').count()) === 1, 'flag off: the legacy dock element still exists in the production default (hidden by panel state only, never by the shell)');
     ok(!(await p.evaluate(() => document.body.dataset.shell)), 'flag off: body never gets the new-shell marker, so the S10.9 CSS rule can never apply there');
     await ctx.close();
@@ -257,7 +257,7 @@ try {
 
   // ---- S10.7: Settings (SET-01..08) and the Activity bell (ACT-01..04) are global - always visible, on every destination, as adapters onto real, unmodified surfaces
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1400, height: 900 } });
     ok(await p.locator('#shell-nav [data-action=settings]').isVisible(), 'the Settings action is visible on Map');
     ok(await p.locator('#shell-nav [data-action=activity]').isVisible(), 'the Activity bell is visible on Map');
     await p.click('#shell-nav [data-dest=trips]');
@@ -279,9 +279,9 @@ try {
   // ---- S10.8: TRIP-03 - Use for new markers/Edit move behind a "More" disclosure on the trip card (new-shell only)
   {
     const seeded = [{ id: 't2', name: 'Overflow trip', startDate: null, endDate: null, description: '', color: '#2196f3', created: '2026-01-01T00:00:00.000Z' }];
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1400, height: 900 } });
     await ctx.addInitScript(([tr]) => { localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr })); }, [seeded]);
-    await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
+    await p.goto('http://127.0.0.1:5206/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
     await p.click('#shell-nav [data-dest=trips]');
     const card = p.locator('#trips-list .trip-card', { hasText: 'Overflow trip' });
     ok(await card.getByRole('button', { name: 'Open' }).isVisible() && await card.getByRole('button', { name: 'Fit map' }).isVisible(), 'TRIP-03: Open and Fit map stay visible, primary actions');
@@ -293,7 +293,7 @@ try {
 
   // ---- free-area integration: the rail is a cover, so a saved marker's host does not sit under it (NAV-09 cross-cutting rule)
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1400, height: 900 } });
     await p.click('#shell-nav [data-action=places]').catch(() => {}); // S10.9: the legacy tab row is hidden once the new shell is active - use the Saved Places quick action instead
     await pickType(p, 'other');
     await p.click('#poi-place');
@@ -309,7 +309,7 @@ try {
   // ---- MAP-01: full-screen search (new shell only). search.js's own state (parsing, online lookup, selection) is untouched - this only
   // checks the shell-only presentation: it covers the viewport while open, has its own close affordance, and leaves map state untouched.
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const mapTransformBefore = await p.locator('.leaflet-map-pane').evaluate((e) => e.style.transform);
     ok(await p.locator('.search').evaluate((e) => e.classList.contains('collapsed')), 'search starts collapsed, as always');
     await p.click('#search-toggle');
@@ -326,7 +326,7 @@ try {
     await ctx.close();
   }
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5193/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }); // flag off
+    const { ctx, p } = await openApp('http://127.0.0.1:5207/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }); // flag off
     await p.click('#search-toggle');
     const box = await p.locator('.search').boundingBox();
     ok(box.width < 388, 'flag off: search stays the compact floating box, never full-screen');
@@ -344,13 +344,13 @@ try {
       { id: 'a', type: 'photo', name: 'Alpha', note: '', lat: 30.590, lon: 114.300, created: '2026-11-01T00:00:01.000Z', tripId: 't1', date: D, order: 1 },
       { id: 'b', type: 'photo', name: 'Bravo', note: '', lat: 30.600, lon: 114.310, created: '2026-11-01T00:00:02.000Z', tripId: 't1', date: D, order: 2 },
     ];
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 1400, height: 900 } });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 1400, height: 900 } });
     await ctx.addInitScript(([po, tr]) => {
       localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po }));
       localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr }));
       localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.595, lon: 114.305, zoom: 14 }, basemap: 'osm' }));
     }, [seededItems, seededTrips]);
-    await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
+    await p.goto('http://127.0.0.1:5206/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
     ok(await p.locator('.route-summary').count() === 1 && await p.locator('.route-summary').isHidden(), 'MAP-10: the sheet exists but stays hidden with no route drawn yet');
     await p.locator('.leaflet-marker-icon[title="Alpha"]').first().click();
     await p.waitForSelector('.pop h3, #marker-host h3', { timeout: 8000 }); await p.waitForTimeout(400);
@@ -369,7 +369,7 @@ try {
   // ---- production hotfix (screenshots, 2026-11-25): the top-right action cluster (#shell-topbar, shown with the bottom nav) sat over the
   // side panel's tab row and over the marker sheet's top edge at 810 px wide. Both must start below it.
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 810, height: 900 } });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 810, height: 900 } });
     await p.evaluate(() => document.querySelector('#splash button')?.click()).catch(() => {});
     await p.click('#shell-nav [data-dest="trips"]'); await p.waitForTimeout(500);
     const bottomOf = (sel) => p.evaluate((s) => { const e = document.querySelector(s); return e && !e.hidden ? e.getBoundingClientRect().bottom : null; }, sel);
@@ -381,7 +381,7 @@ try {
   // ---- production hotfix (screenshots, 2026-11-24): the dashboard, its peek handle and the Trips side panel / bottom sheet sat under the
   // persistent bottom nav bar. Phone and unfolded foldable both use the bottom bar; nothing the user must read may end below its top edge.
   for (const [label, vp] of [['phone', { width: 390, height: 844 }], ['unfolded foldable', { width: 840, height: 900 }]]) {
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: vp, hasTouch: true, isMobile: true });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: vp, hasTouch: true, isMobile: true });
     const rect = (sel) => p.evaluate((s) => { const e = document.querySelector(s); if (!e || e.hidden) return null; const r = e.getBoundingClientRect(); return r.width ? { t: r.top, b: r.bottom } : null; }, sel);
     const navTop = (await rect('#shell-nav')).t;
     const h = await p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--shell-nav-bottom-h')));
@@ -401,7 +401,7 @@ try {
     await ctx.close();
   }
   {
-    const { ctx, p } = await openApp('http://127.0.0.1:5193/'); // flag off
+    const { ctx, p } = await openApp('http://127.0.0.1:5207/'); // flag off
     ok(await p.locator('.route-summary').count() === 0, 'flag off: the route summary element does not exist at all (tree-shaken, same as the rest of the new shell)');
     await ctx.close();
   }
@@ -418,13 +418,13 @@ try {
       { id: 'a', type: 'photo', name: 'Alpha', note: '', lat: 30.590, lon: 114.300, created: '2026-11-01T00:00:01.000Z', tripId: 't1', date: D, order: 1 },
       { id: 'b', type: 'photo', name: 'Bravo', note: '', lat: 30.600, lon: 114.310, created: '2026-11-01T00:00:02.000Z', tripId: 't1', date: D, order: 2 },
     ];
-    const { ctx, p } = await openApp('http://127.0.0.1:5192/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const { ctx, p } = await openApp('http://127.0.0.1:5206/', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     await ctx.addInitScript(([po, tr]) => {
       localStorage.setItem('uavzones.v1.pois', JSON.stringify({ v: 1, items: po }));
       localStorage.setItem('uavzones.v1.trips', JSON.stringify({ v: 1, trips: tr }));
       localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.595, lon: 114.305, zoom: 14 }, basemap: 'osm' }));
     }, [seededItems, seededTrips]);
-    await p.goto('http://127.0.0.1:5192/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
+    await p.goto('http://127.0.0.1:5206/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
     await p.locator('.leaflet-marker-icon[title="Alpha"]').first().click();
     await p.waitForSelector('.pop h3, #marker-host h3', { timeout: 8000 }); await p.waitForTimeout(400);
     ok(await p.locator('#marker-host').getAttribute('data-mode') === 'bottom', 'the marker host is a bottom sheet on a phone (the case this fix targets)');

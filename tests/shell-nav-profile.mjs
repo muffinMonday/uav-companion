@@ -59,7 +59,7 @@ const mockFor = (uid) => async (route) => {
 const one = async (uid, sql, params = []) => (await as(db, uid, `select ${sql} as r`, params))[0].r;
 await one(A, 'public.ensure_profile($1)', ['Alex']);
 
-const PORT = 5195;
+const PORT = 5209;
 const vite = await startVite(PORT);
 const b = await chromium.launch({ channel: CHANNEL, headless: true });
 

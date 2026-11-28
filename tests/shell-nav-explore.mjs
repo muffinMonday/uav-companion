@@ -62,7 +62,7 @@ await one(A, 'public.ensure_profile($1)', ['Alex']);
 await db.exec(`update public.progression_settings set value = 1 where key = 'public_sessions_enabled'`);
 await one(A, 'public.create_session($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)', ['Explore test session', '', 'Test field', 30.6, 114.3, hr(2), hr(3), 'UTC', 'public', null]);
 
-const PORT = 5194;
+const PORT = 5208;
 const vite = await startVite(PORT);
 const b = await chromium.launch({ channel: CHANNEL, headless: true });
 

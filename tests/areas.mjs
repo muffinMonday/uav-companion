@@ -417,7 +417,7 @@ await ctx.close();
   await p.waitForSelector(`${dlg}[open]`);
   ok(await p.evaluate(() => __be.calls.filter((c) => c.fn === 'submit_community_area').length) === 0, 'after sign-in the dialog is offered; nothing is sent yet');
   ok(await p.evaluate(() => localStorage.getItem('uavzones.v1.areas.intent')) === null, 'the intent is used up');
-  ok(await p.locator(`${dlg} strong`).textContent() === 'Seeded <b>park</b>' && await p.locator(`${dlg} b`).count() === 0 && await p.locator(`${panel} .area-item-name b`).count() === 0, 'user text is rendered as text, never markup');
+  ok(await p.locator(`${dlg} p.area-note > strong`).textContent() === 'Seeded <b>park</b>' && await p.locator(`${dlg} b`).count() === 0 && await p.locator(`${panel} .area-item-name b`).count() === 0, 'user text is rendered as text, never markup');
   ok(/not flight authorization/i.test(await p.$eval(`${dlg} .area-disclaimer`, (e) => e.textContent)) && /5 submissions/.test(await p.$eval(dlg, (e) => e.textContent)), 'the disclaimer and the limit are shown');
   ok(await p.locator(`${dlg} [data-act="confirm-submit"]`).isDisabled(), 'Submit stays disabled until the disclaimer is acknowledged');
   await p.screenshot({ path: `${shots}/phase2-dialog.png` });

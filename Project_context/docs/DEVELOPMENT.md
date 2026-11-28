@@ -40,13 +40,18 @@ Never commit or print the service-role key, DB password or access token.
 ## Tests (`tests/`)
 ```
 npm run test:unit                 # the 48 Node-only suites (UNIT in tests/run.mjs)
-npm test                          # all suites (about 7 minutes at 4 at once); needs the app on :5173
+npm test                          # FULL tier: all suites; needs the app on :5173 (measured 941 s at 4 at once in a container without region data)
+npm run test:release              # RELEASE tier: every unit suite + representative browser suites (tests/tiers.mjs), 261 s in the same setup
+npm run test:fast                 # FAST tier: change-impact from git (node tests/run.mjs --tier fast [--since origin/main] [--files a.js,b.js] [--dry])
 node tests/run.mjs trips ai       # only suites whose name contains these words
 node tests/run.mjs --jobs 1        # one suite at a time (default is 4 at once; --jobs auto picks from the CPU count)
 node tests/trips.mjs              # one suite directly; prints PASS/FAIL lines
 ```
 - Suites: the lists `UNIT` (48, logic and database rules on in-memory Postgres) and `BROWSER` (58) in `tests/run.mjs` are the authoritative inventory; a suite's subject is in its file header and name (`*-unit`, `db-*-unit`, `*-live` need no browser or the hosted dev project). Last full browser run: see `CURRENT_STATUS.md`.
 - Browser suites mock Open-Meteo, Photon and Nominatim; screenshots go to `tests/out/` (git-ignored). `lib.mjs` supplies paths, the browser channel and a `chromium` wrapper that tucks the dashboard behind its tab in every new context (import `chromium` from `./lib.mjs`). It also emulates reduced motion in every context, so nothing is moving when a test clicks; pass `reducedMotion: 'no-preference'` to a context that needs the animations (see `motion.mjs`).
+- **Tiers (2026-11-28).** Fast maps changed files to suites (`.claude/skills/test-impact/impact.mjs --json`: suites that name the file, unit/browser suites that share a name token with the file or its `src/` folder, the `OWNERS` table in `tests/tiers.mjs`) plus a canary set. It widens to the release tier for shared infrastructure (`main.js`, `app/`, `components/`, `sync/`, `index.html`, styles, `tests/lib*`, `run.mjs`, package files, `scripts/`, edge functions), runs every unit suite for a file nothing maps, and runs nothing for docs only. Browser suites open the whole app, so no map is exhaustive: fast is for development, release or full decide a release. Release = all unit suites (RLS, authentication, privacy, account deletion, XP, shared data, airspace, motor/preflight logic) + the browser suites listed with reasons in `tests/tiers.mjs`. Standalone `node --test` files (`*.test.mjs`: airspace GEOS/CLI/tile checks) are in no tier; they need local data and tools (see `CURRENT_STATUS.md`).
+- Browser suites also get every basemap tile request (OSM, OSM France, OpenTopoMap, CARTO) answered with a fixed image by `lib.mjs` (`TILES_LIVE=1` turns that off); a suite that counts or fails tiles registers its own route, which takes precedence. `node tests/bench-basemap.mjs` measures tile requests against a local mock provider (see `EFFICIENCY.md`).
+- Dev servers started by a suite use a port of their own (5188 to 5209, one number per suite; check `grep -n "5[12][0-9][0-9]" tests/*.mjs` before adding one): `shell-nav*` shared 5192 to 5195 with `combined-ui`, `motor-diagnostics-ui` and `fourway-ui`, which made parallel runs crash with "Port in use"; fixed 2026-11-28.
 - The runner counts lines starting with `PASS`/`FAIL`; `smoke` prints none, so it shows 0 pass and passes if it does not crash or log console errors.
 
 ## Backend (`supabase/`)

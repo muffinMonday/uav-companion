@@ -12,6 +12,7 @@ node .claude/skills/test-impact/impact.mjs            # changed files from git, 
 node .claude/skills/test-impact/impact.mjs --dry      # plan only
 node .claude/skills/test-impact/impact.mjs src/a.js   # explicit files
 node .claude/skills/test-impact/impact.mjs --browser  # also runs all browser suites (app must be on :5173)
+node .claude/skills/test-impact/impact.mjs --json     # the plan as data (units, browser picks, shared/unitAll flags); used by `npm run test:fast`
 ```
 
 What it does: maps each changed file to the unit suites in `tests/run.mjs` (suites name their `src/`, `public/ai/`, `scripts/`, `supabase/` files; imports are followed), then runs them through `tests/run.mjs`.

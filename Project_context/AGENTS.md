@@ -12,7 +12,7 @@ Vite + Leaflet JS app; static hosting plus optional Supabase (accounts, friends,
 - Validate all stored/imported/shared data; DOM via `el()`/`textContent`. Nothing user-specific leaves the browser unless opted in; Home marker never shared. Keep `uavzones.` keys; shape change = version bump + `DATABASE.md` note.
 - DB writes only via SQL functions, RLS on every table, new migration files only. Never commit secrets or `.env*.local`.
 - Dates in docs are calendar dates from `git log` / `date`, never copied from a migration file name (those run ahead).
-- Minimal root-cause changes. `npm run test:unit`; `npm test` (app on :5173) before committing `src/`, `index.html`, `public/ai/` changes; read results before saying done.
+- Minimal root-cause changes. While iterating `npm run test:fast`; `npm run test:release` for a release candidate; `npm run test:unit`; `npm test` (full, app on :5173) before committing `src/`, `index.html`, `public/ai/` changes; read results before saying done.
 - Ask before commit, push or `npm run deploy`.
 
 **Context:** update `CURRENT_STATUS.md` at each milestone and before stopping or clearing; say "saved" only after editing it. At about 65% context, finish the step and checkpoint; above 75%, no new large work. Claude cannot run `/clear`: checkpoint, then tell the user to run `/clear` (auto-compaction is fine; the checkpoint is the recovery source). Finished history goes to CHANGELOG, decisions to DECISIONS. Final message of a session: done, state, remaining, blockers, files, test results, next action.

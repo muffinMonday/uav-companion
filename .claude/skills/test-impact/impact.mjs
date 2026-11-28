@@ -11,7 +11,7 @@ import path from 'node:path';
 const ROOT = path.resolve(import.meta.dirname, '..', '..', '..');
 const read = (f) => { try { return readFileSync(path.join(ROOT, f), 'utf8'); } catch { return ''; } };
 const argv = process.argv.slice(2);
-const dry = argv.includes('--dry'), withBrowser = argv.includes('--browser');
+const dry = argv.includes('--dry'), withBrowser = argv.includes('--browser'), asJson = argv.includes('--json');
 const given = argv.filter((a) => !a.startsWith('--')).map((a) => a.replace(/\\/g, '/').replace(/^\.\//, ''));
 
 // Suite inventory: the arrays in tests/run.mjs are the single source of truth.
@@ -62,13 +62,40 @@ const HIGH = /^(src\/(poi|trips|prefs|sync\/core|sharedtrip\/core)\.js|tests\/(l
 const DOC = (f) => (/\.md$/i.test(f) && !f.startsWith('public/ai/')) || /^(docs|Project_context|planning|tests\/out|\.claude)\//.test(f) || f === 'LICENSE' || f === '.gitignore';
 const BROWSER_ONLY = (f) => /\.(css|html)$/.test(f) || (f.startsWith('public/') && !f.startsWith('public/ai/') && !f.startsWith('public/data'));
 
+// Browser suites open the whole app, so a mention-based map is NOT exhaustive: it lists the suites that name the changed file (or a file that imports it) and nothing more.
+// `--json` prints the plan for tests/run.mjs --tier fast (which adds a canary set and widens to the release tier whenever `full` is set).
+const _ud = {}; const deps0 = (x) => (_ud[x] ??= depsOf(x));
+const bdeps = Object.fromEntries(BROWSER.map((s) => [s, depsOf(s)]));
+const browserFor = (f) => BROWSER.filter((s) => bdeps[s].has(f) || [...bdeps[s]].some((d) => d.endsWith('/') && f.startsWith(d)));
 const c = changed();
+if (asJson && !c) { console.log(JSON.stringify({ files: [], full: 'git unavailable', unit: UNIT, browser: [], browserNeeded: true })); process.exit(0); }
 if (!c) {
   console.log('test-impact: git unavailable -> FULL unit (npm run test:unit)');
   if (dry) process.exit(0);
   process.exit(spawnSync(process.execPath, ['tests/run.mjs', '--unit'], { cwd: ROOT, stdio: 'inherit' }).status ?? 1);
 }
 const files = c.files;
+if (asJson) {
+  // The same rules as below, reduced to data. `shared` = infrastructure every suite depends on (tests/run.mjs --tier fast then widens to the release tier);
+  // `unitAll` = a file no unit suite maps (all unit suites run: cheap, never fewer). Browser picks = suites naming the file (or an importer) plus suites whose NAME shares a token
+  // with the file name or its src/ folder (more, not fewer): not exhaustive, so the caller adds a canary set.
+  const SHARED = /^(src\/(main|cards|config|theme|prefs|poi|trips)\.js|src\/(app|components|sync|sharedtrip)\/|index\.html$|public\/ai\/|tests\/(lib[\w-]*|run|tiers)\.mjs|tests\/fixtures\/|styles\.css$|src\/styles\/|package(-lock)?\.json$|vite\.config\.js$|scripts\/|supabase\/functions\/)/;
+  const unit = new Set(), browser = new Set(); let shared = null, unitAll = false, browserNeeded = false;
+  for (const f of files) {
+    if (/^(src\/|index\.html$|public\/ai\/)/.test(f)) browserNeeded = true;
+    if (DOC(f)) continue;
+    if (HIGH.test(f) || SHARED.test(f)) { shared = shared || f; continue; }
+    const toks0 = f.startsWith('src/') ? [...path.posix.dirname(f).split('/').slice(1), ...path.posix.basename(f, '.js').split('-')].filter((t) => t.length > 2 && !['main', 'src'].includes(t)) : [];
+    const u = [...new Set([...UNIT.filter((x) => deps0(x).has(f) || [...deps0(x)].some((d) => d.endsWith('/') && f.startsWith(d))), ...UNIT.filter((x) => toks0.some((t) => x.split('-').includes(t)))])];
+    const toks = f.startsWith('src/') ? [...path.posix.dirname(f).split('/').slice(1), ...path.posix.basename(f, '.js').split('-')].filter((t) => t.length > 2 && !['main', 'src'].includes(t)) : [];
+    const b = [...new Set([...browserFor(f), ...BROWSER.filter((x) => toks.some((t) => x.split('-').includes(t) || x === t))])];
+    u.forEach((x) => unit.add(x)); b.forEach((x) => browser.add(x));
+    if (/^tests\/.+\.mjs$/.test(f)) { const n = path.posix.basename(f, '.mjs'); if (BROWSER.includes(n)) browser.add(n); continue; }
+    if (!u.length) { if (BROWSER_ONLY(f)) browserNeeded = true; else if (f.startsWith('supabase/') || f.startsWith('src/') || f.startsWith('data/') || /\.(m?js|json|sql|py)$/.test(f)) unitAll = true; else shared = shared || f; }
+  }
+  console.log(JSON.stringify({ files, shared, unitAll, unit: [...unit], browser: [...browser], browserNeeded }));
+  process.exit(0);
+}
 if (!files.length) { console.log(`test-impact: no changed files (${c.source}) -> nothing to run`); process.exit(0); }
 
 const deps = Object.fromEntries(UNIT.map((s) => [s, depsOf(s)]));
