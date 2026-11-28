@@ -23,8 +23,11 @@ import { chromium as real } from 'playwright-core';
 import { WHATS_NEW } from '../src/whatsnew.js';
 import { HELP } from '../src/help-content.js';
 import { TYPE_GROUPS } from '../src/poi.js';
+import { regionLabel } from '../src/app/region-labels.js';
 /** The id of the newest What's new entry: what a returning visitor has already seen. Suites use it so announcing something new does not reopen the dashboard in every test. */
 export const LATEST_SEEN = WHATS_NEW[0].id;
+/** The labels of China's Fly in menu in the order the app lists them (sorted), read from the published manifest in public/data. The exact list is pinned once, in region-labels-unit and country-groups-unit; browser suites use this so a new region does not need another hand-copied list. */
+export const CHINA_REGION_LABELS = JSON.parse(fs.readFileSync(`${ROOT}/public/data/cn/manifest.json`, 'utf8')).regions.map(regionLabel).sort((a, b) => a.localeCompare(b));
 /** Basemap providers (OpenStreetMap and its France-hosted styles, OpenTopoMap, CARTO) answer every raster tile request of a test context with one fixed image. The suites then never reach a real
  *  provider (no quota, no network dependence, no load on volunteer-run tile servers); a suite that counts or fails tile requests registers its own route, which takes precedence over this one.
  *  TILES_LIVE=1 switches the mock off (only for a deliberate provider integration check). */

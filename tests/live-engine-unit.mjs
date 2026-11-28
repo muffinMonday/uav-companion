@@ -117,7 +117,7 @@ let fails = 1; const real = erra.api.shareLocation;
 erra.api.shareLocation = async (...a) => { if (fails-- > 0) throw new Error('network down'); return real(...a); };
 erra.eng.start(TRIP); erra.pos(30.5, 114.3); await tick(150);
 ok(erra.eng.isSharing(TRIP) && erra.eng.snapshot().sharing[TRIP].status === 'error', 'a failed send keeps sharing on and shows the error');
-erra.advance(6000); await age(A, 5); erra.pos(30.51, 114.31); await tick(150);
+erra.advance(7000); await age(A, 5); erra.pos(30.51, 114.31); await tick(150); // the send back-off is 5 s varied by +/-25 %, so up to 6.25 s: 6000 failed about one run in ten
 ok(erra.eng.snapshot().sharing[TRIP].status === 'ok', 'the next position recovers');
 await erra.eng.stopAll();
 

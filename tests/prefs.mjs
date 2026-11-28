@@ -1,4 +1,4 @@
-import { CHANNEL } from './lib.mjs';
+import { CHANNEL, CHINA_REGION_LABELS } from './lib.mjs';
 import { chromium } from './lib.mjs';
 const openSearch = (p) => p.evaluate(() => { if (document.getElementById('search').classList.contains('collapsed')) document.getElementById('search-toggle').click(); }); // the search box starts folded into a magnifying glass
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
@@ -54,7 +54,7 @@ ok(Math.abs(c1.lon - 103.85) < 0.6 && Math.abs(c1.lat - 1.3) < 0.4, `the Singapo
 
 // ---- China opens its own menu; choosing a region focuses it and closes the menu
 await p.evaluate((s) => document.querySelector(s).click(), '#pane-config .country-btn[data-country="cn"]'); await p.waitForTimeout(300);
-ok((await p.locator('#pane-config .country-menu .btn').allTextContents()).join(',') === 'Chongqing,Guangdong,Hubei,Hunan,Jilin,Ningxia,Sichuan,Yunnan', 'the China button opens a menu of its eight regions');
+ok((await p.locator('#pane-config .country-menu .btn').allTextContents()).join(',') === CHINA_REGION_LABELS.join(','), 'the China button opens a menu of its ' + CHINA_REGION_LABELS.length + ' regions');
 await p.evaluate((s) => document.querySelector(s).click(), '#pane-config .country-menu [data-region="cn-hubei"]'); await p.waitForTimeout(1500);
 ok((await p.locator('#pane-config .country-menu').isHidden()) && Math.abs((await view(p)).view.lat - 30.6) < 2, 'choosing Hubei closes the menu and focuses the map on Hubei');
 
@@ -80,7 +80,7 @@ const c4 = await b.newContext({ viewport: { width: 1200, height: 800 } });
 await c4.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });
 const q4 = await open(c4);
 await q4.evaluate((s) => document.querySelector(s).click(), '#pane-config .country-btn[data-country="sg"]'); await q4.selectOption('#base', 'topo'); await q4.waitForTimeout(800);
-ok((await q4.inputValue('#base')) === 'topo' && (await q4.locator('#pane-config .country-btn').count()) === 2, 'storage blocked: controls still work');
+ok((await q4.inputValue('#base')) === 'topo' && (await q4.locator('#pane-config .country-btn').count()) === 4, 'storage blocked: controls still work (one button each for China, Malaysia, Singapore and Vietnam)');
 
 console.log('errors:', errs.length ? errs : 'none');
 await b.close();

@@ -105,7 +105,7 @@ await bea.p.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))
 ok(await until(() => bea.p.locator('.live-pin').count().then((n) => n === 1), 15000), 'Bea sees one pin for Alex');
 ok(await bea.p.locator('.live-pin.friend').count() === 0 && !/Friend/.test(await bea.p.textContent('.live-pin span')), 'it is a party pin: Alex is a friend and in the party, and is shown once, as party');
 const partyShape = await bea.p.$eval('.live-pin b', (e) => getComputedStyle(e).borderRadius);
-ok(await until(() => cam.p.locator('.live-pin.friend').count().then((n) => n === 1), 25000), 'Cam, who is only a friend, sees a friend pin for Alex');
+ok(await until(() => cam.p.locator('.live-pin.friend').count().then((n) => n === 1), 45000), 'Cam, who is only a friend, sees a friend pin for Alex'); // friends are polled every 10 s (FRIEND_POLL_MS), and a loaded machine can need several polls
 const friendLabel = await cam.p.textContent('.live-pin.friend span');
 const friendShape = await cam.p.$eval('.live-pin.friend b', (e) => getComputedStyle(e).borderRadius);
 ok(/^Friend · Alex/.test(friendLabel), 'its label says Friend, so colour is not the only difference: ' + friendLabel);

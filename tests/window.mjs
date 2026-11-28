@@ -94,7 +94,8 @@ const before = await p.evaluate(() => { const r = document.querySelector('.poi-p
 const cdp = await ctx.newCDPSession(p);
 const y0 = Math.round(g.top * 0.6); // the map ends at the sheet: a point clear of the attribution line at its bottom edge
 const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
-await touch('touchStart', 40, y0); await touch('touchMove', 40, y0 - 30); await touch('touchMove', 40, y0 - 70); await touch('touchEnd'); await p.waitForTimeout(500);
+const x0 = 220; // mid-map: the left edge now carries the map tool buttons, which would take the touch instead of the map
+await touch('touchStart', x0, y0); await touch('touchMove', x0, y0 - 30); await touch('touchMove', x0, y0 - 70); await touch('touchEnd'); await p.waitForTimeout(500);
 const after = await p.evaluate(() => { const r = document.querySelector('.poi-pin[title="Bridge"]').getBoundingClientRect(); return { y: r.y }; });
 ok(Math.abs(after.y - before.y) > 30, 'the map can still be dragged around the expanded sheet (pin moved ' + Math.round(before.y - after.y) + ' px)');
 await p.screenshot({ path: SP + '/window-host-phone.png' });

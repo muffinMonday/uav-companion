@@ -1,6 +1,6 @@
 // The quick setup (splash): shown on a first visit and never to a returning one; Skip and Escape; the trip form and the itinerary link make a prompt that is
 // copied; a pasted answer previews in the Trips tab; Plan a flight centres the map on the visitor (no popup), or offers the regions when there is no position.
-import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN, CHINA_REGION_LABELS } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const b = await chromium.launch({ channel: CHANNEL });
@@ -127,7 +127,7 @@ await p.click('#splash-flight'); await p.click('#splash-locate');
 await p.waitForSelector('#splash[open] #splash-close', { timeout: 10000 });
 ok(/No location yet/.test(await p.textContent('#splash')) && await p.locator('#splash .btn', { hasText: 'Singapore' }).count() === 1, 'with no position it says so and offers the regions');
 await p.click('#splash .country-btn[data-country="cn"]'); await p.waitForTimeout(200);
-ok((await p.locator('#splash .country-menu [data-region]').allTextContents()).length === 7 && await p.isVisible('#splash'), 'the China button opens its seven regions in the same dialog');
+ok((await p.locator('#splash .country-menu [data-region]').allTextContents()).length === CHINA_REGION_LABELS.length && await p.isVisible('#splash'), 'the China button opens its ' + CHINA_REGION_LABELS.length + ' regions in the same dialog');
 await p.keyboard.press('Escape'); await p.waitForTimeout(200);
 ok(await p.isVisible('#splash') && await p.locator('#splash .country-menu').isHidden(), 'Escape closes the China menu and keeps the dialog open');
 await p.click('#splash .btn:has-text("Singapore")'); await p.waitForTimeout(1200);

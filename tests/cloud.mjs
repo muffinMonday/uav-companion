@@ -64,7 +64,10 @@ await openAccount(p);
 ok(await p.locator('#account-pop input[type=email]').isVisible() && /Email me a sign-in link/.test(await p.locator('#account-pop button[type=submit]').textContent()), 'signed out: the popover offers an email sign-in link');
 ok(/only in this browser/.test(await p.locator('#account-pop .hint').first().textContent()), 'and says that without it everything stays in the browser');
 ok(await p.locator('#account-pop >> text=Export or import your data').isVisible(), 'and links to export and import');
-ok(!hits.some((h) => h.includes('/rest/v1/')), 'nothing was sent to the server');
+// The one allowed request is the documented public read of approved community flying areas for the map view (DECISIONS.md, Phase 4: anonymous, bounded by a map box, default on, switchable off); nothing else may be sent.
+const PUBLIC_AREA_READS = /\/rest\/v1\/rpc\/(list_public_areas|get_public_area)$/;
+const sentToServer = hits.filter((h) => h.includes('/rest/v1/') && !PUBLIC_AREA_READS.test(h));
+ok(sentToServer.length === 0, 'nothing but the public community-areas read was sent to the server' + (sentToServer.length ? ': ' + JSON.stringify(sentToServer) : ''));
 await p.fill('#account-pop input[type=email]', 'someone@example.test'); await p.click('#account-pop button[type=submit]'); await p.waitForTimeout(600);
 ok(/Check your email/.test(await p.locator('#account-pop [role=status]').textContent()), 'asking for a link says to check the email');
 await p.keyboard.press('Escape');

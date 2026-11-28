@@ -25,7 +25,7 @@ ok(sg && sg.areas.length === 1 && sg.areas[0].id === 'sg-nofly', 'Singapore has 
 const cn = groups.find((g) => g.name === 'China');
 const cnLabels = cn.areas.map((a) => a.label);
 ok(cn.areas.length > 1, 'China has several regions, so its button opens a menu');
-ok(JSON.stringify(cnLabels) === JSON.stringify(['Chongqing', 'Guangdong', 'Hubei', 'Hunan', 'Jilin', 'Ningxia', 'Sichuan']), 'the China menu lists the regions by label, sorted: ' + cnLabels.join(', '));
+ok(JSON.stringify(cnLabels) === JSON.stringify(['Anhui', 'Chongqing', 'Fujian', 'Gansu', 'Guangdong', 'Guangxi', 'Guizhou', 'Hainan', 'Hebei', 'Heilongjiang', 'Henan', 'Hubei', 'Hunan', 'Inner Mongolia', 'Jiangsu', 'Jiangxi', 'Jilin', 'Liaoning', 'Ningxia', 'Qinghai', 'Shaanxi', 'Shandong', 'Shanghai', 'Shanxi', 'Sichuan', 'Tianjin', 'Tibet', 'Xinjiang', 'Yunnan', 'Zhejiang']), 'the China menu lists the regions by label, sorted: ' + cnLabels.join(', '));
 ok(cnLabels.every((l) => /^[A-Z]/.test(l)), 'region labels are capitalised');
 ok(!cnLabels.includes('China') && cn.areas.every((a) => a.country === 'cn'), 'no country-wide "China" item, and only China regions in its menu');
 

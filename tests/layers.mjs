@@ -136,8 +136,13 @@ for (const width of [390, 800, 1300]) {
       await p.evaluate(([key, mode]) => {
         __native.switchBase(key); __native.theme.setTheme(mode);
         if (key === 'osm' && mode === 'dark') {
-          const dark = __native.layers().find(l => l._url.includes('cartocdn'));
-          dark.once('load', () => { __native.fadeBacked = __native.layers().some(l => l !== dark && l.options.opacity === 1); });
+          // The base layer is created after a short settle (map.js BASE_SETTLE_MS), so wait for it rather than read it at once.
+          const t = setInterval(() => {
+            const dark = __native.layers().find(l => l._url.includes('cartocdn'));
+            if (!dark) return;
+            clearInterval(t);
+            dark.once('load', () => { __native.fadeBacked = __native.layers().some(l => l !== dark && l.options.opacity === 1); });
+          }, 10);
         }
       }, [key, mode]);
       const host = key === 'osm' && mode === 'dark' ? 'basemaps.cartocdn.com' : { osm: 'tile.openstreetmap.org', hot: 'tile.openstreetmap.fr', cyclosm: 'tile-cyclosm.openstreetmap.fr', topo: 'tile.opentopomap.org' }[key];

@@ -1,11 +1,10 @@
 // Country buttons (src/app/country-menu.js): Singapore focuses at once; China opens a menu of its regions. Checks keyboard
 // use (Enter, Arrow keys, Escape, focus return), a press outside, one menu open at a time, and that the buttons fit a narrow
 // screen in both the dashboard's Fly in card and Map Config's Go to card. Needs the app on :5173.
-import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
+import { chromium, CHANNEL, LATEST_SEEN, CHINA_REGION_LABELS as CHINA_REGIONS } from './lib.mjs';
 const ok = (c, m) => console.log((c ? 'PASS' : 'FAIL') + '  ' + m);
 const errs = [];
 const RETURNING = { showOnStart: true, welcomed: true, seen: LATEST_SEEN };
-const CHINA_REGIONS = ['Chongqing', 'Guangdong', 'Hubei', 'Hunan', 'Jilin', 'Ningxia', 'Sichuan', 'Yunnan'];
 
 const b = await chromium.launch({ channel: CHANNEL });
 async function open(width, height, mobile = false) {
@@ -19,6 +18,7 @@ async function open(width, height, mobile = false) {
   return { ctx, p };
 }
 const focusedAttr = (p, name) => p.evaluate((n) => document.activeElement?.getAttribute(n), name);
+const focusedText = (p) => p.evaluate(() => document.activeElement?.textContent);
 const view = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('uavzones.v1.prefs') || '{}').view);
 const DASH_CHINA = '.dash-fly .country-btn[data-country="cn"]';
 const DASH_SG = '.dash-fly .country-btn[data-country="sg"]';
@@ -41,13 +41,13 @@ const DASH_MENU = '.dash-fly .country-menu';
   await p.focus(DASH_CHINA);
   await p.keyboard.press('Enter'); await p.waitForTimeout(200);
   const menuItems = await p.$$eval(`${DASH_MENU} .btn`, (xs) => xs.map((x) => x.textContent));
-  ok(JSON.stringify(menuItems) === JSON.stringify(CHINA_REGIONS), 'Enter on China opens its menu of eight regions: ' + menuItems.join(', '));
+  ok(JSON.stringify(menuItems) === JSON.stringify(CHINA_REGIONS), 'Enter on China opens its menu of its ' + CHINA_REGIONS.length + ' regions: ' + menuItems.join(', '));
   ok(await p.getAttribute(DASH_CHINA, 'aria-expanded') === 'true' && await p.isVisible(DASH_MENU), 'the menu is open and China says so');
-  ok(await focusedAttr(p, 'data-region') === 'cn-chongqing', 'focus moves into the menu (first region)');
+  ok(await focusedText(p) === CHINA_REGIONS[0], 'focus moves into the menu (first region)');
   await p.keyboard.press('ArrowDown'); await p.keyboard.press('ArrowDown');
-  ok(await focusedAttr(p, 'data-region') === 'cn-hubei', 'ArrowDown moves to the next region (Hubei)');
+  ok(await focusedText(p) === CHINA_REGIONS[2], 'ArrowDown moves to the next region (the third after two presses)');
   await p.keyboard.press('ArrowUp'); await p.keyboard.press('ArrowUp'); await p.keyboard.press('ArrowUp');
-  ok(await focusedAttr(p, 'data-region') === 'cn-yunnan', 'ArrowUp from Hubei three times wraps past the first region to the last (Yunnan)');
+  ok(await focusedText(p) === CHINA_REGIONS.at(-1), 'ArrowUp from the third region three times wraps past the first region to the last');
   await p.keyboard.press('Escape'); await p.waitForTimeout(150);
   ok(await p.locator(DASH_MENU).isHidden() && await focusedAttr(p, 'data-country') === 'cn', 'Escape closes the menu and returns focus to China');
 

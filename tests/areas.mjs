@@ -306,7 +306,8 @@ await ctx.close();
   ok(await spotsOnMap(p) === 2, 'zooming back in to about 300 m shows the spots again');
   // area switch off
   await openPanel(p); await p.uncheck('#areas-show-cb');
-  ok(await p.locator('.community-area').count() === 0 && await spotsOnMap(p) === 0, 'Show my areas on the map off hides outlines and spots');
+  // The public community layer (.is-public) has its own switch (Map Config); this one only controls the visitor's own areas.
+  ok(await p.locator('.community-area:not(.is-public)').count() === 0 && await spotsOnMap(p) === 0, 'Show my areas on the map off hides my outlines and spots');
 }
 await ctx.close();
 

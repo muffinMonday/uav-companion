@@ -68,7 +68,9 @@ const code = (p) => p.locator('#fr-code').textContent();
 let { ctx, p } = await open('a', { signedIn: false });
 ok(await p.locator('#tab-friends').count() === 1 && await p.locator('#dock button[data-tab=friends]').count() === 1, 'the Friends tab and its rail icon exist when this build has accounts');
 await goFriends(p);
-ok(/Sign in/.test(await p.textContent('#pane-friends')) && !calls.length, 'signed out, it explains and points to sign-in, and nothing is sent');
+// The one allowed call is the documented anonymous public read of approved community flying areas for the map view (DECISIONS.md, Phase 4); no account call may be made.
+const accountCalls = calls.filter((c) => !/^(list_public_areas|get_public_area)$/.test(c));
+ok(/Sign in/.test(await p.textContent('#pane-friends')) && accountCalls.length === 0, 'signed out, it explains and points to sign-in, and no account call is sent' + (accountCalls.length ? ': ' + JSON.stringify(accountCalls) : ''));
 await p.click('#pane-friends >> text=Sign in…'); await p.waitForSelector('#account-pop:not([hidden])');
 ok(await p.locator('#account-pop input[type=email]').isVisible(), 'its button opens the account popover, where sign-in lives');
 await ctx.close();

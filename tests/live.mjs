@@ -117,14 +117,15 @@ await alex.p.waitForTimeout(100);
 ok(await alex.p.locator('.live-pin').count() === 0, 'and Alex does not see his own pin');
 
 // ---------- moving
+// Bring the pin on screen for Bea and note where it is BEFORE Alex moves: Bea's own polling shows the move within a few seconds, so a position taken afterwards can already be the new one.
+await bea.p.evaluate(() => document.getElementById('panel-close').click()).catch(() => {}); await bea.p.waitForTimeout(500);
+const before = await pinBox(bea.p);
 await sleep(5500);
 await alex.ctx.setGeolocation({ latitude: 30.60, longitude: 114.36, accuracy: 9 });
 await alex.p.waitForTimeout(2500);
 ok(Math.abs((await rowOf(A)).lat - 30.60) < 1e-6, 'when Alex moves the new position is sent');
-// bring the pin on screen for Bea before comparing positions
-await bea.p.evaluate(() => document.getElementById('panel-close').click()).catch(() => {}); await bea.p.waitForTimeout(500);
-const before = await pinBox(bea.p);
-await wake(bea.p); await bea.p.waitForTimeout(1500);
+await wake(bea.p);
+await bea.p.waitForFunction(([x, y]) => { const r = document.querySelector('.live-pin b').getBoundingClientRect(); return Math.round(r.x) !== x || Math.round(r.y) !== y; }, [before.x, before.y], { timeout: 8000 }).catch(() => {}); // a condition, not a fixed wait
 const after = await pinBox(bea.p);
 ok(before.x !== after.x || before.y !== after.y, 'and Bea\'s pin moves (' + JSON.stringify(before) + ' to ' + JSON.stringify(after) + ')');
 

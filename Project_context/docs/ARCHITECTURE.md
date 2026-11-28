@@ -46,30 +46,9 @@ The zone layers then load only the archives whose bounds meet the visible map (`
 
 **Adding or removing shape coverage:** keep in the same change the country's button (a country appears once it has zone data), its menu items (one per region, or none if it has one region), the display labels, the tests (`tests/country-groups-unit.mjs`, `tests/region-labels-unit.mjs`, `tests/country-buttons.mjs`, `tests/fly-in.mjs`) and this list.
 
-Region menu items, in the order shown (capitalised labels):
-- Chongqing
-- Guangdong
-- Hubei
-- Hunan
-- Jilin
-- Ningxia
-- Sichuan
-- Singapore
-- Yunnan
+Region menu items, in the order shown (capitalised labels, sorted). **China** opens a menu of 30: Anhui, Chongqing, Fujian, Gansu, Guangdong, Guangxi, Guizhou, Hainan, Hebei, Heilongjiang, Henan, Hubei, Hunan, Inner Mongolia, Jiangsu, Jiangxi, Jilin, Liaoning, Ningxia, Qinghai, Shaanxi, Shandong, Shanghai, Shanxi, Sichuan, Tianjin, Tibet, Xinjiang, Yunnan, Zhejiang. **Malaysia**, **Singapore** and **Vietnam** have one region each, so their buttons navigate directly (no menu).
 
-The label of each region ID is in `src/app/region-labels.js` (`REGION_LABELS`); a region with no entry would show its manifest name instead:
-
-| Region ID | Fly In label |
-|---|---|
-| `cn-chongqing` | Chongqing |
-| `cn-guangdong` | Guangdong |
-| `cn-hubei` | Hubei |
-| `cn-hunan` | Hunan |
-| `cn-jilin` | Jilin |
-| `cn-ningxia` | Ningxia |
-| `cn-sichuan` | Sichuan |
-| `cn-yunnan` | Yunnan |
-| `sg-nofly` | Singapore |
+The label of each region ID is in `src/app/region-labels.js` (`REGION_LABELS`): one entry per region in `public/data` (33 on 2026-11-28); a region with no entry would show its manifest name instead. A China ID is `cn-` plus the lower-case name of the province, except `cn-neimenggu` (Inner Mongolia) and `cn-xizang` (Tibet); `my-enr51` is Malaysia, `vn-enr51` Vietnam and `sg-nofly` Singapore.
 
 **Keep in sync:** whenever a region's shape archive is added or removed, check the Fly in options, `REGION_LABELS` and this list in the same change. `tests/region-labels-unit.mjs` fails when a region in `public/data` has no label, a label has no region, or the choices differ from its expected list (update that list with the change). `tests/fly-in.mjs` checks the buttons and the downloads in the browser; `tests/country-buttons.mjs` checks the menu by keyboard, outside presses, one menu at a time and narrow screens.
 

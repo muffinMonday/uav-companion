@@ -1,4 +1,4 @@
-// Fly in (dashboard): a fresh visit opens on Singapore and downloads only its archive; choosing a China region downloads that
+// Fly in (dashboard): a fresh visit opens on Singapore and downloads only the archives its view touches (Singapore and the Malaysia one); choosing a China region downloads that
 // region's archive and the ones its view touches; a search that pans into another region downloads that one; after a reload,
 // a region already in the Cache API is read from there. Counts archives and bytes per step. Needs the app on :5173.
 import { chromium, CHANNEL, LATEST_SEEN } from './lib.mjs';
@@ -41,7 +41,7 @@ const bytes = (log) => log.reduce((s, e) => s + e.bytes, 0);
 // ================= 1. a fresh visit opens on Singapore and downloads only its archive
 let { ctx, p, log } = await open();
 // Malaysia's ENR 5.1 archive (0.6 MB) covers the sea and Johor around Singapore, so its bounding box meets the opening view and it loads with Singapore's; no China archive does.
-const sgOnly = JSON.stringify([...ids(log)].sort()) === JSON.stringify(['my-enr51', 'sg-nofly']) && bytes(log) < 2e6;
+const sgOnly = JSON.stringify([...ids(log)].sort()) === JSON.stringify(['my-enr51', 'sg-nofly']) && bytes(log) < 2.5e6; // Singapore's view also touches Malaysia (Johor), so two archives, about 2.05 MB
 ok(sgOnly, 'fresh visit: archives downloaded = ' + JSON.stringify(ids(log)) + ' (' + log.length + ' response(s), ' + mb(bytes(log)) + ')');
 info(`fresh Singapore view: ${ids(log).length} archive(s) downloaded, ${mb(bytes(log))} transferred`);
 const flyBtns = await p.$$eval('.dash-fly .country-btn', (bs) => bs.map((b) => b.textContent));
