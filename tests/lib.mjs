@@ -25,12 +25,21 @@ import { HELP } from '../src/help-content.js';
 import { TYPE_GROUPS } from '../src/poi.js';
 /** The id of the newest What's new entry: what a returning visitor has already seen. Suites use it so announcing something new does not reopen the dashboard in every test. */
 export const LATEST_SEEN = WHATS_NEW[0].id;
+/** Basemap providers (OpenStreetMap and its France-hosted styles, OpenTopoMap, CARTO) answer every raster tile request of a test context with one fixed image. The suites then never reach a real
+ *  provider (no quota, no network dependence, no load on volunteer-run tile servers); a suite that counts or fails tile requests registers its own route, which takes precedence over this one.
+ *  TILES_LIVE=1 switches the mock off (only for a deliberate provider integration check). */
+export const TILE_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+export const TILE_HOSTS = /^https?:\/\/[^/]*(openstreetmap|opentopomap|cartocdn)[^/]*\/.*\.png(\?|$)/i;
+const mockTiles = (ctx) => process.env.TILES_LIVE === '1' ? Promise.resolve() : ctx.route(TILE_HOSTS, (r) => r.fulfill({ status: 200, contentType: 'image/png', headers: { 'cache-control': 'no-store' }, body: TILE_PNG }));
 export const chromium = {
   async launch(options) {
     const browser = await real.launch(options);
     const newContext = browser.newContext.bind(browser);
+    const newPage = browser.newPage.bind(browser);
+    browser.newPage = async (opts) => { const page = await newPage(opts); await mockTiles(page.context()); return page; };
     browser.newContext = async ({ addFolded, listFolded, hubeiView, ...opts } = {}) => {
       const ctx = await newContext({ reducedMotion: 'reduce', ...opts }); // moving elements make timing flaky; motion.mjs asks for it back
+      await mockTiles(ctx);
       // hubeiView: start on Hubei (the suites that use its Wuhan points). A first visit now opens on Singapore.
       if (hubeiView) await ctx.addInitScript(() => { try { if (localStorage.getItem('uavzones.v1.prefs') === null) localStorage.setItem('uavzones.v1.prefs', JSON.stringify({ view: { lat: 30.6, lon: 114.3, zoom: 7 } })); } catch { /* ignore */ } });
       // (the contextual hints are marked as seen too, or a hint at the top of a pane would move what the suites click on; the discover suite starts without them)

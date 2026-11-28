@@ -77,6 +77,26 @@ ok(/OpenStreetMap France/.test(note) && /OpenTopoMap/.test(note) && !/Esri/.test
 await ctx.close();
 
 // Native dark map lifecycle, using the real Leaflet/theme/rotation/PMTiles modules.
+// ---------- a quick run of choices requests tiles only for the last one (a short settle before a new layer is created)
+{
+  const o = await open({ basemap: 'osm', view: { lat: 1.35, lon: 103.82, zoom: 14 }, theme: 'light' });
+  const pick = (k) => o.p.evaluate((v) => { const s = document.getElementById('base'); s.value = v; s.dispatchEvent(new Event('change', { bubbles: true })); }, k);
+  o.tiles.length = 0;
+  for (const k of ['hot', 'cyclosm', 'topo']) { await pick(k); await o.p.waitForTimeout(40); } // like arrow keys through the selector
+  await o.p.waitForFunction(() => { const im = document.querySelector('.leaflet-tile-pane > .base-tiles img.leaflet-tile'); return im && /opentopomap/.test(im.src) && document.querySelectorAll('.leaflet-tile-pane > .base-tiles').length === 1; }, null, { timeout: 8000 });
+  ok(o.tiles.length > 0 && o.tiles.every((u) => HOSTS.topo.test(u)), 'a quick run hot, cyclosm, topo: only OpenTopoMap tiles are requested (' + o.tiles.length + ', none for the layers passed on the way)');
+  ok(await saved(o.p) === 'topo' && /OpenTopoMap/.test(await credit(o.p)), 'the last choice is the one saved and credited');
+  // switching back to the layer already shown is immediate and requests nothing, and cancels a choice still waiting
+  o.tiles.length = 0;
+  await pick('hot'); await pick('topo'); await o.p.waitForTimeout(500);
+  ok(o.tiles.length === 0 && (await o.p.$$eval('.leaflet-tile-pane > .base-tiles img.leaflet-tile', (im) => im.length > 0 && im.every((i) => /opentopomap/.test(i.src)))), 'hot then back to the shown topo: nothing is requested and topo stays');
+  // a single choice still loads promptly (well inside a second)
+  const t0 = Date.now(); await pick('osm');
+  await o.p.waitForFunction(() => { const im = document.querySelector('.leaflet-tile-pane > .base-tiles img.leaflet-tile'); return im && /tile\.openstreetmap\.org/.test(im.src) && document.querySelectorAll('.leaflet-tile-pane > .base-tiles').length === 1; }, null, { timeout: 8000 });
+  ok(Date.now() - t0 < 2500, 'a single choice completes promptly (' + (Date.now() - t0) + ' ms)');
+  await o.ctx.close();
+}
+
 // Requests are intercepted: these regressions consume no provider quota.
 for (const width of [390, 800, 1300]) {
   ({ ctx, p } = await open({ basemap: 'osm', theme: 'system' }, { viewport: { width, height: 850 }, hasTouch: width <= 800, isMobile: width <= 800 }));
