@@ -218,8 +218,10 @@ export function createAdminUI({ map, backend, toast }) {
     c.append(row); return c;
   }
 
+  /** Responsive layout only: a class toggle. It must not rebuild the content, because a mobile virtual keyboard fires resize events and a rebuild would destroy the focused textarea. */
+  const layout = () => root.classList.toggle('sheet', matchMedia('(max-width: 520px)').matches);
   function paint() {
-    root.classList.toggle('sheet', matchMedia('(max-width: 520px)').matches);
+    layout();
     root.hidden = !isOpen || !admin;
     if (root.hidden) return;
     const head = el('div', 'areas-head');
@@ -244,7 +246,7 @@ export function createAdminUI({ map, backend, toast }) {
   }
   backend.onChange?.(() => refreshRole());
   refreshRole();
-  addEventListener('resize', () => { if (isOpen) paint(); });
+  addEventListener('resize', () => { if (isOpen) layout(); }); // never paint() here (see layout)
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen && root.contains(document.activeElement)) { e.stopPropagation(); set(false); } }, true);
   return { isAdmin: () => admin, open: () => set(true), close: () => set(false), refreshRole, get isOpen() { return isOpen; }, onChange: (f) => { listeners.add(f); return () => listeners.delete(f); } };
 }
