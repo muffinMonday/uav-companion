@@ -7,7 +7,8 @@
   "description": "Open-source map of suitable-flight (适飞) drone zones, starting with China",
   "scripts": {
     "deploy:live": "node scripts/deploy-live.js",
-    "deploy": "node scripts/preflight-data.js --restore && vite build && node scripts/strip-local.js && node scripts/preflight-data.js && gh-pages -d dist --nojekyll --no-history",
+    "deploy:check": "node scripts/deploy-live.js --check",
+    "deploy": "node scripts/preflight-data.js --restore && vite build && node scripts/strip-local.js && node scripts/check-dist.js && node scripts/preflight-data.js && gh-pages -d dist --nojekyll --no-history",
     "verify:data": "node scripts/verify-data.js",
     "dev": "vite",
     "build:data": "node scripts/build-data.js",

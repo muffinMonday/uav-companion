@@ -106,7 +106,11 @@ for (const f of [...walk(path.join(ROOT, 'src')).filter((x) => !rel(x).startsWit
   if (/benchtest|motor-bench|bench-lab|VITE_BENCH_PHASE3/i.test(fs.readFileSync(f, 'utf8'))) refs.push(rel(f));
 }
 // The one allowed reference is the dashboard entry of the user-facing beta (owner decision 2026-11-17). It must stay build-flag gated, import only the local result store, and hold no motor, transport or bench code.
-assert.deepEqual(refs, ['src/motor-diag-entry.js'], 'only the flag-gated dashboard entry references the bench flag');
+// The second allowed reference is the production deployment configuration, which names the flag and the two page paths as DATA so a deployment can prove the build has them (scripts/deploy-config.js).
+// It is not an entry point: it is only run by deploy-live.js and check-dist.js, and it must import nothing from the app.
+assert.deepEqual([...refs].sort(), ['scripts/deploy-config.js', 'src/motor-diag-entry.js'], 'only the flag-gated dashboard entry and the deployment configuration (data only) reference the bench flag');
+const deployConfig = fs.readFileSync(path.join(ROOT, 'scripts/deploy-config.js'), 'utf8');
+assert.deepEqual([...deployConfig.matchAll(/^import .* from '(.*)';/gm)].map((m) => m[1]), ['node:fs', 'node:path'], 'the deployment configuration imports only Node built-ins, nothing from the app or the bench');
 const entry = fs.readFileSync(path.join(ROOT, 'src/motor-diag-entry.js'), 'utf8');
 assert.ok(/export const motorDiagCard = import\.meta\.env\.VITE_BENCH_PHASE3 === '1' \? buildCard : \(\) => null;/.test(entry), 'the entry is a constant-false no-op without the flag');
 assert.deepEqual([...entry.matchAll(/^import .* from '(.*)';/gm)].map((m) => m[1]), ['./aircraft-diag-data.js'], 'the entry imports only the local result store');
